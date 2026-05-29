@@ -1,0 +1,86 @@
+{
+  "system_info": {
+    "total_ram_gb": 31.508872985839844,
+    "available_ram_gb": 10.868175506591797,
+    "cpu": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+    "gpu": "4GB (Multiple GPUs)",
+    "ollama_version": "ollama version is 0.17.1"
+  },
+  "benchmark_date": "2026-05-11T17:06:34.148008",
+  "results": [
+    {
+      "model": "qwen2.5-coder:7b",
+      "tier": "hot",
+      "size_gb": 4.7,
+      "cold_start_ms": 12091,
+      "warm_start_ms": 4247,
+      "avg_response_ms": 4248,
+      "memory_mb": 4812,
+      "swapped": false,
+      "timestamp": "2026-05-11T16:59:49.229290"
+    },
+    {
+      "model": "llama3.2:3b",
+      "tier": "hot",
+      "size_gb": 2.0,
+      "cold_start_ms": 7812,
+      "warm_start_ms": 1431,
+      "avg_response_ms": 2843,
+      "memory_mb": 2048,
+      "swapped": false,
+      "timestamp": "2026-05-11T17:00:09.199223"
+    },
+    {
+      "model": "llama-guard3:1b",
+      "tier": "hot",
+      "size_gb": 1.6,
+      "cold_start_ms": 4397,
+      "warm_start_ms": 397,
+      "avg_response_ms": 397,
+      "memory_mb": 1638,
+      "swapped": true,
+      "timestamp": "2026-05-11T17:00:17.349939"
+    },
+    {
+      "model": "phi4",
+      "tier": "hot",
+      "size_gb": 9.1,
+      "cold_start_ms": 29410,
+      "warm_start_ms": 19734,
+      "avg_response_ms": 18372,
+      "memory_mb": 9318,
+      "swapped": false,
+      "timestamp": "2026-05-11T17:02:03.778564"
+    },
+    {
+      "model": "deepseek-r1:7b",
+      "tier": "hot",
+      "size_gb": 4.7,
+      "cold_start_ms": 32045,
+      "warm_start_ms": 50189,
+      "avg_response_ms": 28600,
+      "memory_mb": 4812,
+      "swapped": false,
+      "timestamp": "2026-05-11T17:04:53.975294"
+    },
+    {
+      "model": "llama3.1:8b",
+      "tier": "hot",
+      "size_gb": 4.7,
+      "cold_start_ms": 22501,
+      "warm_start_ms": 20598,
+      "avg_response_ms": 18303,
+      "memory_mb": 4812,
+      "swapped": false,
+      "timestamp": "2026-05-11T17:06:34.148008"
+    }
+  ],
+  "summary": {
+    "hot_tier_avg_ms": 16099,
+    "warm_tier_avg_ms": 0,
+    "cold_tier_avg_ms": 0,
+    "swap_detected_models": [
+      "llama-guard3:1b"
+    ]
+  }
+}
