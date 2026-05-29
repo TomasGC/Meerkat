@@ -1,0 +1,19 @@
+{
+  "mappings": [
+    {
+      "path": "C:/dev/repos/AzureDevops",
+      "profile": "azuredevops",
+      "description": "Azure DevOps projects"
+    },
+    {
+      "path": "C:/dev/repos/GitHub",
+      "profile": "github",
+      "description": "GitHub projects"
+    },
+    {
+      "path": "C:/dev/repos/GitLab",
+      "profile": "gitlab",
+      "description": "GitLab projects"
+    }
+  ]
+}

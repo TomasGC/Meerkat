@@ -1,0 +1,5 @@
+# Ignore local/private profiles
+*.local.json
+
+# Ignore active profile selection
+.active
