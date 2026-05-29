@@ -1,0 +1,67 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash:git status",
+      "Bash:git diff",
+      "Bash:git log",
+      "Bash:dotnet build",
+      "Bash:dotnet test",
+      "Bash:go build",
+      "Bash:go test",
+      "Bash:npm run build",
+      "Bash:npm test",
+      "Bash:pytest",
+      "Edit:.claude/**",
+      "Write:.claude/**",
+      "Edit:README.md",
+      "Write:README.md"
+    ],
+    "ask": [
+      "Edit",
+      "Write",
+      "Bash:git add",
+      "Bash:git commit",
+      "Bash:git push",
+      "Bash:rm",
+      "Bash:mv",
+      "Bash:cp"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/session-start.sh",
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "coderabbit@claude-plugins-official": true,
+    "qodo-skills@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "csharp-lsp@claude-plugins-official": true,
+    "github@claude-plugins-official": true
+  },
+  "theme": "dark"
+}
