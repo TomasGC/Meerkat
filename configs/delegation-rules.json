@@ -1,0 +1,161 @@
+{
+  "enabled": true,
+  "auto_delegate_threshold_s": 10,
+
+  "auto_delegate": {
+    "format_code": {
+      "tool": "scripts/cli/format_code.py",
+      "max_latency_s": 1,
+      "token_savings_estimate": 5000,
+      "triggers": ["format", "formatting", "prettier", "black"],
+      "file_extensions": [".py", ".ts", ".js", ".tsx", ".jsx", ".go", ".cs"]
+    },
+
+    "lint_code": {
+      "tool": "scripts/cli/lint_code.py",
+      "max_latency_s": 2,
+      "token_savings_estimate": 3000,
+      "triggers": ["lint", "linting", "check style", "eslint", "pylint"],
+      "file_extensions": [".py", ".ts", ".js", ".tsx", ".jsx", ".go"]
+    },
+
+    "validate_syntax": {
+      "tool": "ollama:llama3.2:3b",
+      "max_latency_s": 5,
+      "token_savings_estimate": 3000,
+      "triggers": ["syntax", "syntax error", "parse error", "validate"],
+      "confidence_required": 0.8
+    },
+
+    "quick_review": {
+      "tool": "ollama:qwen2.5-coder:7b",
+      "max_latency_s": 10,
+      "token_savings_estimate": 5000,
+      "triggers": ["quick review", "check this", "looks good?"],
+      "confidence_required": 0.7
+    },
+
+    "run_tests": {
+      "tool": "agents/test-runner",
+      "max_latency_s": 60,
+      "background": true,
+      "token_savings_estimate": 15000,
+      "triggers": ["run tests", "test this", "run all tests", "pytest", "jest"]
+    },
+
+    "calculate_coverage": {
+      "tool": "scripts/cli/check_coverage.py",
+      "max_latency_s": 5,
+      "token_savings_estimate": 3000,
+      "triggers": ["coverage", "test coverage", "how much coverage"]
+    },
+
+    "git_operations": {
+      "tool": "scripts/cli/git_helper.py",
+      "max_latency_s": 2,
+      "token_savings_estimate": 2000,
+      "triggers": ["git diff", "git log", "git status", "recent commits"]
+    }
+  },
+
+  "hybrid_tasks": {
+    "debug_bug": {
+      "steps": [
+        {
+          "name": "gather_logs",
+          "tool": "scripts/delegators/gather_logs.py",
+          "output": "logs.json"
+        },
+        {
+          "name": "analyze_root_cause",
+          "tool": "claude",
+          "input": "logs.json",
+          "token_estimate": 10000
+        },
+        {
+          "name": "validate_fix",
+          "tool": "ollama:qwen2.5-coder:7b",
+          "optional": true
+        }
+      ],
+      "triggers": ["bug", "error", "exception", "crash", "not working"],
+      "token_savings_estimate": 15000
+    },
+
+    "optimize_performance": {
+      "steps": [
+        {
+          "name": "profile_endpoint",
+          "tool": "scripts/delegators/profile_endpoint.py",
+          "output": "profile.json"
+        },
+        {
+          "name": "analyze_bottleneck",
+          "tool": "claude",
+          "input": "profile.json",
+          "token_estimate": 12000
+        },
+        {
+          "name": "benchmark_fix",
+          "tool": "scripts/delegators/benchmark.py",
+          "optional": true
+        }
+      ],
+      "triggers": ["slow", "performance", "optimize", "latency", "timeout"],
+      "token_savings_estimate": 20000
+    },
+
+    "refactor_code": {
+      "steps": [
+        {
+          "name": "analyze_complexity",
+          "tool": "scripts/delegators/analyze_complexity.py",
+          "output": "complexity.json"
+        },
+        {
+          "name": "suggest_refactoring",
+          "tool": "claude",
+          "input": "complexity.json",
+          "token_estimate": 15000
+        },
+        {
+          "name": "validate_refactoring",
+          "tool": "ollama:qwen2.5-coder:7b"
+        }
+      ],
+      "triggers": ["refactor", "clean up", "simplify", "improve code"],
+      "token_savings_estimate": 10000
+    }
+  },
+
+  "claude_only": {
+    "tasks": [
+      "architecture",
+      "design_patterns",
+      "explain_complex",
+      "context_synthesis",
+      "security_audit",
+      "code_review_deep"
+    ],
+    "triggers": [
+      "should we use",
+      "architecture",
+      "design decision",
+      "explain why",
+      "how does this work",
+      "what is the best approach"
+    ]
+  },
+
+  "fallback": {
+    "on_error": "claude",
+    "on_timeout": "claude",
+    "on_low_confidence": "claude"
+  },
+
+  "monitoring": {
+    "enabled": true,
+    "log_file": "~/.claude/logs/delegation-stats.jsonl",
+    "report_interval_sessions": 10
+  }
+}

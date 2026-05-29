@@ -1,0 +1,34 @@
+{
+  "SessionStart": [
+    {
+      "type": "command",
+      "command": "bash ~/.claude/hooks/session-start.sh",
+      "shell": "bash",
+      "timeout": 5,
+      "statusMessage": "Loading delegation infrastructure...",
+      "async": true,
+      "once": false
+    }
+  ],
+
+  "PreToolUse": [
+    {
+      "type": "command",
+      "command": "bash ~/.claude/hooks/delegation-router.sh \"$TOOL_NAME\" \"$TOOL_ARGS\"",
+      "shell": "bash",
+      "if": "Bash(git commit*)",
+      "timeout": 60,
+      "statusMessage": "Running pre-commit validation..."
+    }
+  ],
+
+  "PostToolUse": [
+    {
+      "type": "command",
+      "command": "echo '{\"timestamp\":\"$(date -Iseconds)\",\"tool\":\"$TOOL_NAME\",\"delegated\":false,\"tokens_used\":0}' >> ~/.claude/logs/delegation-stats.jsonl",
+      "shell": "bash",
+      "async": true,
+      "timeout": 1
+    }
+  ]
+}
