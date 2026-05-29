@@ -1,0 +1,18 @@
+# Python 3.12+ required
+
+# Code parsing & AST
+tree-sitter>=0.21.0
+astroid>=3.1.0
+
+# Data formats
+pyyaml>=6.0.1
+jsonschema>=4.20.0
+
+# Progress & CLI
+tqdm>=4.66.0
+rich>=13.7.0
+
+# Testing (dev dependencies)
+pytest>=8.0.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0

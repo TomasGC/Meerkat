@@ -1,0 +1,160 @@
+{
+  "project_path": "/home/user/my-api",
+  "project_info": {
+    "language": "go",
+    "frameworks": ["gin"],
+    "endpoint_count": 42,
+    "test_file_count": 18,
+    "project_type": "REST API",
+    "root_path": "/home/user/my-api",
+    "test_framework": "testing",
+    "detected_patterns": {},
+    "metadata": {
+      "has_api_prefixes": true
+    }
+  },
+  "endpoints_summary": {
+    "total": 42
+  },
+  "tests_summary": {
+    "total": 156
+  },
+  "scenarios_summary": {
+    "total": 892,
+    "breakdown": {
+      "happy_path": 42,
+      "edge_case": 378,
+      "error": 294,
+      "security": 178
+    }
+  },
+  "coverage_summary": {
+    "total_scenarios": 892,
+    "tested_scenarios": 287,
+    "untested_scenarios": 605,
+    "coverage_percent": 32.17,
+    "by_endpoint": {
+      "GET /api/users/:id": {
+        "total": 25,
+        "tested": 12,
+        "untested": 13,
+        "coverage_percent": 48.0
+      },
+      "POST /api/users": {
+        "total": 28,
+        "tested": 8,
+        "untested": 20,
+        "coverage_percent": 28.57
+      },
+      "POST /api/payments/checkout": {
+        "total": 35,
+        "tested": 5,
+        "untested": 30,
+        "coverage_percent": 14.29
+      }
+    },
+    "by_type": {
+      "happy_path": {
+        "total": 42,
+        "tested": 40,
+        "untested": 2,
+        "coverage_percent": 95.24
+      },
+      "edge_case": {
+        "total": 378,
+        "tested": 98,
+        "untested": 280,
+        "coverage_percent": 25.93
+      },
+      "error": {
+        "total": 294,
+        "tested": 112,
+        "untested": 182,
+        "coverage_percent": 38.1
+      },
+      "security": {
+        "total": 178,
+        "tested": 37,
+        "untested": 141,
+        "coverage_percent": 20.79
+      }
+    }
+  },
+  "risk_summary": {
+    "total_gaps": 605,
+    "by_level": {
+      "CRITICAL": 23,
+      "HIGH": 87,
+      "MEDIUM": 245,
+      "LOW": 250
+    },
+    "averages": {
+      "business_impact": 3.12,
+      "technical_risk": 3.45,
+      "failure_probability": 3.21,
+      "risk_score": 34.56
+    }
+  },
+  "intermediate_files": {
+    "endpoints": "/tmp/black-box-analyzer-xyz/endpoints.json",
+    "tests": "/tmp/black-box-analyzer-xyz/tests.json",
+    "scenarios": "/tmp/black-box-analyzer-xyz/scenarios.json",
+    "matrix": "/tmp/black-box-analyzer-xyz/matrix.json",
+    "coverage_markdown": "/tmp/black-box-analyzer-xyz/coverage.md",
+    "risks": "/tmp/black-box-analyzer-xyz/risks.json"
+  },
+  "top_critical_risks": [
+    {
+      "endpoint": "POST /api/payments/checkout",
+      "method": "POST",
+      "scenario_type": "security",
+      "description": "Security test: xss_script",
+      "risk_score": 125,
+      "risk_level": "CRITICAL",
+      "reasoning": "Payment/revenue-critical endpoint. Security vulnerability test (XSS, SQL injection, etc.). Security vulnerabilities commonly exploited if unvalidated."
+    },
+    {
+      "endpoint": "POST /api/payments/checkout",
+      "method": "POST",
+      "scenario_type": "security",
+      "description": "Security test: sql_injection",
+      "risk_score": 125,
+      "risk_level": "CRITICAL",
+      "reasoning": "Payment/revenue-critical endpoint. Security vulnerability test (XSS, SQL injection, etc.). Security vulnerabilities commonly exploited if unvalidated."
+    },
+    {
+      "endpoint": "POST /api/auth/login",
+      "method": "POST",
+      "scenario_type": "security",
+      "description": "Security test: command_injection",
+      "risk_score": 125,
+      "risk_level": "CRITICAL",
+      "reasoning": "Authentication/security-critical endpoint. Security vulnerability test (XSS, SQL injection, etc.). Security vulnerabilities commonly exploited if unvalidated."
+    },
+    {
+      "endpoint": "POST /api/payments/checkout",
+      "method": "POST",
+      "scenario_type": "error",
+      "description": "Edge case: amount=None",
+      "risk_score": 80,
+      "risk_level": "CRITICAL",
+      "reasoning": "Payment/revenue-critical endpoint. Null handling - potential NullPointerException. Null handling frequently causes production issues."
+    },
+    {
+      "endpoint": "DELETE /api/users/:id",
+      "method": "DELETE",
+      "scenario_type": "error",
+      "description": "Missing required parameter: id",
+      "risk_score": 64,
+      "risk_level": "CRITICAL",
+      "reasoning": "User-facing write operation. Missing parameter validation - potential for invalid state. Missing param handling commonly forgotten."
+    }
+  ],
+  "recommendations": [
+    "Focus on CRITICAL (23 gaps) and HIGH (87 gaps) priority tests first",
+    "Security tests have only 20.79% coverage - prioritize XSS, SQL injection, path traversal tests",
+    "Payment endpoints (/api/payments/checkout) have very low coverage (14.29%) - high business risk",
+    "Edge cases have only 25.93% coverage - add tests for null, empty, boundary values",
+    "Consider implementing property-based testing for input validation"
+  ]
+}
