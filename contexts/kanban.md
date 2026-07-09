@@ -4,9 +4,7 @@ Track of work sessions and completed tasks.
 
 ---
 
-2026-07-09 - [#3] Black-Box Analyzer — Test Suite & Script Improvements
-- Reorganized test suite into 4-tier co-located structure (units/integration-mocks/integration-reals/e2e) per source
-- Added root pytest.ini with markers + conftest.py auto-marking by directory name
+2026-07-09 - [#3] Black-Box Analyzer — Script Improvements & Test Coverage
 - Expanded BBA test coverage: diff_analysis, common/utils, common/cache, common/logger, coverage pipeline
 - Replaced always-skip Ollama stubs with live integration-reals tests
 - Extracted Ollama prompt strings into .prompt files (prompts/claude/)
@@ -14,8 +12,9 @@ Track of work sessions and completed tasks.
 - library_analyzer: phases 1+4b now run concurrently; scan_tdd_refactoring: --agents N parallel runs
 - prioritize_by_risk: library scenario risk scoring across business/technical/failure axes
 - Analyzers: consistent Ollama prompt integration across api/cli/mobile/frontend/desktop/blockchain/event-driven
-tags: #testing #bba #refactoring #4-tier #ollama #parallel
-Commits: f2092bf, 36640b3, 911ae6a, fe1e199, 4130cad, a054c99, 63bd4d6, b7f617b
+- Added doc.md (phase reference) and examples.md
+tags: #bba #testing #ollama #parallel
+Commit: 119bbaa
 
 ---
 
