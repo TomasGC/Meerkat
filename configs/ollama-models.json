@@ -1,0 +1,19 @@
+{
+  "generation": {
+    "primary": "qwen2.5-coder:14b",
+    "fallbacks": ["qwen2.5-coder:7b", "deepseek-coder-v2:16b"]
+  },
+  "analysis": {
+    "primary": "qwen3:8b",
+    "fallbacks": ["deepseek-r1:7b", "llama3.1:8b"]
+  },
+  "quick": {
+    "primary": "qwen2.5-coder:7b",
+    "fallbacks": []
+  },
+  "timeouts": {
+    "generation": 600,
+    "analysis": 300,
+    "quick": 60
+  }
+}

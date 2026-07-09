@@ -1,67 +1,180 @@
-{
-  "permissions": {
-    "allow": [
-      "Read",
-      "Glob",
-      "Grep",
-      "Bash:git status",
-      "Bash:git diff",
-      "Bash:git log",
-      "Bash:dotnet build",
-      "Bash:dotnet test",
-      "Bash:go build",
-      "Bash:go test",
-      "Bash:npm run build",
-      "Bash:npm test",
-      "Bash:pytest",
-      "Edit:.claude/**",
-      "Write:.claude/**",
-      "Edit:README.md",
-      "Write:README.md"
-    ],
-    "ask": [
-      "Edit",
-      "Write",
-      "Bash:git add",
-      "Bash:git commit",
-      "Bash:git push",
-      "Bash:rm",
-      "Bash:mv",
-      "Bash:cp"
-    ]
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/session-start.sh",
-            "async": true
-          }
-        ]
-      }
-    ]
-  },
-  "enabledPlugins": {
-    "superpowers@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
-    "feature-dev@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "pr-review-toolkit@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "plugin-dev@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "coderabbit@claude-plugins-official": true,
-    "qodo-skills@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
-    "csharp-lsp@claude-plugins-official": true,
-    "github@claude-plugins-official": true
-  },
-  "theme": "dark"
+﻿{
+    "cleanupPeriodDays":  99999,
+    "permissions":  {
+                        "allow":  [
+                                      "Read",
+                                      "Glob",
+                                      "Grep",
+                                      "ToolSearch",
+                                      "WebSearch",
+                                      "Bash:git status",
+                                      "Bash:git diff",
+                                      "Bash:git log",
+                                      "Bash:git show",
+                                      "Bash:git branch",
+                                      "Bash:git tag",
+                                      "Bash:git ls-files",
+                                      "Bash:git remote",
+                                      "Bash:rtk git status",
+                                      "Bash:rtk git diff",
+                                      "Bash:rtk git log",
+                                      "Bash:rtk git show",
+                                      "Bash:rtk git branch",
+                                      "Bash:rtk git tag",
+                                      "Bash:rtk git ls-files",
+                                      "Bash:rtk git remote",
+                                      "Bash:find",
+                                      "Bash:ls",
+                                      "Bash:cat",
+                                      "Bash:head",
+                                      "Bash:tail",
+                                      "Bash:wc",
+                                      "Bash:file",
+                                      "Bash:which",
+                                      "Bash:pwd",
+                                      "Bash:tree",
+                                      "Bash:rtk find",
+                                      "Bash:rtk ls",
+                                      "Bash:rtk cat",
+                                      "Bash:rtk head",
+                                      "Bash:rtk tail",
+                                      "Bash:rtk wc",
+                                      "Bash:rtk file",
+                                      "Bash:rtk which",
+                                      "Bash:rtk pwd",
+                                      "Bash:rtk tree",
+                                      "Bash:dotnet build",
+                                      "Bash:dotnet test",
+                                      "Bash:go build",
+                                      "Bash:go test",
+                                      "Bash:npm run build",
+                                      "Bash:npm test",
+                                      "Bash:pytest",
+                                      "Bash:python scripts/manage.py build",
+                                      "Bash:python scripts/manage.py test",
+                                      "Bash:./gradlew",
+                                      "PowerShell:Get-ChildItem",
+                                      "PowerShell:Get-Content",
+                                      "PowerShell:Get-Location",
+                                      "PowerShell:Test-Path",
+                                      "Edit:.claude/contexts/kanban.md",
+                                      "Edit:.claude/contexts/architecture.md",
+                                      "Edit:.claude/contexts/commands.md",
+                                      "Edit:.claude/contexts/conventions.md",
+                                      "Edit:.claude/contexts/tests.md",
+                                      "Edit:.claude/docs/CICD.md",
+                                      "Write:.claude/contexts/kanban.md",
+                                      "Write:.claude/contexts/architecture.md",
+                                      "Write:.claude/contexts/commands.md",
+                                      "Write:.claude/contexts/conventions.md",
+                                      "Write:.claude/contexts/tests.md",
+                                      "Write:.claude/docs/CICD.md",
+                                      "Edit:README.md",
+                                      "Write:README.md"
+                                  ],
+                        "ask":  [
+                                    "Edit",
+                                    "Write",
+                                    "Bash",
+                                    "PowerShell"
+                                ]
+                    },
+    "hooks":  {
+                  "PreToolUse":  [
+                                     {
+                                         "matcher":  "Bash",
+                                         "hooks":  [
+                                                       {
+                                                           "type":  "command",
+                                                           "command":  "rtk hook claude"
+                                                       }
+                                                   ]
+                                     }
+                                 ],
+                  "SessionStart":  [
+                                       {
+                                           "matcher":  "",
+                                           "hooks":  [
+                                                         {
+                                                             "type":  "command",
+                                                             "command":  "bash ~/.claude/hooks/session-start.sh",
+                                                             "async":  true
+                                                         }
+                                                     ]
+                                       },
+                                       {
+                                           "matcher":  "",
+                                           "hooks":  [
+                                                         {
+                                                             "type":  "command",
+                                                             "command":  "\"C:\\Program Files\\nodejs\\node.exe\" \"C:\\Users\\tomas.gomes\\.claude\\hooks\\caveman-activate.js\"",
+                                                             "timeout":  5,
+                                                             "statusMessage":  "Loading caveman mode..."
+                                                         }
+                                                     ]
+                                       }
+                                   ],
+                  "UserPromptSubmit":  [
+                                           {
+                                               "matcher":  "",
+                                               "hooks":  [
+                                                             {
+                                                                 "type":  "command",
+                                                                 "command":  "\"C:\\Program Files\\nodejs\\node.exe\" \"C:\\Users\\tomas.gomes\\.claude\\hooks\\caveman-mode-tracker.js\"",
+                                                                 "timeout":  5,
+                                                                 "statusMessage":  "Tracking caveman mode..."
+                                                             }
+                                                         ]
+                                           }
+                                       ]
+              },
+    "statusLine":  {
+                       "type":  "command",
+                       "command":  "pwsh -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\tomas.gomes\\.claude\\hooks\\caveman-statusline.ps1\""
+                   },
+    "enabledPlugins":  {
+                           "superpowers@claude-plugins-official":  true,
+                           "frontend-design@claude-plugins-official":  true,
+                           "feature-dev@claude-plugins-official":  true,
+                           "code-simplifier@claude-plugins-official":  true,
+                           "pr-review-toolkit@claude-plugins-official":  true,
+                           "claude-md-management@claude-plugins-official":  true,
+                           "plugin-dev@claude-plugins-official":  true,
+                           "skill-creator@claude-plugins-official":  true,
+                           "context7@claude-plugins-official":  true,
+                           "coderabbit@claude-plugins-official":  true,
+                           "qodo-skills@claude-plugins-official":  true,
+                           "typescript-lsp@claude-plugins-official":  true,
+                           "gopls-lsp@claude-plugins-official":  true,
+                           "ralph-loop@claude-plugins-official":  true,
+                           "security-guidance@claude-plugins-official":  true,
+                           "csharp-lsp@claude-plugins-official":  true,
+                           "github@claude-plugins-official":  true,
+                           "caveman@caveman":  true,
+                           "token-optimizer@alexgreensh-token-optimizer":  true,
+                           "headroom@headroom-marketplace":  true
+                       },
+    "extraKnownMarketplaces":  {
+                                   "caveman":  {
+                                                   "source":  {
+                                                                  "source":  "github",
+                                                                  "repo":  "JuliusBrussee/caveman"
+                                                              }
+                                               },
+                                   "headroom-marketplace":  {
+                                                                "source":  {
+                                                                               "source":  "github",
+                                                                               "repo":  "chopratejas/headroom"
+                                                                           }
+                                                            },
+                                   "alexgreensh-token-optimizer":  {
+                                                                       "source":  {
+                                                                                      "source":  "github",
+                                                                                      "repo":  "alexgreensh/token-optimizer"
+                                                                                  }
+                                                                   }
+                               },
+    "tui":  "fullscreen",
+    "theme":  "dark",
+    "editorMode":  "normal"
 }

@@ -1,0 +1,5 @@
+- **Shell**: PowerShell 7+ (cross-platform)
+- **Testing**: Pester 5+
+- **Linting**: PSScriptAnalyzer
+- **Build**: Invoke-Build or psake
+- **Packaging**: PowerShellGet, PSResourceGet

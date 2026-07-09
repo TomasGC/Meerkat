@@ -5,17 +5,6 @@
 
 ---
 
-## Project Context
-
-@contexts/kanban.md
-@contexts/architecture.md
-@contexts/commands.md
-@contexts/conventions.md
-@contexts/delegation-strategy.md
-@CLAUDE.local.md
-
----
-
 ## Hard Constraints (Non-Negotiable)
 
 ### File Modification Workflow
@@ -83,7 +72,7 @@ docs: update API documentation
 **Add to `.gitignore`**:
 ```gitignore
 .claude/*.local.*
-.claude/tmpclaude/
+.claude/sessions/
 .claude/logs/
 .claude/projects/*/memory/
 ```
@@ -140,7 +129,7 @@ All automatic, transparent, graceful if files missing.
 ### Language
 
 **Code/Documentation/Commits**: English (always)
-**Conversation**: French (concise, direct)
+**Conversation**: English (always, concise, direct)
 
 ### Tone
 
@@ -201,33 +190,37 @@ All automatic, transparent, graceful if files missing.
 
 ### Coding Standards
 
-Located in `~/.claude/rules/`:
+Located in `~/.claude/rules/` (auto-loaded per file type).
 
-**General Standards**:
-- `standards-code-quality.md` - DRY, SOLID, KISS, YAGNI
-- `standards-security.md` - Security best practices
-- `standards-testing.md` - TDD, coverage requirements
+---
 
-**Language-Specific**:
-- `standards-typescript.md` - TypeScript best practices
-- `standards-javascript.md` - ES6+ conventions
-- `standards-vuejs3.md` - Vue.js 3 Composition API
-- `standards-cshtml.md` - Razor Pages conventions
-- `standards-bash.md` - Bash scripting (set -euo pipefail)
-- `standards-powershell.md` - PowerShell 7 with OOP
+## Delegation
 
-**Infrastructure**:
-- `standards-docker.md` - Multi-stage builds, security
-- `standards-kubernetes.md` - Resources, health checks
-- `standards-terraform.md` - IaC best practices
+Delegate mechanical tasks to Ollama via MCP tools (ollama_generate, ollama_chat).
+Keep strategic reasoning, architecture decisions, and context synthesis with Claude.
+For unattended scripts, use subprocess via common_config.run_ollama().
 
-**Database**:
-- `standards-postgresql.md` - Indexing, transactions
-- `standards-sqlserver.md` - T-SQL, stored procedures
+---
 
-**Frameworks**:
-- `standards-kendo.md` - Kendo UI with TypeScript
+## Session Artifacts Location
+
+All non-committed artifacts go inside `.claude/sessions/` (gitignored). Never use `tmpclaude/`, `docs/superpowers/`, `.superpowers/`, or `.claude/plans/`.
+
+| Artifact | Location |
+|----------|----------|
+| Plans (writing-plans skill) | `.claude/sessions/plans/YYYY-MM-DD-<name>.md` |
+| SDD progress ledgers | `.claude/sessions/superpowers/sdd/` |
+| Other superpowers artifacts | `.claude/sessions/superpowers/` |
+| Temp / scratch files | `.claude/sessions/tmp/` |
+| Design specs (local) | `.claude/sessions/specs/` |
+
+## Claude Scripts
+
+`.claude/scripts/` — Claude Code utility scripts. **Python only** (`.py`). No PowerShell (`.ps1`).
 
 ---
 
 **End of Global Instructions**
+
+@CLAUDE.local.md
+@RTK.md

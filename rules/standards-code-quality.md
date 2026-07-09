@@ -1,6 +1,17 @@
 ---
 paths:
-  - "**/*.*"
+  - "**/*.cs"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.go"
+  - "**/*.py"
+  - "**/*.java"
+  - "**/*.kt"
+  - "**/*.rs"
+  - "**/*.cshtml"
+  - "**/*.razor"
 ---
 
 # Company Code Quality Standards

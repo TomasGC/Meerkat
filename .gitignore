@@ -24,6 +24,9 @@ security_warnings_state_*.json
 # Plugins (external marketplace dependencies)
 plugins/
 
+# Tools
+tools/
+
 # Auto-memory (project-specific)
 projects/*/memory/
 
@@ -78,17 +81,26 @@ tasks/
 # Cache and debug
 cache/
 debug/
-backups/
+*backups*/
+*cache*
+*.bak
+token-optimizer/
+
+# Runtime state
+.caveman-active*
+daemon*
+jobs/
+
+# Caveman hook files (local plugin)
+hooks/caveman*
+hooks/package.json
 
 # Archives (use GitHub issues instead)
 docs/archives/
 
 # Templates (project-specific)
 template-analysis.md
-template-base/
 
-# GitLab CI (project-specific, not global)
-.gitlab-ci.yml
 
 # EditorConfig (optional, user preference)
 .editorconfig

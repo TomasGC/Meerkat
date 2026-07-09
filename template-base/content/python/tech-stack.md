@@ -1,0 +1,6 @@
+- **Language**: Python 3.12+
+- **Package manager**: uv (preferred) or pip + venv
+- **Testing**: pytest + pytest-cov
+- **Linting**: ruff (lint + format)
+- **Type checking**: mypy (strict)
+- **CLI**: argparse or typer

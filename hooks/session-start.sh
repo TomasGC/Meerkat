@@ -19,30 +19,21 @@ if ! command -v ollama &> /dev/null; then
     exit 0
 fi
 
-# Check if Ollama server is running
-if ! ollama ps &> /dev/null; then
-    echo "[WARN] Ollama not running - starting..."
-    # Don't block on Ollama start, it may take time
-    (ollama serve &> /dev/null &)
-fi
-
-# 3. Preload hot tier models (background, don't block session)
-(
-    sleep 2  # Wait for Ollama to start
-
-    # Check which models are already loaded
-    LOADED=$(ollama ps 2>/dev/null | tail -n +2 | awk '{print $1}' || echo "")
-
-    # Preload hot tier if not already loaded
-    for model in llama-guard3:1b llama3.2:3b qwen2.5-coder:7b; do
-        if ! echo "$LOADED" | grep -q "$model"; then
-            echo "[INFO] Preloading $model..." >&2
-            ollama run "$model" "test" &> /dev/null || true
+# Start Ollama if not running, wait up to 8s for it to be ready
+if ! curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+    echo "[INFO] Ollama not running - starting..."
+    (ollama serve > /dev/null 2>&1 &)
+    # Wait for API to be ready (up to 8s)
+    for i in 1 2 3 4 5 6 7 8; do
+        sleep 1
+        if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+            echo "[OK] Ollama ready (${i}s)"
+            break
         fi
     done
+fi
 
-    echo "[OK] Hot tier models ready" >&2
-) &
+# 3. No preloading - models load on first use (32b+8b won't fit simultaneously on 32GB RAM)
 
 # 4. Log session start
 echo "{\"timestamp\": \"$(date -Iseconds)\", \"event\": \"session_start\", \"delegation_enabled\": true}" \

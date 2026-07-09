@@ -1,183 +1,86 @@
-# Commands - Claude Code Global Scripts
+# Commands - Meerkat Scripts
 
-Commands for managing `~/.claude/` configuration and scripts.
+Commands for `~/.claude/` scripts and tests.
 
 ---
 
-## Scripts Tests
+## Tests
 
-Run tests for Python scripts in `~/.claude/scripts/`:
-
-### Quick validation (before commit)
+### Run by tier (from ~/.claude/)
 ```bash
-cd ~/.claude/scripts && python -m pytest tests/ -v --maxfail=1
+pytest agents/black-box-analyzer/tests/units/ -v
+pytest agents/black-box-analyzer/tests/integration-mocks/ -v
+pytest agents/black-box-analyzer/tests/integration-reals/ -v
+pytest agents/black-box-analyzer/tests/e2e/ -v
+
+pytest scripts/cli/tests/units/ -v
+pytest scripts/cli/tests/integration-mocks/ -v
+pytest scripts/common/tests/units/ -v
+pytest scripts/tests/e2e/ -v
 ```
 
-### Full test suite
+### Run by marker (avoid BBA + scripts together — common namespace collision)
 ```bash
-cd ~/.claude/scripts && python -m pytest tests/ -v
+# BBA only
+pytest agents/black-box-analyzer/tests -m units
+pytest agents/black-box-analyzer/tests -m "units or integration_mocks"
+
+# Scripts only
+pytest scripts/tests scripts/cli/tests scripts/common/tests -m units
 ```
 
-### With coverage report
+### CI-safe (no real Ollama required)
 ```bash
-cd ~/.claude/scripts && python -m pytest tests/ -v --cov=. --cov-report=term-missing
+pytest agents/black-box-analyzer/tests -m "units or integration_mocks"
+pytest scripts/tests scripts/cli/tests scripts/common/tests -m "units or integration_mocks"
 ```
 
-### Specific test modules
+### Full suites (separate invocations)
 ```bash
-# Integration profiles
-cd ~/.claude/scripts && python -m pytest tests/test_integrations.py -v
-
-# Issue extraction
-cd ~/.claude/scripts && python -m pytest tests/test_extract_issue.py -v
-
-# Commit message formatting
-cd ~/.claude/scripts && python -m pytest tests/test_format_commit_message.py -v
-
-# KANBAN search
-cd ~/.claude/scripts && python -m pytest tests/test_search_kanban.py -v
-
-# KANBAN update
-cd ~/.claude/scripts && python -m pytest tests/test_update_kanban.py -v
-```
-
-### Fast tests only (skip slow integration tests)
-```bash
-cd ~/.claude/scripts && python -m pytest tests/ -v -m "not slow"
-```
-
-### Syntax validation
-```bash
-cd ~/.claude/scripts && python -m py_compile cli/*.py common/*.py
+pytest agents/black-box-analyzer/tests -v
+pytest scripts/tests scripts/cli/tests scripts/common/tests -v
 ```
 
 ---
 
 ## Integration Profiles
 
-Manage VCS/CI/docs/issues provider profiles:
-
-### Switch profile
 ```bash
-cd ~/.claude/scripts && python cli/switch-profile.py <profile-name>
-```
-
-### List available profiles
-```bash
-cd ~/.claude/scripts && python cli/switch-profile.py --list
-```
-
-### Show active profile status
-```bash
-cd ~/.claude/scripts && python cli/switch-profile.py --status
-```
-
-### Validate profile JSON
-```bash
-cd ~/.claude/scripts && python cli/switch-profile.py --validate <profile-name>
-```
-
-### Create new profile
-```bash
-cd ~/.claude/scripts && python cli/switch-profile.py --create <profile-name>
+python scripts/cli/switch-profile.py --list
+python scripts/cli/switch-profile.py <profile-name>
+python scripts/cli/switch-profile.py --status
+python scripts/cli/switch-profile.py --validate <profile-name>
 ```
 
 ---
 
-## Issue Management
+## Issue / Commit Utilities
 
-Extract and format issue IDs from branches/commits:
-
-### Extract issue from current branch
 ```bash
-cd ~/.claude/scripts && python cli/extract_issue.py
-```
+# Extract issue from current branch
+python scripts/cli/extract_issue.py
 
-### Extract from specific branch
-```bash
-cd ~/.claude/scripts && python cli/extract_issue.py --branch "feature/#123-auth"
-```
+# Validate commit message
+python scripts/cli/format_commit_message.py --validate --message "#3: feat: add thing"
 
-### Extract from last commit
-```bash
-cd ~/.claude/scripts && python cli/extract_issue.py --from-commit
+# Format commit message
+python scripts/cli/format_commit_message.py --issue "#3" --type feat --message "add thing"
 ```
 
 ---
 
-## Commit Message Formatting
+## KANBAN
 
-Validate and format commit messages:
-
-### Validate commit message
 ```bash
-cd ~/.claude/scripts && python cli/format_commit_message.py --validate --message "#123: feat: add auth"
-```
-
-### Generate suggestion for invalid message
-```bash
-cd ~/.claude/scripts && python cli/format_commit_message.py --suggest --message "added authentication"
-```
-
-### Format commit message
-```bash
-cd ~/.claude/scripts && python cli/format_commit_message.py --issue "#123" --type feat --message "add authentication"
+python scripts/cli/search_kanban.py --issue "#3"
+python scripts/cli/search_kanban.py --tag "testing"
+python scripts/cli/update_kanban.py --auto
 ```
 
 ---
 
-## KANBAN Management
+## Syntax Check
 
-Search and update KANBAN entries:
-
-### Search KANBAN by issue
 ```bash
-cd ~/.claude/scripts && python cli/search_kanban.py --issue "#123"
-```
-
-### Search by tag
-```bash
-cd ~/.claude/scripts && python cli/search_kanban.py --tag "optimization"
-```
-
-### Search by date range
-```bash
-cd ~/.claude/scripts && python cli/search_kanban.py --from "2026-05-01" --to "2026-05-31"
-```
-
-### Update KANBAN (auto-detect issue + commits)
-```bash
-cd ~/.claude/scripts && python cli/update_kanban.py --auto
-```
-
-### Update with specific issue and commits
-```bash
-cd ~/.claude/scripts && python cli/update_kanban.py --issue "#123" --commits "abc123f,def456a"
-```
-
----
-
-## Session Context Loading
-
-Load project context at session start:
-
-### Load context for current branch
-```bash
-cd ~/.claude/scripts && python cli/load_session_context.py
-```
-
----
-
-## Validation
-
-Pre-commit validation checks:
-
-### Run all validations
-```bash
-cd ~/.claude/scripts && python -m pytest tests/ -v --maxfail=1
-```
-
-### Quick syntax check
-```bash
-cd ~/.claude/scripts && python -m py_compile cli/*.py common/*.py
+python -m py_compile scripts/cli/*.py scripts/common/*.py
 ```

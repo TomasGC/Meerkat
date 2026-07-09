@@ -1,0 +1,16 @@
+# Python 3.12+ required
+
+# HTTP requests for StackOverflow API
+requests>=2.31.0
+
+# Testing dependencies
+pytest>=8.0.0
+pytest-cov>=4.1.0
+
+# No other dependencies needed - uses stdlib for:
+# - argparse (CLI parsing)
+# - json (JSON handling)
+# - pathlib (file paths)
+# - dataclasses (data models)
+# - subprocess (gh CLI wrapper)
+# - datetime (date handling)

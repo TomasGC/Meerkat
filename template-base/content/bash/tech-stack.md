@@ -1,0 +1,5 @@
+- **Shell**: Bash 5+
+- **Linting**: ShellCheck
+- **Testing**: bats-core (Bash Automated Testing System)
+- **Formatting**: shfmt
+- **Documentation**: Inline comments, usage functions

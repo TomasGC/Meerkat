@@ -1,6 +1,4 @@
-# Conventions - Claude Code Standards
-
-Project structure, file organization, and development principles.
+# Conventions - Meerkat
 
 ---
 
@@ -12,16 +10,19 @@ Project structure, file organization, and development principles.
 
 **Examples**:
 ```
-#1: feat: add universal black-box test analyzer
-#1: fix: resolve UTF-8 encoding in pipeline scripts
-#1: refactor: extract repository pattern for cleaner architecture
-#1: docs: update integration profiles documentation
+#3: feat: add typed-agents mode to library analyzer
+#3: fix: resolve common namespace collision in pytest
+#3: refactor: reorganize test suite into 4-tier co-located structure
+#1: feat: add universal black-box test analyzer agent
 ```
 
 **Rules**:
-- Always prefix with GitHub issue number
+- Always prefix with issue number
 - Description: WHAT/WHY, not HOW/WHO
 - No stats (+XX lines), no implementation details, no emoji
+
+**Bad**: `#3: feat: add caching (+806 lines) 🎉`
+**Good**: `#3: feat: add system information caching for faster page loads`
 
 ---
 
@@ -32,38 +33,11 @@ Project structure, file organization, and development principles.
 
 ---
 
-## File Organization
+## Python Conventions
 
-### .claude/ Directory Structure
+- Python 3.12+
+- One class per file
+- No hardcoded values — constants or config
+- No TODO/FIXME — fix or create issue
+- Type annotations on public functions
 
-```
-<project_root>/
-├── .claude/
-│   ├── CLAUDE.md                    # Project instructions (shared)
-│   ├── CLAUDE.local.md              # Personal overrides (gitignored)
-│   ├── settings.json                # Project settings (shared)
-│   ├── settings.local.json          # Local settings (gitignored)
-│   ├── contexts/                    # Context files (auto-loaded)
-│   │   ├── kanban.md                # Task tracking (shared)
-│   │   ├── kanban.local.md          # Personal notes (gitignored)
-│   │   ├── architecture.md          # Architecture (shared)
-│   │   ├── commands.md              # Build/test commands (shared)
-│   │   └── conventions.md           # This file (shared)
-│   ├── rules/                       # Auto-loaded coding standards
-│   │   └── standards-*.md
-│   ├── skills/                      # Custom skills
-│   ├── agents/                      # Custom agents
-│   └── hooks/                       # Automation hooks
-```
-
-**Pattern**: `.local.*` files are gitignored (personal), base files are committed (shared).
-
----
-
-## Code Quality
-
-See `~/.claude/rules/standards-*.md` for language-specific standards.
-
-**Principles**: TDD, Clean Architecture, DRY, SOLID, KISS, YAGNI
-**Coverage**: ≥ 80%
-**No**: hardcoded values, TODO/FIXME, magic numbers

@@ -44,17 +44,18 @@ You are an **intelligent task routing orchestrator** that minimizes Claude token
 Analyze incoming user requests and classify by complexity:
 
 **AUTO-DELEGATE** (0 Claude tokens):
-- Code formatting → `scripts/format_code.py`
-- Syntax validation → `ollama:llama3.2:3b` (2.8s)
-- Linting → `scripts/lint_code.py`
+- Syntax validation / quick check → `ollama_chat` MCP (mode=quick, qwen2.5-coder:7b)
 - Test execution → `agents/test-runner`
-- Git operations → `scripts/git_*.py`
-- Coverage calculation → `scripts/check_coverage.py`
-- Quick code review → `ollama:qwen2.5-coder:7b` (4.2s)
+- Git operations → `git-helper` agent
+- Coverage analysis → `ollama_generate` MCP (mode=analysis, qwen3:8b)
+- Code generation / test writing → `ollama_generate` MCP (mode=generation, qwen2.5-coder:32b)
+- Build error investigation → `ollama_chat` MCP (mode=quick)
+
+**In unattended scripts** (no MCP): use `common_config.run_ollama(prompt, mode='generation'|'analysis'|'quick')`
 
 **HYBRID** (reduced tokens):
 - Bug investigation → Scripts (data) + Claude (analysis)
-- Refactoring → Claude (plan) + Ollama (validate)
+- Refactoring → Claude (plan) + Ollama MCP (validate)
 - Feature implementation → Claude (design) + Scripts (scaffold)
 
 **CLAUDE ONLY** (full tokens):
