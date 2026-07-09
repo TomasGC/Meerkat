@@ -22,15 +22,22 @@ from .models import Endpoint, TestCase
 class AnalysisCache:
     """Cache for analysis results with file hash-based invalidation."""
 
-    def __init__(self, cache_dir: Path | None = None):
+    def __init__(self, cache_dir: Path | None = None, project_path: Path | None = None):
         """
         Initialize cache.
 
         Args:
             cache_dir: Cache directory (default: ~/.cache/black-box-analyzer)
+            project_path: Project root — used to scope cache per project (avoids cross-project pollution)
         """
         if cache_dir is None:
-            cache_dir = Path.home() / ".cache" / "black-box-analyzer"
+            base = Path.home() / ".cache" / "black-box-analyzer"
+            if project_path is not None:
+                # Scope by a short hash of the absolute project path
+                project_slug = hashlib.sha256(str(project_path.resolve()).encode()).hexdigest()[:12]
+                cache_dir = base / project_slug
+            else:
+                cache_dir = base
 
         self.cache_dir = cache_dir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -104,7 +111,7 @@ class AnalysisCache:
 
         # Load metadata
         try:
-            metadata = json.loads(self.metadata_cache.read_text())
+            metadata = json.loads(self.metadata_cache.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return None
 
@@ -134,7 +141,7 @@ class AnalysisCache:
 
         # Load cached endpoints
         try:
-            endpoints_data = json.loads(self.endpoints_cache.read_text())
+            endpoints_data = json.loads(self.endpoints_cache.read_text(encoding="utf-8"))
 
             # Reconstruct Endpoint objects from JSON
             from .models import HTTPMethod, Parameter
@@ -195,7 +202,7 @@ class AnalysisCache:
         endpoints_data = [ep.to_dict() for ep in endpoints]
 
         # Save endpoints
-        self.endpoints_cache.write_text(json.dumps(endpoints_data, indent=2))
+        self.endpoints_cache.write_text(json.dumps(endpoints_data, indent=2), encoding="utf-8")
 
         # Update metadata
         metadata = self._load_metadata()
@@ -220,7 +227,7 @@ class AnalysisCache:
 
         # Load metadata
         try:
-            metadata = json.loads(self.metadata_cache.read_text())
+            metadata = json.loads(self.metadata_cache.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return None
 
@@ -243,7 +250,7 @@ class AnalysisCache:
 
         # Load cached tests
         try:
-            tests_data = json.loads(self.tests_cache.read_text())
+            tests_data = json.loads(self.tests_cache.read_text(encoding="utf-8"))
 
             # Reconstruct TestCase objects from JSON
             from .models import HTTPMethod, TestFramework
@@ -286,7 +293,7 @@ class AnalysisCache:
         tests_data = [t.to_dict() for t in tests]
 
         # Save tests
-        self.tests_cache.write_text(json.dumps(tests_data, indent=2))
+        self.tests_cache.write_text(json.dumps(tests_data, indent=2), encoding="utf-8")
 
         # Update metadata
         metadata = self._load_metadata()
@@ -310,7 +317,7 @@ class AnalysisCache:
 
         # Load metadata
         try:
-            metadata = json.loads(self.metadata_cache.read_text())
+            metadata = json.loads(self.metadata_cache.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return None
 
@@ -320,7 +327,7 @@ class AnalysisCache:
 
         # Load cached scenarios
         try:
-            scenarios_data = json.loads(self.scenarios_cache.read_text())
+            scenarios_data = json.loads(self.scenarios_cache.read_text(encoding="utf-8"))
 
             # Reconstruct Scenario objects from JSON
             from .models import HTTPMethod, Scenario
@@ -353,7 +360,7 @@ class AnalysisCache:
         scenarios_data = [s.to_dict() for s in scenarios]
 
         # Save scenarios
-        self.scenarios_cache.write_text(json.dumps(scenarios_data, indent=2))
+        self.scenarios_cache.write_text(json.dumps(scenarios_data, indent=2), encoding="utf-8")
 
         # Update metadata
         metadata = self._load_metadata()
@@ -372,7 +379,7 @@ class AnalysisCache:
             if cache_file.exists():
                 cache_file.unlink()
 
-        print(f"✅ Cache invalidated: {self.cache_dir}", file=sys.stderr)
+        print(f"Cache invalidated: {self.cache_dir}", file=sys.stderr)
 
     def get_cache_info(self) -> dict[str, Any]:
         """
@@ -416,10 +423,10 @@ class AnalysisCache:
             return {}
 
         try:
-            return json.loads(self.metadata_cache.read_text())
+            return json.loads(self.metadata_cache.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return {}
 
     def _save_metadata(self, metadata: dict[str, Any]):
         """Save metadata to cache."""
-        self.metadata_cache.write_text(json.dumps(metadata, indent=2))
+        self.metadata_cache.write_text(json.dumps(metadata, indent=2), encoding="utf-8")

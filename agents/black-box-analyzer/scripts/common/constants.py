@@ -13,9 +13,13 @@ LANGUAGE_INDICATORS = {
     "javascript": ["package.json"],
     "csharp": ["*.csproj", "*.sln"],
     "python": ["requirements.txt", "pyproject.toml", "setup.py"],
-    "java": ["pom.xml", "build.gradle", "build.gradle.kts"],
+    "kotlin": ["build.gradle.kts", "*.kt"],
+    "java": ["pom.xml", "build.gradle"],
     "ruby": ["Gemfile", "Gemfile.lock"],
     "php": ["composer.json"],
+    "rust": ["Cargo.toml", "Cargo.lock"],
+    "swift": ["Package.swift", "*.xcodeproj"],
+    "cpp": ["CMakeLists.txt", "*.cpp", "*.hpp"],
 }
 
 # Framework detection patterns (in package files)
@@ -56,6 +60,10 @@ TEST_FILE_PATTERNS = {
     "java": ["*Test.java", "**/*Test.java", "**/test/**/*.java"],
     "ruby": ["*_spec.rb", "**/*_spec.rb"],
     "php": ["*Test.php", "**/*Test.php"],
+    "kotlin": ["*Test.kt", "**/*Test.kt", "**/test/**/*.kt"],
+    "rust": ["tests/**/*.rs"],
+    "swift": ["*Tests.swift", "**/*Tests/**/*.swift"],
+    "cpp": ["*_test.cpp", "*_test.cc", "**/*test*.cpp", "**/*test*.cc"],
 }
 
 # API endpoint detection patterns
@@ -65,7 +73,7 @@ ENDPOINT_PATTERNS = {
         r'router\.(GET|POST|PUT|PATCH|DELETE|OPTIONS)\s*\(\s*["\']([^"\']+)["\']'
     ),
     "go_echo": re.compile(
-        r'e\.(GET|GET|POST|PUT|PATCH|DELETE)\s*\(\s*["\']([^"\']+)["\']'
+        r'e\.(GET|POST|PUT|PATCH|DELETE)\s*\(\s*["\']([^"\']+)["\']'
     ),
     "go_fiber": re.compile(
         r'app\.(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']'
@@ -127,6 +135,11 @@ TEST_FRAMEWORK_PATTERNS = {
     # Java
     "junit": re.compile(r"@Test"),
     "testng": re.compile(r"@Test"),
+    "kotlin_kotest": re.compile(r"class\s+\w+\s*:\s*(StringSpec|FunSpec|BehaviorSpec|DescribeSpec|ShouldSpec)"),
+    "rust_test": re.compile(r"#\[test\]"),
+    "xctest": re.compile(r"class\s+\w+\s*:\s*XCTestCase|func\s+test\w+\(\s*\)"),
+    "gtest": re.compile(r"TEST\s*\(|TEST_F\s*\("),
+    "catch2": re.compile(r"TEST_CASE\s*\(|SECTION\s*\("),
 }
 
 # HTTP status codes

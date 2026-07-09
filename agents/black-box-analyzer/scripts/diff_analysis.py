@@ -125,9 +125,16 @@ def compare_analyses(baseline: dict, current: dict) -> AnalysisDiff:
     resolved_gaps = max(0, old_total_gaps - new_total_gaps)
     new_gaps = max(0, new_total_gaps - old_total_gaps)
 
-    # Compare endpoint-level coverage
-    baseline_by_endpoint = baseline_coverage.get("by_endpoint", {})
-    current_by_endpoint = current_coverage.get("by_endpoint", {})
+    # Compare entry-point-level coverage (works for both API endpoints and library methods)
+    # "by_entry_point" is the canonical key; fall back to legacy "by_endpoint"
+    baseline_by_endpoint = (
+        baseline_coverage.get("by_entry_point")
+        or baseline_coverage.get("by_endpoint", {})
+    )
+    current_by_endpoint = (
+        current_coverage.get("by_entry_point")
+        or current_coverage.get("by_endpoint", {})
+    )
 
     improved_endpoints = []
     regressed_endpoints = []
@@ -315,6 +322,9 @@ def format_summary(diff: AnalysisDiff) -> str:
 
 def main():
     """CLI entry point."""
+    if sys.platform == "win32":
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(
         description="Compare two analysis runs",
         formatter_class=argparse.RawDescriptionHelpFormatter,

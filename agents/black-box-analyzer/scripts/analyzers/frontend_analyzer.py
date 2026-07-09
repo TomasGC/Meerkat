@@ -188,7 +188,7 @@ class FrontendAnalyzer(BaseAnalyzer):
     def _returns_jsx(self, content: str, start_pos: int) -> bool:
         """Check if function returns JSX."""
         # Look for return statement with JSX
-        search_area = content[start_pos : start_pos + 200]
+        search_area = content[start_pos : start_pos + 600]
         return bool(re.search(r"return\s*\(?\s*<\w+", search_area))
 
     def _extract_vue_entry_points(self, project_path: Path) -> list[EntryPoint]:

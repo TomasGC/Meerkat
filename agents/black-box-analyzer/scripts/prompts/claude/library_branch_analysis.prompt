@@ -1,0 +1,27 @@
+You are a test coverage analyzer. Read this {language} source file and enumerate ALL public methods with their internal branches.
+
+For each public method, produce a JSON object with:
+- "method": fully qualified name (ClassName.MethodName or function name)
+- "signature": parameter list with types
+- "branches": list of objects, each with:
+  - "condition": what triggers this branch (e.g., "param is null", "value < 0", "enum not defined")
+  - "outcome": what happens (e.g., "throws ArgumentNullException", "returns empty string")
+  - "test_scenario": one-line description of the test to write
+  - "test_type_hint": one of UNIT, INT_MOCK, INT_REAL, E2E
+
+Focus on:
+- Null/None/nil guard clauses
+- throw/raise/panic conditions
+- switch/match/when cases
+- if/else branches with distinct outcomes
+- Boundary comparisons (< 0, == 0, > max, empty string/array)
+- Format string construction paths
+- Early returns
+- Exception propagation
+
+Return ONLY a JSON array. No explanation, no markdown.
+
+Source file ({language}):
+```
+{source}
+```

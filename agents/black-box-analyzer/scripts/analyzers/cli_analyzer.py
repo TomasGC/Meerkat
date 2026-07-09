@@ -161,14 +161,22 @@ class CLIAnalyzer(BaseAnalyzer):
             if not content:
                 continue
 
-            # Click commands
-            click_pattern = re.compile(r"@click\.(command|group)\s*\(\s*\)\s*\ndef\s+(\w+)")
-            for match in click_pattern.finditer(content):
-                cmd_type, cmd_name = match.groups()
-                line_num = content[:match.start()].count("\n") + 1
+            # Click commands — two-pass: find decorator, then nearest following def
+            # Handles @click.command(), @click.command(name="x"), bare @click.command
+            click_decorator_pattern = re.compile(r"@click\.(command|group)\s*(\([^)]*\))?")
+            click_def_pattern = re.compile(r"def\s+(\w+)\s*\(")
+            for dec_match in click_decorator_pattern.finditer(content):
+                cmd_type = dec_match.group(1)
+                window = content[dec_match.end():dec_match.end() + 300]
+                def_match = click_def_pattern.search(window)
+                if not def_match:
+                    continue
+                cmd_name = def_match.group(1)
+                dec_start = dec_match.start()
+                line_num = content[:dec_start].count("\n") + 1
 
                 # Extract click options
-                options = self._extract_click_options(content, match.start())
+                options = self._extract_click_options(content, dec_start)
 
                 entry_points.append(
                     EntryPoint(

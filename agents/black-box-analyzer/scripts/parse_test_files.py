@@ -36,6 +36,83 @@ from common.utils import (
     write_json,
 )
 
+# ---------------------------------------------------------------------------
+# Test-type classification (UNIT / INT_MOCK / INT_REAL / E2E)
+# ---------------------------------------------------------------------------
+# Fast regex-first pass — zero Ollama tokens for clear cases.
+# Ollama fallback only for ambiguous bodies.
+
+_INT_REAL_PATTERNS = re.compile(
+    r"testcontainers|DockerComposeContainer|@SpringBootTest|WebApplicationFactory"
+    r"|TestServer|httptest\.NewServer|net/http/httptest"
+    r"|real.*db|sqlite3\.(open|connect)|psycopg2\.connect|mysql\.connector"
+    r"|requests\.get|fetch\(|axios\.|http\.get|HttpClient"
+    r"|FileInfo|File\.Open|open\(.*['\"]r['\"]|os\.Open|os\.Create"
+    r"|smtp|smtplib|nodemailer|SendGrid"
+    r"|S3Client|BlobServiceClient|CloudStorage",
+    re.IGNORECASE,
+)
+_INT_MOCK_PATTERNS = re.compile(
+    r"\bmock\b|\bstub\b|\bfake\b|\bspy\b"
+    r"|MockMvc|Mockito|moq\.|NSubstitute|testify/mock"
+    r"|jest\.fn\(\)|jest\.mock\(|sinon\.|unittest\.mock"
+    r"|@patch\(|MagicMock|Mock\(",
+    re.IGNORECASE,
+)
+_E2E_PATTERNS = re.compile(
+    r"cypress|playwright|selenium|detox|espresso|xcuitest"
+    r"|WebDriver|Appium|puppeteer|nightwatch",
+    re.IGNORECASE,
+)
+
+
+def _classify_by_regex(combined: str) -> str | None:
+    """Fast regex classifier. Returns type string or None if ambiguous."""
+    if _E2E_PATTERNS.search(combined):
+        return "e2e"
+    if _INT_REAL_PATTERNS.search(combined):
+        return "int_real"
+    if _INT_MOCK_PATTERNS.search(combined):
+        return "int_mock"
+    return None
+
+
+def infer_test_type(test_name: str, test_body: str) -> str:
+    """
+    Classify a test as unit / int_mock / int_real / e2e.
+
+    Uses regex for speed (covers ~90% of cases). Falls back to Ollama
+    for the ambiguous remainder — only if Ollama is available.
+    """
+    if not test_body or not test_body.strip():
+        return "unit"  # no body to inspect — safe default
+
+    combined = test_name + "\n" + test_body
+
+    result = _classify_by_regex(combined)
+    if result:
+        return result
+
+    # Ambiguous — try Ollama for a cheap 1-token answer
+    try:
+        from common.ollama_utils import check_ollama_available, run_prompt
+        if check_ollama_available("qwen2.5-coder:7b"):
+            response = run_prompt(
+                "infer_test_type",
+                model="qwen2.5-coder:7b",
+                timeout=30,
+                test_name=test_name,
+                test_body=test_body[:600],
+            )
+            if response:
+                word = response.strip().lower().split()[0]
+                if word in ("unit", "int_mock", "int_real", "e2e"):
+                    return word
+    except Exception:
+        pass
+
+    return "unit"  # safe default
+
 
 def detect_language(project_path: Path) -> Language:
     """Detect project language from test file patterns."""
@@ -194,6 +271,10 @@ def infer_tested_endpoint(test_name: str, content: str) -> tuple[str | None, HTT
         except ValueError:
             return target, None
 
+    # Path found but no HTTP verb inferred — still return the path
+    if target is not None:
+        return target, None
+
     return None, None
 
 
@@ -233,7 +314,7 @@ def parse_go_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type="unit",
+                    test_type=infer_test_type(test_name, test_body),
                 )
             )
 
@@ -261,9 +342,9 @@ def parse_typescript_tests(project_path: Path) -> list[TestCase]:
             test_name = match.group(2)
             line_num = content[:match.start()].count("\n") + 1
 
-            # Extract test body
+            # Extract test body — count from 0; opening '{' of the callback increments to 1,
+            # matching '}' decrements back to 0 and terminates.
             test_body_start = match.end()
-            # Find matching closing brace (simplified)
             brace_count = 0
             test_body_end = test_body_start
             for i, char in enumerate(content[test_body_start:], start=test_body_start):
@@ -271,7 +352,7 @@ def parse_typescript_tests(project_path: Path) -> list[TestCase]:
                     brace_count += 1
                 elif char == "}":
                     brace_count -= 1
-                    if brace_count == -1:
+                    if brace_count == 0:
                         test_body_end = i
                         break
 
@@ -288,7 +369,7 @@ def parse_typescript_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type="unit",
+                    test_type=infer_test_type(test_name, test_body),
                 )
             )
 
@@ -310,7 +391,9 @@ def parse_csharp_tests(project_path: Path) -> list[TestCase]:
 
         # Patterns: [Fact], [Test], [TestMethod]
         test_pattern = re.compile(
-            r"\[\s*(Fact|Test|TestMethod|Theory|TestCase)\s*\][\s\S]*?public\s+(?:async\s+)?(?:Task\s+)?(\w+)\s*\("
+            r"\[\s*(Fact|Test|TestMethod|Theory|TestCase)\s*\][\s\S]*?"
+            r"public\s+(?:(?:async|static|override|virtual|abstract)\s+)*"
+            r"[\w<>\[\]?.]+\s+(\w+)\s*\("
         )
         matches = test_pattern.finditer(content)
 
@@ -344,7 +427,7 @@ def parse_csharp_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type="unit",
+                    test_type=infer_test_type(test_name, test_body),
                 )
             )
 
@@ -384,7 +467,7 @@ def parse_python_tests(project_path: Path) -> list[TestCase]:
                 current_indent = len(line) - len(line.lstrip())
                 if initial_indent is None:
                     initial_indent = current_indent
-                if current_indent <= initial_indent and test_body_lines:
+                if current_indent < initial_indent and test_body_lines:
                     break
                 test_body_lines.append(line)
 
@@ -401,7 +484,7 @@ def parse_python_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type="unit",
+                    test_type=infer_test_type(test_name, test_body),
                 )
             )
 
@@ -455,7 +538,7 @@ def parse_java_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type="unit",
+                    test_type=infer_test_type(test_name, test_body),
                 )
             )
 
@@ -484,18 +567,19 @@ def parse_ruby_tests(project_path: Path) -> list[TestCase]:
             line_num = content[:match.start()].count("\n") + 1
 
             # Extract test body (until matching 'end')
+            # start at 0: the 'do' on the it/describe line was already consumed by the regex
             test_body_start = match.end()
             lines = content[test_body_start:].split("\n")
             test_body_lines = []
-            end_count = 1
+            end_count = 0
 
             for line in lines:
-                if re.search(r"\bdo\b", line):
+                if re.search(r"\bdo\b|\bbegin\b", line):
                     end_count += 1
                 if re.search(r"\bend\b", line):
-                    end_count -= 1
                     if end_count == 0:
                         break
+                    end_count -= 1
                 test_body_lines.append(line)
 
             test_body = "\n".join(test_body_lines)
@@ -511,7 +595,7 @@ def parse_ruby_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type="unit",
+                    test_type=infer_test_type(test_name, test_body),
                 )
             )
 
@@ -555,7 +639,7 @@ def parse_tests(project_path: Path, language: Language | None = None) -> list[Te
     elif language == Language.RUBY:
         return parse_ruby_tests(project_path)
     else:
-        raise ValueError(f"Unsupported language: {language}")
+        return []  # Language not supported for test parsing — return empty
 
 
 def main():
@@ -568,6 +652,7 @@ Examples:
   python parse_test_files.py /path/to/project
   python parse_test_files.py . --language go --output tests.json
   python parse_test_files.py ~/myapp --language python
+  python parse_test_files.py . --previous-pass .claude/bbanalysis-last-tests.json
         """,
     )
 
@@ -592,24 +677,77 @@ Examples:
         help="Output JSON file path (default: stdout)",
     )
 
+    parser.add_argument(
+        "--previous-pass",
+        "-p",
+        type=Path,
+        help="JSON snapshot from previous pass — only new tests reported (incremental mode)",
+    )
+
+    parser.add_argument(
+        "--save-snapshot",
+        type=Path,
+        help="Save full inventory here for use as next --previous-pass",
+    )
+
     args = parser.parse_args()
 
     try:
-        # Parse language
         language = Language(args.language) if args.language else None
-
-        # Parse tests
         test_cases = parse_tests(args.project_path, language)
 
-        # Convert to dict for JSON
-        output_data = {
+        all_tests_data = {
             "test_count": len(test_cases),
             "tests": [tc.to_dict() for tc in test_cases],
         }
 
-        # Write output
-        write_json(output_data, args.output)
+        # Auto-save full snapshot to .claude/bbanalysis-last-tests.json
+        auto_snapshot = args.project_path / ".claude" / "bbanalysis-last-tests.json"
+        try:
+            auto_snapshot.parent.mkdir(parents=True, exist_ok=True)
+            auto_snapshot.write_text(
+                json.dumps(all_tests_data, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass  # non-fatal
 
+        if args.save_snapshot:
+            args.save_snapshot.write_text(
+                json.dumps(all_tests_data, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            print(f"[INCREMENTAL] Snapshot saved to {args.save_snapshot}", file=sys.stderr)
+
+        # Incremental diff against previous pass
+        previous_names: set[str] = set()
+        if args.previous_pass and args.previous_pass.exists():
+            try:
+                prev = json.loads(args.previous_pass.read_text(encoding="utf-8"))
+                previous_names = {t["name"] for t in prev.get("tests", [])}
+                print(
+                    f"[INCREMENTAL] Previous pass: {len(previous_names)} tests",
+                    file=sys.stderr,
+                )
+            except Exception as exc:
+                print(f"[WARN] Could not load previous pass: {exc}", file=sys.stderr)
+
+        if previous_names:
+            new_tests = [tc for tc in test_cases if tc.name not in previous_names]
+            print(
+                f"[INCREMENTAL] {len(new_tests)} new / {len(test_cases) - len(new_tests)} already known",
+                file=sys.stderr,
+            )
+            output_data = {
+                "test_count": len(new_tests),
+                "new_since_last_pass": len(new_tests),
+                "total_in_project": len(test_cases),
+                "tests": [tc.to_dict() for tc in new_tests],
+            }
+        else:
+            output_data = all_tests_data
+
+        write_json(output_data, args.output)
         return 0
 
     except Exception as e:

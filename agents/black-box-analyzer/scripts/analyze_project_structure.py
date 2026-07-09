@@ -72,6 +72,9 @@ def detect_frameworks(project_path: Path, language: Language) -> list[str]:
         Language.CSHARP: ["*.csproj"],
         Language.PYTHON: ["requirements.txt", "pyproject.toml"],
         Language.JAVA: ["pom.xml", "build.gradle"],
+        Language.KOTLIN: ["build.gradle.kts"],
+        Language.RUST: ["Cargo.toml"],
+        Language.SWIFT: ["Package.swift"],
     }
 
     files_to_check = package_files.get(language, [])
@@ -120,6 +123,10 @@ def count_endpoints(project_path: Path, language: Language, frameworks: list[str
         Language.CSHARP: ["*.cs"],
         Language.PYTHON: ["*.py"],
         Language.JAVA: ["*.java"],
+        Language.KOTLIN: ["*.kt"],
+        Language.RUST: ["*.rs"],
+        Language.SWIFT: ["*.swift"],
+        Language.CPP: ["*.cpp", "*.cc", "*.h"],
     }
 
     patterns = file_patterns.get(language, [])
@@ -144,7 +151,7 @@ def count_endpoints(project_path: Path, language: Language, frameworks: list[str
             elif language == Language.PYTHON and pattern_name.startswith("py_"):
                 matches = pattern.findall(content)
                 endpoint_count += len(matches)
-            elif language == Language.JAVA and pattern_name.startswith("java_"):
+            elif language in (Language.JAVA, Language.KOTLIN) and pattern_name.startswith("java_"):
                 matches = pattern.findall(content)
                 endpoint_count += len(matches)
 
@@ -202,6 +209,12 @@ def detect_test_framework(project_path: Path, language: Language) -> TestFramewo
                     "mstest": TestFramework.MSTEST,
                     "junit": TestFramework.JUNIT,
                     "testng": TestFramework.TESTNG,
+                    # Languages without dedicated TestFramework enum values
+                    "kotlin_kotest": TestFramework.UNKNOWN,
+                    "rust_test": TestFramework.UNKNOWN,
+                    "xctest": TestFramework.UNKNOWN,
+                    "gtest": TestFramework.UNKNOWN,
+                    "catch2": TestFramework.UNKNOWN,
                 }
                 return framework_map.get(framework_name, TestFramework.UNKNOWN)
 
@@ -273,13 +286,30 @@ def analyze_project(project_path: Path) -> ProjectInfo:
     # Phase 6: Infer project type
     project_type = infer_project_type(frameworks, endpoint_count)
 
+    # Determine project type: 0 endpoints → LIBRARY mode (white-box analysis)
+    if endpoint_count == 0:
+        primary = ProjectType.UNKNOWN  # will be resolved by LibraryAnalyzer
+        types: list[ProjectType] = []
+        is_library = True
+    else:
+        # Map infer_project_type() string to correct ProjectType enum
+        _type_map = {
+            "GraphQL API": ProjectType.GRAPHQL_API,
+            "gRPC Service": ProjectType.GRPC_API,
+            "Microservice": ProjectType.REST_API,
+            "REST API": ProjectType.REST_API,
+        }
+        primary = _type_map.get(project_type, ProjectType.REST_API)
+        types = [primary]
+        is_library = False
+
     return ProjectInfo(
         language=language,
         frameworks=frameworks,
         endpoint_count=endpoint_count,
         test_file_count=test_file_count,
-        primary_type=ProjectType.REST_API if endpoint_count > 0 else ProjectType.UNKNOWN,
-        project_types=[ProjectType.REST_API] if endpoint_count > 0 else [],
+        primary_type=primary,
+        project_types=types,
         root_path=str(project_path),
         test_framework=test_framework,
         detected_patterns={},
@@ -289,6 +319,7 @@ def analyze_project(project_path: Path) -> ProjectInfo:
                 for prefix in API_PATH_PREFIXES
             ),
             "legacy_project_type": project_type,
+            "is_library": is_library,
         },
     )
 

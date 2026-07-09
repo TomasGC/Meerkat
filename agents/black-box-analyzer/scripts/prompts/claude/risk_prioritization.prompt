@@ -1,0 +1,45 @@
+You are a risk assessment specialist. For each missing test scenario, calculate a risk score and classify it.
+
+Risk formula: business_impact × technical_risk × failure_probability (each 1-5, score 1-125).
+
+Business impact scoring:
+- 5 = payment, billing, checkout, auth, login, token, password
+- 4 = admin, config, user write operations
+- 3 = user read operations
+- 2 = analytics, reports, logging
+- 1 = static content, health checks
+
+Technical risk scoring:
+- 5 = security vulnerabilities (XSS, SQL injection, auth bypass)
+- 4 = null handling, missing param validation, DELETE operations
+- 3 = invalid input validation, error cases
+- 2 = edge cases, happy path validation
+- 1 = static scenarios
+
+Failure probability scoring:
+- 5 = unhandled security input, known production incident pattern
+- 4 = missing null handling, missing param validation (common bugs)
+- 3 = error cases, edge cases (moderately common)
+- 2 = happy path (typically well-tested)
+- 1 = trivial scenarios
+
+Risk levels:
+- CRITICAL: score ≥ 60
+- HIGH: score 40-59
+- MEDIUM: score 20-39
+- LOW: score < 20
+
+For each scenario in the input JSON array, output a JSON object with:
+- "scenario": the scenario description (copy from input)
+- "method": the method/endpoint name
+- "business_impact": integer 1-5
+- "technical_risk": integer 1-5
+- "failure_probability": integer 1-5
+- "risk_score": product of the three
+- "risk_level": CRITICAL | HIGH | MEDIUM | LOW
+- "reasoning": one sentence explaining the score
+
+Return ONLY a JSON array sorted by risk_score descending. No explanation, no markdown.
+
+Missing scenarios:
+{scenarios}

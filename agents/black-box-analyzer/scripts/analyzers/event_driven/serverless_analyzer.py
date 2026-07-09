@@ -145,7 +145,8 @@ class ServerlessAnalyzer(BaseEventDrivenAnalyzer):
             # Pattern: func handler(ctx context.Context, event events.XXX)
             go_lambda_pattern = SERVERLESS_PATTERNS["aws_lambda_go"]
             for match in go_lambda_pattern.finditer(content):
-                handler_name = match.group(0).split("func ")[1].split("(")[0].strip()
+                # Use capture group 1 (function name) — avoid fragile string surgery on group(0)
+                handler_name = match.group(1) if match.lastindex and match.lastindex >= 1 else "handler"
                 line_num = content[: match.start()].count("\n") + 1
 
                 entry_points.append(
@@ -188,12 +189,15 @@ class ServerlessAnalyzer(BaseEventDrivenAnalyzer):
             # Pattern: @app.route(...) or @app.function_name(...)
             azure_pattern = SERVERLESS_PATTERNS["azure_function"]
             for match in azure_pattern.finditer(content):
-                # Find function name after decorator
+                # Bound search to 300 chars after decorator to avoid picking up unrelated funcs
+                window_start = match.end()
+                window = content[window_start:window_start + 300]
                 func_pattern = re.compile(r"def\s+(\w+)\s*\(", re.MULTILINE)
-                func_match = func_pattern.search(content, match.end())
+                func_match = func_pattern.search(window)
                 if func_match:
                     func_name = func_match.group(1)
-                    line_num = content[: func_match.start()].count("\n") + 1
+                    abs_pos = window_start + func_match.start()
+                    line_num = content[:abs_pos].count("\n") + 1
 
                     entry_points.append(
                         EntryPoint(
@@ -253,12 +257,15 @@ class ServerlessAnalyzer(BaseEventDrivenAnalyzer):
             # Pattern: @functions_framework.http
             gcp_pattern = SERVERLESS_PATTERNS["gcp_function"]
             for match in gcp_pattern.finditer(content):
-                # Find function name after decorator
+                # Bound search to 300 chars after decorator
+                window_start = match.end()
+                window = content[window_start:window_start + 300]
                 func_pattern = re.compile(r"def\s+(\w+)\s*\(", re.MULTILINE)
-                func_match = func_pattern.search(content, match.end())
+                func_match = func_pattern.search(window)
                 if func_match:
                     func_name = func_match.group(1)
-                    line_num = content[: func_match.start()].count("\n") + 1
+                    abs_pos = window_start + func_match.start()
+                    line_num = content[:abs_pos].count("\n") + 1
 
                     entry_points.append(
                         EntryPoint(

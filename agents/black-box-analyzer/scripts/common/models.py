@@ -29,6 +29,10 @@ class Language(Enum):
     JAVA = "java"
     RUBY = "ruby"
     PHP = "php"
+    KOTLIN = "kotlin"
+    RUST = "rust"
+    SWIFT = "swift"
+    CPP = "cpp"
     UNKNOWN = "unknown"
 
 
@@ -114,6 +118,7 @@ class ProjectType(Enum):
 
     # Meta Types
     HYBRID = "hybrid"  # Multiple types in one project
+    LIBRARY = "library"  # Library / SDK / framework (no HTTP endpoints)
     UNKNOWN = "unknown"
 
 
@@ -314,7 +319,7 @@ class TestCase:
     tested_method: Optional[HTTPMethod] = None
     tested_inputs: list[str] = field(default_factory=list)
     expected_outputs: list[str] = field(default_factory=list)
-    test_type: str = "unknown"  # "unit", "integration", "e2e"
+    test_type: str = "unknown"  # "unit", "int_mock", "int_real", "e2e"
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""

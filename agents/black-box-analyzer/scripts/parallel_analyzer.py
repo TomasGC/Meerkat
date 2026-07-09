@@ -24,7 +24,7 @@ Features:
 import argparse
 import json
 import sys
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +44,7 @@ from analyzers import (
 )
 from common.cache import AnalysisCache
 from common.models import ProjectType, AnalysisResult
+from library_analyzer import LibraryAnalyzer
 
 # Import project detection
 from analyze_project_structure import analyze_project as detect_project_structure
@@ -76,6 +77,7 @@ class AnalyzerRouter:
     def __init__(self):
         """Initialize all analyzers."""
         self.analyzers = [
+            LibraryAnalyzer(),   # must be first — catches 0-endpoint projects before API
             APIAnalyzer(),
             CLIAnalyzer(),
             MobileAnalyzer(),
@@ -159,7 +161,7 @@ class AnalyzerRouter:
 
         results = {}
 
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit analyzer tasks
             futures = {
                 executor.submit(
@@ -237,6 +239,7 @@ class AnalyzerRouter:
             for scenario in all_scenarios
             if any(
                 test.tested_endpoint == scenario.endpoint
+                and (test.tested_method is None or test.tested_method == scenario.method)
                 for test in all_tests
             )
         )
@@ -355,6 +358,9 @@ class AnalyzerRouter:
 
 def main():
     """CLI entry point."""
+    if sys.platform == "win32":
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(
         description="Universal parallel black-box analyzer with automatic routing",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -384,6 +390,7 @@ Supported project types (19):
     parser.add_argument(
         "project_path",
         type=Path,
+        nargs="?",
         help="Path to project root directory",
     )
 
@@ -453,6 +460,30 @@ Supported project types (19):
                 print(f"\n✅ Report written to {args.output}")
         else:
             print(json.dumps(report, indent=2, ensure_ascii=False))
+
+        # Save project_info.json alongside output (required by generate_ci_workflow.py)
+        project_info_path = (
+            args.output.parent / "project_info.json"
+            if args.output
+            else args.project_path / "project_info.json"
+        )
+        project_info_path.write_text(
+            json.dumps(report.get("project_info", {}), indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+        # Print follow-up commands
+        project_path_str = str(args.project_path)
+        project_info_str = str(project_info_path)
+        scripts_dir = Path(__file__).parent
+        print("\n── Next steps ──────────────────────────────────────────", file=sys.stderr)
+        print(f"  Visual HTML report (local):", file=sys.stderr)
+        print(f"    python {scripts_dir}/open_report.py {project_path_str}", file=sys.stderr)
+        print(f"  Generate CI workflow (.github/workflows/coverage.yml):", file=sys.stderr)
+        print(f"    python {scripts_dir}/generate_ci_workflow.py {project_info_str} --output .github/workflows/coverage.yml", file=sys.stderr)
+        print(f"  Coverage breakdown by test type:", file=sys.stderr)
+        print(f"    python {scripts_dir}/coverage_by_type.py scenarios.json tests.json --markdown breakdown.md", file=sys.stderr)
+        print("────────────────────────────────────────────────────────", file=sys.stderr)
 
         return 0 if report.get("success", False) else 1
 

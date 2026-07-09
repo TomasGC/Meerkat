@@ -15,13 +15,19 @@ Uses intelligent combinatorial explosion management:
 import argparse
 import json
 import sys
-from itertools import product
 from pathlib import Path
 from typing import Any
 
 from common.constants import DEFAULT_RESPONSE_CODES, EDGE_CASE_VALUES
 from common.models import Endpoint, HTTPMethod, Parameter, Scenario
 from common.utils import read_json, write_json
+
+_SECURITY_KEYWORDS = ["script", "drop", "select", "..", "etc/passwd"]
+
+
+def _is_security_string(value: str) -> bool:
+    """Return True if value contains a known security attack keyword."""
+    return any(kw in str(value).lower() for kw in _SECURITY_KEYWORDS)
 
 
 def generate_edge_cases_for_type(data_type: str) -> list[Any]:
@@ -102,24 +108,14 @@ def generate_scenarios_for_endpoint(endpoint: Endpoint) -> list[Scenario]:
             if edge_value is None:
                 expected_output = 400 if param.required else 200
             elif param.data_type == "string" and isinstance(edge_value, str):
-                # Security strings should be rejected
-                if any(
-                    keyword in str(edge_value).lower()
-                    for keyword in ["script", "drop", "select", "..", "etc/passwd"]
-                ):
-                    expected_output = 400
-                else:
-                    expected_output = 200
+                expected_output = 400 if _is_security_string(edge_value) else 200
             else:
                 expected_output = 200
 
             # Categorize scenario type
             if edge_value is None:
                 scenario_type = "error"
-            elif any(
-                keyword in str(edge_value).lower()
-                for keyword in ["script", "drop", "select", "..", "etc/passwd"]
-            ):
+            elif _is_security_string(edge_value):
                 scenario_type = "security"
             else:
                 scenario_type = "edge_case"
@@ -185,21 +181,20 @@ def generate_scenarios_for_endpoint(endpoint: Endpoint) -> list[Scenario]:
 
     if string_params:
         for security_test in security_scenarios:
-            # Test first string parameter (representative)
-            param = string_params[0]
-            input_combination = happy_path_values.copy()
-            input_combination[param.name] = security_test["value"]
+            for param in string_params:
+                input_combination = happy_path_values.copy()
+                input_combination[param.name] = security_test["value"]
 
-            scenarios.append(
-                Scenario(
-                    endpoint=endpoint.path,
-                    method=endpoint.method,
-                    input_combination=input_combination,
-                    expected_output=security_test["expected"],
-                    scenario_type="security",
-                    description=f"Security test: {security_test['name']}",
+                scenarios.append(
+                    Scenario(
+                        endpoint=endpoint.path,
+                        method=endpoint.method,
+                        input_combination=input_combination,
+                        expected_output=security_test["expected"],
+                        scenario_type="security",
+                        description=f"Security test [{param.name}]: {security_test['name']}",
+                    )
                 )
-            )
 
     # --- Method-specific scenarios ---
     if endpoint.method == HTTPMethod.POST:
@@ -216,12 +211,17 @@ def generate_scenarios_for_endpoint(endpoint: Endpoint) -> list[Scenario]:
         )
 
     if endpoint.method in (HTTPMethod.PUT, HTTPMethod.PATCH):
-        # PUT/PATCH non-existent resource
+        # PUT/PATCH non-existent resource — override ID-like path params
+        id_override = {
+            p.name: "non-existent-id"
+            for p in endpoint.params
+            if p.param_type == "path" and any(k in p.name.lower() for k in ("id", "key", "slug", "uuid"))
+        } or {"id": "non-existent-id"}
         scenarios.append(
             Scenario(
                 endpoint=endpoint.path,
                 method=endpoint.method,
-                input_combination={**happy_path_values, "id": "non-existent-id"},
+                input_combination={**happy_path_values, **id_override},
                 expected_output=404,
                 scenario_type="error",
                 description=f"{endpoint.method.value} non-existent resource",
@@ -229,12 +229,17 @@ def generate_scenarios_for_endpoint(endpoint: Endpoint) -> list[Scenario]:
         )
 
     if endpoint.method == HTTPMethod.DELETE:
-        # DELETE non-existent resource
+        # DELETE non-existent resource — use actual path params with sentinel value
+        id_override = {
+            p.name: "non-existent-id"
+            for p in endpoint.params
+            if p.param_type == "path" and any(k in p.name.lower() for k in ("id", "key", "slug", "uuid"))
+        } or {"id": "non-existent-id"}
         scenarios.append(
             Scenario(
                 endpoint=endpoint.path,
                 method=endpoint.method,
-                input_combination={"id": "non-existent-id"},
+                input_combination=id_override,
                 expected_output=404,
                 scenario_type="error",
                 description="DELETE non-existent resource",

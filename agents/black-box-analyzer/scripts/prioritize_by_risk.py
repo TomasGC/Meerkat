@@ -43,6 +43,11 @@ from common.models import CoverageGap, HTTPMethod, RiskAssessment, Scenario, Tes
 from common.utils import read_json, write_json
 
 
+def _is_library_scenario(scenario: Scenario) -> bool:
+    """Library scenarios store method name (no leading '/') in endpoint field."""
+    return not scenario.endpoint.startswith("/")
+
+
 def assess_business_impact(scenario: Scenario) -> tuple[int, str]:
     """
     Assess business impact of missing test.
@@ -56,6 +61,16 @@ def assess_business_impact(scenario: Scenario) -> tuple[int, str]:
     path = scenario.endpoint.lower()
     method = scenario.method
     scenario_type = scenario.scenario_type
+
+    if _is_library_scenario(scenario):
+        name = scenario.endpoint.lower()
+        if any(k in name for k in ("pay", "bill", "charge", "auth", "crypt", "sign", "token", "secret")):
+            return 5, "Security or payment-critical library method"
+        if any(k in name for k in ("write", "save", "delete", "remove", "update", "send", "publish")):
+            return 4, "Mutating library method"
+        if any(k in name for k in ("read", "get", "fetch", "parse", "load", "find")):
+            return 3, "Read/parse library method"
+        return 2, "Internal utility library method"
 
     # High-impact keywords
     if any(keyword in path for keyword in ["payment", "billing", "checkout", "order"]):
@@ -96,6 +111,18 @@ def assess_technical_risk(scenario: Scenario) -> tuple[int, str]:
     method = scenario.method
     scenario_type = scenario.scenario_type
     path = scenario.endpoint.lower()
+
+    if _is_library_scenario(scenario):
+        condition = scenario.input_combination.get("condition", "").lower()
+        if scenario_type == "security":
+            return 5, "Security vulnerability in library"
+        if any(k in condition for k in ("null", "none", "nil", "throw", "exception", "overflow")):
+            return 4, "Null/exception branch — potential unhandled crash"
+        if scenario_type == "error":
+            return 3, "Error branch validation"
+        if scenario_type == "edge_case":
+            return 3, "Edge case handling"
+        return 2, "Happy path validation"
 
     # Security scenarios are high risk
     if scenario_type == "security":
@@ -154,6 +181,16 @@ def assess_failure_probability(scenario: Scenario) -> tuple[int, str]:
     scenario_type = scenario.scenario_type
     method = scenario.method
     path = scenario.endpoint.lower()
+
+    if _is_library_scenario(scenario):
+        condition = scenario.input_combination.get("condition", "").lower()
+        if any(k in condition for k in ("null", "none", "nil")):
+            return 4, "Null handling frequently causes production issues"
+        if scenario_type == "error":
+            return 3, "Error branches often not fully covered"
+        if scenario_type == "edge_case":
+            return 3, "Edge cases moderately likely to fail"
+        return 2, "Happy path typically well-tested"
 
     # Security scenarios have high failure probability if unhandled
     if scenario_type == "security":

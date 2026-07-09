@@ -151,7 +151,7 @@ class MessageQueueAnalyzer(BaseEventDrivenAnalyzer):
                 entry_points.append(
                     EntryPoint(
                         type=EntryPointType.MESSAGE_CONSUMER,
-                        name="kafka_consumer",
+                        name=f"kafka_consumer_{file_path.stem}_L{line_num}",
                         params=[
                             Parameter(
                                 name="message",
@@ -187,7 +187,7 @@ class MessageQueueAnalyzer(BaseEventDrivenAnalyzer):
                 entry_points.append(
                     EntryPoint(
                         type=EntryPointType.MESSAGE_CONSUMER,
-                        name="rabbitmq_consumer",
+                        name=f"rabbitmq_consumer_{file_path.stem}_L{line_num}",
                         params=[
                             Parameter(
                                 name="ch",
@@ -277,7 +277,7 @@ class MessageQueueAnalyzer(BaseEventDrivenAnalyzer):
                 entry_points.append(
                     EntryPoint(
                         type=EntryPointType.MESSAGE_CONSUMER,
-                        name="sqs_receiver",
+                        name=f"sqs_receiver_{file_path.stem}_L{line_num}",
                         params=[
                             Parameter(
                                 name="message",
@@ -313,7 +313,7 @@ class MessageQueueAnalyzer(BaseEventDrivenAnalyzer):
                 entry_points.append(
                     EntryPoint(
                         type=EntryPointType.MESSAGE_CONSUMER,
-                        name="servicebus_receiver",
+                        name=f"servicebus_receiver_{file_path.stem}_L{line_num}",
                         params=[
                             Parameter(
                                 name="message",

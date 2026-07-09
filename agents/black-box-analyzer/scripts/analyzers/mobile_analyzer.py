@@ -147,8 +147,10 @@ class MobileAnalyzer(BaseAnalyzer):
             r"override\s+fun\s+(onCreate|onStart|onResume|onPause|onStop|onDestroy)"
         )
 
-        # Search from Activity/Fragment declaration onwards
-        search_area = content[start_pos:]
+        # Bound search to end of this class body — stop at next class declaration
+        next_class = re.search(r"\nclass\s+", content[start_pos:])
+        end_pos = start_pos + next_class.start() if next_class else len(content)
+        search_area = content[start_pos:end_pos]
 
         for match in lifecycle_pattern.finditer(search_area):
             method_name = match.group(1)
@@ -258,7 +260,10 @@ class MobileAnalyzer(BaseAnalyzer):
             r"override\s+func\s+(viewDidLoad|viewWillAppear|viewDidAppear|viewWillDisappear|viewDidDisappear)"
         )
 
-        search_area = content[start_pos:]
+        # Bound search to end of this class body — stop at next class declaration
+        next_class = re.search(r"\nclass\s+", content[start_pos:])
+        end_pos = start_pos + next_class.start() if next_class else len(content)
+        search_area = content[start_pos:end_pos]
 
         for match in lifecycle_pattern.finditer(search_area):
             method_name = match.group(1)

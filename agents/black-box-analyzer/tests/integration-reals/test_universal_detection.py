@@ -8,15 +8,12 @@ This is future work planned for Phase 2+ of the refactoring.
 """
 
 import pytest
-import sys
 from pathlib import Path
 
 # Skip all tests in this file - universal detection not yet implemented
 pytestmark = pytest.mark.skip(reason="Universal detection not yet implemented (future work)")
 
 # Add scripts directory to path (parent/scripts)
-scripts_dir = Path(__file__).parent.parent / "scripts"
-sys.path.insert(0, str(scripts_dir))
 
 import pytest
 from analyze_project_structure import analyze_project as detect_project_structure
@@ -32,9 +29,7 @@ from analyzers.event_driven.message_queue_analyzer import MessageQueueAnalyzer
 from analyzers.blockchain.smart_contract_analyzer import SmartContractAnalyzer
 from common.models import ProjectType, EntryPointType
 
-
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-
 
 class TestCLIProject:
     """Test CLI project detection and analysis."""
@@ -71,7 +66,6 @@ class TestCLIProject:
         assert "force" in flag_names or "f" in flag_names
         assert "environment" in flag_names or "e" in flag_names
 
-
 class TestAndroidProject:
     """Test Android project detection and analysis."""
 
@@ -102,7 +96,6 @@ class TestAndroidProject:
         # Check for UI handlers
         ui_handlers = [ep for ep in entry_points if ep.type == EntryPointType.UI_HANDLER]
         assert len(ui_handlers) >= 1  # onButtonClick
-
 
 class TestFrontendProject:
     """Test React frontend project detection and analysis."""
@@ -137,7 +130,6 @@ class TestFrontendProject:
         prop_names = [p.name for p in component.params]
         assert "userId" in prop_names
 
-
 class TestLLMProject:
     """Test LLM agent project detection and analysis."""
 
@@ -169,7 +161,6 @@ class TestLLMProject:
         tool_names = [ep.name for ep in tool_entries]
         assert "search_documents" in tool_names
         assert "calculate_risk" in tool_names
-
 
 class TestSQLProject:
     """Test SQL project detection and analysis."""
@@ -203,7 +194,6 @@ class TestSQLProject:
         functions = [ep for ep in entry_points if ep.type == EntryPointType.SQL_FUNCTION]
         assert len(functions) >= 2
 
-
 class TestServerlessProject:
     """Test serverless project detection and analysis."""
 
@@ -230,7 +220,6 @@ class TestServerlessProject:
         # Check Lambda handler type
         lambda_handlers = [ep for ep in entry_points if ep.type == EntryPointType.LAMBDA_HANDLER]
         assert len(lambda_handlers) >= 2
-
 
 class TestWorkerProject:
     """Test background worker project detection and analysis."""
@@ -264,7 +253,6 @@ class TestWorkerProject:
         assert "send_email" in task_names
         assert "process_payment" in task_names
 
-
 class TestMessageQueueProject:
     """Test message queue project detection and analysis."""
 
@@ -291,7 +279,6 @@ class TestMessageQueueProject:
         # Check consumer type
         consumers = [ep for ep in entry_points if ep.type == EntryPointType.MESSAGE_CONSUMER]
         assert len(consumers) >= 1
-
 
 class TestSmartContractProject:
     """Test smart contract project detection and analysis."""
@@ -327,7 +314,6 @@ class TestSmartContractProject:
         # Check modifiers
         modifiers = [ep for ep in entry_points if ep.type == EntryPointType.CONTRACT_MODIFIER]
         assert len(modifiers) >= 2
-
 
 class TestHybridProject:
     """Test hybrid project detection and analysis."""

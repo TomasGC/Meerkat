@@ -17,6 +17,26 @@ from common.models import CoverageGap, HTTPMethod, Scenario, TestCase
 from common.utils import read_json, write_json
 
 
+def scenario_matches_test_library(scenario: Scenario, test: TestCase) -> bool:
+    """
+    Library-mode matching: compare method name + branch condition keywords
+    against test name, rather than HTTP path + method.
+    """
+    method_name = scenario.endpoint.lower()       # repurposed as method name
+    branch_condition = scenario.input_combination.get("condition", "").lower()
+    test_name_lower = test.name.lower()
+
+    # Test name contains method name words
+    method_words = set(w for w in method_name.replace(".", "_").split("_") if len(w) > 2)
+    condition_words = set(w for w in branch_condition.split() if len(w) > 3)
+    test_words = set(test_name_lower.replace("_", " ").split())
+
+    method_match = len(method_words & test_words) >= 1
+    cond_match = len(condition_words & test_words) >= 1
+
+    return method_match and cond_match
+
+
 def scenario_matches_test(scenario: Scenario, test: TestCase) -> bool:
     """
     Check if a test case covers a scenario.
@@ -116,27 +136,24 @@ def scenario_matches_test(scenario: Scenario, test: TestCase) -> bool:
     return False
 
 
-def find_related_tests(scenario: Scenario, all_tests: list[TestCase]) -> list[TestCase]:
+def find_related_tests(
+    scenario: Scenario, all_tests: list[TestCase], mode: str = "api"
+) -> list[TestCase]:
     """
     Find all tests related to a scenario.
 
     Args:
-        scenario: Scenario to find tests for
+        scenario: Scenario to check
         all_tests: All available test cases
-
-    Returns:
-        List of related test cases
+        mode: "api" (HTTP path matching) or "library" (method+branch keyword matching)
     """
-    related = []
-
-    for test in all_tests:
-        if scenario_matches_test(scenario, test):
-            related.append(test)
-
-    return related
+    matcher = scenario_matches_test_library if mode == "library" else scenario_matches_test
+    return [test for test in all_tests if matcher(scenario, test)]
 
 
-def generate_coverage_matrix(scenarios_file: Path, tests_file: Path) -> list[CoverageGap]:
+def generate_coverage_matrix(
+    scenarios_file: Path, tests_file: Path, mode: str = "api"
+) -> list[CoverageGap]:
     """
     Generate coverage matrix from scenarios and tests.
 
@@ -186,7 +203,7 @@ def generate_coverage_matrix(scenarios_file: Path, tests_file: Path) -> list[Cov
     coverage_gaps = []
 
     for scenario in scenarios:
-        related_tests = find_related_tests(scenario, tests)
+        related_tests = find_related_tests(scenario, tests, mode=mode)
         is_tested = len(related_tests) > 0
 
         gap = CoverageGap(
@@ -266,7 +283,8 @@ def calculate_coverage_stats(coverage_gaps: list[CoverageGap]) -> dict:
         "tested_scenarios": tested_scenarios,
         "untested_scenarios": untested_scenarios,
         "coverage_percent": round(coverage_percent, 2),
-        "by_endpoint": endpoint_stats,
+        "by_entry_point": endpoint_stats,   # canonical key (works for API + library)
+        "by_endpoint": endpoint_stats,      # legacy alias — kept for backward compat
         "by_type": type_stats,
     }
 
@@ -374,11 +392,18 @@ Examples:
         help="Show coverage summary",
     )
 
+    parser.add_argument(
+        "--mode",
+        choices=["api", "library"],
+        default="api",
+        help="Matching mode: 'api' (HTTP path) or 'library' (method+branch keywords)",
+    )
+
     args = parser.parse_args()
 
     try:
         # Generate coverage matrix
-        coverage_gaps = generate_coverage_matrix(args.scenarios_file, args.tests_file)
+        coverage_gaps = generate_coverage_matrix(args.scenarios_file, args.tests_file, mode=args.mode)
 
         # Calculate stats
         stats = calculate_coverage_stats(coverage_gaps)

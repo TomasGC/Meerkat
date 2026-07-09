@@ -113,7 +113,9 @@ class WorkerAnalyzer(BaseEventDrivenAnalyzer):
             for match in sidekiq_worker_pattern.finditer(content):
                 # Extract class name
                 class_pattern = re.compile(r"class\s+(\w+)")
-                class_match = class_pattern.search(content[: match.start()])
+                # Use rfind equivalent: last match before current position = enclosing class
+                class_matches = list(class_pattern.finditer(content[: match.start()]))
+                class_match = class_matches[-1] if class_matches else None
                 if class_match:
                     worker_name = class_match.group(1)
                     line_num = content[: class_match.start()].count("\n") + 1
@@ -193,8 +195,9 @@ class WorkerAnalyzer(BaseEventDrivenAnalyzer):
 
                 # Try to extract handler function name
                 func_pattern = re.compile(r"func\s+(\w+)\s*\(")
-                func_match = func_pattern.search(content[: match.start()])
-                handler_name = func_match.group(1) if func_match else "handler"
+                # Last func declaration before this call = the registered handler
+                func_matches = list(func_pattern.finditer(content[: match.start()]))
+                handler_name = func_matches[-1].group(1) if func_matches else "handler"
 
                 entry_points.append(
                     EntryPoint(

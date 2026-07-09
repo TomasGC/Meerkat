@@ -1,0 +1,32 @@
+You are a TDD refactoring expert. Analyze this {language} source file and identify testability anti-patterns — code constructs that make it hard or impossible to write unit or integration tests today.
+
+For each anti-pattern found, output a JSON object with:
+- "location": "ClassName.MethodName" or best description
+- "line_hint": approximate line number if obvious, or null
+- "anti_pattern": one of: static_method_call, new_in_method, no_interface, sealed_or_final, global_mutable_state, hardcoded_io, private_complex_logic, deep_method_chain, thread_sleep_or_datetime_now, unhandled_exception_swallow
+- "description": one sentence explaining why this blocks testing
+- "proposed_refactoring": minimal change to fix (e.g., "Extract IXmlSerializerFactory interface, inject via constructor")
+- "tests_unlocked": list of objects, each with:
+  - "test_name": suggested test method name
+  - "test_scenario": one sentence what it would verify
+  - "test_type": one of UNIT, INT_MOCK, INT_REAL, E2E
+- "effort": one of Tiny (<1h), Small (<4h), Medium (<1d), Large (>1d)
+
+Anti-patterns to look for:
+- static_method_call: calling static methods on concrete classes inside testable methods
+- new_in_method: `new ConcreteType()` inside a constructor or non-factory method (hidden dependency)
+- no_interface: a collaborator used by multiple methods but no interface defined
+- sealed_or_final: sealed/final/internal class with no test accessor
+- global_mutable_state: static fields shared across instances (test pollution)
+- hardcoded_io: hardcoded file paths, URLs, connection strings baked into logic
+- private_complex_logic: private method with complex branching, unreachable directly
+- deep_method_chain: long chains on external objects (impossible to intercept)
+- thread_sleep_or_datetime_now: non-injectable time source (DateTime.Now, time.Now(), etc.)
+- unhandled_exception_swallow: empty catch block or catch-and-ignore
+
+Only report blockers ACTUALLY present. Return ONLY a JSON array. No explanation, no markdown.
+
+Source file ({language}):
+```
+{source}
+```

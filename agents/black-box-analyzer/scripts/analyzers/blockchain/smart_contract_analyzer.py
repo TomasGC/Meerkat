@@ -74,18 +74,32 @@ class SmartContractAnalyzer(BaseAnalyzer):
             if not contract_matches:
                 continue
 
-            for contract_match in contract_matches:
+            for i, contract_match in enumerate(contract_matches):
                 contract_name = contract_match.group(1)
+                # Bound search to this contract's body — stop at the next contract
+                search_end = contract_matches[i + 1].start() if i + 1 < len(contract_matches) else len(content)
+                search_area = content[contract_match.end():search_end]
 
                 # Extract functions
                 func_pattern = BLOCKCHAIN_PATTERNS["solidity_function"]
-                for match in func_pattern.finditer(content, contract_match.end()):
+                for match in func_pattern.finditer(search_area):
                     func_name = match.group(1)
-                    line_num = content[: match.start()].count("\n") + 1
+                    abs_pos = contract_match.end() + match.start()
+                    line_num = content[:abs_pos].count("\n") + 1
 
                     # Parse function signature to extract parameters
                     func_sig = match.group(0)
                     params = self._parse_solidity_params(func_sig)
+
+                    # Determine correct Solidity visibility (public/external/internal/private)
+                    if "public" in func_sig:
+                        visibility = "public"
+                    elif "external" in func_sig:
+                        visibility = "external"
+                    elif "private" in func_sig:
+                        visibility = "private"
+                    else:
+                        visibility = "internal"
 
                     entry_points.append(
                         EntryPoint(
@@ -97,16 +111,17 @@ class SmartContractAnalyzer(BaseAnalyzer):
                             framework="solidity",
                             metadata={
                                 "contract": contract_name,
-                                "visibility": "public" if "public" in func_sig else "external",
+                                "visibility": visibility,
                             },
                         )
                     )
 
                 # Extract events
                 event_pattern = BLOCKCHAIN_PATTERNS["solidity_event"]
-                for match in event_pattern.finditer(content, contract_match.end()):
+                for match in event_pattern.finditer(search_area):
                     event_name = match.group(1)
-                    line_num = content[: match.start()].count("\n") + 1
+                    abs_pos = contract_match.end() + match.start()
+                    line_num = content[:abs_pos].count("\n") + 1
 
                     entry_points.append(
                         EntryPoint(
@@ -120,11 +135,12 @@ class SmartContractAnalyzer(BaseAnalyzer):
                         )
                     )
 
-                # Extract modifiers
+                # Extract modifiers (bounded to this contract's search_area)
                 modifier_pattern = BLOCKCHAIN_PATTERNS["solidity_modifier"]
-                for match in modifier_pattern.finditer(content, contract_match.end()):
+                for match in modifier_pattern.finditer(search_area):
                     modifier_name = match.group(1)
-                    line_num = content[: match.start()].count("\n") + 1
+                    abs_pos = contract_match.end() + match.start()
+                    line_num = content[:abs_pos].count("\n") + 1
 
                     entry_points.append(
                         EntryPoint(
@@ -199,16 +215,18 @@ class SmartContractAnalyzer(BaseAnalyzer):
             if not module_matches:
                 continue
 
-            for module_match in module_matches:
+            for i, module_match in enumerate(module_matches):
                 module_name = module_match.group(1)
+                # Bound search to this module — stop at next module declaration
+                module_end = module_matches[i + 1].start() if i + 1 < len(module_matches) else len(content)
+                module_area = content[module_match.end():module_end]
 
                 # Pattern: public entry fun function_name(...)
                 move_function_pattern = BLOCKCHAIN_PATTERNS["move_function"]
-                for match in move_function_pattern.finditer(
-                    content, module_match.end()
-                ):
+                for match in move_function_pattern.finditer(module_area):
                     func_name = match.group(1)
-                    line_num = content[: match.start()].count("\n") + 1
+                    abs_pos = module_match.end() + match.start()
+                    line_num = content[:abs_pos].count("\n") + 1
 
                     entry_points.append(
                         EntryPoint(

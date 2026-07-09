@@ -220,7 +220,7 @@ class DesktopAnalyzer(BaseAnalyzer):
                 slot_name = match.group(1)
 
                 # Check if it's a slot
-                if "slots:" in content[max(0, match.start() - 100) : match.start()]:
+                if "slots:" in content[max(0, match.start() - 1000) : match.start()]:
                     line_num = content[: match.start()].count("\n") + 1
 
                     entry_points.append(

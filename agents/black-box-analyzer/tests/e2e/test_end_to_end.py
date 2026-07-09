@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 # Add scripts directory to path
-scripts_dir = Path(__file__).parent.parent / "scripts"
+scripts_dir = Path(__file__).parent.parent.parent / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
 
@@ -417,3 +417,44 @@ def test_no_cache_flag(sample_go_project, temp_dir):
 
     # Both should produce same results
     # (No cache hit messages in result2 output)
+
+
+def test_project_info_json_written_alongside_output(sample_go_project, temp_dir):
+    """parallel_analyzer.py must write project_info.json next to --output."""
+    output_file = temp_dir / "analysis.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(scripts_dir / "parallel_analyzer.py"),
+            str(sample_go_project),
+            "--output", str(output_file),
+            "--max-workers", "2",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0
+    project_info_path = temp_dir / "project_info.json"
+    assert project_info_path.exists(), "project_info.json not written alongside output"
+    info = json.loads(project_info_path.read_text())
+    assert info.get("language") == "go"
+
+
+def test_project_info_json_written_to_project_root_when_no_output(sample_go_project):
+    """When --output is omitted, project_info.json goes to project root."""
+    project_info_path = sample_go_project / "project_info.json"
+    project_info_path.unlink(missing_ok=True)
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(scripts_dir / "parallel_analyzer.py"),
+            str(sample_go_project),
+            "--max-workers", "2",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0
+    assert project_info_path.exists(), "project_info.json not written to project root"
+    info = json.loads(project_info_path.read_text())
+    assert info.get("language") == "go"

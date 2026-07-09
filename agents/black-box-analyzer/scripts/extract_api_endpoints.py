@@ -25,6 +25,7 @@ from common.constants import (
 from common.models import Endpoint, HTTPMethod, Language, Parameter
 from common.utils import (
     extract_line_number_from_pattern,
+    extract_params_from_path,
     format_path_relative,
     read_file_safe,
     walk_files,
@@ -44,44 +45,6 @@ def detect_language(project_path: Path) -> Language:
                     return Language(language)
     return Language.UNKNOWN
 
-
-def extract_params_from_path(path: str) -> list[Parameter]:
-    """
-    Extract path parameters from URL pattern.
-
-    Examples:
-        /users/:id → [Parameter(name="id", param_type="path")]
-        /users/{id} → [Parameter(name="id", param_type="path")]
-        /api/v1/posts/:postId/comments/:commentId → [id, commentId]
-    """
-    params = []
-
-    # Pattern 1: Express/Gin style (:param)
-    colon_params = re.findall(r":(\w+)", path)
-    for param in colon_params:
-        params.append(
-            Parameter(
-                name=param,
-                param_type="path",
-                data_type="string",
-                required=True,
-            )
-        )
-
-    # Pattern 2: ASP.NET/Spring style ({param})
-    brace_params = re.findall(r"\{(\w+)\}", path)
-    for param in brace_params:
-        if param not in [p.name for p in params]:  # Avoid duplicates
-            params.append(
-                Parameter(
-                    name=param,
-                    param_type="path",
-                    data_type="string",
-                    required=True,
-                )
-            )
-
-    return params
 
 
 def extract_go_endpoints(project_path: Path) -> list[Endpoint]:
@@ -364,7 +327,7 @@ def extract_endpoints(project_path: Path, language: Language | None = None) -> l
     elif language == Language.JAVA:
         return extract_java_endpoints(project_path)
     else:
-        raise ValueError(f"Unsupported language: {language}")
+        return []  # Language not supported for endpoint extraction — return empty
 
 
 def main():

@@ -5,11 +5,13 @@ File operations, JSON helpers, and utility functions.
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Generator
 
 from .constants import EXCLUDED_DIRS
+from .models import Parameter
 
 
 def walk_files(
@@ -289,9 +291,6 @@ def extract_params_from_path(path: str):
         >>> extract_params_from_path("/posts/{postId}/comments/{id}")
         [Parameter(name="postId", ...), Parameter(name="id", ...)]
     """
-    import re
-    from .models import Parameter
-
     params = []
 
     # Pattern 1: Express/Gin style (:param)

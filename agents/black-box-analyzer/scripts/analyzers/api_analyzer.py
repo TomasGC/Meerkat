@@ -31,6 +31,7 @@ from common.models import (
 )
 from common.utils import (
     extract_line_number_from_pattern,
+    extract_params_from_path,
     format_path_relative,
     read_file_safe,
     walk_files,
@@ -137,7 +138,7 @@ class APIAnalyzer(BaseAnalyzer):
                     except ValueError:
                         continue
 
-                    params = self._extract_params_from_path(path)
+                    params = extract_params_from_path(path)
                     response_codes = DEFAULT_RESPONSE_CODES.get(method, [200, 400, 500])
                     line_num = extract_line_number_from_pattern(content, path)
 
@@ -178,7 +179,7 @@ class APIAnalyzer(BaseAnalyzer):
                     except ValueError:
                         continue
 
-                    params = self._extract_params_from_path(path)
+                    params = extract_params_from_path(path)
                     response_codes = DEFAULT_RESPONSE_CODES.get(method, [200, 400, 500])
                     line_num = extract_line_number_from_pattern(content, path)
 
@@ -230,7 +231,7 @@ class APIAnalyzer(BaseAnalyzer):
                     except ValueError:
                         continue
 
-                    params = self._extract_params_from_path(path)
+                    params = extract_params_from_path(path)
                     response_codes = DEFAULT_RESPONSE_CODES.get(method, [200, 400, 500])
                     line_num = extract_line_number_from_pattern(content, path)
 
@@ -275,7 +276,7 @@ class APIAnalyzer(BaseAnalyzer):
                     except ValueError:
                         continue
 
-                    params = self._extract_params_from_path(path)
+                    params = extract_params_from_path(path)
                     response_codes = DEFAULT_RESPONSE_CODES.get(method, [200, 400, 500])
                     line_num = extract_line_number_from_pattern(content, path)
 
@@ -324,7 +325,7 @@ class APIAnalyzer(BaseAnalyzer):
                     except ValueError:
                         continue
 
-                    params = self._extract_params_from_path(path)
+                    params = extract_params_from_path(path)
                     response_codes = DEFAULT_RESPONSE_CODES.get(method, [200, 400, 500])
                     line_num = extract_line_number_from_pattern(content, path)
 
@@ -341,42 +342,6 @@ class APIAnalyzer(BaseAnalyzer):
                     )
 
         return endpoints
-
-    def _extract_params_from_path(self, path: str) -> list[Parameter]:
-        """Extract path parameters from URL pattern.
-
-        Examples:
-            /users/:id → [Parameter(name="id", param_type="path")]
-            /users/{id} → [Parameter(name="id", param_type="path")]
-        """
-        params = []
-
-        # Pattern 1: Express/Gin style (:param)
-        colon_params = re.findall(r":(\w+)", path)
-        for param in colon_params:
-            params.append(
-                Parameter(
-                    name=param,
-                    param_type="path",
-                    data_type="string",
-                    required=True,
-                )
-            )
-
-        # Pattern 2: ASP.NET/Spring style ({param})
-        brace_params = re.findall(r"\{(\w+)\}", path)
-        for param in brace_params:
-            if param not in [p.name for p in params]:
-                params.append(
-                    Parameter(
-                        name=param,
-                        param_type="path",
-                        data_type="string",
-                        required=True,
-                    )
-                )
-
-        return params
 
     def parse_tests(self, project_path: Path) -> list[TestCase]:
         """Parse API test files.

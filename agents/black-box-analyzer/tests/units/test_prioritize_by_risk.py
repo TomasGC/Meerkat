@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """Tests for prioritize_by_risk.py"""
 
-import sys
 from pathlib import Path
 
 # Add scripts directory to path
-scripts_dir = Path(__file__).parent.parent / "scripts"
-sys.path.insert(0, str(scripts_dir))
 
 from common.models import CoverageGap, HTTPMethod, Scenario
 from prioritize_by_risk import (
@@ -17,7 +14,6 @@ from prioritize_by_risk import (
     calculate_risk_stats,
     prioritize_gaps,
 )
-
 
 def test_assess_business_impact_payment():
     """Test business impact for payment endpoint."""
@@ -34,7 +30,6 @@ def test_assess_business_impact_payment():
     assert impact == 5
     assert "payment" in reasoning.lower() or "revenue" in reasoning.lower()
 
-
 def test_assess_business_impact_auth():
     """Test business impact for authentication endpoint."""
     scenario = Scenario(
@@ -50,7 +45,6 @@ def test_assess_business_impact_auth():
     assert impact == 5
     assert "auth" in reasoning.lower() or "security" in reasoning.lower()
 
-
 def test_assess_business_impact_user_write():
     """Test business impact for user write operation."""
     scenario = Scenario(
@@ -65,7 +59,6 @@ def test_assess_business_impact_user_write():
 
     assert impact >= 3  # User-facing write operation
 
-
 def test_assess_business_impact_analytics():
     """Test business impact for analytics endpoint."""
     scenario = Scenario(
@@ -79,7 +72,6 @@ def test_assess_business_impact_analytics():
     impact, reasoning = assess_business_impact(scenario)
 
     assert impact == 2  # Internal reporting
-
 
 def test_assess_technical_risk_security():
     """Test technical risk for security scenario."""
@@ -97,7 +89,6 @@ def test_assess_technical_risk_security():
     assert risk == 5
     assert "security" in reasoning.lower()
 
-
 def test_assess_technical_risk_null_handling():
     """Test technical risk for null handling."""
     scenario = Scenario(
@@ -114,7 +105,6 @@ def test_assess_technical_risk_null_handling():
     assert risk == 4
     assert "null" in reasoning.lower()
 
-
 def test_assess_technical_risk_delete():
     """Test technical risk for delete operation."""
     scenario = Scenario(
@@ -128,7 +118,6 @@ def test_assess_technical_risk_delete():
     risk, reasoning = assess_technical_risk(scenario)
 
     assert risk == 4  # Delete has high technical risk
-
 
 def test_assess_failure_probability_security():
     """Test failure probability for security scenario."""
@@ -146,7 +135,6 @@ def test_assess_failure_probability_security():
     assert probability == 5
     assert "security" in reasoning.lower()
 
-
 def test_assess_failure_probability_missing_param():
     """Test failure probability for missing required param."""
     scenario = Scenario(
@@ -163,7 +151,6 @@ def test_assess_failure_probability_missing_param():
     assert probability == 4
     assert "missing" in reasoning.lower()
 
-
 def test_assess_failure_probability_happy_path():
     """Test failure probability for happy path."""
     scenario = Scenario(
@@ -178,7 +165,6 @@ def test_assess_failure_probability_happy_path():
 
     assert probability == 2  # Happy path typically well-tested
 
-
 def test_calculate_risk_score_critical():
     """Test critical risk level calculation."""
     risk_score, risk_level = calculate_risk_score(
@@ -187,7 +173,6 @@ def test_calculate_risk_score_critical():
 
     assert risk_score == 125  # 5 × 5 × 5
     assert risk_level == "CRITICAL"
-
 
 def test_calculate_risk_score_high():
     """Test high risk level calculation."""
@@ -198,7 +183,6 @@ def test_calculate_risk_score_high():
     assert risk_score == 48  # 4 × 4 × 3
     assert risk_level == "HIGH"
 
-
 def test_calculate_risk_score_medium():
     """Test medium risk level calculation."""
     risk_score, risk_level = calculate_risk_score(
@@ -208,7 +192,6 @@ def test_calculate_risk_score_medium():
     assert risk_score == 18  # 3 × 3 × 2
     assert risk_level == "LOW"  # Just below MEDIUM threshold (20)
 
-
 def test_calculate_risk_score_low():
     """Test low risk level calculation."""
     risk_score, risk_level = calculate_risk_score(
@@ -217,7 +200,6 @@ def test_calculate_risk_score_low():
 
     assert risk_score == 8  # 2 × 2 × 2
     assert risk_level == "LOW"
-
 
 def test_prioritize_gaps():
     """Test gap prioritization."""
@@ -269,7 +251,6 @@ def test_prioritize_gaps():
     analytics_assessment = next(a for a in assessments if "analytics" in a.gap.scenario.endpoint)
 
     assert payment_assessment.risk_score > analytics_assessment.risk_score
-
 
 def test_calculate_risk_stats():
     """Test risk statistics calculation."""
@@ -340,7 +321,6 @@ def test_calculate_risk_stats():
     assert stats["by_level"]["MEDIUM"] == 1
     assert stats["by_level"]["LOW"] == 1
     assert stats["averages"]["risk_score"] > 0
-
 
 def test_prioritize_gaps_skips_tested():
     """Test that prioritization skips already tested scenarios."""
