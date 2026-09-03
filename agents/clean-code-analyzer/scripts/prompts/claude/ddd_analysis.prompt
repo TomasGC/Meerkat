@@ -1,0 +1,19 @@
+Analyze the following {language} code for Domain-Driven Design (DDD) violations.
+
+For each violation found, report:
+- pattern: one of: anemic-domain-model, business-logic-in-service, ubiquitous-language-violation, aggregate-boundary-violation, missing-value-object
+- class_or_method: name of the offending class or method
+- line: approximate line number
+- severity: high, medium, or low
+- violation: what DDD principle is broken
+- suggestion: how to fix using DDD patterns
+
+Patterns to detect:
+- anemic-domain-model: entity/aggregate with only getters/setters and no meaningful behavior methods — all logic in services
+- business-logic-in-service: service/controller/handler containing domain calculations, validations, or business rules that belong in the domain model
+- ubiquitous-language-violation: technical names (UserData, ProcessItem, HandleRequest) for concepts that should use domain language (Order, Payment, Shipment)
+- aggregate-boundary-violation: directly accessing or modifying internal entities of another aggregate (reaching inside another aggregate root)
+- missing-value-object: primitive obsession — using raw strings/ints/floats where a Value Object would encapsulate invariants (Money, Email, Address, PhoneNumber as primitives)
+
+Code:
+{source}

@@ -1,0 +1,17 @@
+Analyze the following {language} code for SOLID principle violations.
+
+For each violation found, report:
+- principle: S (Single Responsibility), O (Open/Closed), L (Liskov Substitution), I (Interface Segregation), or D (Dependency Inversion)
+- line: approximate line number
+- severity: high, medium, or low
+- violation: what specific rule is broken
+- suggestion: concrete, actionable fix
+
+S — Single Responsibility: class/function has more than one reason to change (handles multiple unrelated concerns)
+O — Open/Closed: code requires modification instead of extension to add behavior (switch/if-else on type instead of polymorphism)
+L — Liskov Substitution: subclass changes behavior in a way that breaks parent contract (throws where parent doesn't, ignores params, changes postconditions)
+I — Interface Segregation: interface forces implementors to depend on methods they don't use (fat interface)
+D — Dependency Inversion: class directly instantiates concrete dependencies instead of depending on abstractions
+
+Code:
+{source}

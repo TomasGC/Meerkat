@@ -1,0 +1,21 @@
+Analyze the following {language} code for YAGNI (You Aren't Gonna Need It) violations — speculative features built before they are needed.
+
+For each violation found, report:
+- pattern: one of: speculative-feature, unused-extension-point, premature-abstraction, future-proofing
+- line: approximate line number
+- severity: high, medium, or low
+- violation: what speculative feature was added
+- suggestion: what to remove or simplify
+
+Look for:
+- Extension hooks with no current callers
+- Plugin systems with only one plugin
+- Configuration flags that are always the same value
+- Abstract base classes with only one subclass
+- Comments like "// for future use" or "// TODO: extend later"
+- Parameters that are always passed the same literal value
+- Interfaces extracted before there are multiple implementations
+- Caching added before profiling shows it's needed
+
+Code:
+{source}

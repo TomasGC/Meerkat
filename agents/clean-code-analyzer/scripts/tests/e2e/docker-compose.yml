@@ -1,0 +1,18 @@
+version: "3.8"
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: cca-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
+volumes:
+  ollama_data:

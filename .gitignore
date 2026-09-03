@@ -1,5 +1,5 @@
 # Personal/Local files (user-specific configs, AWS creds, personal notes)
-*.local.*
+*local*
 
 # MCP and secrets
 .mcp.json
@@ -82,9 +82,10 @@ tasks/
 cache/
 debug/
 *backups*/
-*cache*
+**/.cache/
 *.bak
 token-optimizer/
+stats-cache.json
 
 # Runtime state
 .caveman-active*

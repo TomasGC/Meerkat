@@ -1,0 +1,21 @@
+Analyze the following {language} code for KISS (Keep It Simple) violations and over-engineering.
+
+For each violation found, report:
+- pattern: one of: over-abstraction, premature-generalization, unnecessary-pattern, complex-solution, speculative-design
+- line: approximate line number
+- severity: high, medium, or low
+- violation: what makes this unnecessarily complex
+- suggestion: simpler alternative
+
+Look for:
+- Abstract factories where a single concrete class would do
+- Strategy pattern where a simple if/switch suffices
+- Generic type parameters that are never varied
+- Visitor pattern on 2 types
+- Builder pattern for simple 2-3 field objects
+- Over-parameterized functions (>5 params)
+- Unnecessary layers of indirection
+- Complex inheritance where a simple function works
+
+Code:
+{source}
