@@ -4,6 +4,19 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-09-04 - [#9] Align BBA architecture with CCA patterns
+
+- common/ollama_utils.py: added async pipeline (call_ollama_async, analyze_files_async, analyze_files_parallel), split_into_chunks, _http_generate, _THINK_RE stripping; all existing functions kept for backward compat
+- common/cache.py: appended per-file Ollama result cache (get_ollama_cached, set_ollama_cached, clear_ollama_cache) with content-hash keying
+- Added orchestrate.py as primary entry point: --full/--fast/--model/--agents/--no-cache/--clear-cache flags; incremental default (branch-vs-main)
+- Renamed test directories: units/ → unit/, integration-mocks/ → integration/mock/, integration-reals/ → integration/real/
+- 337 unit tests pass after rename
+tags: #bba #ollama #async #refactor #testing
+Ref: https://github.com/TomasGC/Meerkat/issues/9
+Commits: 92be88a, d5dac1b, fcff828
+
+---
+
 2026-09-04 - [#7] Rework context skills to use contexts/ directory layout
 - load_session_context.py, update_kanban.py, search_kanban.py: all default paths updated to .claude/contexts/kanban.md
 - update-context skill: file references updated; File Location constraint block added; contexts/ sub-files (tests.md, conventions.md, commands.md) now known
