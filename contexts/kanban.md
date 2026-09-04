@@ -4,6 +4,16 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-09-04 - [#7] Rework context skills to use contexts/ directory layout
+- load_session_context.py, update_kanban.py, search_kanban.py: all default paths updated to .claude/contexts/kanban.md
+- update-context skill: file references updated; File Location constraint block added; contexts/ sub-files (tests.md, conventions.md, commands.md) now known
+- project-setup skill: CREATE generates contexts/ layout; UPDATE detects old flat layout and offers migration
+tags: #skills #contexts #refactor
+Ref: https://github.com/TomasGC/Meerkat/issues/7
+Commit: 5030654
+
+---
+
 2026-09-04 - [#4] Clean Code Analyzer (CCA) Agent
 - Added CCA agent: 12 principle checkers (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, ErrorHandling, Composition) running in parallel via ThreadPoolExecutor
 - Async pipeline: asyncio.run() with all HTTP requests in-flight simultaneously; line-aligned chunking for large files; per-file Ollama result cache with TTL
