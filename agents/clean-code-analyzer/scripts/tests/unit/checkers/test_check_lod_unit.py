@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import sys
+from unittest.mock import patch
 
 import pytest
 
@@ -71,3 +72,60 @@ def test_lod_string_literal_chain_not_flagged(tmp_path):
     # (the variable 'result' after '=' is on the left side, not a chain itself)
     for v in result["violations"]:
         assert '"hello world"' not in v.get("message", "")
+
+
+# ── error path ──────────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_lod_oserror_reading_file_skips(tmp_path):
+    """OSError reading file → no crash, empty violations returned."""
+    (tmp_path / "mod.py").write_text("x = 1\n")
+    with patch("pathlib.Path.read_text", side_effect=OSError("permission denied")):
+        result = run(tmp_path, "python")
+    assert result["success"] is True
+    assert result["violations"] == []
+
+
+# ── comment line skip ───────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_lod_comment_line_not_flagged(tmp_path):
+    """Lines starting with # → skipped, no false LoD violations."""
+    code = "# result = obj.service.repository.find_by_id(42)\n"
+    (tmp_path / "mod.py").write_text(code)
+    result = run(tmp_path, "python")
+    assert result["violations"] == []
+
+
+# ── self. chain exempt ──────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_lod_self_property_chain_exempt(tmp_path):
+    """Deep property chain starting with self → exempt from LoD."""
+    code = "x = self.a.b.c.d\n"
+    (tmp_path / "mod.py").write_text(code)
+    result = run(tmp_path, "python")
+    lod_self = [v for v in result["violations"] if "self." in v.get("message", "")]
+    assert len(lod_self) == 0
+
+
+# ── single file path ────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_lod_single_file_path(tmp_path):
+    """run() with single file path (not directory) → files_analyzed=1."""
+    f = tmp_path / "mod.py"
+    f.write_text("result = obj.service.repository.find_by_id(42)\n")
+    result = run(f, "python")
+    assert result["success"] is True
+    assert result["files_analyzed"] == 1
+
+
+@pytest.mark.unit
+def test_lod_run_with_files_list(tmp_path):
+    """run() with explicit files list (line 83 path) → only those files analyzed."""
+    f = tmp_path / "mod.py"
+    f.write_text("x = a.b.c.d.e\n")
+    result = run(tmp_path, "python", files=[f])
+    assert result["success"] is True
+    assert result["files_analyzed"] == 1

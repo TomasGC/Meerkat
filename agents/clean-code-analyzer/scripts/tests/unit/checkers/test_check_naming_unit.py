@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import sys
+from unittest.mock import patch
 
 import pytest
 
@@ -66,3 +67,51 @@ def test_naming_go_no_crash(tmp_path):
     result = run_naming(tmp_path, "go")
     assert result["success"] is True
     assert isinstance(result["violations"], list)
+
+
+# ── error path ──────────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_naming_oserror_reading_file_skips(tmp_path):
+    """OSError reading file → skipped gracefully, no crash, no violations."""
+    (tmp_path / "mod.py").write_text("a = 1\n")
+    with patch("pathlib.Path.read_text", side_effect=OSError("permission denied")):
+        result = run_naming(tmp_path, "python")
+    assert result["success"] is True
+    assert result["violations"] == []
+
+
+# ── comment lines skipped ───────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_naming_comment_with_number_not_flagged(tmp_path):
+    """Magic number inside a comment line → not flagged."""
+    code = "# maximum retries: 3600\nx = 1\n"
+    (tmp_path / "mod.py").write_text(code)
+    result = run_naming(tmp_path, "python")
+    magic = [v for v in result["violations"] if "3600" in v.get("message", "")]
+    assert len(magic) == 0
+
+
+# ── boolean method naming ───────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_naming_bool_method_without_prefix_flagged(tmp_path):
+    """Method not starting with is/has/can/should and not in exempt list → flagged."""
+    code = "class MyClass:\n    def validate(self):\n        return True\n"
+    (tmp_path / "mod.py").write_text(code)
+    result = run_naming(tmp_path, "python")
+    bool_v = [v for v in result["violations"] if "validate" in v.get("message", "")]
+    assert len(bool_v) >= 1
+
+
+# ── single file path ────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_naming_single_file_path(tmp_path):
+    """run() with a single file path → files_analyzed=1."""
+    f = tmp_path / "mod.py"
+    f.write_text("if retries > 3600:\n    pass\n")
+    result = run_naming(f, "python")
+    assert result["success"] is True
+    assert result["files_analyzed"] == 1

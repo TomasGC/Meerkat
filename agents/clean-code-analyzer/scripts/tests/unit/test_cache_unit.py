@@ -122,3 +122,81 @@ def test_content_hash_changes_on_file_modification(tmp_path, source_file):
 
     result = cache_mod.get_cached(source_file, "test_checker")
     assert result is None
+
+
+# ── error paths ─────────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_file_hash_nonexistent_returns_nohash():
+    """_file_hash on nonexistent file returns 'nohash' (OSError caught)."""
+    result = cache_mod._file_hash(Path("/nonexistent_file_xyz_does_not_exist_at_all"))
+    assert result == "nohash"
+
+
+@pytest.mark.unit
+def test_get_cached_corrupt_json_returns_none(source_file):
+    """Cache file with invalid JSON → get_cached returns None."""
+    cache_mod.set_cached(source_file, "test_checker", [{"line": 1}])
+    cache_dir = cache_mod._CACHE_DIR
+    cache_files = list(cache_dir.glob("*.json"))
+    assert len(cache_files) == 1
+    cache_files[0].write_text("{ not valid json !!!}")
+    result = cache_mod.get_cached(source_file, "test_checker")
+    assert result is None
+
+
+@pytest.mark.unit
+def test_get_cached_unlink_oserror_returns_none(source_file):
+    """OSError when unlinking expired file → returns None gracefully (no crash)."""
+    import os
+    violations = [{"line": 1}]
+    cache_mod.set_cached(source_file, "test_checker", violations)
+    cache_dir = cache_mod._CACHE_DIR
+    cache_files = list(cache_dir.glob("*.json"))
+    old_mtime = time.time() - 10 * 86400
+    os.utime(cache_files[0], (old_mtime, old_mtime))
+    with patch("pathlib.Path.unlink", side_effect=OSError("permission denied")):
+        result = cache_mod.get_cached(source_file, "test_checker", max_age_days=7)
+    assert result is None
+
+
+@pytest.mark.unit
+def test_set_cached_oserror_no_crash(source_file):
+    """OSError when writing cache file → no exception raised, silently ignored."""
+    with patch("pathlib.Path.write_text", side_effect=OSError("disk full")):
+        cache_mod.set_cached(source_file, "test_checker", [{"line": 1}])
+    # No exception = pass
+
+
+@pytest.mark.unit
+def test_clear_cache_dir_missing_returns_zero(tmp_path):
+    """clear_cache when cache dir doesn't exist → returns 0 immediately."""
+    with patch.object(cache_mod, "_CACHE_DIR", tmp_path / "nonexistent_cache_dir_xyz"):
+        result = cache_mod.clear_cache()
+    assert result == 0
+
+
+@pytest.mark.unit
+def test_clear_cache_unlink_oserror_skips_file(tmp_path):
+    """OSError on unlink during clear_cache → file skipped, count reflects successes only."""
+    cache_dir = tmp_path / ".cache_test_clear"
+    cache_dir.mkdir()
+    f1 = cache_dir / "entry1.json"
+    f2 = cache_dir / "entry2.json"
+    f1.write_text("{}")
+    f2.write_text("{}")
+
+    call_count = [0]
+    original_unlink = Path.unlink
+
+    def flaky_unlink(self, missing_ok=False):
+        call_count[0] += 1
+        if call_count[0] == 1:
+            raise OSError("permission denied")
+        original_unlink(self, missing_ok=missing_ok)
+
+    with patch.object(cache_mod, "_CACHE_DIR", cache_dir):
+        with patch.object(Path, "unlink", flaky_unlink):
+            count = cache_mod.clear_cache()
+
+    assert count == 1  # one succeeded, one failed

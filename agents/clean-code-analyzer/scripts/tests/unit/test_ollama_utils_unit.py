@@ -359,3 +359,396 @@ def test_split_into_chunks_empty_source():
     """Empty source → single-element list (len(source) == 0 <= max_chars)."""
     result = split_into_chunks("", max_chars=100)
     assert result == [""]
+
+
+# ── _http_generate: general exception path ──────────────────────────────────────
+
+@pytest.mark.unit
+def test_http_generate_general_exception_returns_none():
+    """Non-connection exception in _http_generate → returns None."""
+    mock_conn = MagicMock()
+    mock_conn.request.side_effect = ValueError("unexpected error")
+    with patch.object(http.client, "HTTPConnection", return_value=mock_conn):
+        result = ou._http_generate("prompt", "devstral")
+    assert result is None
+
+
+@pytest.mark.unit
+def test_http_generate_conn_close_exception_no_crash():
+    """Exception in conn.close() inside finally → no crash."""
+    response_body = json.dumps({"response": "ok"}).encode()
+    mock_resp = MagicMock(status=200)
+    mock_resp.read.return_value = response_body
+    mock_conn = MagicMock()
+    mock_conn.getresponse.return_value = mock_resp
+    mock_conn.close.side_effect = Exception("close failed")
+    with patch.object(http.client, "HTTPConnection", return_value=mock_conn):
+        result = ou._http_generate("prompt", "devstral")
+    assert result == "ok"
+
+
+# ── call_ollama: non-zero exit code ─────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_call_ollama_nonzero_exit_returns_none():
+    """Ollama subprocess returns non-zero exit code → None."""
+    mock_result = MagicMock(returncode=1, stderr="model error", stdout="")
+    with patch("subprocess.run", return_value=mock_result):
+        result = ou.call_ollama("prompt")
+    assert result is None
+
+
+# ── run_prompt ───────────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_run_prompt_happy_path(tmp_path):
+    """run_prompt with existing prompt file → formats prompt and calls call_ollama."""
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "test_prompt.prompt").write_text("Analyze {language}: {source}")
+
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        with patch.object(ou, "call_ollama", return_value="analysis result") as mock_call:
+            result = ou.run_prompt("test_prompt", language="python", source="class X: pass")
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    mock_call.assert_called_once()
+    assert result == "analysis result"
+
+
+@pytest.mark.unit
+def test_run_prompt_missing_file_returns_none(tmp_path):
+    """run_prompt with nonexistent prompt file → returns None."""
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = tmp_path
+    try:
+        result = ou.run_prompt("nonexistent_prompt")
+    finally:
+        ou._PROMPTS_DIR = original_dir
+    assert result is None
+
+
+# ── analyze_files_async: cache hit path ─────────────────────────────────────────
+
+@pytest.mark.unit
+def test_analyze_files_async_cache_hit(tmp_path):
+    """analyze_files_async returns cached result without calling _http_generate."""
+    import asyncio
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    cached_violations = [{"line": 1, "principle": "S"}]
+
+    with patch.object(ou, "_CACHE_AVAILABLE", True):
+        with patch.object(ou, "_get_cached", return_value=cached_violations):
+            with patch.object(ou, "_http_generate") as mock_http:
+                results = asyncio.run(ou.analyze_files_async(
+                    [f], "python", "devstral", "solid_analysis", no_cache=False
+                ))
+
+    mock_http.assert_not_called()
+    assert results == cached_violations
+
+
+# ── analyze_files_async: prompt not found ──────────────────────────────────────
+
+@pytest.mark.unit
+def test_analyze_files_async_prompt_not_found(tmp_path):
+    """analyze_files_async with missing prompt file → returns [] for that file."""
+    import asyncio
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "empty_prompts"
+    prompts_dir.mkdir()
+
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        results = asyncio.run(ou.analyze_files_async(
+            [f], "python", "devstral", "nonexistent_prompt", no_cache=True
+        ))
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    assert results == []
+
+
+# ── analyze_files_async: agents > 1 ────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_analyze_files_async_agents_greater_than_1(tmp_path):
+    """analyze_files_async with agents=2 runs multiple calls and deduplicates."""
+    import asyncio
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        with patch("common.ollama_utils._http_generate", return_value=response_json):
+            results = asyncio.run(ou.analyze_files_async(
+                [f], "python", "devstral", "solid_analysis", agents=2, no_cache=True
+            ))
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    assert len(results) >= 1
+
+
+# ── analyze_files_async: exception in one task ──────────────────────────────────
+
+@pytest.mark.unit
+def test_analyze_files_async_exception_in_task(tmp_path):
+    """Exception in one file's analysis → warning printed, other tasks complete."""
+    import asyncio
+    f1 = tmp_path / "good.py"
+    f1.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        with patch("common.ollama_utils._http_generate", return_value=response_json):
+            results = asyncio.run(ou.analyze_files_async(
+                [f1, Path("/nonexistent/bad.py")], "python", "devstral", "solid_analysis", no_cache=True
+            ))
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    assert isinstance(results, list)
+
+
+# ── analyze_files_async: cache write path ───────────────────────────────────────
+
+@pytest.mark.unit
+def test_analyze_files_async_writes_cache(tmp_path):
+    """analyze_files_async with no_cache=False writes results to cache."""
+    import asyncio
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        with patch("common.ollama_utils._http_generate", return_value=response_json):
+            with patch.object(ou, "_CACHE_AVAILABLE", True):
+                with patch.object(ou, "_get_cached", return_value=None):
+                    with patch.object(ou, "_set_cached") as mock_set:
+                        asyncio.run(ou.analyze_files_async(
+                            [f], "python", "devstral", "solid_analysis", no_cache=False
+                        ))
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    mock_set.assert_called_once()
+
+
+# ── analyze_file_with_ollama ─────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_analyze_file_with_ollama_cache_hit(tmp_path):
+    """analyze_file_with_ollama returns cached result without calling Ollama."""
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    cached = [{"line": 1, "principle": "S"}]
+
+    with patch.object(ou, "_CACHE_AVAILABLE", True):
+        with patch.object(ou, "_get_cached", return_value=cached):
+            with patch.object(ou, "call_ollama") as mock_call:
+                result = ou.analyze_file_with_ollama(f, "python", "devstral", "solid")
+
+    mock_call.assert_not_called()
+    assert result == cached
+
+
+@pytest.mark.unit
+def test_analyze_file_with_ollama_agents_greater_than_1(tmp_path):
+    """analyze_file_with_ollama with agents=2 uses call_ollama_multi."""
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        with patch.object(ou, "call_ollama_multi", return_value=[{"line": 1, "principle": "S"}]) as mock_multi:
+            result = ou.analyze_file_with_ollama(f, "python", "devstral", "solid_analysis", agents=2, no_cache=True)
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    mock_multi.assert_called()
+    assert len(result) >= 1
+
+
+# ── extract_json_array: bracketed invalid JSON ──────────────────────────────────
+
+@pytest.mark.unit
+def test_extract_json_array_invalid_bracketed_content():
+    """Text with [...] that contains invalid JSON → returns None."""
+    text = "Here is: [not valid json here] end"
+    result = ou.extract_json_array(text)
+    assert result is None
+
+
+# ── extract_json_object: braced invalid JSON ────────────────────────────────────
+
+@pytest.mark.unit
+def test_extract_json_object_invalid_braced_content():
+    """Text with {...} that contains invalid JSON → returns None."""
+    text = "Result: {not valid: json here} done"
+    result = ou.extract_json_object(text)
+    assert result is None
+
+
+# ── get_claude_fallback_prompt: KeyError path ────────────────────────────────────
+
+@pytest.mark.unit
+def test_get_claude_fallback_prompt_key_error_returns_raw(tmp_path):
+    """get_claude_fallback_prompt with format KeyError → returns raw template."""
+    prompt_file = tmp_path / "test_prompt.prompt"
+    prompt_file.write_text("Analyze {language}: {required_key}")
+
+    original_dir = ou.CLAUDE_PROMPTS_DIR
+    ou.CLAUDE_PROMPTS_DIR = tmp_path
+    try:
+        result = ou.get_claude_fallback_prompt("test_prompt")  # no kwargs → KeyError
+    finally:
+        ou.CLAUDE_PROMPTS_DIR = original_dir
+
+    assert result is not None
+    assert "{language}" in result or "{required_key}" in result
+
+
+# ── analyze_file_with_ollama: agents=1 path ─────────────────────────────────────
+
+@pytest.mark.unit
+def test_analyze_file_with_ollama_agents_1_calls_ollama(tmp_path):
+    """analyze_file_with_ollama agents=1 calls call_ollama directly."""
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        with patch.object(ou, "call_ollama", return_value=response_json) as mock_call:
+            result = ou.analyze_file_with_ollama(f, "python", "devstral", "solid_analysis", agents=1, no_cache=True)
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    mock_call.assert_called()
+    assert len(result) >= 1
+
+
+@pytest.mark.unit
+def test_analyze_file_with_ollama_prompt_not_found(tmp_path):
+    """analyze_file_with_ollama with missing prompt file → returns []."""
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = tmp_path  # no prompt files here
+    try:
+        result = ou.analyze_file_with_ollama(f, "python", "devstral", "nonexistent_prompt", no_cache=True)
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    assert result == []
+
+
+@pytest.mark.unit
+def test_analyze_file_with_ollama_empty_results_warning(tmp_path):
+    """analyze_file_with_ollama when Ollama returns None → empty list (warning printed)."""
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        with patch.object(ou, "call_ollama", return_value=None):
+            result = ou.analyze_file_with_ollama(f, "python", "devstral", "solid_analysis", agents=1, no_cache=True)
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    assert result == []
+
+
+@pytest.mark.unit
+def test_analyze_file_with_ollama_writes_cache(tmp_path):
+    """analyze_file_with_ollama with no_cache=False writes results to cache."""
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        with patch.object(ou, "call_ollama", return_value=response_json):
+            with patch.object(ou, "_CACHE_AVAILABLE", True):
+                with patch.object(ou, "_get_cached", return_value=None):
+                    with patch.object(ou, "_set_cached") as mock_set:
+                        ou.analyze_file_with_ollama(
+                            f, "python", "devstral", "solid_analysis", agents=1, no_cache=False
+                        )
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    mock_set.assert_called_once()
+
+
+# ── analyze_files_async: agents>1 exception response skipped (line 138) ──────────
+
+@pytest.mark.unit
+def test_analyze_files_async_agents_exception_response_skipped(tmp_path):
+    """agents>1 where one coroutine raises → exception in gather skipped, other result kept."""
+    import asyncio
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    good_response = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
+    call_count = [0]
+
+    async def mock_async_call(prompt, model, timeout):
+        call_count[0] += 1
+        if call_count[0] == 1:
+            raise ConnectionError("agent 1 failed")
+        return good_response
+
+    original_dir = ou._PROMPTS_DIR
+    ou._PROMPTS_DIR = prompts_dir
+    try:
+        with patch("common.ollama_utils.call_ollama_async", side_effect=mock_async_call):
+            results = asyncio.run(ou.analyze_files_async(
+                [f], "python", "devstral", "solid_analysis", agents=2, no_cache=True
+            ))
+    finally:
+        ou._PROMPTS_DIR = original_dir
+
+    assert len(results) >= 1

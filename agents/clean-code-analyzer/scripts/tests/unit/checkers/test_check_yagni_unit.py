@@ -167,3 +167,36 @@ def test_files_none_runs_full_path(tmp_path):
     assert result["success"] is True
     # All violations from subprocess returned (no filtering)
     assert len(result["violations"]) == 1
+
+
+# ── Ollama with files=None hits discover_files branch ───────────────────────────
+
+@pytest.mark.unit
+def test_yagni_ollama_discover_files_branch(tmp_path):
+    """When files=None and Ollama available → discover_files branch (lines 65-67) hit."""
+    f = tmp_path / "service.py"
+    f.write_text("class UserService:\n    def get_user(self): pass\n")
+
+    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path, \
+         patch("checkers.check_yagni.check_ollama_available", return_value=True), \
+         patch("checkers.check_yagni.analyze_files_parallel", return_value=[]) as mock_ollama:
+        mock_path.exists.return_value = False
+        result = run(tmp_path, "python", files=None)
+
+    mock_ollama.assert_called_once()
+    assert result["success"] is True
+
+
+@pytest.mark.unit
+def test_yagni_ollama_discover_files_mixed_language(tmp_path):
+    """language='mixed' → exts=None, discover_files finds all supported files."""
+    f = tmp_path / "service.py"
+    f.write_text("class UserService:\n    pass\n")
+
+    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path, \
+         patch("checkers.check_yagni.check_ollama_available", return_value=True), \
+         patch("checkers.check_yagni.analyze_files_parallel", return_value=[]):
+        mock_path.exists.return_value = False
+        result = run(tmp_path, "mixed", files=None)
+
+    assert result["success"] is True

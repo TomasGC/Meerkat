@@ -110,3 +110,69 @@ def test_check_python_file_syntax_error_returns_empty(tmp_path):
     f.write_text("def foo(\n  # unclosed parenthesis\n")
     result = _check_python_file(f, tmp_path)
     assert result == []
+
+
+# ── bare except with non-empty body (no raise / no log) ─────────────────────────
+
+@pytest.mark.unit
+def test_error_handling_bare_except_with_assignment_flagged(tmp_path):
+    """Bare `except:` with body that neither raises nor logs → flagged."""
+    code = "try:\n    risky()\nexcept:\n    x = 1\n"
+    (tmp_path / "mod.py").write_text(code)
+    result = run(tmp_path, "python")
+    assert result["success"] is True
+    assert len(result["violations"]) >= 1
+
+
+# ── _detect_non_python_violations: Go empty error check ─────────────────────────
+
+@pytest.mark.unit
+def test_detect_non_python_violations_go_empty_error_check():
+    """Go `if err != nil {}` (empty block on one line) → ErrorHandling violation."""
+    content = "if err != nil {}\n"
+    result = _detect_non_python_violations(content, "main.go", "go")
+    assert len(result) >= 1
+    assert result[0]["principle"] == "ErrorHandling"
+
+
+# ── run() with non-Python file ───────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_error_handling_run_with_single_go_file(tmp_path):
+    """run() called with a single .go file path → success, files_analyzed=1."""
+    f = tmp_path / "main.go"
+    f.write_text("_ = service.DoSomething()\n")
+    result = run(f, "go")
+    assert result["success"] is True
+    assert result["files_analyzed"] == 1
+
+
+@pytest.mark.unit
+def test_error_handling_run_with_typescript_directory(tmp_path):
+    """run() on directory containing .ts file → dispatches _check_non_python, no crash."""
+    (tmp_path / "app.ts").write_text("try { risky(); } catch (e) {}\n")
+    result = run(tmp_path, "typescript")
+    assert result["success"] is True
+    assert isinstance(result["violations"], list)
+
+
+@pytest.mark.unit
+def test_error_handling_run_with_files_list(tmp_path):
+    """run() with explicit files list (line 148 path) → only those files analyzed."""
+    f = tmp_path / "mod.go"
+    f.write_text("_ = svc.Get()\n")
+    result = run(tmp_path, "go", files=[f])
+    assert result["success"] is True
+    assert result["files_analyzed"] == 1
+
+
+@pytest.mark.unit
+def test_error_handling_check_non_python_oserror_skips(tmp_path):
+    """_check_non_python OSError path (lines 136-137) → returns []."""
+    from unittest.mock import patch
+    f = tmp_path / "app.ts"
+    f.write_text("try {} catch(e) {}\n")
+    with patch("pathlib.Path.read_text", side_effect=OSError("no access")):
+        from checkers.check_error_handling import _check_non_python
+        result = _check_non_python(f, tmp_path, "typescript")
+    assert result == []

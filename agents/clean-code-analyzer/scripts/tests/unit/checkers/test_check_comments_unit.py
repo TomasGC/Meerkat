@@ -120,3 +120,41 @@ def test_comments_what_verb_flagged(tmp_path):
     assert result["success"] is True
     what_violations = [v for v in result["violations"] if "WHAT" in v.get("message", "")]
     assert len(what_violations) >= 1
+
+
+# ── error path: OSError reading file ────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_comments_oserror_reading_file_skips(tmp_path):
+    """OSError reading file → file skipped gracefully, no crash."""
+    from unittest.mock import patch
+    (tmp_path / "mod.py").write_text("# TODO: fix\nx = 1\n")
+    with patch("pathlib.Path.read_text", side_effect=OSError("permission denied")):
+        result = run(tmp_path, "python")
+    assert result["success"] is True
+    assert result["violations"] == []
+
+
+# ── run() with files= list ───────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_comments_run_with_files_list(tmp_path):
+    """run() with files=[...] parameter → analyzes only those files."""
+    f = tmp_path / "mod.py"
+    f.write_text("# TODO: fix this\nx = 1\n")
+    result = run(tmp_path, "python", files=[f])
+    assert result["success"] is True
+    assert result["files_analyzed"] == 1
+    assert len(result["violations"]) >= 1
+
+
+# ── run() with single file path ─────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_comments_single_file_path(tmp_path):
+    """run() with single file path (not directory) → files_analyzed=1."""
+    f = tmp_path / "mod.py"
+    f.write_text("# FIXME: broken code\nx = 1\n")
+    result = run(f, "python")
+    assert result["success"] is True
+    assert result["files_analyzed"] == 1

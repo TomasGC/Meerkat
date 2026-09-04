@@ -248,3 +248,32 @@ def test_get_branch_files_uses_three_dot_diff(tmp_path):
         fu.get_branch_files(tmp_path, base="main")
     cmd = mock_run.call_args[0][0]
     assert "main...HEAD" in cmd
+
+
+# ── get_changed_files: exception path ───────────────────────────────────────────
+
+@pytest.mark.unit
+def test_get_changed_files_exception_returns_none(tmp_path):
+    """subprocess raises exception in get_changed_files → returns None."""
+    with patch("subprocess.run", side_effect=Exception("git not found")):
+        result = get_changed_files(tmp_path)
+    assert result is None
+
+
+# ── get_staged_files: error paths ────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_get_staged_files_nonzero_returns_none(tmp_path):
+    """get_staged_files with non-zero returncode (not a git repo) → None."""
+    mock_result = MagicMock(returncode=128, stdout="")
+    with patch("subprocess.run", return_value=mock_result):
+        result = get_staged_files(tmp_path)
+    assert result is None
+
+
+@pytest.mark.unit
+def test_get_staged_files_exception_returns_none(tmp_path):
+    """subprocess raises exception in get_staged_files → returns None."""
+    with patch("subprocess.run", side_effect=Exception("git not found")):
+        result = get_staged_files(tmp_path)
+    assert result is None
