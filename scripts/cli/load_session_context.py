@@ -48,6 +48,11 @@ def get_issue_from_branch(cwd: Optional[Path] = None) -> Optional[str]:
     if match:
         return match.group(0)
 
+    # Fallback: bare number after slash (e.g. feature/38-foo or bugfix/38-foo → #38)
+    fallback = re.search(r"(?:^|/)#?(\d+)[-_]", branch)
+    if fallback:
+        return f"#{fallback.group(1)}"
+
     return None
 
 
@@ -57,16 +62,15 @@ def load_kanban_entry(issue_id: str, kanban_path: Path = None) -> Optional[str]:
 
     Args:
         issue_id: Issue ID (#123 or #12345)
-        kanban_path: Path to KANBAN.md (default: .claude/KANBAN.md)
+        kanban_path: Path to kanban.md (default: .claude/contexts/kanban.md)
 
     Returns:
         KANBAN entry content or None
     """
     if kanban_path is None:
-        kanban_path = Path(".claude/KANBAN.md")
-
-    if not kanban_path.exists():
-        return None
+        kanban_path = Path(".claude/contexts/kanban.md")
+        if not kanban_path.exists():
+            return None
 
     try:
         content = kanban_path.read_text(encoding="utf-8")

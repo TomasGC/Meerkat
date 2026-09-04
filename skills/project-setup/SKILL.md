@@ -14,7 +14,7 @@ Dual-mode skill for managing `.claude/` project structure:
 **CREATE MODE** (if `.claude/` doesn't exist):
 - Auto-detect project type (Go, Node.js, Vue.js, .NET, ASP.NET MVC)
 - Use template-base/ with injection system for language-specific content
-- Initialize complete structure (CLAUDE.md, ARCHITECTURE.md, KANBAN.md, rules/, etc.)
+- Initialize complete structure (CLAUDE.md, contexts/, rules/, etc.)
 - Generate automation scripts for project maintenance
 - Create project-specific examples and documentation
 
@@ -44,7 +44,7 @@ You are an **principal developer, senior DevOps engineer, and principal technica
 
 **Technical writing skills**:
 - Ability to generate and update project documentation
-- Experience with CLAUDE.md, ARCHITECTURE.md, KANBAN.md formats
+- Experience with CLAUDE.md, contexts/architecture.md, contexts/kanban.md formats
 - Skill at preserving user customizations during updates
 - Talent for clear status reporting and next steps
 
@@ -80,7 +80,7 @@ This skill has access to the following tools:
   - Returns: branch, remote, commit count, changes status
   - Format options: json (default), text, bool
 - **validate_markdown.py** - Validate markdown files for format compliance (`~/.claude/scripts/validate_markdown.py`)
-  - Validates KANBAN.md, ARCHITECTURE.md, CLAUDE.md
+  - Validates contexts/kanban.md, contexts/architecture.md, CLAUDE.md
   - Checks: language, format, forbidden markers
   - Format options: json (default), text, summary
 - **update_section_in_markdown.py** - Update specific markdown section (`~/.claude/scripts/update_section_in_markdown.py`)
@@ -144,15 +144,15 @@ This skill has access to the following tools:
 
 4. **Template integrity** - MUST copy complete template
    - CLAUDE.md with Session Startup section
-   - ARCHITECTURE.md with Mermaid diagrams
-   - KANBAN.md with proper empty format
+   - contexts/architecture.md with Mermaid diagrams
+   - contexts/kanban.md with proper empty format
+   - contexts/tests.md, contexts/conventions.md, contexts/commands.md
    - settings.json, settings.local.json
    - rules/, agents/, skills/ (if applicable)
 
 5. **English documentation only** - ALL generated/updated files in English
    - CLAUDE.md in English
-   - ARCHITECTURE.md in English
-   - KANBAN.md in English
+   - contexts/*.md in English
    - Code comments in English
 
 6. **Gitignore compliance** - MUST inform user about gitignore
@@ -370,9 +370,8 @@ B. Select from menu"
 │                                                               │
 │  Core Documentation:                                          │
 │  ☑ 1. CLAUDE.md (mandatory)                                  │
-│  ☑ 2. ARCHITECTURE.md (recommended)                          │
-│  ☑ 3. KANBAN.md (recommended)                                │
-│  ☐ 4. CLAUDE.local.md (optional - personal notes)           │
+│  ☑ 2. contexts/ (kanban.md, architecture.md, tests.md, conventions.md, commands.md) │
+│  ☐ 3. CLAUDE.local.md (optional - personal notes)           │
 │                                                               │
 │  Configuration:                                               │
 │  ☑ 5. settings.json (mandatory)                              │
@@ -472,6 +471,13 @@ python ~/.claude/template-base/inject.py template \
 
 ### UPDATE Mode Strategy
 
+**Layout detection** (check before anything else):
+- If `.claude/contexts/kanban.md` exists → new layout, update in place
+- If `.claude/KANBAN.md` exists but `contexts/` does not → old flat layout; offer migration:
+  "This project uses the old flat layout (KANBAN.md/ARCHITECTURE.md at .claude/ root). Migrate to contexts/ layout? (yes/no)"
+  - If yes: move KANBAN.md → contexts/kanban.md, ARCHITECTURE.md → contexts/architecture.md, update CLAUDE.md `@` references
+  - If no: update in place using old paths
+
 **When .claude/ exists**:
 
 **GUIDED MODE workflow**:
@@ -495,8 +501,8 @@ Q3: Compare with template
 │                                                               │
 │  Core Documentation:                                          │
 │  ☐ 1. CLAUDE.md (outdated - new Session Startup section)    │
-│  ☐ 2. ARCHITECTURE.md (outdated - new Mermaid format)       │
-│  ☐ 3. KANBAN.md (✓ up to date)                              │
+│  ☐ 2. contexts/architecture.md (outdated - new Mermaid format) │
+│  ☐ 3. contexts/kanban.md (✓ up to date)                     │
 │                                                               │
 │  Configuration:                                               │
 │  ☐ 4. settings.json (outdated - new permissions)            │
@@ -681,7 +687,7 @@ Write-Host "🔄 Syncing .claude/ with template-base..."
     # Validates current project structure
 #>
 
-$required = @("CLAUDE.md", "ARCHITECTURE.md", "KANBAN.md", "settings.json")
+$required = @("CLAUDE.md", "contexts/architecture.md", "contexts/kanban.md", "settings.json")
 
 Write-Host "✅ Validating .claude/ structure..."
 foreach ($file in $required) {
@@ -768,16 +774,19 @@ Explanation of the `.claude/` directory structure.
 ```
 .claude/
 ├── CLAUDE.md               # Project instructions and workflows
-├── ARCHITECTURE.md         # System architecture and design decisions
-├── KANBAN.md              # Task tracking and work history
-├── settings.json          # Claude Code settings (committed)
-├── settings.local.json    # Local overrides (gitignored)
-├── rules/                 # Auto-loaded coding standards
-├── agents/                # Autonomous agents for complex workflows
-├── skills/                # User-invokable skills
-├── scripts/               # Maintenance and utility scripts
-├── examples/              # Configuration examples
-└── docs/                  # Auto-generated documentation
+├── contexts/               # Project documentation
+│   ├── kanban.md           # Task tracking and work history
+│   ├── architecture.md     # System architecture and design decisions
+│   ├── tests.md            # Test structure and coverage
+│   ├── conventions.md      # Coding conventions
+│   └── commands.md         # Command reference
+├── settings.json           # Claude Code settings (committed)
+├── settings.local.json     # Local overrides (gitignored)
+├── rules/                  # Auto-loaded coding standards
+├── agents/                 # Autonomous agents for complex workflows
+├── skills/                 # User-invokable skills
+├── scripts/                # Maintenance and utility scripts
+└── docs/                   # Auto-generated documentation
 ```
 
 ## Key Files
@@ -833,8 +842,9 @@ Before completing operation, verify:
 - [ ] Template-base/ structure accessible (~/.claude/template-base/)
 - [ ] .claude/ directory created or updated
 - [ ] CLAUDE.md present with Session Startup section
-- [ ] ARCHITECTURE.md present with Mermaid diagrams
-- [ ] KANBAN.md present with empty template format
+- [ ] contexts/architecture.md present with Mermaid diagrams
+- [ ] contexts/kanban.md present with empty template format
+- [ ] contexts/tests.md, contexts/conventions.md, contexts/commands.md present
 - [ ] settings.json and settings.local.json present
 - [ ] User customizations preserved (UPDATE mode)
 - [ ] All files in English
@@ -883,7 +893,8 @@ Before completing operation, verify:
 ✅ Files Created:
 - .claude/CLAUDE.md (Go service instructions)
 - .claude/contexts/architecture.md (Clean Architecture + Mermaid)
-- .claude/contexts/kanban.md (Empty template)
+- .claude/contexts/kanban.md (empty template)
+- .claude/contexts/tests.md, conventions.md, commands.md
 - .claude/settings.json, .claude/settings.local.json
 - .claude/rules/go-conventions.md
 - .claude/agents/test-runner.md
@@ -924,8 +935,7 @@ Update these files? (yes/no/select)
 
 **ALL .claude/ files MUST be in English**:
 - ✅ CLAUDE.md - Always English
-- ✅ ARCHITECTURE.md - Always English
-- ✅ KANBAN.md - Always English
+- ✅ contexts/*.md - Always English
 - ✅ rules/ files - Always English
 - ❌ NEVER use user's conversation language in .claude/ files
 
@@ -945,7 +955,7 @@ Found files:
 - <list relevant files>
 
 Options:
-1. Use minimal template (basic CLAUDE.md, ARCHITECTURE.md, KANBAN.md)
+1. Use minimal template (basic CLAUDE.md, contexts/)
 2. Specify project type manually
 3. Cancel
 
@@ -1077,8 +1087,12 @@ What would you like to do?
 <project-root>/.claude/
 ├── CLAUDE.md                    # Project instructions (from template + injection)
 ├── CLAUDE.local.md              # Personal overrides (from common/)
-├── KANBAN.md                    # Task tracking (from common/)
-├── ARCHITECTURE.md              # Architecture docs (from template + injection)
+├── contexts/
+│   ├── kanban.md                # Task tracking (from common/)
+│   ├── architecture.md          # Architecture docs (from template + injection)
+│   ├── tests.md                 # Test structure (from common/)
+│   ├── conventions.md           # Coding conventions (from inject.py)
+│   └── commands.md              # Command reference (from inject.py)
 ├── settings.json                # Permissions (from template + injection)
 ├── settings.local.json          # Local settings (from common/)
 ├── rules/                       # Auto-loaded patterns
@@ -1265,8 +1279,11 @@ What would you like to do?
 |------|------|-------------|-----------|
 | **CLAUDE.md** | Template | Project instructions | ✅ Yes |
 | **CLAUDE.local.md** | Common | Personal overrides (gitignored) | ✅ Yes |
-| **KANBAN.md** | Common | Task tracking, backlog | ✅ Yes |
-| **ARCHITECTURE.md** | Template | Architecture docs | ⚠️ Recommended |
+| **contexts/kanban.md** | Common | Task tracking | ✅ Yes |
+| **contexts/architecture.md** | Template | Architecture docs | ✅ Yes |
+| **contexts/tests.md** | Common | Test structure | ✅ Yes |
+| **contexts/conventions.md** | Common | Coding conventions | ✅ Yes |
+| **contexts/commands.md** | Common | Command reference | ✅ Yes |
 | **settings.json** | Template | Permissions, hooks | ✅ Yes |
 | **settings.local.json** | Common | Local settings (gitignored) | ⚠️ Recommended |
 | **rules/** | Mixed | Coding standards (language-specific) | ⚠️ Recommended |
@@ -1298,7 +1315,8 @@ What would you like to do?
 ~/.claude/template-base/
 ├── common/               # Files identical across all projects
 │   ├── CLAUDE.local.md
-│   ├── KANBAN.md
+│   ├── contexts/kanban.md
+│   ├── contexts/tests.md
 │   └── settings.local.json
 ├── templates/            # Files with {{PLACEHOLDERS}}
 │   ├── CLAUDE.template.md

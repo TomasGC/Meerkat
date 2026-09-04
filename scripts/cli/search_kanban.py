@@ -209,14 +209,14 @@ class SearchKanbanScript(BaseCLIScript):
         parser.add_argument(
             "--path",
             "-p",
-            default=".claude/KANBAN.md",
-            help="Path to KANBAN.md (default: .claude/KANBAN.md)"
+            default=".claude/contexts/kanban.md",
+            help="Path to kanban.md (default: .claude/contexts/kanban.md)"
         )
 
     def execute(self, args) -> dict[str, Any]:
         """Execute KANBAN search."""
         try:
-            # Parse KANBAN.md
+            # Parse kanban.md
             file_path = Path(args.path)
             entries = parse_kanban_file(file_path)
 

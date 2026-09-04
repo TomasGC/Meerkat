@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Update KANBAN.md automatically with work from commits.
+Update .claude/contexts/kanban.md automatically with work from commits.
 
 Replaces: update-kanban.ps1
 
-Searches for existing issue entry in KANBAN.md and updates it, or creates
-new entry if not found. Respects KANBAN.md format rules (singular/plural,
+Searches for existing issue entry in kanban.md and updates it, or creates
+new entry if not found. Respects kanban.md format rules (singular/plural,
 date updates, cumulative descriptions).
 """
 
@@ -30,28 +30,21 @@ from common.utils import run_command
 
 def find_kanban_file(start_path: Path = None) -> Path | None:
     """
-    Search for KANBAN.md in current and parent directories.
+    Search for .claude/contexts/kanban.md in current and parent directories.
 
     Args:
         start_path: Starting directory (defaults to current)
 
     Returns:
-        Path to KANBAN.md or None if not found
+        Path to kanban.md or None if not found
     """
     search_path = start_path or Path.cwd()
 
     while search_path:
-        # Try KANBAN.md
-        kanban_path = search_path / "KANBAN.md"
+        kanban_path = search_path / ".claude" / "contexts" / "kanban.md"
         if kanban_path.exists():
             return kanban_path
 
-        # Try .claude/KANBAN.md
-        claude_path = search_path / ".claude" / "KANBAN.md"
-        if claude_path.exists():
-            return claude_path
-
-        # Move up
         if search_path.parent == search_path:
             break
         search_path = search_path.parent
@@ -220,7 +213,7 @@ class UpdateKanbanScript(BaseCLIScript):
             "--kanban-file",
             "-k",
             default="",
-            help="Path to KANBAN.md (auto-detects if not provided)"
+            help="Path to kanban.md (auto-detects .claude/contexts/kanban.md if not provided)"
         )
         parser.add_argument(
             "--no-backup",
@@ -302,13 +295,13 @@ class UpdateKanbanScript(BaseCLIScript):
                 if not kanban_file:
                     return {
                         "success": False,
-                        "error": "KANBAN.md not found in current directory or parent directories"
+                        "error": ".claude/contexts/kanban.md not found in current directory or parent directories"
                     }
 
             if not kanban_file.exists():
                 return {
                     "success": False,
-                    "error": f"KANBAN.md not found at: {kanban_file}"
+                    "error": f"kanban.md not found at: {kanban_file}"
                 }
 
             self.logger.debug(f"Using KANBAN file: {kanban_file}")
