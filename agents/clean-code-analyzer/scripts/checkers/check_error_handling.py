@@ -107,18 +107,13 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
     return violations
 
 
-def _check_non_python(file: Path, root: Path, language: str) -> list[dict]:
+def _detect_non_python_violations(content: str, filename: str, language: str) -> list[dict]:
+    """Pure function — detect error handling violations in non-Python source content."""
     violations = []
     patterns = _GREP_PATTERNS.get(language, [])
     if not patterns:
         return []
-
-    try:
-        source = file.read_text(encoding="utf-8", errors="replace")
-        lines = source.splitlines()
-    except OSError:
-        return []
-
+    lines = content.splitlines()
     for pattern, message in patterns:
         if message is None:
             continue
@@ -126,14 +121,22 @@ def _check_non_python(file: Path, root: Path, language: str) -> list[dict]:
             if pattern.search(line):
                 violations.append({
                     "principle": "ErrorHandling",
-                    "file": str(file.relative_to(root) if file.is_relative_to(root) else file),
+                    "file": filename,
                     "line": i,
                     "severity": "high",
                     "message": message,
                     "suggestion": "Handle or log the exception; never silently swallow errors",
                 })
-
     return violations
+
+
+def _check_non_python(file: Path, root: Path, language: str) -> list[dict]:
+    try:
+        source = file.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    filename = str(file.relative_to(root) if file.is_relative_to(root) else file)
+    return _detect_non_python_violations(source, filename, language)
 
 
 def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False) -> dict:

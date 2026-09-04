@@ -197,3 +197,54 @@ def test_discover_files_single_file(tmp_path):
     result = fu.discover_files(f, [".py"])
     assert len(result) == 1
     assert result[0] == f
+
+
+# ── get_branch_files ────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_get_branch_files_nonzero_returns_none(tmp_path):
+    """Non-zero returncode (not a git repo / diff failed) → None."""
+    mock_result = MagicMock(returncode=128, stdout="")
+    with patch("subprocess.run", return_value=mock_result):
+        result = fu.get_branch_files(tmp_path, base="main")
+    assert result is None
+
+
+@pytest.mark.unit
+def test_get_branch_files_exception_returns_none(tmp_path):
+    """subprocess raises → None (not an exception propagated to caller)."""
+    with patch("subprocess.run", side_effect=Exception("git not found")):
+        result = fu.get_branch_files(tmp_path, base="main")
+    assert result is None
+
+
+@pytest.mark.unit
+def test_get_branch_files_filters_nonexistent_files(tmp_path):
+    """get_branch_files only returns files that actually exist on disk."""
+    (tmp_path / "existing.py").write_text("x = 1")
+    # deleted.py is in git output but was deleted
+    mock_result = MagicMock(returncode=0, stdout="existing.py\ndeleted.py\n")
+    with patch("subprocess.run", return_value=mock_result):
+        result = fu.get_branch_files(tmp_path, base="main")
+    assert result is not None
+    assert len(result) == 1
+    assert result[0].name == "existing.py"
+
+
+@pytest.mark.unit
+def test_get_branch_files_empty_diff_returns_empty_list(tmp_path):
+    """Empty git diff output (no changed files on branch) → [] not None."""
+    mock_result = MagicMock(returncode=0, stdout="")
+    with patch("subprocess.run", return_value=mock_result):
+        result = fu.get_branch_files(tmp_path, base="main")
+    assert result == []
+
+
+@pytest.mark.unit
+def test_get_branch_files_uses_three_dot_diff(tmp_path):
+    """get_branch_files uses the three-dot diff syntax (base...HEAD)."""
+    mock_result = MagicMock(returncode=0, stdout="")
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        fu.get_branch_files(tmp_path, base="main")
+    cmd = mock_run.call_args[0][0]
+    assert "main...HEAD" in cmd

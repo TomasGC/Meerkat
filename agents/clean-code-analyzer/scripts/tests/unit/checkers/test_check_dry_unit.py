@@ -1,6 +1,7 @@
 """Unit tests for checkers/check_dry.py — mocks subprocess and _FIND_DUPLICATES."""
 
 import json
+import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 import sys
@@ -85,4 +86,31 @@ def test_dry_no_duplicates(tmp_path):
         result = run(tmp_path, "python")
 
     assert result["success"] is True
+    assert result["violations"] == []
+
+
+# ── error paths ─────────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_dry_timeout_returns_failure(tmp_path):
+    """subprocess.TimeoutExpired → success=False, violations=[]."""
+    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, \
+         patch("subprocess.run", side_effect=subprocess.TimeoutExpired("python", 60)):
+        mock_path.exists.return_value = True
+        result = run(tmp_path, "python")
+
+    assert result["success"] is False
+    assert result["violations"] == []
+
+
+@pytest.mark.unit
+def test_dry_json_decode_error_returns_failure(tmp_path):
+    """Malformed JSON from find_duplicates.py → success=False, violations=[]."""
+    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, \
+         patch("subprocess.run") as mock_run:
+        mock_path.exists.return_value = True
+        mock_run.return_value = MagicMock(returncode=0, stdout="not valid json {{{", stderr="")
+        result = run(tmp_path, "python")
+
+    assert result["success"] is False
     assert result["violations"] == []

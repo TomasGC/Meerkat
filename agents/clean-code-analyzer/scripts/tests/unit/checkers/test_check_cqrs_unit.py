@@ -82,3 +82,39 @@ def test_cqrs_return_schema(tmp_path):
     assert "success" in result
     assert "violations" in result
     assert isinstance(result["violations"], list)
+
+
+# ── files param + test file exclusion ───────────────────────────────────────────
+
+@pytest.mark.unit
+def test_cqrs_files_param_uses_only_given_files(tmp_path):
+    """When files param provided, only those files are analyzed."""
+    explicit = tmp_path / "service.py"
+    explicit.write_text("class OrderService: pass\n")
+    other = tmp_path / "other.py"
+    other.write_text("class X: pass\n")
+
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+        run(tmp_path, "python", files=[explicit])
+
+    called_files = mock_analyze.call_args[0][0]
+    assert explicit in called_files
+    assert other not in called_files
+
+
+@pytest.mark.unit
+def test_cqrs_test_files_excluded_in_discovery(tmp_path):
+    """Test files (test_*.py) excluded when files=None (full discovery)."""
+    source = tmp_path / "service.py"
+    source.write_text("class OrderService: pass\n")
+    test_file = tmp_path / "test_service.py"
+    test_file.write_text("def test_order(): pass\n")
+
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+        run(tmp_path, "python")
+
+    called_files = mock_analyze.call_args[0][0]
+    assert source in called_files
+    assert test_file not in called_files

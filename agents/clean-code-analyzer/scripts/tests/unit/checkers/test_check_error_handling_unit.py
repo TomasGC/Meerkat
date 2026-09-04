@@ -8,7 +8,7 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from checkers.check_error_handling import run
+from checkers.check_error_handling import run, _detect_non_python_violations, _check_python_file
 
 
 def _wrap_try(handler_code: str) -> str:
@@ -62,3 +62,51 @@ def test_error_handling_return_schema(tmp_path):
     assert "violations" in result
     assert "files_analyzed" in result
     assert "duration_ms" in result
+
+
+# ── _detect_non_python_violations (pure function after refactoring B) ───────────
+
+@pytest.mark.unit
+def test_detect_non_python_violations_typescript_empty_catch():
+    """Empty TypeScript catch block flagged as error handling violation."""
+    content = "try {\n  risky();\n} catch (e) {}\n"
+    result = _detect_non_python_violations(content, "app.ts", "typescript")
+    assert len(result) >= 1
+    assert result[0]["principle"] == "ErrorHandling"
+    assert result[0]["severity"] == "high"
+
+
+@pytest.mark.unit
+def test_detect_non_python_violations_go_discarded_error():
+    """Go explicit error discard with _ flagged."""
+    content = "_ = service.DoSomething()\n"
+    result = _detect_non_python_violations(content, "main.go", "go")
+    assert len(result) >= 1
+    assert result[0]["principle"] == "ErrorHandling"
+
+
+@pytest.mark.unit
+def test_detect_non_python_violations_unknown_language_returns_empty():
+    """Language with no grep patterns → empty list (no crash)."""
+    result = _detect_non_python_violations("some code", "mod.lua", "lua")
+    assert result == []
+
+
+@pytest.mark.unit
+def test_detect_non_python_violations_powershell_silent_continue():
+    """PowerShell -ErrorAction SilentlyContinue flagged."""
+    content = "Remove-Item $path -ErrorAction SilentlyContinue\n"
+    result = _detect_non_python_violations(content, "script.ps1", "powershell")
+    assert len(result) >= 1
+    assert result[0]["severity"] == "high"
+
+
+# ── _check_python_file SyntaxError ──────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_check_python_file_syntax_error_returns_empty(tmp_path):
+    """File with SyntaxError → returns [], no exception raised."""
+    f = tmp_path / "broken.py"
+    f.write_text("def foo(\n  # unclosed parenthesis\n")
+    result = _check_python_file(f, tmp_path)
+    assert result == []

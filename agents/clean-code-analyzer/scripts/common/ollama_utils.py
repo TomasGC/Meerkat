@@ -32,7 +32,7 @@ except ImportError:
 _AVAILABILITY_CACHE: dict[str, bool] = {}
 
 
-def _split_into_chunks(source: str, max_chars: int) -> list[str]:
+def split_into_chunks(source: str, max_chars: int) -> list[str]:
     """Split source into line-aligned chunks of at most max_chars each."""
     if len(source) <= max_chars:
         return [source]
@@ -125,7 +125,7 @@ async def analyze_files_async(
         except FileNotFoundError:
             return []
         results: list[dict] = []
-        for chunk in _split_into_chunks(source, max_chars):
+        for chunk in split_into_chunks(source, max_chars):
             prompt = template.format(language=language, source=chunk)
             if agents > 1:
                 responses = await asyncio.gather(
@@ -270,7 +270,7 @@ def analyze_file_with_ollama(
         return []
 
     results: list[dict] = []
-    for chunk in _split_into_chunks(source, max_chars):
+    for chunk in split_into_chunks(source, max_chars):
         prompt = template.format(language=language, source=chunk)
         if agents > 1:
             results.extend(call_ollama_multi(prompt, model=model, n=agents))

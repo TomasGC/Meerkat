@@ -46,3 +46,28 @@ def test_lod_return_schema(tmp_path):
     assert "success" in result
     assert "violations" in result
     assert isinstance(result["violations"], list)
+
+
+# ── non-Python language support ─────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_lod_typescript_no_crash(tmp_path):
+    """check_lod.run with TypeScript file → success=True, no exception."""
+    (tmp_path / "service.ts").write_text(
+        "export class Service {\n  doWork() { return this.dep.getResult(); }\n}\n"
+    )
+    result = run(tmp_path, "typescript")
+    assert result["success"] is True
+    assert isinstance(result["violations"], list)
+
+
+@pytest.mark.unit
+def test_lod_string_literal_chain_not_flagged(tmp_path):
+    """String literal method chain is not flagged — regex requires \\w+ before first dot."""
+    code = 'result = "hello world".upper().strip().replace("o", "0")\n'
+    (tmp_path / "mod.py").write_text(code)
+    result = run(tmp_path, "python")
+    # "hello world" starts with '"', not \w+, so _CHAIN_RE cannot match the chain
+    # (the variable 'result' after '=' is on the left side, not a chain itself)
+    for v in result["violations"]:
+        assert '"hello world"' not in v.get("message", "")

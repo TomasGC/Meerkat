@@ -1,7 +1,9 @@
 """Unit tests for internal helpers in orchestrate.py."""
 
+import io
 import subprocess
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 import sys
 
 import pytest
@@ -9,7 +11,10 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from orchestrate import _progress_bar, _build_summary, _SEVERITY_ORDER, _mini_bar, _estimate_token_savings
+from orchestrate import (
+    _progress_bar, _build_summary, _SEVERITY_ORDER, _mini_bar,
+    _estimate_token_savings, _detect_base_branch,
+)
 
 
 # ── _progress_bar ───────────────────────────────────────────────────────────────
@@ -175,3 +180,134 @@ def test_invalid_path_exits_nonzero():
         timeout=10,
     )
     assert result.returncode != 0
+
+
+# ── _detect_base_branch ─────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_detect_base_branch_returns_main(tmp_path):
+    """Returns 'main' when 'main' branch exists in repo."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0)
+        result = _detect_base_branch(tmp_path)
+    assert result == "main"
+    # Should have tried 'main' first and returned immediately
+    assert mock_run.call_count == 1
+
+
+@pytest.mark.unit
+def test_detect_base_branch_falls_back_to_master(tmp_path):
+    """Returns 'master' when 'main' is absent but 'master' exists."""
+    def side_effect(cmd, **kwargs):
+        branch = cmd[-1]  # last arg is branch name
+        mock = MagicMock()
+        mock.returncode = 0 if branch == "master" else 1
+        return mock
+
+    with patch("subprocess.run", side_effect=side_effect):
+        result = _detect_base_branch(tmp_path)
+    assert result == "master"
+
+
+@pytest.mark.unit
+def test_detect_base_branch_returns_none_when_neither(tmp_path):
+    """Returns None when neither 'main' nor 'master' exists."""
+    with patch("subprocess.run", return_value=MagicMock(returncode=1)):
+        result = _detect_base_branch(tmp_path)
+    assert result is None
+
+
+# ── orchestrate default mode (branch-vs-main) ──────────────────────────────────
+
+_DUMMY_RESULT = {
+    "principle": "Naming",
+    "success": True,
+    "violations": [],
+    "files_analyzed": 0,
+    "duration_ms": 1,
+}
+
+
+@pytest.mark.unit
+def test_orchestrate_default_mode_uses_branch_files(tmp_path):
+    """Default mode (no flags) detects base branch and calls get_branch_files."""
+    from orchestrate import main as orch_main
+    with patch.object(sys, "argv", [
+        "orchestrate.py", "--path", str(tmp_path),
+        "--checks", "naming", "--format", "json", "--no-cache",
+    ]):
+        with patch("orchestrate._detect_base_branch", return_value="main") as mock_detect:
+            with patch("orchestrate.get_branch_files", return_value=[]) as mock_branch:
+                with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+                    out = io.StringIO()
+                    with io.StringIO() as _err, patch("sys.stdout", out):
+                        orch_main()
+
+    mock_detect.assert_called_once_with(tmp_path)
+    mock_branch.assert_called_once_with(tmp_path, "main")
+
+
+@pytest.mark.unit
+def test_orchestrate_default_mode_falls_back_when_no_base_branch(tmp_path):
+    """When _detect_base_branch returns None, get_branch_files is NOT called."""
+    from orchestrate import main as orch_main
+    with patch.object(sys, "argv", [
+        "orchestrate.py", "--path", str(tmp_path),
+        "--checks", "naming", "--format", "json", "--no-cache",
+    ]):
+        with patch("orchestrate._detect_base_branch", return_value=None):
+            with patch("orchestrate.get_branch_files") as mock_branch:
+                with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+                    out = io.StringIO()
+                    with patch("sys.stdout", out):
+                        orch_main()
+
+    mock_branch.assert_not_called()
+
+
+@pytest.mark.unit
+def test_orchestrate_default_mode_falls_back_when_branch_files_none(tmp_path):
+    """When get_branch_files returns None, full analysis runs (incremental_files stays None)."""
+    from orchestrate import main as orch_main
+    captured_calls = []
+
+    def capture_run_checker(name, mod_path, path, language, files, *args, **kwargs):
+        captured_calls.append(files)
+        return _DUMMY_RESULT
+
+    with patch.object(sys, "argv", [
+        "orchestrate.py", "--path", str(tmp_path),
+        "--checks", "naming", "--format", "json", "--no-cache",
+    ]):
+        with patch("orchestrate._detect_base_branch", return_value="main"):
+            with patch("orchestrate.get_branch_files", return_value=None):
+                with patch("orchestrate._run_checker", side_effect=capture_run_checker):
+                    out = io.StringIO()
+                    with patch("sys.stdout", out):
+                        orch_main()
+
+    # incremental_files was None → checker received None for files param
+    assert captured_calls and captured_calls[0] is None
+
+
+@pytest.mark.unit
+def test_orchestrate_staged_empty_list_runs_without_crash(tmp_path):
+    """--staged with get_staged_files returning [] → checker called with [], exits 0."""
+    from orchestrate import main as orch_main
+    captured_calls = []
+
+    def capture_run_checker(name, mod_path, path, language, files, *args, **kwargs):
+        captured_calls.append(files)
+        return _DUMMY_RESULT
+
+    with patch.object(sys, "argv", [
+        "orchestrate.py", "--path", str(tmp_path),
+        "--checks", "naming", "--format", "json", "--staged", "--no-cache",
+    ]):
+        with patch("orchestrate.get_staged_files", return_value=[]):
+            with patch("orchestrate._run_checker", side_effect=capture_run_checker):
+                out = io.StringIO()
+                with patch("sys.stdout", out):
+                    orch_main()
+
+    assert captured_calls and captured_calls[0] == []

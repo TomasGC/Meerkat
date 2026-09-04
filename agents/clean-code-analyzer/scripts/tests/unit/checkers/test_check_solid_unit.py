@@ -78,3 +78,34 @@ def test_solid_return_schema(tmp_path):
     assert "violations" in result
     assert "files_analyzed" in result
     assert "duration_ms" in result
+
+
+# ── files param + model override ────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_solid_files_param_skips_discovery(tmp_path):
+    """When files param provided, only those files are analyzed (no discovery)."""
+    explicit = tmp_path / "explicit.py"
+    explicit.write_text("class X: pass\n")
+    other = tmp_path / "other.py"
+    other.write_text("class Y: pass\n")
+
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+        run(tmp_path, "python", files=[explicit])
+
+    called_files = mock_analyze.call_args[0][0]
+    assert explicit in called_files
+    assert other not in called_files
+
+
+@pytest.mark.unit
+def test_solid_model_override_propagated(tmp_path):
+    """model param overrides _MODEL default and is passed to analyze_files_parallel."""
+    (tmp_path / "app.py").write_text("class X: pass\n")
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+        run(tmp_path, "python", model="custom-model:latest")
+
+    called_model = mock_analyze.call_args[0][2]  # positional: files, language, model, prompt
+    assert called_model == "custom-model:latest"

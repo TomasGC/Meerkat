@@ -46,3 +46,23 @@ def test_naming(tmp_path, code, expected_violations):
         f"Code: {code!r}\nExpected {expected_violations} violations, "
         f"got {count}: {result['violations']}"
     )
+
+
+# ── non-Python language support ─────────────────────────────────────────────────
+
+@pytest.mark.unit
+def test_naming_typescript_no_crash(tmp_path):
+    """check_naming.run with TypeScript file → success=True, no exception."""
+    (tmp_path / "service.ts").write_text("const x = 3600;\nexport default x;\n")
+    result = run_naming(tmp_path, "typescript")
+    assert result["success"] is True
+    assert isinstance(result["violations"], list)
+
+
+@pytest.mark.unit
+def test_naming_go_no_crash(tmp_path):
+    """check_naming.run with Go file → success=True, no exception."""
+    (tmp_path / "main.go").write_text("package main\nfunc main() {}\n")
+    result = run_naming(tmp_path, "go")
+    assert result["success"] is True
+    assert isinstance(result["violations"], list)
