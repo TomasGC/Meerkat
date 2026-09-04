@@ -430,3 +430,63 @@ class AnalysisCache:
     def _save_metadata(self, metadata: dict[str, Any]):
         """Save metadata to cache."""
         self.metadata_cache.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Per-file Ollama result cache (separate from AnalysisCache)
+# ---------------------------------------------------------------------------
+import time  # noqa: E402
+
+_OLLAMA_CACHE_DIR = Path.home() / ".cache" / "black-box-analyzer" / "ollama"
+
+
+def _ollama_file_hash(file_path: Path) -> str:
+    try:
+        return hashlib.sha256(file_path.read_bytes()).hexdigest()[:16]
+    except OSError:
+        return "nohash"
+
+
+def get_ollama_cached(file_path: Path, analyzer: str, max_age_days: int = 7) -> list[dict] | None:
+    """Return cached Ollama results, or None if missing/expired."""
+    key = f"{_ollama_file_hash(file_path)}_{analyzer}"
+    cache_file = _OLLAMA_CACHE_DIR / f"{key}.json"
+    if not cache_file.exists():
+        return None
+    if max_age_days > 0:
+        age_seconds = time.time() - cache_file.stat().st_mtime
+        if age_seconds > max_age_days * 86400:
+            try:
+                cache_file.unlink()
+            except OSError:
+                pass
+            return None
+    try:
+        return json.loads(cache_file.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def set_ollama_cached(file_path: Path, analyzer: str, results: list[dict]) -> None:
+    """Cache Ollama results for file+analyzer."""
+    _OLLAMA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    key = f"{_ollama_file_hash(file_path)}_{analyzer}"
+    cache_file = _OLLAMA_CACHE_DIR / f"{key}.json"
+    try:
+        cache_file.write_text(json.dumps(results), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def clear_ollama_cache() -> int:
+    """Clear all Ollama cached results. Returns number of entries deleted."""
+    if not _OLLAMA_CACHE_DIR.exists():
+        return 0
+    count = 0
+    for f in _OLLAMA_CACHE_DIR.glob("*.json"):
+        try:
+            f.unlink()
+            count += 1
+        except OSError:
+            pass
+    return count
