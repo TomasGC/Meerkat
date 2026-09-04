@@ -2,7 +2,7 @@
 
 **Purpose**: Claude Code optimization framework — delegates mechanical tasks to local tools (Ollama + Python scripts), keeps Claude focused on strategic reasoning.
 
-**Last Updated**: 2026-07-09
+**Last Updated**: 2026-09-04
 
 ---
 
@@ -50,6 +50,10 @@ Ollama  Scripts  Agents
 │   │   ├── AGENT.md
 │   │   ├── scripts/                 # Analysis scripts + prompts/claude/
 │   │   └── tests/                   # Co-located 4-tier tests
+│   ├── clean-code-analyzer/         # 12-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, ErrorHandling, Composition)
+│   │   ├── AGENT.md
+│   │   ├── scripts/                 # orchestrate.py + 12 checkers + common/ (ollama_utils, cache, file_utils)
+│   │   └── tests/                   # 472 unit + 17 integration/mock (99% coverage)
 │   ├── ci-fix-proposer/
 │   ├── code-analyzer/
 │   ├── ollama-router/
@@ -93,6 +97,7 @@ Ollama  Scripts  Agents
 | Hot | qwen2.5-coder:7b, llama3.2:3b | Preloaded | Instant validation |
 | Warm | qwen2.5-coder:14b, deepseek-coder-v2:16b | 9-16 GB | Deep review |
 | Cold | llama3.3:70b | 42 GB (SWAP) | Critical architecture |
+| Semantic | devstral | ~14 GB | Semantic code analysis (CCA default) |
 
 ---
 

@@ -52,6 +52,14 @@ agents/black-box-analyzer/tests/
 │   │   ├── integration-mocks/
 │   │   ├── integration-reals/
 │   │   └── e2e/
+│   ├── clean-code-analyzer/
+│   │   ├── scripts/tests/
+│   │   │   ├── pytest.ini
+│   │   │   ├── conftest.py
+│   │   │   ├── unit/            # 472 tests — checkers, ollama_utils, cache, file_utils, orchestrate, prompts
+│   │   │   ├── integration/mock/ # 17 tests — mocked Ollama, real filesystem/cache
+│   │   │   ├── integration/real/ # real Ollama (devstral required)
+│   │   │   └── e2e/             # full orchestrate.py CLI against fixture directories
 │   └── tests/
 │       └── integration-reals/  # cross-agent Ollama tests (not BBA-specific)
 │           ├── test_agents.py
@@ -71,19 +79,23 @@ agents/black-box-analyzer/tests/
 
 ## Important: common Namespace Collision
 
-`agents/black-box-analyzer/scripts/common/` and `scripts/common/` are two different packages.
+`agents/black-box-analyzer/scripts/common/`, `agents/clean-code-analyzer/scripts/common/`, and `scripts/common/` are three independent packages.
 Python's import cache will find whichever is on sys.path first.
 
-**Rule**: Always run BBA tests and scripts tests in **separate pytest invocations**.
+**Rule**: Always run BBA, CCA, and scripts tests in **separate pytest invocations**.
 
 ```bash
 # OK
 pytest agents/black-box-analyzer/tests -m units
 pytest scripts/cli/tests -m units
+cd agents/clean-code-analyzer/scripts && python -m pytest tests/unit/ -q
 
 # NOT OK (common collision)
 pytest agents/black-box-analyzer/tests scripts/cli/tests -m units
+pytest agents/clean-code-analyzer/scripts/tests agents/black-box-analyzer/tests -m units
 ```
+
+**Note**: CCA uses `tests/unit/` (singular) and `tests/integration/mock/` — not the standard `units/` / `integration-mocks/` naming. Always run from `agents/clean-code-analyzer/scripts/` as the working directory.
 
 ---
 
