@@ -1,0 +1,21 @@
+Analyze the following {language} code for CQRS (Command Query Responsibility Segregation) violations.
+
+For each violation found, report:
+- method: method/function name
+- line: approximate line number
+- type: one of: command-returns-data, query-has-side-effects, mixed-responsibility
+- severity: high, medium, or low
+- violation: what CQRS rule is broken
+- suggestion: how to separate command from query
+
+Rules:
+- Commands: mutate state, should return void or only an ID/acknowledgment
+- Queries: return data, must have NO side effects (no DB writes, no state mutation, no counters)
+
+Violations to find:
+- Save()/Create()/Update() that returns the full entity graph → command-returns-data
+- Get()/Find()/List() that increments a counter, writes audit log, or mutates state → query-has-side-effects
+- Process()/Handle() that both modifies state AND returns business data → mixed-responsibility
+
+Code:
+{source}

@@ -1,0 +1,18 @@
+Analyze the following {language} code for SLAP (Single Level of Abstraction Principle) violations.
+
+For each violation found, report:
+- function: function/method name
+- line: approximate line number
+- severity: high, medium, or low
+- violation: which mixed abstraction levels are present (e.g. "high-level ProcessOrder() mixed with low-level SQL query string building")
+- suggestion: what to extract into a helper function to isolate the low-level detail
+
+SLAP rule: each function should operate at one level of abstraction.
+
+High-level operations: calling domain methods (ProcessOrder, SendEmail, ValidateUser), orchestrating steps, making business decisions.
+Low-level operations: string parsing/manipulation, bit operations, raw SQL queries, file I/O, HTTP request building, serialization details.
+
+A function violates SLAP when it mixes both: calling high-level orchestration methods alongside low-level implementation details in the same function body.
+
+Code:
+{source}

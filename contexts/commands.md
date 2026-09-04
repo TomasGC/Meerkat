@@ -4,6 +4,41 @@ Commands for `~/.claude/` scripts and tests.
 
 ---
 
+## Clean Code Analyzer (CCA)
+
+### Analyze a project
+
+```bash
+python ~/.claude/agents/clean-code-analyzer/scripts/orchestrate.py --path /path/to/project
+python ~/.claude/agents/clean-code-analyzer/scripts/orchestrate.py --path /path/to/project --full
+python ~/.claude/agents/clean-code-analyzer/scripts/orchestrate.py --path /path/to/project --checks solid,dry
+python ~/.claude/agents/clean-code-analyzer/scripts/orchestrate.py --path /path/to/project --format table
+python ~/.claude/agents/clean-code-analyzer/scripts/orchestrate.py --path /path/to/project --fast
+python ~/.claude/agents/clean-code-analyzer/scripts/orchestrate.py --path /path/to/project --model qwen2.5-coder:14b
+python ~/.claude/agents/clean-code-analyzer/scripts/orchestrate.py --path /path/to/project --no-cache
+python ~/.claude/agents/clean-code-analyzer/scripts/orchestrate.py --path /path/to/project --clear-cache
+```
+
+**Flags**:
+- (no flags) — incremental: branch-vs-main changed files only
+- `--full` — analyze entire repo
+- `--checks solid,dry` — run specific principles only
+- `--fast` — use qwen2.5-coder:7b (faster, lower quality)
+- `--model MODEL` — override Ollama model for semantic checkers
+- `--no-cache` — bypass per-file content-hash cache
+- `--agents N` — N independent Ollama calls per file, dedup-merged
+
+### CCA tests
+
+```bash
+cd ~/.claude/agents/clean-code-analyzer/scripts
+python -m pytest tests/unit/ -q
+python -m pytest tests/integration/mock/ -q
+python -m pytest tests/unit/ tests/integration/mock/ --cov=checkers --cov=common --cov=orchestrate -q
+```
+
+---
+
 ## Tests
 
 ### Run by tier (from ~/.claude/)

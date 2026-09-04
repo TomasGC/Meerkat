@@ -41,3 +41,14 @@
 - No TODO/FIXME — fix or create issue
 - Type annotations on public functions
 
+---
+
+## Agent Conventions
+
+### CCA (Clean Code Analyzer)
+- Default model: `devstral` (semantic checkers: SOLID, KISS, YAGNI, CQRS, DDD, SLAP)
+- Fast model: `qwen2.5-coder:7b` (via `--fast`)
+- Tests run via `python -m pytest` directly from `agents/clean-code-analyzer/scripts/`
+- Prompts in `scripts/prompts/ollama/` (6 templates) and `scripts/prompts/claude/` (6 fallback templates)
+- Test naming: `tests/unit/` (singular), `tests/integration/mock/`, `tests/integration/real/` — differs from the global `units/`/`integration-mocks/` convention
+
