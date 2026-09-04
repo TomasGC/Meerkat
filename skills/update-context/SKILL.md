@@ -11,10 +11,11 @@ Update project documentation after completing tasks, with automatic GitHub issue
 
 After completing a task (feature, bug fix, refactoring), this skill:
 
-1. **Updates KANBAN.md** - One line per issue (update existing or create new)
+1. **Updates contexts/kanban.md** - One line per issue (update existing or create new)
 2. **Adds a comment to the GitHub issue** with technical details (if user wants)
-3. **Updates ARCHITECTURE.md** if there were architectural changes
-4. **Creates rules files** if new patterns were discovered
+3. **Updates contexts/architecture.md** if there were architectural changes
+4. **Updates other contexts/ files** (tests.md, conventions.md, commands.md) when relevant patterns change
+5. **Creates rules files** if new patterns were discovered
 
 ## Persona Definition
 
@@ -48,8 +49,8 @@ You are an **principal developer, principal product owner, and principal archite
 This skill has access to the following tools:
 
 ### Core Tools
-- **Read** - Read KANBAN.md, ARCHITECTURE.md, rules/ files
-- **Edit** - Update KANBAN.md, ARCHITECTURE.md (after user validation)
+- **Read** - Read contexts/kanban.md, contexts/architecture.md, contexts/tests.md, contexts/conventions.md, contexts/commands.md, rules/ files
+- **Edit** - Update contexts/kanban.md, contexts/architecture.md and other contexts/ sub-files (after user validation)
 - **Write** - Create new rules files if patterns discovered
 
 ### Utility Scripts
@@ -120,7 +121,14 @@ This skill has access to the following tools:
 
 ## Hard Constraints (Non-Negotiable)
 
-### KANBAN.md Format Rules
+### File Location
+
+- All context files live under `.claude/contexts/`
+- kanban: `.claude/contexts/kanban.md`
+- architecture: `.claude/contexts/architecture.md`
+- tests, conventions, commands: `.claude/contexts/<name>.md`
+
+### kanban.md Format Rules
 
 1. **One entry per issue** - NEVER create duplicate entries
    - Search for `[TICKET-ID]` before creating new entry
@@ -195,7 +203,7 @@ This skill has access to the following tools:
 
 ### Update Strategy
 
-**When issue exists in KANBAN.md**:
+**When issue exists in contexts/kanban.md**:
 1. Read entire existing entry
 2. Update date to today
 3. MERGE new work into description (cumulative)
@@ -209,7 +217,7 @@ This skill has access to the following tools:
 
 ## Self-Verification Checklist
 
-Before saving changes to KANBAN.md, verify:
+Before saving changes to contexts/kanban.md, verify:
 
 - [ ] Searched for existing `[TICKET-ID]` entry
 - [ ] Date is today's date in `YYYY-MM-DD` format
@@ -308,9 +316,9 @@ Options:
 What would you like to do?
 ```
 
-**If KANBAN.md doesn't exist**:
+**If contexts/kanban.md doesn't exist**:
 ```
-⚠️ KANBAN.md doesn't exist in .claude/
+⚠️ .claude/contexts/kanban.md not found.
 
 I can create it with the basic structure. Would you like me to do that?
 ```
@@ -554,9 +562,9 @@ User says task is done
     ↓
 Ask: Ticket ID? Commits?
     ↓
-Read KANBAN.md
+Read .claude/contexts/kanban.md
     ↓
-Search for [TICKET-ID] in KANBAN.md
+Search for [TICKET-ID] in contexts/kanban.md
     ↓
 If found: Update existing line (date + description + commits)
 If not found: Create new line at top
@@ -596,7 +604,7 @@ Report completion
 
 **User:** "finished #123, added charge and refund. commit abc123f. update docs"
 
-**KANBAN.md before:**
+**contexts/kanban.md before:**
 ```markdown
 ---
 
@@ -605,7 +613,7 @@ Report completion
 ---
 ```
 
-**KANBAN.md after:**
+**contexts/kanban.md after:**
 ```markdown
 ---
 
@@ -621,7 +629,7 @@ Commit: abc123f
 
 **User:** "continued #123, added cancel + tests. commits def456g, ghi789j. update"
 
-**KANBAN.md before:**
+**contexts/kanban.md before:**
 ```markdown
 ---
 
@@ -633,7 +641,7 @@ Commit: abc123f
 ---
 ```
 
-**KANBAN.md after:**
+**contexts/kanban.md after:**
 ```markdown
 ---
 
@@ -653,7 +661,7 @@ Commits: abc123f, def456g, ghi789j
 
 **User:** "fixed bug #124, UTF-8 issue. commit xyz987k. github-wiki doc at https://conf.company.com/utf8-fix. update"
 
-**KANBAN.md before:**
+**contexts/kanban.md before:**
 ```markdown
 ---
 
@@ -666,7 +674,7 @@ Commits: abc123f, def456g, ghi789j
 ---
 ```
 
-**KANBAN.md after:**
+**contexts/kanban.md after:**
 ```markdown
 ---
 
@@ -690,8 +698,8 @@ Commits: abc123f, def456g, ghi789j
 
 ## Important Notes
 
-- **All content in English** (KANBAN, GitHub comments, ARCHITECTURE)
-- **KANBAN.md is a log** - no backlog, no "Done" section
+- **All content in English** (kanban, GitHub comments, architecture)
+- **contexts/kanban.md is a log** - no backlog, no "Done" section
 - **One line per issue** - Update existing, don't duplicate
 - **Cumulative description** - Describe all work done, not just today's session
 - **GitHub is source of truth** for tasks and backlog
@@ -712,15 +720,15 @@ Commits: abc123f, def456g, ghi789j
 
 **If GitHub plugin not configured:**
 - Skip GitHub steps
-- Update KANBAN.md, ARCHITECTURE.md, rules/ only
+- Update contexts/kanban.md, contexts/architecture.md, rules/ only
 - Inform user GitHub integration is not available
 
-## KANBAN.md Search Algorithm
+## kanban.md Search Algorithm
 
 To find if issue exists:
 
 ```bash
-# Read KANBAN.md content
+# Read .claude/contexts/kanban.md content
 # Search for pattern: - \[TICKET-ID\]
 # Example: Search for "- [#123]"
 
