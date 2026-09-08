@@ -4,6 +4,21 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-09-08 - [#9] Rework BBA: async pipeline, orchestrate.py, test gap checkers
+
+- `orchestrate.py`: new entry point with incremental (branch-vs-main) + full mode, `--role`, `--fast`, `--clear-cache`, delegates to `parallel_analyzer.py` via subprocess
+- `checkers/` package: 4 test gap checkers (`check_unit_gaps`, `check_integ_mock_gaps`, `check_integ_real_gaps`, `check_e2e_gaps`) sharing the CCA checker contract; `_utils.py` for shared file discovery
+- `prompts/local/`: 4 prompt templates for AI-assisted gap detection (force-added past `*local*` gitignore)
+- BBA docs (`AGENT.md`, `doc.md`, `examples.md`): all Ollama/model-name references replaced with "local AI"
+- BBA test directories aligned to CCA naming: `unit/`, `integration/mock/`, `integration/real/`
+- 35 new tests: 28 unit (4×7 per checker + `_utils`), 4 integration/mock (real filesystem layout), 3 e2e (orchestrate.py `--help`/`--clear-cache`/nonexistent path)
+
+tags: #bba #checkers #orchestrate #testing #local-ai
+Ref: https://github.com/TomasGC/Meerkat/issues/9
+Commits: 8f5a2ce, 0b38efd, a14f52c, 7957fa9
+
+---
+
 2026-09-08 - [#10] Provider-agnostic local AI abstraction
 
 - configs/template_models_config.json + scripts/model_config.py: role-based model map (analyzer/fast/deep/reasoning/guard) for local + online providers; singleton reader; auto-copies template on first run

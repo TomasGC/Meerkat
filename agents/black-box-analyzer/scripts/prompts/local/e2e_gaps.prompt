@@ -1,0 +1,18 @@
+You are a test coverage analyzer. Given this {language} source file, identify user-facing flows or entry points that NEED end-to-end tests.
+
+E2E tests are needed for: API endpoints that are part of a user workflow, CLI commands that orchestrate multiple steps, UI event handlers triggering multi-step operations, webhook handlers driving user-visible outcomes, complete CRUD flows (create → read → update → delete).
+
+For each flow needing E2E coverage, output:
+- "function": entry point function/method name
+- "line": line number of the entry point
+- "severity": "high" (critical user journey or revenue path), "medium" (standard user flow), "low" (edge case flow)
+- "flow_type": "api_endpoint" | "cli_command" | "ui_handler" | "webhook" | "crud_flow"
+- "reason": what user journey this entry point covers
+- "test_scenario": one-line description of the E2E test scenario
+
+Return ONLY a JSON array. Empty array if no E2E tests are needed. No explanation, no markdown.
+
+Source file ({language}):
+```
+{source}
+```

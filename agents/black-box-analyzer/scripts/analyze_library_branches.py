@@ -156,7 +156,7 @@ def analyze_library(
 
 
 def _merge_runs(runs: list[list[dict]]) -> list[dict]:
-    """Merge N independent Ollama analysis runs, deduplicating by (method, condition)."""
+    """Merge N independent local AI analysis runs, deduplicating by (method, condition)."""
     merged: dict[str, dict] = {}
     seen_branches: set[tuple] = set()
     for run in runs:
@@ -181,7 +181,7 @@ def main():
 Examples:
   python analyze_library_branches.py ./src --language csharp --output methods.json
   python analyze_library_branches.py ./lib --language auto --verbose
-  python analyze_library_branches.py . --language python --model qwen2.5-coder:14b
+  python analyze_library_branches.py . --language python --role deep
         """,
     )
     parser.add_argument("src_path", type=Path, help="Path to source directory")
@@ -210,13 +210,13 @@ Examples:
         "--max-chars",
         type=int,
         default=8000,
-        help="Max characters per file sent to Ollama (default: 8000)",
+        help="Max characters per file sent to local AI (default: 8000)",
     )
     parser.add_argument(
         "--agents",
         type=int,
         default=1,
-        help="Number of independent Ollama runs to merge per type (default: 1)",
+        help="Number of independent local AI runs to merge per type (default: 1)",
     )
     parser.add_argument(
         "--typed-agents",

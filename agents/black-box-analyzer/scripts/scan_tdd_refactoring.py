@@ -120,7 +120,7 @@ def main():
 Examples:
   python scan_tdd_refactoring.py ./src --language csharp --output refactoring.json
   python scan_tdd_refactoring.py ./lib --language auto --verbose
-  python scan_tdd_refactoring.py . --language python --model qwen2.5-coder:14b
+  python scan_tdd_refactoring.py . --language python --role deep
         """,
     )
     parser.add_argument("src_path", type=Path, help="Path to source directory")
@@ -149,7 +149,7 @@ Examples:
         "--max-chars",
         type=int,
         default=8000,
-        help="Max characters per file sent to Ollama (default: 8000)",
+        help="Max characters per file sent to local AI (default: 8000)",
     )
     parser.add_argument(
         "--sort-by",
@@ -161,7 +161,7 @@ Examples:
         "--agents",
         type=int,
         default=1,
-        help="Number of independent Ollama runs to merge (default: 1)",
+        help="Number of independent local AI runs to merge (default: 1)",
     )
 
     args = parser.parse_args()

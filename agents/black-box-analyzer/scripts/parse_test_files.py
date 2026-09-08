@@ -39,8 +39,8 @@ from common.utils import (
 # ---------------------------------------------------------------------------
 # Test-type classification (UNIT / INT_MOCK / INT_REAL / E2E)
 # ---------------------------------------------------------------------------
-# Fast regex-first pass — zero Ollama tokens for clear cases.
-# Ollama fallback only for ambiguous bodies.
+# Fast regex-first pass — zero local AI tokens for clear cases.
+# local AI fallback only for ambiguous bodies.
 
 _INT_REAL_PATTERNS = re.compile(
     r"testcontainers|DockerComposeContainer|@SpringBootTest|WebApplicationFactory"
@@ -81,8 +81,8 @@ def infer_test_type(test_name: str, test_body: str) -> str:
     """
     Classify a test as unit / int_mock / int_real / e2e.
 
-    Uses regex for speed (covers ~90% of cases). Falls back to Ollama
-    for the ambiguous remainder — only if Ollama is available.
+    Uses regex for speed (covers ~90% of cases). Falls back to local AI
+    for the ambiguous remainder — only if local AI is available.
     """
     if not test_body or not test_body.strip():
         return "unit"  # no body to inspect — safe default

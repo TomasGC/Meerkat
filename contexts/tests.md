@@ -8,9 +8,9 @@
 
 | Tier | Directory | Marker | What |
 |------|-----------|--------|------|
-| Unit | `tests/units/` | `units` | Pure in-process, no I/O, all mocked |
-| Integration-mocks | `tests/integration-mocks/` | `integration_mocks` | Mocked subprocess/tools |
-| Integration-reals | `tests/integration-reals/` | `integration_reals` | Live Ollama or real filesystem |
+| Unit | `tests/unit/` | `units` | Pure in-process, no I/O, all mocked |
+| Integration-mocks | `tests/integration/mock/` | `integration_mocks` | Mocked subprocess/tools |
+| Integration-reals | `tests/integration/real/` | `integration_reals` | Live Ollama or real filesystem |
 | E2E | `tests/e2e/` | `e2e` | `subprocess.run` on actual scripts |
 
 Markers applied automatically by root `conftest.py` based on directory name.
@@ -31,8 +31,8 @@ scripts/cli/tests/
 agents/black-box-analyzer/scripts/library_analyzer.py
 agents/black-box-analyzer/tests/
     conftest.py
-    units/test_library_analyzer.py
-    integration-mocks/test_library_analyzer.py
+    unit/test_library_analyzer.py
+    integration/mock/test_library_analyzer.py
     e2e/test_end_to_end.py
 ```
 
@@ -48,10 +48,10 @@ agents/black-box-analyzer/tests/
 ├── agents/
 │   ├── black-box-analyzer/tests/
 │   │   ├── conftest.py
-│   │   ├── units/
-│   │   ├── integration-mocks/
-│   │   ├── integration-reals/
-│   │   └── e2e/
+│   │   ├── unit/            # 384 tests — checkers/_utils, 4 gap checkers (7 each), parse_test_files, etc.
+│   │   ├── integration/mock/ # 47 tests — library_analyzer, analyze_library_branches, 4 gap checkers (1 each)
+│   │   ├── integration/real/ # real local AI required
+│   │   └── e2e/             # 33 tests — parallel_analyzer, orchestrate, collect_coverage, diff_analysis, etc.
 │   ├── clean-code-analyzer/
 │   │   ├── scripts/tests/
 │   │   │   ├── pytest.ini
@@ -94,9 +94,10 @@ cd agents/clean-code-analyzer/scripts && python -m pytest tests/unit/ -q
 # NOT OK (common collision)
 pytest agents/black-box-analyzer/tests scripts/cli/tests -m units
 pytest agents/clean-code-analyzer/scripts/tests agents/black-box-analyzer/tests -m units
+
 ```
 
-**Note**: CCA uses `tests/unit/` (singular) and `tests/integration/mock/` — not the standard `units/` / `integration-mocks/` naming. Always run from `agents/clean-code-analyzer/scripts/` as the working directory.
+**Note**: Always run from `agents/clean-code-analyzer/scripts/` as the working directory (to avoid `common` namespace collision).
 
 ---
 

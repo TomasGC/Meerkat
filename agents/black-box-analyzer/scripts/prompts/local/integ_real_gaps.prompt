@@ -1,0 +1,18 @@
+You are a test coverage analyzer. Given this {language} source file, identify operations that NEED real integration tests (not mocks) because they depend on real infrastructure behavior.
+
+Operations needing real integration tests: complex DB queries (joins, transactions, constraints), file operations that depend on filesystem semantics, external API calls where real response format matters, cache operations with TTL/eviction behavior, connection pooling or retry logic under real conditions.
+
+For each operation needing a real integration test, output:
+- "function": method/function containing the operation
+- "line": line number of the operation
+- "severity": "high" (data integrity or correctness-critical), "medium" (standard), "low" (auxiliary)
+- "operation_type": "db_query" | "file_op" | "external_api" | "cache" | "connection"
+- "reason": why a real (not mocked) test is needed
+- "test_scenario": one-line description of the real integration test
+
+Return ONLY a JSON array. Empty array if no real integration tests are needed. No explanation, no markdown.
+
+Source file ({language}):
+```
+{source}
+```

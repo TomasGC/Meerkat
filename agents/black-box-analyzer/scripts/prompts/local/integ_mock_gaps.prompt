@@ -1,0 +1,18 @@
+You are a test coverage analyzer. Given this {language} source file, identify service interactions (DB calls, HTTP clients, message queues, external services) that NEED mock integration tests.
+
+An interaction needs a mock integration test if it: calls a database, makes HTTP requests to external services, publishes/consumes from message queues, or depends on external service behavior that should be verified with controlled inputs.
+
+For each uncovered interaction, output:
+- "function": method/function name where the interaction occurs
+- "line": line number of the interaction call
+- "severity": "high" (data integrity or critical path), "medium" (standard integration), "low" (auxiliary)
+- "interaction_type": "database" | "http" | "queue" | "filesystem" | "external_service"
+- "reason": what specific interaction needs a mock test
+- "test_scenario": one-line description of the mock integration test to write
+
+Return ONLY a JSON array. Empty array if nothing needs mock integration testing. No explanation, no markdown.
+
+Source file ({language}):
+```
+{source}
+```

@@ -7,8 +7,8 @@
 
 ## Core Patterns
 
-1. **Strategic Delegation** — mechanical tasks routed to local tools (scripts/Ollama/agents), Claude handles only strategic reasoning
-2. **Checker Strategy** — 12 CCA checkers implement the same `run(path, language, **kwargs) -> dict` interface; orchestrator treats them uniformly
+1. **Strategic Delegation** — mechanical tasks routed to local tools (scripts/local AI/agents), Claude handles only strategic reasoning
+2. **Checker Strategy** — CCA (12 checkers) and BBA (4 gap checkers) share the same `run(path, language, **kwargs) -> dict` interface; orchestrators treat them uniformly
 3. **Mechanical vs Semantic Split** — checkers categorized by whether they need a model (AST/grep = mechanical, SOLID/KISS/etc = semantic); different execution paths, same output contract
 4. **Async Pipeline** — `asyncio.run(gather(*tasks, return_exceptions=True))` fans out all N file HTTP requests simultaneously; GPU is the only bottleneck
 5. **Content-Hash Cache** — model results keyed by `(file, checker, role, content_hash)`; invalidation is implicit (hash changes on file edit), no TTL management required at write time
@@ -21,7 +21,7 @@
 
 ---
 
-## CCA Checker Contract
+## Checker Contract (CCA + BBA)
 
 Every checker (mechanical or semantic) returns the same dict schema:
 

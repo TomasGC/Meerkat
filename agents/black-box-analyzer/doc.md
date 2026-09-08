@@ -31,11 +31,11 @@ Operational detail for each analysis phase. AGENT.md has the summary; this has t
 ### Library Mode
 
 **Script**: `analyze_library_branches.py <src_path> --language auto --output library_methods.json`
-- Delegates to Ollama `qwen2.5-coder:7b` via `scripts/prompts/ollama/analyze_library_branches.prompt`
+- Delegates to local AI via `scripts/prompts/local/analyze_library_branches.prompt`
 - Extracts: public methods, all branches (null guards, throw conditions, switch/match cases, enum validation, boundary checks, early returns)
 - Near-zero Claude tokens
 
-**Manual fallback** (Ollama unavailable → use `scripts/prompts/claude/library_branch_analysis.prompt`):
+**Manual fallback** (local AI unavailable → use `scripts/prompts/claude/library_branch_analysis.prompt`):
 - For each source file, read public API surface
 - For each public method enumerate:
   - Happy path: valid inputs → expected return
@@ -69,7 +69,7 @@ Operational detail for each analysis phase. AGENT.md has the summary; this has t
 
 **Scripts**:
 - `parse_test_files.py <project> --output tests.json [--previous-pass <path>]`
-  - Classifies each test as unit/int_mock/int_real/e2e (regex + Ollama fallback via `ollama/infer_test_type.prompt`)
+  - Classifies each test as unit/int_mock/int_real/e2e (regex + local AI fallback via `local/infer_test_type.prompt`)
   - With `--previous-pass`: diffs against prior run, reports ONLY newly added tests (60-80% less re-analysis)
 - `generate_coverage_matrix.py scenarios.json tests.json --output matrix.json --markdown coverage.md [--mode library]`
   - Produces scenario × test matrix with ✅/❌
@@ -131,9 +131,9 @@ Levels: CRITICAL ≥ 60 | HIGH 40-59 | MEDIUM 20-39 | LOW < 20
 **Goal**: Find untestable code patterns; propose minimal refactoring that unlocks new tests.
 
 **Script**: `scan_tdd_refactoring.py <src_path> --language auto --output refactoring.json`
-- Delegates to Ollama via `scripts/prompts/ollama/scan_tdd_refactoring.prompt`
+- Delegates to local AI via `scripts/prompts/local/scan_tdd_refactoring.prompt`
 
-**Manual fallback** (Ollama unavailable → use `scripts/prompts/claude/tdd_refactoring_analysis.prompt`):
+**Manual fallback** (local AI unavailable → use `scripts/prompts/claude/tdd_refactoring_analysis.prompt`):
 
 Anti-patterns to find:
 - `static_method_call` — concrete static in testable method (can't mock)

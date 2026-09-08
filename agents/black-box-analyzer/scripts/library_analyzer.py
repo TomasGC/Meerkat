@@ -3,8 +3,8 @@
 LibraryAnalyzer — white-box analyzer for library/SDK projects (any language).
 
 Activated when analyze_project_structure detects 0 HTTP endpoints.
-Delegates to analyze_library_branches.py (Ollama) for branch extraction
-and scan_tdd_refactoring.py (Ollama) for testability analysis.
+Delegates to analyze_library_branches.py (local AI) for branch extraction
+and scan_tdd_refactoring.py (local AI) for testability analysis.
 """
 
 import json

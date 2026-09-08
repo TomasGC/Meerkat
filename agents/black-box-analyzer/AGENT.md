@@ -65,10 +65,10 @@ Full phase details and manual fallbacks: `doc.md`. Full workflow examples: `exam
 
 **LIBRARY MODE — no `Read` on source (hard rule)**:
 - NEVER use the `Read` tool to read `.cs`, `.py`, `.ts`, `.go`, `.rs`, `.java`, `.kt`, `.rb` source files.
-- Delegate ALL source analysis to `analyze_library_branches.py` (Ollama — near-zero tokens).
-- Fallback when Ollama unavailable: use `scripts/prompts/claude/library_branch_analysis.prompt` directly.
+- Delegate ALL source analysis to `analyze_library_branches.py` (local AI — near-zero tokens).
+- Fallback when local AI unavailable: use `scripts/prompts/claude/library_branch_analysis.prompt` directly.
 - `Read` permitted ONLY for: project files (`.csproj`, `package.json`, `go.mod`, etc.) in Phase 0, and test files in Phase 2.
-- **Why**: Ollama handles branch extraction for any language. Reading source with `Read` wastes 10-30K tokens per file with no quality gain.
+- **Why**: local AI handles branch extraction for any language. Reading source with `Read` wastes 10-30K tokens per file with no quality gain.
 
 ### 2. Exhaustive Enumeration Required — All Test Types Mandatory
 
@@ -81,7 +81,7 @@ All input/output combinations. Edge cases: null, empty, max, min, invalid. Combi
 | Library / SDK | MANDATORY | MANDATORY | MANDATORY | Never (no entry point) |
 | API / Web / App / CLI / Mobile | MANDATORY | MANDATORY | MANDATORY | MANDATORY |
 
-- `--typed-agents` activates one dedicated Ollama agent per type, run in parallel → max recall per tier
+- `--typed-agents` activates one dedicated local AI agent per type, run in parallel → max recall per tier
 - `--e2e` required for API/app/web/CLI/mobile projects (not libraries)
 - Use `--typed-agents --e2e` for all non-library projects
 
@@ -104,14 +104,14 @@ Infer structure automatically. No intermediate questions unless critical info is
 Located in `~/.claude/agents/black-box-analyzer/scripts/`.
 
 Prompts:
-- `scripts/prompts/ollama/` — Ollama prompts (`qwen2.5-coder:7b`, near-zero Claude tokens)
-- `scripts/prompts/claude/` — Claude fallback prompts (when Ollama unavailable)
+- `scripts/prompts/local/` — local AI prompts (near-zero Claude tokens)
+- `scripts/prompts/claude/` — Claude fallback prompts (when local AI unavailable)
 
 | Script | Purpose |
 |---|---|
 | `analyze_project_structure.py` | Phase 0: detect language, frameworks, endpoint/test counts |
-| `analyze_library_branches.py` | Library Phase 1: extract public methods + branches via Ollama |
-| `scan_tdd_refactoring.py` | Phase 4b: detect testability blockers via Ollama |
+| `analyze_library_branches.py` | Library Phase 1: extract public methods + branches via local AI |
+| `scan_tdd_refactoring.py` | Phase 4b: detect testability blockers via local AI |
 | `parse_test_files.py` | Phase 2: parse tests, classify unit/int_mock/int_real/e2e |
 | `generate_coverage_matrix.py` | Phase 3: scenario × test matrix |
 | `prioritize_by_risk.py` | Phase 4: risk scoring |
@@ -133,7 +133,7 @@ sd=~/.claude/agents/black-box-analyzer/scripts
 python $sd/analyze_project_structure.py /path/to/project > project_info.json
 
 # Phase 1 + Phase 4b run in parallel automatically (via library_analyzer.py)
-# --typed-agents: 1 dedicated Ollama agent per test type (unit/int_mock/int_real), parallel
+# --typed-agents: 1 dedicated local AI agent per test type (unit/int_mock/int_real), parallel
 # --agents 3: 3 independent runs per type, dedup-merged — combine both for max coverage:
 python $sd/analyze_library_branches.py /path/to/project/src --language auto --output library_methods.json --typed-agents --agents 3
 # For API/app/web projects, add --e2e to also run the e2e-focused agent:
@@ -147,10 +147,10 @@ python $sd/scan_tdd_refactoring.py /path/to/project/src --language auto --output
 ```
 
 **`--agents N` flag** (both `analyze_library_branches.py` and `scan_tdd_refactoring.py`):
-- Runs N independent Ollama instances in parallel on the same files
+- Runs N independent local AI instances in parallel on the same files
 - Results deduped by `(method, condition)` for branches and `(location, anti_pattern)` for blockers
 - N=2-3 recommended: catches branches/blockers a single run misses (~15-30% more coverage)
-- N>3: diminishing returns; Ollama queues requests so wall-clock grows linearly past ~3
+- N>3: diminishing returns; local AI queues requests so wall-clock grows linearly past ~3
 
 **Parallel phases** (`library_analyzer.py`):
 - Phase 1 (`analyze_library_branches`) and Phase 4b (`scan_tdd_refactoring`) run concurrently via `ThreadPoolExecutor(2)`
