@@ -14,7 +14,7 @@ python analyze_project_structure.py /path/to/RestClient > project_info.json
 # → language: C#, endpoints: 0, test_files: 3 → LIBRARY MODE
 ```
 
-**Phase 1** — extract branches via Ollama:
+**Phase 1** — extract branches via local AI:
 ```bash
 python analyze_library_branches.py /path/to/RestClient/src --language csharp --output library_methods.json
 # → 14 public methods, 47 branches extracted
@@ -107,7 +107,7 @@ Patterns:
 
 ```
 Phase 1/6: Extracting branches for 14 public methods...
-  → analyze_library_branches.py running (Ollama qwen2.5-coder:7b)
+  → analyze_library_branches.py running (local AI)
   → 47 branches extracted across 14 methods
 Phase 2/6: Parsing 8 existing test files (incremental — diff against last pass)...
   → 2 new tests since last pass

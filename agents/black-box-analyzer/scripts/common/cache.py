@@ -433,7 +433,7 @@ class AnalysisCache:
 
 
 # ---------------------------------------------------------------------------
-# Per-file Ollama result cache (separate from AnalysisCache)
+# Per-file local AI result cache (separate from AnalysisCache)
 # ---------------------------------------------------------------------------
 import time  # noqa: E402
 

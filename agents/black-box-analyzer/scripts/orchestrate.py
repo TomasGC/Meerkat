@@ -7,7 +7,7 @@ Usage:
   python orchestrate.py --path /project
   python orchestrate.py --path /project --full
   python orchestrate.py --path /project --fast
-  python orchestrate.py --path /project --model qwen2.5-coder:14b
+  python orchestrate.py --path /project --role deep
   python orchestrate.py --path /project --agents 2
   python orchestrate.py --path /project --no-cache
   python orchestrate.py --path /project --clear-cache
