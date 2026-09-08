@@ -48,10 +48,10 @@ agents/black-box-analyzer/tests/
 ├── agents/
 │   ├── black-box-analyzer/tests/
 │   │   ├── conftest.py
-│   │   ├── unit/
-│   │   ├── integration/mock/
-│   │   ├── integration/real/
-│   │   └── e2e/
+│   │   ├── unit/            # 384 tests — checkers/_utils, 4 gap checkers (7 each), parse_test_files, etc.
+│   │   ├── integration/mock/ # 47 tests — library_analyzer, analyze_library_branches, 4 gap checkers (1 each)
+│   │   ├── integration/real/ # real local AI required
+│   │   └── e2e/             # 33 tests — parallel_analyzer, orchestrate, collect_coverage, diff_analysis, etc.
 │   ├── clean-code-analyzer/
 │   │   ├── scripts/tests/
 │   │   │   ├── pytest.ini

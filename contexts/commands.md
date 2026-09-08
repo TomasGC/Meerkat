@@ -39,13 +39,47 @@ python -m pytest tests/unit/ tests/integration/mock/ --cov=checkers --cov=common
 
 ---
 
+## Black-Box Analyzer (BBA)
+
+### Analyze a project
+
+```bash
+python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --path /path/to/project
+python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --path /path/to/project --full
+python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --path /path/to/project --fast
+python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --path /path/to/project --role deep
+python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --path /path/to/project --no-cache
+python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --path /path/to/project --clear-cache
+```
+
+**Flags**:
+- (no flags) — incremental: branch-vs-main changed files only
+- `--full` — analyze entire repo
+- `--fast` — use `fast` model role (lighter, quicker)
+- `--role ROLE` — override model role: analyzer, fast, deep, reasoning
+- `--agents N` — N independent local AI calls per file, dedup-merged
+- `--no-cache` — bypass per-file local AI cache
+- `--clear-cache` — delete all cached local AI results and exit
+
+### BBA tests
+
+```bash
+cd ~/.claude/agents/black-box-analyzer
+python -m pytest tests/unit/ -q
+python -m pytest tests/integration/mock/ -q
+python -m pytest tests/e2e/ -q
+python -m pytest tests/unit/ tests/integration/mock/ -q  # CI-safe (no local AI required)
+```
+
+---
+
 ## Tests
 
 ### Run by tier (from ~/.claude/)
 ```bash
-pytest agents/black-box-analyzer/tests/units/ -v
-pytest agents/black-box-analyzer/tests/integration-mocks/ -v
-pytest agents/black-box-analyzer/tests/integration-reals/ -v
+pytest agents/black-box-analyzer/tests/unit/ -v
+pytest agents/black-box-analyzer/tests/integration/mock/ -v
+pytest agents/black-box-analyzer/tests/integration/real/ -v
 pytest agents/black-box-analyzer/tests/e2e/ -v
 
 pytest scripts/cli/tests/units/ -v
@@ -54,19 +88,19 @@ pytest scripts/common/tests/units/ -v
 pytest scripts/tests/e2e/ -v
 ```
 
-### Run by marker (avoid BBA + scripts together — common namespace collision)
+### Run by tier (avoid BBA + scripts together — common namespace collision)
 ```bash
 # BBA only
-pytest agents/black-box-analyzer/tests -m units
-pytest agents/black-box-analyzer/tests -m "units or integration_mocks"
+pytest agents/black-box-analyzer/tests/unit/ -v
+pytest agents/black-box-analyzer/tests/unit/ agents/black-box-analyzer/tests/integration/mock/ -q
 
 # Scripts only
 pytest scripts/tests scripts/cli/tests scripts/common/tests -m units
 ```
 
-### CI-safe (no real Ollama required)
+### CI-safe (no local AI required)
 ```bash
-pytest agents/black-box-analyzer/tests -m "units or integration_mocks"
+pytest agents/black-box-analyzer/tests/unit/ agents/black-box-analyzer/tests/integration/mock/ -q
 pytest scripts/tests scripts/cli/tests scripts/common/tests -m "units or integration_mocks"
 ```
 

@@ -25,8 +25,8 @@ Delegation Router (task type → tool)
          │
    ┌─────┼──────┐
    ▼     ▼      ▼
-Ollama  Scripts  Agents
-(LLM)  (AST/Regex) (autonomous)
+Local AI  Scripts  Agents
+ (LLM)  (AST/Regex) (autonomous)
 ```
 
 ---
@@ -48,15 +48,15 @@ Ollama  Scripts  Agents
 ├── agents/                          # Autonomous agents
 │   ├── black-box-analyzer/          # Universal test gap analyzer (19+ project types)
 │   │   ├── AGENT.md
-│   │   ├── scripts/                 # Analysis scripts + prompts/claude/
-│   │   └── tests/                   # Co-located 4-tier tests
+│   │   ├── scripts/                 # orchestrate.py + parallel_analyzer + checkers/ (4 gap) + prompts/local/
+│   │   └── tests/                   # 384 unit / 47 integration/mock / 33 e2e
 │   ├── clean-code-analyzer/         # 12-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, ErrorHandling, Composition)
 │   │   ├── AGENT.md
-│   │   ├── scripts/                 # orchestrate.py + 12 checkers + common/ (ollama_utils, cache, file_utils)
-│   │   └── tests/                   # 472 unit + 17 integration/mock (99% coverage)
+│   │   ├── scripts/                 # orchestrate.py + 12 checkers + common/ (model_utils, cache, file_utils)
+│   │   └── tests/                   # 478 unit + 17 integration/mock (99% coverage)
 │   ├── ci-fix-proposer/
 │   ├── code-analyzer/
-│   ├── ollama-router/
+│   ├── model-router/
 │   ├── task-delegator/
 │   ├── task-monitor/
 │   ├── test-runner/
@@ -90,7 +90,7 @@ Ollama  Scripts  Agents
 | 10-60s | Agents (background) | Test execution, code analysis, test gap detection |
 | Strategic | Claude | Architecture, bug root cause, refactoring strategy |
 
-### Ollama Model Tiers
+### Local AI Model Tiers
 
 | Tier | Model | RAM | Use case |
 |------|-------|-----|---------|
