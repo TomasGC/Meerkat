@@ -1,0 +1,18 @@
+{
+  "local": {
+    "provider": "ollama",
+    "base_url": "http://localhost:11434",
+    "analyzer":  "devstral-small-2",
+    "fast":      "qwen2.5-coder:7b",
+    "deep":      "qwen2.5-coder:14b",
+    "reasoning": "qwen2.5:32b",
+    "guard":     "llama-guard3:8b"
+  },
+  "online": {
+    "provider": "anthropic",
+    "analyzer":  "claude-sonnet-5",
+    "fast":      "claude-haiku-4-5-20251001",
+    "deep":      "claude-opus-5",
+    "reasoning": "claude-opus-5"
+  }
+}
