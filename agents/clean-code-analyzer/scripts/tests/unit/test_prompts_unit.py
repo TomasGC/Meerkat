@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 SCRIPTS_DIR = Path(__file__).parent.parent.parent
-PROMPTS_OLLAMA = SCRIPTS_DIR / "prompts" / "ollama"
+PROMPTS_OLLAMA = SCRIPTS_DIR / "prompts" / "local"
 PROMPTS_CLAUDE = SCRIPTS_DIR / "prompts" / "claude"
 
 PRINCIPLES = [
@@ -32,7 +32,7 @@ _PRINCIPLE_KEYWORDS = {
     "slap_analysis": ["function", "abstraction", "SLAP"],
 }
 
-# Standard kwargs passed by ollama_utils: template.format(language=..., source=...)
+# Standard kwargs passed by model_utils: template.format(language=..., source=...)
 _STANDARD_KWARGS = {"language": "python", "source": "class X: pass\n"}
 
 

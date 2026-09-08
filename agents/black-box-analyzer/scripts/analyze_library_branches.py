@@ -2,7 +2,7 @@
 """
 Library branch extractor — white-box analysis for any language library/SDK.
 
-Uses Ollama (qwen2.5-coder:7b) to extract public methods + all internal branches
+Uses local AI to extract public methods + all internal branches
 from source files. Works for C#, Python, Kotlin, Java, Go, Rust, Ruby, TypeScript, etc.
 
 Output: JSON list of methods with their branches and expected test scenarios.
@@ -13,7 +13,7 @@ import json
 import sys
 from pathlib import Path
 
-from common.ollama_utils import analyze_file_with_ollama, check_ollama_available
+from common.model_utils import analyze_file_with_model, analyze_files_parallel, check_server_available, PROMPTS_DIR
 
 # Source file extensions per language
 LANGUAGE_EXTENSIONS = {
@@ -73,25 +73,25 @@ TYPED_PROMPTS = {
 }
 
 
-def analyze_file(file_path: Path, language: str, model: str, max_chars: int = 8000,
+def analyze_file(file_path: Path, language: str, role: str, max_chars: int = 8000,
                  prompt_name: str = "analyze_library_branches") -> list[dict]:
-    """Analyze one source file via Ollama. Returns list of method branch objects."""
-    return analyze_file_with_ollama(file_path, language, model, prompt_name, max_chars)
+    """Analyze one source file via local AI. Returns list of method branch objects."""
+    return analyze_file_with_model(file_path, language, role, prompt_name, prompts_dir=PROMPTS_DIR, max_chars=max_chars)
 
 
 def analyze_file_typed(
     file_path: Path,
     language: str,
-    model: str,
+    role: str,
     max_chars: int = 8000,
     include_e2e: bool = False,
 ) -> list[dict]:
-    """Run one Ollama agent per test type in parallel, tag results, merge."""
+    """Run one local AI agent per test type in parallel, tag results, merge."""
     from concurrent.futures import ThreadPoolExecutor
     types = ["unit", "int_mock", "int_real"] + (["e2e"] if include_e2e else [])
 
     def _run_type(test_type: str) -> list[dict]:
-        results = analyze_file_with_ollama(file_path, language, model, TYPED_PROMPTS[test_type], max_chars)
+        results = analyze_file_with_model(file_path, language, role, TYPED_PROMPTS[test_type], prompts_dir=PROMPTS_DIR, max_chars=max_chars)
         for item in results:
             for branch in item.get("branches", []):
                 branch["test_type_hint"] = test_type.upper()
@@ -121,7 +121,7 @@ def analyze_file_typed(
 def analyze_library(
     src_path: Path,
     language: str,
-    model: str,
+    role: str,
     verbose: bool,
     max_chars: int = 8000,
     typed_agents: bool = False,
@@ -136,7 +136,6 @@ def analyze_library(
     if verbose:
         print(f"[INFO] Language: {language}", file=sys.stderr)
         print(f"[INFO] Source files: {len(files)}", file=sys.stderr)
-        print(f"[INFO] Ollama model: {model}", file=sys.stderr)
         if typed_agents:
             types = ["unit", "int_mock", "int_real"] + (["e2e"] if include_e2e else [])
             print(f"[INFO] Typed agents: {types}", file=sys.stderr)
@@ -146,9 +145,9 @@ def analyze_library(
         if verbose:
             print(f"[{i}/{len(files)}] Analyzing {f.name}...", file=sys.stderr)
         if typed_agents:
-            methods = analyze_file_typed(f, language, model, max_chars=max_chars, include_e2e=include_e2e)
+            methods = analyze_file_typed(f, language, role, max_chars=max_chars, include_e2e=include_e2e)
         else:
-            methods = analyze_file(f, language, model, max_chars=max_chars)
+            methods = analyze_file(f, language, role, max_chars=max_chars)
         all_methods.extend(methods)
         if verbose and methods:
             print(f"  → {len(methods)} public method(s) found", file=sys.stderr)
@@ -176,7 +175,7 @@ def _merge_runs(runs: list[list[dict]]) -> list[dict]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract public methods + branches from any language library via Ollama",
+        description="Extract public methods + branches from any language library via local AI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -193,9 +192,9 @@ Examples:
         help="Source language (default: auto-detect)",
     )
     parser.add_argument(
-        "--model", "-m",
-        default="qwen2.5-coder:7b",
-        help="Ollama model to use (default: qwen2.5-coder:7b)",
+        "--role", "-m",
+        default="analyzer",
+        help="Model role to use: analyzer, fast, deep, reasoning (default: analyzer)",
     )
     parser.add_argument(
         "--output", "-o",
@@ -236,10 +235,9 @@ Examples:
         print(f"Error: {args.src_path} does not exist", file=sys.stderr)
         return 1
 
-    if not check_ollama_available(args.model):
+    if not check_server_available(args.role):
         print(
-            f"[ERROR] Ollama model '{args.model}' not available.\n"
-            f"  Run: ollama pull {args.model}",
+            f"[ERROR] Local AI model for role '{args.role}' not available.",
             file=sys.stderr,
         )
         return 1
@@ -259,7 +257,7 @@ Examples:
             print(f"[INFO] Running {args.agents} parallel agents for broader coverage...", file=sys.stderr)
         with ThreadPoolExecutor(max_workers=args.agents) as pool:
             futures = [
-                pool.submit(analyze_library, args.src_path, language, args.model, False,
+                pool.submit(analyze_library, args.src_path, language, args.role, False,
                             args.max_chars, typed, include_e2e)
                 for _ in range(args.agents)
             ]
@@ -268,7 +266,7 @@ Examples:
         if args.verbose:
             print(f"[INFO] Merged {args.agents} runs: {len(methods)} unique methods", file=sys.stderr)
     else:
-        methods = analyze_library(args.src_path, language, args.model, args.verbose,
+        methods = analyze_library(args.src_path, language, args.role, args.verbose,
                                   max_chars=args.max_chars, typed_agents=typed, include_e2e=include_e2e)
 
     output = {

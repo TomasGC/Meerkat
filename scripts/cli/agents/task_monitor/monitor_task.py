@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Generic Task Monitor using Ollama
+Generic Task Monitor using local AI
 
-Monitors background tasks and uses Ollama exclusively for surveillance
+Monitors background tasks and uses local AI exclusively for surveillance
 and analysis to consume ZERO Claude tokens.
 
 Usage:
@@ -19,16 +19,21 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
 
+_SCRIPTS_DIR = Path.home() / ".claude" / "scripts"
+sys.path.insert(0, str(_SCRIPTS_DIR))
+from model_config import get_model as _get_model
+_DEFAULT_MODEL = _get_model("fast")
 
-class OllamaMonitor:
-    """Wrapper for Ollama API calls"""
 
-    def __init__(self, model: str = "qwen2.5-coder:7b"):
+class LocalAIMonitor:
+    """Wrapper for local AI API calls"""
+
+    def __init__(self, model: str = _DEFAULT_MODEL):
         self.model = model
 
     def analyze_log(self, log_content: str, task_type: str, criteria: Dict) -> Dict:
         """
-        Ask Ollama to analyze log content and detect status/problems.
+        Ask local AI to analyze log content and detect status/problems.
 
         Returns:
             {
@@ -55,7 +60,7 @@ class OllamaMonitor:
             )
 
             if result.returncode == 0:
-                # Parse JSON from Ollama response
+                # Parse JSON from local AI response
                 output = result.stdout.strip()
                 # Extract JSON block
                 import re
@@ -67,11 +72,11 @@ class OllamaMonitor:
             return self._fallback_analysis(log_content, task_type)
 
         except Exception as e:
-            print(f"Ollama error: {e}", file=sys.stderr)
+            print(f"local AI error: {e}", file=sys.stderr)
             return self._fallback_analysis(log_content, task_type)
 
     def _build_analysis_prompt(self, log_content: str, task_type: str, criteria: Dict) -> str:
-        """Build prompt for Ollama based on task type"""
+        """Build prompt for local AI based on task type"""
 
         base_prompt = f"""Analyze this {task_type} log and detect status/problems.
 
@@ -100,7 +105,7 @@ Respond in JSON:
         return base_prompt
 
     def _fallback_analysis(self, log_content: str, task_type: str) -> Dict:
-        """Fallback regex-based analysis if Ollama fails"""
+        """Fallback regex-based analysis if local AI fails"""
         import re
 
         status = "running"
@@ -163,7 +168,7 @@ class TaskMonitor:
         self.poll_interval = poll_interval
         self.stall_threshold = stall_threshold
 
-        self.ollama = OllamaMonitor()
+        self.ollama = LocalAIMonitor()
         self.last_log_size = 0
         self.last_log_change = time.time()
         self.start_time = time.time()
@@ -194,7 +199,7 @@ class TaskMonitor:
                     self._handle_stall(log_content)
                     break
 
-                # Ask Ollama to analyze
+                # Ask local AI to analyze
                 analysis = self.ollama.analyze_log(
                     log_content,
                     self.task_type,
@@ -379,7 +384,7 @@ Timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Monitor background tasks using Ollama (zero Claude tokens)"
+        description="Monitor background tasks using local AI (zero Claude tokens)"
     )
     parser.add_argument("--pid", type=int, help="Process ID to monitor")
     parser.add_argument("--pattern", type=str, help="Process name pattern (regex)")

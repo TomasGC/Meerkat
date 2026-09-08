@@ -1,6 +1,6 @@
-"""Unit tests for checkers/check_cqrs.py — mocks Ollama calls.
+"""Unit tests for checkers/check_cqrs.py — mocks local AI calls.
 
-Pattern mirrors test_check_solid_unit.py: patch check_ollama_available
+Pattern mirrors test_check_solid_unit.py: patch check_server_available
 and analyze_files_parallel as bound names in the checker module.
 """
 
@@ -22,13 +22,13 @@ except ImportError:
 
 pytestmark = pytest.mark.skipif(not _CQRS_AVAILABLE, reason="check_cqrs not implemented yet")
 
-_CHECK_AVAILABLE = "checkers.check_cqrs.check_ollama_available"
+_CHECK_AVAILABLE = "checkers.check_cqrs.check_server_available"
 _ANALYZE_PARALLEL = "checkers.check_cqrs.analyze_files_parallel"
 
 
 @pytest.mark.unit
-def test_cqrs_returns_violations_when_ollama_available(tmp_path):
-    """CQRS checker maps Ollama items to violations."""
+def test_cqrs_returns_violations_when_server_available(tmp_path):
+    """CQRS checker maps local AI items to violations."""
     (tmp_path / "app.py").write_text(
         "class OrderService:\n"
         "    def save_and_get(self, order): pass\n"
@@ -63,8 +63,8 @@ def test_cqrs_empty_when_no_violations(tmp_path):
 
 
 @pytest.mark.unit
-def test_cqrs_failure_when_ollama_unavailable(tmp_path):
-    """Ollama not available → success=False, violations=[]."""
+def test_cqrs_failure_when_server_unavailable(tmp_path):
+    """server not available → success=False, violations=[]."""
     with patch(_CHECK_AVAILABLE, return_value=False):
         result = run(tmp_path, "python")
 

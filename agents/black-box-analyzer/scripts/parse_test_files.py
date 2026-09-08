@@ -93,13 +93,14 @@ def infer_test_type(test_name: str, test_body: str) -> str:
     if result:
         return result
 
-    # Ambiguous — try Ollama for a cheap 1-token answer
+    # Ambiguous — try local AI for a cheap 1-token answer
     try:
-        from common.ollama_utils import check_ollama_available, run_prompt
-        if check_ollama_available("qwen2.5-coder:7b"):
+        from common.model_utils import check_server_available, run_prompt, PROMPTS_DIR
+        if check_server_available("fast"):
             response = run_prompt(
                 "infer_test_type",
-                model="qwen2.5-coder:7b",
+                PROMPTS_DIR,
+                role="fast",
                 timeout=30,
                 test_name=test_name,
                 test_body=test_body[:600],

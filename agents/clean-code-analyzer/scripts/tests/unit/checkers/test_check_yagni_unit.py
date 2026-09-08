@@ -1,4 +1,4 @@
-"""Unit tests for checkers/check_yagni.py — subprocess and Ollama mocked."""
+"""Unit tests for checkers/check_yagni.py — subprocess and local AI mocked."""
 
 import json
 import subprocess
@@ -48,7 +48,7 @@ def test_subprocess_unused_code_mapped_to_yagni(tmp_path):
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", return_value=mock_result):
-            with patch("checkers.check_yagni.check_ollama_available", return_value=False):
+            with patch("checkers.check_yagni.check_server_available", return_value=False):
                 result = run(tmp_path, "python")
 
     assert result["success"] is True
@@ -66,7 +66,7 @@ def test_subprocess_failure_empty_violations(tmp_path):
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", side_effect=OSError("not found")):
-            with patch("checkers.check_yagni.check_ollama_available", return_value=False):
+            with patch("checkers.check_yagni.check_server_available", return_value=False):
                 result = run(tmp_path, "python")
 
     assert result["success"] is True
@@ -80,7 +80,7 @@ def test_subprocess_timeout_empty_violations(tmp_path):
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("cmd", 60)):
-            with patch("checkers.check_yagni.check_ollama_available", return_value=False):
+            with patch("checkers.check_yagni.check_server_available", return_value=False):
                 result = run(tmp_path, "python")
 
     assert result["success"] is True
@@ -106,7 +106,7 @@ def test_ollama_speculative_violation_added(tmp_path):
     }
     with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = False  # skip subprocess
-        with patch("checkers.check_yagni.check_ollama_available", return_value=True):
+        with patch("checkers.check_yagni.check_server_available", return_value=True):
             with patch("checkers.check_yagni.analyze_files_parallel", return_value=[ollama_item]):
                 result = run(tmp_path, "python", files=[f])
 
@@ -124,7 +124,7 @@ def test_ollama_unavailable_subprocess_results_still_returned(tmp_path):
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", return_value=mock_result):
-            with patch("checkers.check_yagni.check_ollama_available", return_value=False):
+            with patch("checkers.check_yagni.check_server_available", return_value=False):
                 result = run(tmp_path, "python")
 
     assert result["success"] is True
@@ -144,7 +144,7 @@ def test_files_filter_only_targeted_file(tmp_path):
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", return_value=mock_result):
-            with patch("checkers.check_yagni.check_ollama_available", return_value=False):
+            with patch("checkers.check_yagni.check_server_available", return_value=False):
                 result = run(tmp_path, "python", files=[targeted])
 
     assert result["success"] is True
@@ -161,7 +161,7 @@ def test_files_none_runs_full_path(tmp_path):
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", return_value=mock_result):
-            with patch("checkers.check_yagni.check_ollama_available", return_value=False):
+            with patch("checkers.check_yagni.check_server_available", return_value=False):
                 result = run(tmp_path, "python", files=None)
 
     assert result["success"] is True
@@ -178,7 +178,7 @@ def test_yagni_ollama_discover_files_branch(tmp_path):
     f.write_text("class UserService:\n    def get_user(self): pass\n")
 
     with patch("checkers.check_yagni._FIND_UNUSED") as mock_path, \
-         patch("checkers.check_yagni.check_ollama_available", return_value=True), \
+         patch("checkers.check_yagni.check_server_available", return_value=True), \
          patch("checkers.check_yagni.analyze_files_parallel", return_value=[]) as mock_ollama:
         mock_path.exists.return_value = False
         result = run(tmp_path, "python", files=None)
@@ -194,7 +194,7 @@ def test_yagni_ollama_discover_files_mixed_language(tmp_path):
     f.write_text("class UserService:\n    pass\n")
 
     with patch("checkers.check_yagni._FIND_UNUSED") as mock_path, \
-         patch("checkers.check_yagni.check_ollama_available", return_value=True), \
+         patch("checkers.check_yagni.check_server_available", return_value=True), \
          patch("checkers.check_yagni.analyze_files_parallel", return_value=[]):
         mock_path.exists.return_value = False
         result = run(tmp_path, "mixed", files=None)

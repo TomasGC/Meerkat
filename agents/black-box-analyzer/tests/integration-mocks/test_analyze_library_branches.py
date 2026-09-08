@@ -15,7 +15,7 @@ def test_main_agents_1_does_not_use_executor(tmp_path, monkeypatch):
         "--language", "python",
         "--agents", "1",
     ])
-    with patch("analyze_library_branches.check_ollama_available", return_value=True), \
+    with patch("analyze_library_branches.check_server_available", return_value=True), \
          patch("analyze_library_branches.analyze_library", return_value=[]), \
          patch("concurrent.futures.ThreadPoolExecutor") as mock_executor, \
          patch("builtins.print"):
@@ -30,7 +30,7 @@ def test_main_agents_2_calls_merge_runs(tmp_path, monkeypatch):
         "--language", "python",
         "--agents", "2",
     ])
-    with patch("analyze_library_branches.check_ollama_available", return_value=True), \
+    with patch("analyze_library_branches.check_server_available", return_value=True), \
          patch("analyze_library_branches.analyze_library", return_value=[]) as mock_analyze, \
          patch("builtins.print"):
         main()

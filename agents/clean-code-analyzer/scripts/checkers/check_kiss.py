@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""KISS checker — complexity metrics + Ollama over-engineering detection."""
+"""KISS checker — complexity metrics + local AI over-engineering detection."""
 
 import json
 import subprocess
@@ -10,9 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from common.file_utils import discover_files, _LANG_EXTENSIONS, _TEST_MARKERS
-from common.ollama_utils import analyze_files_parallel, check_ollama_available
+from common.model_utils import analyze_files_parallel, check_server_available, PROMPTS_DIR
 
-_MODEL = "devstral"
 _PROMPT = "kiss_overengineering"
 _CALC_COMPLEXITY = Path.home() / ".claude/scripts/cli/agents/code_analyzer/calculate_complexity.py"
 
@@ -23,7 +22,7 @@ def run(
     files: list | None = None,
     agents: int = 1,
     no_cache: bool = False,
-    model: str = _MODEL,
+    role: str = "analyzer",
 ) -> dict:
     start = time.time()
     violations = []
@@ -41,7 +40,6 @@ def run(
                 files_analyzed = raw.get("files_analyzed", 0)
                 for issue in raw.get("complexity_issues", []):
                     issue_file = issue.get("file", "")
-                    # In incremental mode, filter to changed files only
                     if files is not None:
                         changed_names = {f.name for f in files}
                         if Path(issue_file).name not in changed_names:
@@ -62,8 +60,8 @@ def run(
         except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError):
             pass
 
-    # Part 2: Ollama over-engineering scan (only if available)
-    if check_ollama_available(model):
+    # Part 2: local AI over-engineering scan (only if available)
+    if check_server_available(role):
         if files is not None:
             source_files = [f for f in files if f.suffix in {e for exts in _LANG_EXTENSIONS.values() for e in exts}]
         else:
@@ -74,7 +72,7 @@ def run(
         if not files_analyzed:
             files_analyzed = len(source_files)
 
-        for item in analyze_files_parallel(source_files, language, model, _PROMPT, agents=agents, no_cache=no_cache):
+        for item in analyze_files_parallel(source_files, language, role, _PROMPT, prompts_dir=PROMPTS_DIR, agents=agents, no_cache=no_cache):
             src = Path(item.get("source_file", ""))
             rel = str(src.relative_to(path) if src.is_relative_to(path) else src)
             violations.append({

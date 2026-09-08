@@ -1,4 +1,4 @@
-"""Unit tests for checkers/check_solid.py — mocks Ollama calls."""
+"""Unit tests for checkers/check_solid.py — mocks local AI calls."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -13,13 +13,13 @@ import checkers.check_solid as solid_mod
 from checkers.check_solid import run
 
 # Patch targets: check_solid imports these with 'from', so we patch the bound names.
-_CHECK_AVAILABLE = "checkers.check_solid.check_ollama_available"
+_CHECK_AVAILABLE = "checkers.check_solid.check_server_available"
 _ANALYZE_PARALLEL = "checkers.check_solid.analyze_files_parallel"
 
 
 @pytest.mark.unit
-def test_solid_returns_violations_when_ollama_available(tmp_path):
-    """SOLID checker maps Ollama items to SOLID:X violations."""
+def test_solid_returns_violations_when_server_available(tmp_path):
+    """SOLID checker maps local AI items to SOLID:X violations."""
     (tmp_path / "app.py").write_text(
         "class GodClass:\n"
         "    def a(self): pass\n"
@@ -46,7 +46,7 @@ def test_solid_returns_violations_when_ollama_available(tmp_path):
 
 @pytest.mark.unit
 def test_solid_empty_violations_when_no_issues(tmp_path):
-    """Empty Ollama response → 0 violations, success=True."""
+    """Empty AI response → 0 violations, success=True."""
     (tmp_path / "app.py").write_text("class Service: pass\n")
     with patch(_CHECK_AVAILABLE, return_value=True), \
          patch(_ANALYZE_PARALLEL, return_value=[]):
@@ -57,8 +57,8 @@ def test_solid_empty_violations_when_no_issues(tmp_path):
 
 
 @pytest.mark.unit
-def test_solid_failure_when_ollama_unavailable(tmp_path):
-    """Ollama not available → success=False, violations=[]."""
+def test_solid_failure_when_server_unavailable(tmp_path):
+    """server not available → success=False, violations=[]."""
     with patch(_CHECK_AVAILABLE, return_value=False):
         result = run(tmp_path, "python")
 
@@ -100,12 +100,12 @@ def test_solid_files_param_skips_discovery(tmp_path):
 
 
 @pytest.mark.unit
-def test_solid_model_override_propagated(tmp_path):
-    """model param overrides _MODEL default and is passed to analyze_files_parallel."""
+def test_solid_role_override_propagated(tmp_path):
+    """role param is passed to analyze_files_parallel."""
     (tmp_path / "app.py").write_text("class X: pass\n")
     with patch(_CHECK_AVAILABLE, return_value=True), \
          patch(_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
-        run(tmp_path, "python", model="custom-model:latest")
+        run(tmp_path, "python", role="deep")
 
-    called_model = mock_analyze.call_args[0][2]  # positional: files, language, model, prompt
-    assert called_model == "custom-model:latest"
+    called_role = mock_analyze.call_args[0][2]  # positional: files, language, role, prompt
+    assert called_role == "deep"

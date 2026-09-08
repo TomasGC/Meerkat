@@ -45,10 +45,17 @@
 
 ## Agent Conventions
 
+### Model Configuration
+
+- All model names live in `configs/local_models_config.json` only — never hardcoded in scripts or agents
+- `scripts/model_config.py`: singleton reader; `get_model(role, provider="local")` resolves role → model name
+- `scripts/model_utils.py`: shared local AI client; imported via shims at `agents/*/scripts/common/model_utils.py`
+- Roles: `analyzer`, `fast`, `deep`, `reasoning`, `guard`
+
 ### CCA (Clean Code Analyzer)
-- Default model: `devstral` (semantic checkers: SOLID, KISS, YAGNI, CQRS, DDD, SLAP)
-- Fast model: `qwen2.5-coder:7b` (via `--fast`)
+- Default role: `analyzer` (semantic checkers: SOLID, KISS, YAGNI, CQRS, DDD, SLAP)
+- Fast mode: `--fast` passes `role="fast"` to checkers
 - Tests run via `python -m pytest` directly from `agents/clean-code-analyzer/scripts/`
-- Prompts in `scripts/prompts/ollama/` (6 templates) and `scripts/prompts/claude/` (6 fallback templates)
+- Prompts in `scripts/prompts/local/` (6 templates) and `scripts/prompts/claude/` (6 fallback templates)
 - Test naming: `tests/unit/` (singular), `tests/integration/mock/`, `tests/integration/real/` — differs from the global `units/`/`integration-mocks/` convention
 

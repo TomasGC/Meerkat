@@ -80,25 +80,28 @@ def test_cache_ttl_expiry(source_file):
 
 @pytest.mark.integration_mock
 def test_no_cache_flag_bypasses(tmp_path, source_file):
-    """When no_cache=True in analyze_file_with_ollama, cache not written or read."""
-    import common.ollama_utils as ollama_mod
+    """When no_cache=True in analyze_file_with_model, cache not written or read."""
+    _SHARED = Path.home() / ".claude" / "scripts"
+    if str(_SHARED) not in sys.path:
+        sys.path.insert(0, str(_SHARED))
+    import model_utils as model_mod
 
     call_count = [0]
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "test_prompt.prompt").write_text("{source}")
 
-    def fake_call_ollama(prompt, model="qwen2.5-coder:7b", timeout=120):
+    def fake_call_model(prompt, role="fast", timeout=120):
         call_count[0] += 1
         return "[]"
 
-    # Patch prompt file reading so it doesn't fail on missing file
-    with patch.object(ollama_mod, "call_ollama", side_effect=fake_call_ollama), \
-         patch.object(cache_mod, "_CACHE_DIR", tmp_path / ".nocache"), \
-         patch("pathlib.Path.read_text", return_value="{source}"):
-        # Both calls with no_cache=True should hit Ollama
-        ollama_mod.analyze_file_with_ollama(
-            source_file, "python", "qwen2.5-coder:7b", "test_prompt", no_cache=True
+    with patch.object(model_mod, "call_model", side_effect=fake_call_model), \
+         patch.object(cache_mod, "_CACHE_DIR", tmp_path / ".nocache"):
+        model_mod.analyze_file_with_model(
+            source_file, "python", "fast", "test_prompt", prompts_dir=prompts_dir, no_cache=True
         )
-        ollama_mod.analyze_file_with_ollama(
-            source_file, "python", "qwen2.5-coder:7b", "test_prompt", no_cache=True
+        model_mod.analyze_file_with_model(
+            source_file, "python", "fast", "test_prompt", prompts_dir=prompts_dir, no_cache=True
         )
 
     assert call_count[0] == 2  # Called both times — no caching

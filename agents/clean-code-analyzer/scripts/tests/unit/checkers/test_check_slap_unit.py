@@ -1,7 +1,7 @@
-"""Unit tests for checkers/check_slap.py — Ollama mocked via analyze_files_parallel."""
+"""Unit tests for checkers/check_slap.py — local AI mocked via check_server_available / analyze_files_parallel."""
 
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 import sys
 
 import pytest
@@ -20,12 +20,12 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-# ── Ollama unavailable ──────────────────────────────────────────────────────────
+# ── Local AI unavailable ────────────────────────────────────────────────────────
 
 @pytest.mark.unit
-def test_slap_ollama_unavailable_returns_failure(tmp_path):
-    """Ollama model not available → success: False, violations: []."""
-    with patch("checkers.check_slap.check_ollama_available", return_value=False):
+def test_slap_server_unavailable_returns_failure(tmp_path):
+    """Local AI not available → success: False, violations: []."""
+    with patch("checkers.check_slap.check_server_available", return_value=False):
         result = run(tmp_path, "python")
     assert result["success"] is False
     assert result["violations"] == []
@@ -36,7 +36,7 @@ def test_slap_ollama_unavailable_returns_failure(tmp_path):
 
 @pytest.mark.unit
 def test_slap_violation_mapped_with_principle(tmp_path):
-    """Ollama returns SLAP violation → mapped with principle: SLAP."""
+    """Local AI returns SLAP violation → mapped with principle: SLAP."""
     f = tmp_path / "handler.py"
     f.write_text(
         "def process_order(order):\n"
@@ -55,7 +55,7 @@ def test_slap_violation_mapped_with_principle(tmp_path):
         "suggestion": "Extract low-level operations into separate helper functions",
         "line": 1,
     }
-    with patch("checkers.check_slap.check_ollama_available", return_value=True):
+    with patch("checkers.check_slap.check_server_available", return_value=True):
         with patch("checkers.check_slap.analyze_files_parallel", return_value=[raw_item]):
             result = run(tmp_path, "python", files=[f])
 
@@ -71,10 +71,10 @@ def test_slap_violation_mapped_with_principle(tmp_path):
 
 @pytest.mark.unit
 def test_slap_empty_response_no_violations(tmp_path):
-    """Ollama returns [] → success: True, violations: []."""
+    """Local AI returns [] → success: True, violations: []."""
     f = tmp_path / "clean.py"
     f.write_text("def greet(name): return f'Hello {name}'\n")
-    with patch("checkers.check_slap.check_ollama_available", return_value=True):
+    with patch("checkers.check_slap.check_server_available", return_value=True):
         with patch("checkers.check_slap.analyze_files_parallel", return_value=[]):
             result = run(tmp_path, "python", files=[f])
     assert result["success"] is True
@@ -88,7 +88,7 @@ def test_slap_files_none_discovers_all(tmp_path):
     """files=None → discover_files is called (discovery path used)."""
     f = tmp_path / "svc.py"
     f.write_text("def fn(): pass\n")
-    with patch("checkers.check_slap.check_ollama_available", return_value=True):
+    with patch("checkers.check_slap.check_server_available", return_value=True):
         with patch("checkers.check_slap.discover_files", return_value=[f]) as mock_discover:
             with patch("checkers.check_slap.analyze_files_parallel", return_value=[]):
                 result = run(tmp_path, "python", files=None)
@@ -101,7 +101,7 @@ def test_slap_files_provided_skips_discovery(tmp_path):
     """files=[path] → discover_files NOT called."""
     f = tmp_path / "svc.py"
     f.write_text("def fn(): pass\n")
-    with patch("checkers.check_slap.check_ollama_available", return_value=True):
+    with patch("checkers.check_slap.check_server_available", return_value=True):
         with patch("checkers.check_slap.discover_files") as mock_discover:
             with patch("checkers.check_slap.analyze_files_parallel", return_value=[]):
                 result = run(tmp_path, "python", files=[f])
@@ -109,30 +109,18 @@ def test_slap_files_provided_skips_discovery(tmp_path):
     mock_discover.assert_not_called()
 
 
-# ── Chunking ────────────────────────────────────────────────────────────────────
+# ── Chunking (verify analyze_files_parallel is called for large files) ──────────
 
 @pytest.mark.unit
-def test_slap_large_file_split_into_chunks(tmp_path):
-    """File >8000 chars → split into multiple chunks, one Ollama call per chunk."""
+def test_slap_large_file_passed_to_analyze(tmp_path):
+    """Large file → analyze_files_parallel called with that file."""
     large_file = tmp_path / "big_handler.py"
     large_file.write_text("def fn():\n    pass\n" + "# padding\n" * 1000)
 
-    prompts_dir = tmp_path / "ollama_prompts"
-    prompts_dir.mkdir()
-    (prompts_dir / "slap_analysis.prompt").write_text("Analyze {language}:\n{source}")
+    with patch("checkers.check_slap.check_server_available", return_value=True):
+        with patch("checkers.check_slap.analyze_files_parallel", return_value=[]) as mock_analyze:
+            run(tmp_path, "python", files=[large_file], no_cache=True)
 
-    import common.ollama_utils as ou
-    original_dir = ou._PROMPTS_DIR
-    ou._PROMPTS_DIR = prompts_dir
-    mock_ollama = AsyncMock(return_value="[]")
-    try:
-        with patch("checkers.check_slap.check_ollama_available", return_value=True):
-            with patch("common.ollama_utils.call_ollama_async", mock_ollama):
-                run(tmp_path, "python", files=[large_file], no_cache=True)
-    finally:
-        ou._PROMPTS_DIR = original_dir
-
-    # File ~10 019 chars → at least 2 chunks, no truncation marker
-    prompts = [call.args[0] for call in mock_ollama.call_args_list]
-    assert len(prompts) >= 2
-    assert not any("// ... (truncated)" in p for p in prompts)
+    mock_analyze.assert_called_once()
+    call_files = mock_analyze.call_args[0][0]
+    assert large_file in call_files

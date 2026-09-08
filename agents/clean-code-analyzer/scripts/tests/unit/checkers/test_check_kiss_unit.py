@@ -1,4 +1,4 @@
-"""Unit tests for checkers/check_kiss.py — mocks complexity subprocess and Ollama."""
+"""Unit tests for checkers/check_kiss.py — mocks complexity subprocess and local AI."""
 
 import json
 from pathlib import Path
@@ -47,7 +47,7 @@ def test_kiss_high_complexity_creates_violation(tmp_path, mocked_calc_complexity
     (tmp_path / "app.py").write_text("def process_data(): pass\n")
 
     with patch("subprocess.run") as mock_run, \
-         patch.object(kiss_mod, "check_ollama_available", return_value=False):
+         patch.object(kiss_mod, "check_server_available", return_value=False):
         mock_run.return_value = MagicMock(
             returncode=0, stdout=HIGH_COMPLEXITY_OUTPUT, stderr=""
         )
@@ -64,7 +64,7 @@ def test_kiss_low_complexity_no_violation(tmp_path, mocked_calc_complexity):
     (tmp_path / "app.py").write_text("def simple(): return 1\n")
 
     with patch("subprocess.run") as mock_run, \
-         patch.object(kiss_mod, "check_ollama_available", return_value=False):
+         patch.object(kiss_mod, "check_server_available", return_value=False):
         mock_run.return_value = MagicMock(
             returncode=0, stdout=LOW_COMPLEXITY_OUTPUT, stderr=""
         )
@@ -76,11 +76,11 @@ def test_kiss_low_complexity_no_violation(tmp_path, mocked_calc_complexity):
 
 @pytest.mark.unit
 def test_kiss_ollama_called_only_when_available(tmp_path, mocked_calc_complexity):
-    """Ollama analyze_files_parallel is only called when check_ollama_available=True."""
+    """Ollama analyze_files_parallel is only called when check_server_available=True."""
     (tmp_path / "app.py").write_text("class Foo: pass\n")
 
     with patch("subprocess.run") as mock_run, \
-         patch.object(kiss_mod, "check_ollama_available", return_value=True), \
+         patch.object(kiss_mod, "check_server_available", return_value=True), \
          patch.object(kiss_mod, "analyze_files_parallel", return_value=[]) as mock_ollama:
         mock_run.return_value = MagicMock(
             returncode=0, stdout=LOW_COMPLEXITY_OUTPUT, stderr=""
@@ -97,7 +97,7 @@ def test_kiss_subprocess_failure_graceful(tmp_path):
 
     with patch.object(kiss_mod, "_CALC_COMPLEXITY") as mock_path, \
          patch("subprocess.run") as mock_run, \
-         patch.object(kiss_mod, "check_ollama_available", return_value=False):
+         patch.object(kiss_mod, "check_server_available", return_value=False):
         mock_path.exists.return_value = True
         mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="error")
         result = run(tmp_path, "python")
@@ -114,7 +114,7 @@ def test_kiss_subprocess_timeout_graceful(tmp_path):
 
     with patch.object(kiss_mod, "_CALC_COMPLEXITY") as mock_path, \
          patch("subprocess.run", side_effect=subprocess.TimeoutExpired("cmd", 60)), \
-         patch.object(kiss_mod, "check_ollama_available", return_value=False):
+         patch.object(kiss_mod, "check_server_available", return_value=False):
         mock_path.exists.return_value = True
         result = run(tmp_path, "python")
 
@@ -129,7 +129,7 @@ def test_kiss_subprocess_json_decode_error_graceful(tmp_path):
 
     with patch.object(kiss_mod, "_CALC_COMPLEXITY") as mock_path, \
          patch("subprocess.run") as mock_run, \
-         patch.object(kiss_mod, "check_ollama_available", return_value=False):
+         patch.object(kiss_mod, "check_server_available", return_value=False):
         mock_path.exists.return_value = True
         mock_run.return_value = MagicMock(returncode=0, stdout="{ invalid json }", stderr="")
         result = run(tmp_path, "python")
@@ -157,7 +157,7 @@ def test_kiss_incremental_files_filter_by_name(tmp_path, mocked_calc_complexity)
         ],
     })
     with patch("subprocess.run") as mock_run, \
-         patch.object(kiss_mod, "check_ollama_available", return_value=False):
+         patch.object(kiss_mod, "check_server_available", return_value=False):
         mock_run.return_value = MagicMock(returncode=0, stdout=both_files_output, stderr="")
         result = run(tmp_path, "python", files=[targeted])
 
@@ -182,7 +182,7 @@ def test_kiss_ollama_violation_appended(tmp_path, mocked_calc_complexity):
         "line": 1,
     }
     with patch("subprocess.run") as mock_run, \
-         patch.object(kiss_mod, "check_ollama_available", return_value=True), \
+         patch.object(kiss_mod, "check_server_available", return_value=True), \
          patch.object(kiss_mod, "analyze_files_parallel", return_value=[ollama_item]):
         mock_run.return_value = MagicMock(returncode=0, stdout=LOW_COMPLEXITY_OUTPUT, stderr="")
         result = run(tmp_path, "python", files=None)
@@ -199,7 +199,7 @@ def test_kiss_files_not_none_ollama_path(tmp_path, mocked_calc_complexity):
     f.write_text("class X: pass\n")
 
     with patch("subprocess.run") as mock_run, \
-         patch.object(kiss_mod, "check_ollama_available", return_value=True), \
+         patch.object(kiss_mod, "check_server_available", return_value=True), \
          patch.object(kiss_mod, "analyze_files_parallel", return_value=[]) as mock_ollama:
         mock_run.return_value = MagicMock(returncode=0, stdout=LOW_COMPLEXITY_OUTPUT, stderr="")
         result = run(tmp_path, "python", files=[f])
@@ -218,7 +218,7 @@ def test_kiss_files_analyzed_zero_gets_set_from_source_files(tmp_path):
     empty_output = json.dumps({"files_analyzed": 0, "complexity_issues": []})
     with patch.object(kiss_mod, "_CALC_COMPLEXITY") as mock_path, \
          patch("subprocess.run") as mock_run, \
-         patch.object(kiss_mod, "check_ollama_available", return_value=True), \
+         patch.object(kiss_mod, "check_server_available", return_value=True), \
          patch.object(kiss_mod, "discover_files", return_value=[f]), \
          patch.object(kiss_mod, "analyze_files_parallel", return_value=[]):
         mock_path.exists.return_value = True

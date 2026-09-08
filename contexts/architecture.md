@@ -1,6 +1,6 @@
 # Architecture - Meerkat
 
-**Purpose**: Claude Code optimization framework — delegates mechanical tasks to local tools (Ollama + Python scripts), keeps Claude focused on strategic reasoning.
+**Purpose**: Claude Code optimization framework — delegates mechanical tasks to local tools (local AI + Python scripts), keeps Claude focused on strategic reasoning.
 
 **Last Updated**: 2026-09-04
 
@@ -97,7 +97,7 @@ Ollama  Scripts  Agents
 | Hot | qwen2.5-coder:7b, llama3.2:3b | Preloaded | Instant validation |
 | Warm | qwen2.5-coder:14b, deepseek-coder-v2:16b | 9-16 GB | Deep review |
 | Cold | llama3.3:70b | 42 GB (SWAP) | Critical architecture |
-| Semantic | devstral | ~14 GB | Semantic code analysis (CCA default) |
+| Semantic | devstral-small-2 | ~14 GB | Semantic code analysis (CCA default) |
 
 ---
 

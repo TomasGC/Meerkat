@@ -4,6 +4,19 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-09-08 - [#10] Provider-agnostic local AI abstraction
+
+- configs/template_models_config.json + scripts/model_config.py: role-based model map (analyzer/fast/deep/reasoning/guard) for local + online providers; singleton reader; auto-copies template on first run
+- scripts/model_utils.py: shared generic local AI client; host/port from config; role-based API (call_model, analyze_files_parallel); no model names in code
+- BBA + CCA: common/model_utils.py shims replacing ollama_utils.py; all callers updated to role-based API
+- Renamed agents: ollama-router → model-router, start-ollama-mcp → start-model-server; cache functions get_ollama_* → get_model_*
+- 54 new unit tests: model_config (12), LocalAIMonitor (10), analyze_files_parallel (4), call_model_async + _parse_local_server (6), CLI role resolution (2), test isolation fixes (20)
+tags: #config #refactor #provider-agnostic #local-ai #testing
+Ref: https://github.com/TomasGC/Meerkat/issues/10
+Commits: 63c01f1, 48a0f90, 14505bb
+
+---
+
 2026-09-04 - [#7] Rework context skills to use contexts/ directory layout
 - load_session_context.py, update_kanban.py, search_kanban.py: all default paths updated to .claude/contexts/kanban.md
 - update-context skill: file references updated; File Location constraint block added; contexts/ sub-files (tests.md, conventions.md, commands.md) now known
