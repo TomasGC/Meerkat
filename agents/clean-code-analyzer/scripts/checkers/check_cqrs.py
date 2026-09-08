@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CQRS checker — Ollama qwen3:8b detects command/query separation violations."""
+"""CQRS checker — detects command/query separation violations via local AI."""
 
 import sys
 import time
@@ -8,20 +8,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from common.file_utils import discover_files, _TEST_MARKERS
-from common.ollama_utils import analyze_files_parallel, check_ollama_available
+from common.model_utils import analyze_files_parallel, check_server_available, PROMPTS_DIR
 
-_MODEL = "devstral"
 _PROMPT = "cqrs_analysis"
 
 
-def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False, model: str = _MODEL) -> dict:
+def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False, role: str = "analyzer") -> dict:
     start = time.time()
 
-    if not check_ollama_available(model):
+    if not check_server_available(role):
         return {
             "principle": "CQRS",
             "success": False,
-            "error": f"Ollama model {model} not available",
+            "error": "Local AI model not available",
             "violations": [],
             "files_analyzed": 0,
             "duration_ms": 0,
@@ -33,7 +32,7 @@ def run(path: Path, language: str, files: list | None = None, agents: int = 1, n
         source_files = discover_files(path)
         source_files = [f for f in source_files if not any(m in f.name.lower() for m in _TEST_MARKERS)]
 
-    raw_items = analyze_files_parallel(source_files, language, model, _PROMPT, agents=agents, no_cache=no_cache)
+    raw_items = analyze_files_parallel(source_files, language, role, _PROMPT, prompts_dir=PROMPTS_DIR, agents=agents, no_cache=no_cache)
     violations = []
     for item in raw_items:
         src = Path(item.get("source_file", ""))

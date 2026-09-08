@@ -61,16 +61,16 @@ All checkers run concurrently via `ThreadPoolExecutor(max_workers=6)`.
 | Checker | Principle | Method | Ollama Model |
 |---|---|---|---|
 | `check_dry.py` | DRY | Delegates to `find_duplicates.py` | None (mechanical) |
-| `check_solid.py` | SOLID (S/O/L/I/D) | Ollama per file | `devstral` |
-| `check_kiss.py` | KISS | Complexity script + Ollama | `devstral` |
-| `check_yagni.py` | YAGNI | Dead code script + Ollama | `devstral` |
+| `check_solid.py` | SOLID (S/O/L/I/D) | Ollama per file | `devstral-small-2` |
+| `check_kiss.py` | KISS | Complexity script + Ollama | `devstral-small-2` |
+| `check_yagni.py` | YAGNI | Dead code script + Ollama | `devstral-small-2` |
 | `check_error_handling.py` | Error Handling | AST/grep | None (mechanical) |
 | `check_naming.py` | Naming | Grep/regex | None (mechanical) |
 | `check_comments.py` | Comments | Grep | None (mechanical) |
-| `check_cqrs.py` | CQRS | Ollama per file | `devstral` |
-| `check_ddd.py` | DDD | Ollama per file | `devstral` |
+| `check_cqrs.py` | CQRS | Ollama per file | `devstral-small-2` |
+| `check_ddd.py` | DDD | Ollama per file | `devstral-small-2` |
 | `check_lod.py` | Law of Demeter | AST/grep | None (mechanical) |
-| `check_slap.py` | SLAP | Ollama per file | `devstral` |
+| `check_slap.py` | SLAP | Ollama per file | `devstral-small-2` |
 | `check_inheritance.py` | Composition > Inheritance | AST/grep | None (mechanical) |
 
 ### Phase 2 — Aggregate & Score

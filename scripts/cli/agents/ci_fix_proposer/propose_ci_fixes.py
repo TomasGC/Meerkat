@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Propose fixes for CI errors using Ollama for mechanical fixes.
+Propose fixes for CI errors using local AI for mechanical fixes.
 
-Delegates mechanical error analysis to Ollama (qwen2.5-coder:7b) to minimize
+Delegates mechanical error analysis to local AI to minimize
 Claude token usage. Escalates complex errors back to Claude.
 
 Used by ci-fix-proposer agent and analyze-github-ci skill.
@@ -17,7 +17,13 @@ from pathlib import Path
 from typing import Any
 
 # Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+_SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(_SCRIPTS_DIR))
+
+try:
+    from model_config import get_model as _get_model
+except ImportError:
+    _get_model = None
 
 from common.cli.base import BaseCLIScript
 from common.utils import run_command
@@ -198,8 +204,9 @@ Respond with JSON only (no markdown):
         import time
         start = time.time()
 
+        _model = _get_model("fast", "local", fallback="qwen2.5-coder:7b") if _get_model else "qwen2.5-coder:7b"
         result = subprocess.run(
-            ["ollama", "run", "qwen2.5-coder:7b", prompt],
+            ["ollama", "run", _model, prompt],
             capture_output=True,
             text=True,
             timeout=30,

@@ -14,6 +14,11 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+try:
+    from model_config import get_model as _get_model
+except ImportError:
+    _get_model = None
+
 from common.cli.base import BaseCLIScript
 from common.utils import run_command
 
@@ -239,8 +244,9 @@ Respond with only 'yes' or 'no'.
 """
 
         try:
+            _model = _get_model("fast", "local", fallback="qwen2.5-coder:7b") if _get_model else "qwen2.5-coder:7b"
             result = subprocess.run(
-                ["ollama", "run", "qwen2.5-coder:7b", prompt],
+                ["ollama", "run", _model, prompt],
                 capture_output=True,
                 text=True,
                 timeout=10,

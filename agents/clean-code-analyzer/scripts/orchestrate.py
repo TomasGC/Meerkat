@@ -9,8 +9,8 @@ Usage:
   python orchestrate.py --path /project --format json --output results.json
   python orchestrate.py --path /project --since HEAD~1           # incremental: changed files only
   python orchestrate.py --path /project --staged                 # incremental: staged files only
-  python orchestrate.py --path /project --agents 2               # 2x Ollama calls per file, dedup-merged
-  python orchestrate.py --path /project --no-cache               # bypass per-file Ollama cache
+  python orchestrate.py --path /project --agents 2               # 2x local AI calls per file, dedup-merged
+  python orchestrate.py --path /project --no-cache               # bypass per-file local AI cache
   python orchestrate.py --path /project --clear-cache            # delete all cached results
 """
 
@@ -27,7 +27,9 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-
+_GLOBAL_SCRIPTS = Path.home() / ".claude" / "scripts"
+if str(_GLOBAL_SCRIPTS) not in sys.path:
+    sys.path.append(str(_GLOBAL_SCRIPTS))
 import subprocess
 
 from common.file_utils import detect_language, get_branch_files, get_changed_files, get_staged_files
@@ -85,7 +87,7 @@ def _run_checker(
     agents: int = 1,
     no_cache: bool = False,
     cache_ttl_days: int = 7,
-    model: str | None = None,
+    role: str | None = None,
 ) -> dict:
     try:
         mod = importlib.import_module(module_path)
@@ -99,8 +101,8 @@ def _run_checker(
             kwargs["no_cache"] = no_cache
         if "cache_ttl_days" in params:
             kwargs["cache_ttl_days"] = cache_ttl_days
-        if "model" in params and model is not None:
-            kwargs["model"] = model
+        if "role" in params and role is not None:
+            kwargs["role"] = role
         return mod.run(path, language, **kwargs)
     except Exception as exc:
         return {
@@ -187,13 +189,13 @@ def main() -> None:
     parser.add_argument("--full", action="store_true",
                         help="Full-repo analysis, bypass auto branch-vs-main detection")
     model_group = parser.add_mutually_exclusive_group()
-    model_group.add_argument("--model", default=None, metavar="MODEL",
-                             help="Override Ollama model for all semantic checkers")
+    model_group.add_argument("--role", default=None, metavar="ROLE",
+                             help="Override model role for all semantic checkers (analyzer, fast, deep, reasoning)")
     model_group.add_argument("--fast", action="store_true",
-                             help="Use qwen2.5-coder:7b for all semantic checkers (faster full-repo analysis)")
+                             help="Use 'fast' role for all semantic checkers (faster full-repo analysis)")
     args = parser.parse_args()
     if args.fast:
-        args.model = "qwen2.5-coder:7b"
+        args.role = "fast"
 
     if args.clear_cache:
         try:
@@ -252,7 +254,7 @@ def main() -> None:
         mode = f"incremental ({len(incremental_files)} files)" if incremental_files is not None else "full"
         print(f"\nClean Code Analysis — {path} ({language}) [{mode}]", file=sys.stderr, flush=True)
         if args.agents > 1:
-            print(f"Ollama agents: {args.agents}x per file (dedup-merged)", file=sys.stderr, flush=True)
+            print(f"Local AI agents: {args.agents}x per file (dedup-merged)", file=sys.stderr, flush=True)
         print(f"Running {len(selected)} checkers...\n", file=sys.stderr, flush=True)
 
     start_total = time.time()
@@ -300,7 +302,7 @@ def main() -> None:
         for name, mod_path in selected:
             future = executor.submit(
                 _run_checker, name, mod_path, path, language,
-                incremental_files, args.agents, args.no_cache, args.cache_ttl, args.model,
+                incremental_files, args.agents, args.no_cache, args.cache_ttl, args.role,
             )
             future.add_done_callback(lambda f, n=name: on_checker_done(f, n))
     # executor.__exit__ waits for all futures; callbacks have already fired

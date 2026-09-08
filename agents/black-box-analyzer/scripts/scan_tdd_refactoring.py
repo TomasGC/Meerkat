@@ -2,7 +2,7 @@
 """
 TDD refactoring scanner — detect testability anti-patterns in any language library.
 
-Uses Ollama (qwen2.5-coder:7b) to identify code constructs that block unit/integration
+Uses local AI to identify code constructs that block unit/integration
 testing, and proposes minimal refactorings to unlock new tests.
 
 Output: JSON list of blockers with proposed refactorings and tests unlocked.
@@ -13,7 +13,7 @@ import json
 import sys
 from pathlib import Path
 
-from common.ollama_utils import analyze_file_with_ollama, check_ollama_available
+from common.model_utils import analyze_file_with_model, check_server_available, PROMPTS_DIR
 
 # Source file extensions per language (same as analyze_library_branches.py)
 LANGUAGE_EXTENSIONS = {
@@ -74,8 +74,8 @@ def get_source_files(src_path: Path, language: str) -> list[Path]:
     return sorted(files)
 
 
-def scan_file(file_path: Path, language: str, model: str, max_chars: int) -> list[dict]:
-    return analyze_file_with_ollama(file_path, language, model, "scan_tdd_refactoring", max_chars)
+def scan_file(file_path: Path, language: str, role: str, max_chars: int) -> list[dict]:
+    return analyze_file_with_model(file_path, language, role, "scan_tdd_refactoring", prompts_dir=PROMPTS_DIR, max_chars=max_chars)
 
 
 EFFORT_ORDER = {"Tiny": 0, "Small": 1, "Medium": 2, "Large": 3}
@@ -114,7 +114,7 @@ def _merge_blocker_runs(runs: list[list[dict]]) -> list[dict]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Detect testability anti-patterns and propose TDD refactorings via Ollama",
+        description="Detect testability anti-patterns and propose TDD refactorings via local AI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -131,9 +131,9 @@ Examples:
         help="Source language (default: auto-detect)",
     )
     parser.add_argument(
-        "--model", "-m",
-        default="qwen2.5-coder:7b",
-        help="Ollama model to use (default: qwen2.5-coder:7b)",
+        "--role", "-m",
+        default="analyzer",
+        help="Model role to use: analyzer, fast, deep, reasoning (default: analyzer)",
     )
     parser.add_argument(
         "--output", "-o",
@@ -170,10 +170,9 @@ Examples:
         print(f"Error: {args.src_path} does not exist", file=sys.stderr)
         return 1
 
-    if not check_ollama_available(args.model):
+    if not check_server_available(args.role):
         print(
-            f"[ERROR] Ollama model '{args.model}' not available.\n"
-            f"  Run: ollama pull {args.model}",
+            f"[ERROR] Local AI model for role '{args.role}' not available.",
             file=sys.stderr,
         )
         return 1
@@ -198,7 +197,7 @@ Examples:
         for i, f in enumerate(files, 1):
             if args.verbose:
                 print(f"[{i}/{len(files)}] Scanning {f.name}...", file=sys.stderr)
-            result.extend(scan_file(f, language, args.model, args.max_chars))
+            result.extend(scan_file(f, language, args.role, args.max_chars))
         return result
 
     if args.agents > 1:
