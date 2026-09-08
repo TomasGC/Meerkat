@@ -170,5 +170,37 @@ class TestProposeCIFixesIntegration:
         # Either 0 (success) or 1 (Ollama unavailable) is acceptable
         assert result in [0, 1]
 
+class TestModelResolution:
+    """Verify get_model() is used for model selection, not a hardcoded string."""
+
+    def test_invoke_ollama_uses_get_model_with_fast_role(self, tmp_path):
+        """invoke_ollama_for_fix calls get_model('fast', ...) to resolve the model name."""
+        from unittest.mock import patch, MagicMock
+        import cli.agents.ci_fix_proposer.propose_ci_fixes as mod
+
+        error = ErrorInput(
+            error_id="e1",
+            error_type="compilation",
+            error_message="Unresolved: Foo",
+        )
+        context = {"file_content": "x = 1"}
+
+        captured_roles = []
+
+        def fake_get_model(role, provider="local", fallback=None):
+            captured_roles.append(role)
+            return fallback or "test-model"
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = '{"fix_type": "add_import", "fixed_code": "import Foo", "reasoning": "r", "confidence": "high"}'
+
+        with patch.object(mod, "_get_model", fake_get_model):
+            with patch("cli.agents.ci_fix_proposer.propose_ci_fixes.subprocess.run", return_value=mock_result):
+                mod.invoke_ollama_for_fix(error, context)
+
+        assert "fast" in captured_roles, "get_model should be called with role='fast'"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

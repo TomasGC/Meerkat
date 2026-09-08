@@ -356,7 +356,7 @@ def test_run_checker_exception_returns_error_dict(tmp_path):
 
 @pytest.mark.unit
 def test_orchestrate_fast_flag_sets_model_to_fast(tmp_path):
-    """--fast sets model=qwen2.5-coder:7b and passes it to _run_checker."""
+    """--fast passes role="fast" to _run_checker instead of a hardcoded model name."""
     from orchestrate import main as orch_main
     captured_model = []
 
@@ -373,7 +373,7 @@ def test_orchestrate_fast_flag_sets_model_to_fast(tmp_path):
             with patch("sys.stdout", out):
                 orch_main()
 
-    assert captured_model and captured_model[0] == "qwen2.5-coder:7b"
+    assert captured_model and captured_model[0] == "fast"
 
 
 # ── --clear-cache ────────────────────────────────────────────────────────────────
@@ -551,7 +551,7 @@ def test_run_checker_success_with_files_param(tmp_path):
     f.write_text("x = 1\n")
     result = _run_checker(
         "Naming", "checkers.check_naming", tmp_path, "python",
-        files=[f], agents=1, no_cache=True, cache_ttl_days=7, model=None,
+        files=[f], agents=1, no_cache=True, cache_ttl_days=7, role=None,
     )
     assert result["success"] is True
     assert result["principle"] == "Naming"
@@ -565,7 +565,7 @@ def test_run_checker_success_no_files(tmp_path):
     (tmp_path / "mod.py").write_text("x = 1\n")
     result = _run_checker(
         "Naming", "checkers.check_naming", tmp_path, "python",
-        files=None, agents=1, no_cache=True, cache_ttl_days=7, model=None,
+        files=None, agents=1, no_cache=True, cache_ttl_days=7, role=None,
     )
     assert result["success"] is True
 
@@ -679,12 +679,12 @@ def test_orchestrate_since_not_git_repo_fallback(tmp_path):
 
 @pytest.mark.unit
 def test_run_checker_model_kwarg_passed_to_run(tmp_path):
-    """_run_checker passes model kwarg when checker run() accepts it."""
+    """_run_checker passes role kwarg when checker run() accepts it."""
     from orchestrate import _run_checker
     captured = {}
 
-    def fake_run(path, language, files=None, agents=1, no_cache=False, model="default"):
-        captured["model"] = model
+    def fake_run(path, language, files=None, agents=1, no_cache=False, role="default"):
+        captured["role"] = role
         return {"violations": [], "files_analyzed": 0, "success": True}
 
     import types
@@ -694,10 +694,10 @@ def test_run_checker_model_kwarg_passed_to_run(tmp_path):
     with patch("orchestrate.importlib.import_module", return_value=fake_module):
         result = _run_checker(
             "SOLID", "checkers.check_solid_fake", tmp_path, "python",
-            files=None, agents=1, no_cache=True, cache_ttl_days=7, model="devstral",
+            files=None, agents=1, no_cache=True, cache_ttl_days=7, role="analyzer",
         )
 
-    assert captured.get("model") == "devstral"
+    assert captured.get("role") == "analyzer"
     assert result["success"] is True
 
 
@@ -718,7 +718,7 @@ def test_run_checker_cache_ttl_days_kwarg_passed_to_run(tmp_path):
     with patch("orchestrate.importlib.import_module", return_value=fake_module):
         result = _run_checker(
             "Fake", "checkers.check_fake_ttl", tmp_path, "python",
-            files=None, agents=1, no_cache=True, cache_ttl_days=14, model=None,
+            files=None, agents=1, no_cache=True, cache_ttl_days=14, role=None,
         )
 
     assert captured.get("cache_ttl_days") == 14
