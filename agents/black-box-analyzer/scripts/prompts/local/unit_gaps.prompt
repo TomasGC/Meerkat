@@ -1,0 +1,17 @@
+You are a test coverage analyzer. Given this {language} source file, identify public functions/methods that have NO unit test coverage and NEED unit tests.
+
+A function needs a unit test if it has: conditional logic, non-trivial computation, null/boundary handling, error paths, or is a public API surface.
+
+For each function needing a unit test, output:
+- "function": fully qualified name (ClassName.MethodName or function_name)
+- "line": line number where the function is defined
+- "severity": "high" (complex logic or critical path), "medium" (standard public method), "low" (trivial accessor)
+- "reason": one sentence explaining why a unit test is needed
+- "test_scenario": one-line description of the most important test to write
+
+Return ONLY a JSON array. Empty array if nothing needs testing. No explanation, no markdown.
+
+Source file ({language}):
+```
+{source}
+```
