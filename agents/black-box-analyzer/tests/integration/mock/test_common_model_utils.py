@@ -88,7 +88,7 @@ def test_analyze_file_annotates_results(tmp_path):
     response = json.dumps([{"method": "Bar", "branches": []}])
     with patch("model_utils.call_model", return_value=response):
         result = analyze_file_with_model(src, "csharp", "analyzer", "prompt_name",
-                                         prompts_dir=prompts_dir)
+                                         prompts_dir=prompts_dir, no_cache=True)
 
     assert len(result) == 1
     assert result[0]["source_file"] == str(src)
