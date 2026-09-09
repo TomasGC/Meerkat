@@ -388,6 +388,99 @@ def test_analyze_files_async_empty_on_failure(tmp_path):
 
 
 @pytest.mark.unit
+def test_analyze_files_async_extra_slots_injected(tmp_path):
+    """extra_slots values reach the prompt template for the matching file."""
+    import asyncio
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text(
+        "Analyze {language}:\n{source}\nKnown:\n{known_findings}"
+    )
+
+    captured = []
+
+    def capture(prompt, *args, **kwargs):
+        captured.append(prompt)
+        return "[]"
+
+    with patch("model_utils.get_model", return_value="test-model"):
+        with patch("model_utils._http_generate", side_effect=capture):
+            asyncio.run(
+                analyze_files_async([f], "python", "analyzer", "solid_analysis",
+                                    prompts_dir=prompts_dir, no_cache=True,
+                                    extra_slots={f: {"known_findings": "- line 1: secret"}})
+            )
+
+    assert "Known:\n- line 1: secret" in captured[0]
+
+
+@pytest.mark.unit
+def test_analyze_files_async_extra_slots_are_per_file(tmp_path):
+    """Each file receives only its own extra_slots values."""
+    import asyncio
+    first = tmp_path / "first.py"
+    first.write_text("class A: pass\n")
+    second = tmp_path / "second.py"
+    second.write_text("class B: pass\n")
+
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("{source}\n{known_findings}")
+
+    captured = []
+
+    def capture(prompt, *args, **kwargs):
+        captured.append(prompt)
+        return "[]"
+
+    with patch("model_utils.get_model", return_value="test-model"):
+        with patch("model_utils._http_generate", side_effect=capture):
+            asyncio.run(
+                analyze_files_async([first, second], "python", "analyzer", "solid_analysis",
+                                    prompts_dir=prompts_dir, no_cache=True,
+                                    extra_slots={
+                                        first: {"known_findings": "finding-A"},
+                                        second: {"known_findings": "finding-B"},
+                                    })
+            )
+
+    prompt_a = next(p for p in captured if "class A" in p)
+    prompt_b = next(p for p in captured if "class B" in p)
+    assert "finding-A" in prompt_a and "finding-B" not in prompt_a
+    assert "finding-B" in prompt_b and "finding-A" not in prompt_b
+
+
+@pytest.mark.unit
+def test_analyze_files_async_without_extra_slots_unchanged(tmp_path):
+    """Templates with no extra slots still format when extra_slots is omitted."""
+    import asyncio
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    captured = []
+
+    def capture(prompt, *args, **kwargs):
+        captured.append(prompt)
+        return "[]"
+
+    with patch("model_utils.get_model", return_value="test-model"):
+        with patch("model_utils._http_generate", side_effect=capture):
+            asyncio.run(
+                analyze_files_async([f], "python", "analyzer", "solid_analysis",
+                                    prompts_dir=prompts_dir, no_cache=True)
+            )
+
+    assert captured[0] == "Analyze python:\nclass X: pass\n"
+
+
+@pytest.mark.unit
 def test_analyze_files_async_cache_hit(tmp_path):
     """analyze_files_async returns cached result without calling _http_generate."""
     import asyncio
