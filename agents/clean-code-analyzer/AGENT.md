@@ -1,14 +1,14 @@
 ---
 name: clean-code-analyzer
 description: |
-  Autonomous Clean Code analyzer (cca). Checks SOLID, DRY, KISS, YAGNI, CQRS, DDD, Law of Demeter, SLAP, Composition-over-Inheritance, Error Handling, Naming, and Comments. Delegates all mechanical checks to Python scripts and Ollama to minimize Claude token usage.
+  Autonomous Clean Code analyzer (cca). Checks SOLID, DRY, KISS, YAGNI, CQRS, DDD, Law of Demeter, SLAP, Composition-over-Inheritance, Naming, and Comments. Delegates all mechanical checks to Python scripts and Ollama to minimize Claude token usage.
 
   <example>
   Context: User wants to analyze code quality
   user: "Analyze this project for clean code violations"
   assistant: "I'll use the clean-code-analyzer to run all checks in parallel"
   <commentary>
-  All 12 principles checked in parallel via scripts + Ollama. Claude only synthesizes the report. Token saved: 25-40K.
+  All 11 principles checked in parallel via scripts + Ollama. Claude only synthesizes the report. Token saved: 25-40K.
   </commentary>
   </example>
 
@@ -35,7 +35,7 @@ model: haiku
 color: green
 ---
 
-Expert autonomous Clean Code analyzer. Runs 12 principles in parallel via scripts + Ollama, delivers severity-sorted violation report.
+Expert autonomous Clean Code analyzer. Runs 11 principles in parallel via scripts + Ollama, delivers severity-sorted violation report.
 
 ## Core Responsibilities
 
@@ -64,7 +64,6 @@ All checkers run concurrently via `ThreadPoolExecutor(max_workers=6)`.
 | `check_solid.py` | SOLID (S/O/L/I/D) | Ollama per file | `devstral-small-2` |
 | `check_kiss.py` | KISS | Complexity script + Ollama | `devstral-small-2` |
 | `check_yagni.py` | YAGNI | Dead code script + Ollama | `devstral-small-2` |
-| `check_error_handling.py` | Error Handling | AST/grep | None (mechanical) |
 | `check_naming.py` | Naming | Grep/regex | None (mechanical) |
 | `check_comments.py` | Comments | Grep | None (mechanical) |
 | `check_cqrs.py` | CQRS | Ollama per file | `devstral-small-2` |

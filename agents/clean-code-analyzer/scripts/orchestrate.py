@@ -39,7 +39,6 @@ CHECKERS: dict[str, str] = {
     "solid": "checkers.check_solid",
     "kiss": "checkers.check_kiss",
     "yagni": "checkers.check_yagni",
-    "error_handling": "checkers.check_error_handling",
     "naming": "checkers.check_naming",
     "comments": "checkers.check_comments",
     "cqrs": "checkers.check_cqrs",

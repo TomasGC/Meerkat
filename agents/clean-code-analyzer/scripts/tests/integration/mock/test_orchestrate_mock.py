@@ -80,7 +80,7 @@ def test_full_pipeline_mechanical_only(dirty_src):
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
             "--path", str(dirty_src),
-            "--checks", "error_handling,naming,lod,inheritance",
+            "--checks", "naming,lod,inheritance",
             "--format", "json",
             "--no-cache",
         ],
@@ -92,7 +92,7 @@ def test_full_pipeline_mechanical_only(dirty_src):
     data = json.loads(result.stdout)
     assert data["total_violations"] > 0
     principles = {v["principle"] for v in data["violations"]}
-    assert "ErrorHandling" in principles
+    assert "LawOfDemeter" in principles
     assert "Naming" in principles
 
 
@@ -108,7 +108,7 @@ def test_clean_code_no_mechanical_violations(clean_src):
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
             "--path", str(clean_src),
-            "--checks", "error_handling,lod,inheritance",
+            "--checks", "lod,inheritance",
             "--format", "json",
             "--no-cache",
         ],
@@ -129,7 +129,7 @@ def test_checker_failure_continues(dirty_src):
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
             "--path", str(dirty_src),
-            "--checks", "error_handling,nonexistent_checker",
+            "--checks", "lod,nonexistent_checker",
             "--format", "json",
             "--no-cache",
         ],
@@ -139,8 +139,8 @@ def test_checker_failure_continues(dirty_src):
     )
     assert result.returncode == 0, f"stderr: {result.stderr}"
     data = json.loads(result.stdout)
-    # error_handling should still produce violations
-    assert any(v["principle"] == "ErrorHandling" for v in data["violations"])
+    # lod should still produce violations
+    assert any(v["principle"] == "LawOfDemeter" for v in data["violations"])
     # Unknown checker is warned about on stderr
     assert "nonexistent_checker" in result.stderr or data["checkers_run"] == 1
 
@@ -153,7 +153,7 @@ def test_json_output_schema(dirty_src):
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
             "--path", str(dirty_src),
-            "--checks", "error_handling",
+            "--checks", "lod",
             "--format", "json",
             "--no-cache",
         ],
