@@ -3,8 +3,13 @@
 
 import ast
 import re
+import sys
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from common.file_utils import _LANG_EXTENSIONS as _LANG_EXTS
 
 _GREP_PATTERNS = {
     "csharp": [
@@ -13,7 +18,6 @@ _GREP_PATTERNS = {
     ],
     "typescript": [
         (re.compile(r"catch\s*\([^)]*\)\s*\{\s*\}"), "Empty catch block"),
-        (re.compile(r"catch\s*\([^)]*\)\s*\{[^}]*\}"), None),  # handled below
     ],
     "javascript": [
         (re.compile(r"catch\s*\([^)]*\)\s*\{\s*\}"), "Empty catch block"),
@@ -33,8 +37,6 @@ _GREP_PATTERNS = {
     ],
 }
 
-from common.file_utils import _LANG_EXTENSIONS as _LANG_EXTS
-
 
 def _check_python_file(file: Path, root: Path) -> list[dict]:
     violations = []
@@ -49,7 +51,6 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
             continue
 
         body = node.body
-        # Empty except body (only Pass or Ellipsis)
         if all(isinstance(stmt, (ast.Pass, ast.Expr)) for stmt in body):
             if all(
                 isinstance(getattr(stmt, "value", None), ast.Constant)
@@ -67,7 +68,6 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
                 })
                 continue
 
-        # Catch-all without re-raise or logging
         if node.type is None:
             has_raise = any(isinstance(s, ast.Raise) for s in ast.walk(node))
             has_log = any(
@@ -86,7 +86,6 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
                 })
             continue
 
-        # Generic Exception catch — check if specific is possible
         if node.type and isinstance(node.type, ast.Name) and node.type.id == "Exception":
             has_raise = any(isinstance(s, ast.Raise) for s in ast.walk(node))
             has_log = any(
@@ -108,7 +107,6 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
 
 
 def _detect_non_python_violations(content: str, filename: str, language: str) -> list[dict]:
-    """Pure function — detect error handling violations in non-Python source content."""
     violations = []
     patterns = _GREP_PATTERNS.get(language, [])
     if not patterns:
@@ -154,6 +152,7 @@ def run(path: Path, language: str, files: list | None = None, agents: int = 1, n
                 source_files.extend(p for p in path.rglob(f"*{ext}")
                              if not any(part in {".git", "node_modules", "__pycache__", ".venv", "venv",
                                                  "bin", "obj", "dist", "vendor", "build", "out"} for part in p.parts))
+
     for file in source_files:
         if file.suffix == ".py":
             violations.extend(_check_python_file(file, path))

@@ -15,6 +15,8 @@ try:
     risky_operation()
 except:
     pass
+
+x = obj.service.repo.find_by_id(42)
 """
 
 CLEAN_PYTHON = """\
@@ -61,7 +63,7 @@ def test_since_head_only_analyzes_changed_files(tmp_path):
             str(SCRIPTS_DIR / "orchestrate.py"),
             "--path", str(tmp_path),
             "--since", "HEAD",
-            "--checks", "error_handling",
+            "--checks", "lod",
             "--format", "json",
             "--no-cache",
         ],
@@ -92,7 +94,7 @@ def test_since_non_git_falls_back_to_full(tmp_path):
             str(SCRIPTS_DIR / "orchestrate.py"),
             "--path", str(src),
             "--since", "HEAD",
-            "--checks", "error_handling",
+            "--checks", "lod",
             "--format", "json",
             "--no-cache",
         ],
@@ -130,7 +132,7 @@ def test_staged_flag_analyzes_only_staged_files(tmp_path):
             str(SCRIPTS_DIR / "orchestrate.py"),
             "--path", str(tmp_path),
             "--staged",
-            "--checks", "error_handling",
+            "--checks", "lod",
             "--format", "json",
             "--no-cache",
         ],

@@ -1,0 +1,27 @@
+Analyze this {language} code for sensitive data exposure and logging failures (OWASP A09).
+
+Source file:
+{source}
+
+Already reported by mechanical pattern analysis — do NOT report these again:
+{known_findings}
+
+Detect:
+- Credentials, tokens, keys or personal data written to logs or stdout
+- Whole request, response or entity objects logged, carrying secrets as a side effect
+- Stack traces, SQL text or internal paths returned to the caller
+- Secrets placed in URLs, redirect targets or error messages
+- Personal data stored or transmitted without masking, hashing or encryption
+- Security-relevant events (auth failure, permission change) not logged at all
+- Log statements that an attacker can inject newlines into (log forging)
+
+Return a JSON array of findings. Each finding:
+{{
+  "exposure_type": "SECRET_IN_LOG|OBJECT_DUMP|INTERNALS_TO_CALLER|SECRET_IN_URL|UNPROTECTED_PII|MISSING_AUDIT_LOG|LOG_FORGING|OTHER",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "description": "one sentence naming the data exposed and where it goes",
+  "fix": "concrete fix suggestion"
+}}
+
+Return [] if no issues found. Return ONLY the JSON array, no prose.

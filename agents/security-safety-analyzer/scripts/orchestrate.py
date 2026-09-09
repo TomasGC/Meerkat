@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Clean Code Analyzer orchestrator.
+Security Safety Analyzer orchestrator.
 
-Runs all 12 principle checkers in parallel via ThreadPoolExecutor with callback streaming.
+Runs all 5 safety/security checkers in parallel via ThreadPoolExecutor with callback streaming.
 Usage:
   python orchestrate.py --path /project --checks all --format json
-  python orchestrate.py --path /project --checks solid,dry --format table
+  python orchestrate.py --path /project --checks security,crash_bugs --format table
   python orchestrate.py --path /project --format json --output results.json
   python orchestrate.py --path /project --since HEAD~1           # incremental: changed files only
   python orchestrate.py --path /project --staged                 # incremental: staged files only
@@ -18,12 +18,10 @@ import argparse
 import importlib
 import inspect
 import json
-import shutil
 import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -35,17 +33,16 @@ import subprocess
 from common.file_utils import detect_language, get_branch_files, get_changed_files, get_staged_files
 
 CHECKERS: dict[str, str] = {
-    "dry": "checkers.check_dry",
-    "solid": "checkers.check_solid",
-    "kiss": "checkers.check_kiss",
-    "yagni": "checkers.check_yagni",
-    "naming": "checkers.check_naming",
-    "comments": "checkers.check_comments",
-    "cqrs": "checkers.check_cqrs",
-    "ddd": "checkers.check_ddd",
-    "lod": "checkers.check_lod",
-    "slap": "checkers.check_slap",
-    "inheritance": "checkers.check_inheritance",
+    "security": "checkers.check_security",
+    "crypto": "checkers.check_crypto",
+    "deserialization": "checkers.check_deserialization",
+    "misconfiguration": "checkers.check_misconfiguration",
+    "sensitive_data": "checkers.check_sensitive_data",
+    "crash_bugs": "checkers.check_crash_bugs",
+    "concurrency": "checkers.check_concurrency",
+    "resource_leaks": "checkers.check_resource_leaks",
+    "error_handling": "checkers.check_error_handling",
+    "prompt_injection": "checkers.check_prompt_injection",
 }
 
 _SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
@@ -66,7 +63,6 @@ def _mini_bar(count: int, max_count: int, width: int = 8) -> str:
 
 
 def _detect_base_branch(path: Path) -> str | None:
-    """Return 'main' or 'master' — whichever exists in the repo."""
     for branch in ("main", "master"):
         r = subprocess.run(
             ["git", "rev-parse", "--verify", branch],
@@ -136,7 +132,7 @@ def _print_table(violations: list[dict]) -> None:
     col_w = [8, 22, 45, 55]
     header = (
         f"{'SEVERITY':<{col_w[0]}} | "
-        f"{'PRINCIPLE':<{col_w[1]}} | "
+        f"{'CHECKER':<{col_w[1]}} | "
         f"{'FILE:LINE':<{col_w[2]}} | "
         f"{'MESSAGE':<{col_w[3]}}"
     )
@@ -158,7 +154,7 @@ def _estimate_token_savings(total_violations: int, checkers_run: int) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Clean Code Analyzer")
+    parser = argparse.ArgumentParser(description="Security Safety Analyzer")
     parser.add_argument("--path", "-p", type=Path, default=Path.cwd(),
                         help="Path to analyze (default: cwd)")
     parser.add_argument("--checks", "-c", default="all",
@@ -178,9 +174,9 @@ def main() -> None:
     parser.add_argument("--staged", action="store_true",
                         help="Incremental: only analyze git staged files")
     parser.add_argument("--agents", type=int, default=1, metavar="N",
-                        help="Run N independent Ollama calls per file, dedup-merge (default: 1, recommended: 2-3)")
+                        help="Run N independent local AI calls per file, dedup-merge (default: 1)")
     parser.add_argument("--no-cache", action="store_true",
-                        help="Bypass per-file Ollama result cache")
+                        help="Bypass per-file local AI result cache")
     parser.add_argument("--cache-ttl", type=int, default=7, metavar="DAYS",
                         help="Cache TTL in days; 0 = never expire (default: 7)")
     parser.add_argument("--clear-cache", action="store_true",
@@ -191,7 +187,7 @@ def main() -> None:
     model_group.add_argument("--role", default=None, metavar="ROLE",
                              help="Override model role for all semantic checkers (analyzer, fast, deep, reasoning)")
     model_group.add_argument("--fast", action="store_true",
-                             help="Use 'fast' role for all semantic checkers (faster full-repo analysis)")
+                             help="Use 'fast' role for all semantic checkers")
     args = parser.parse_args()
     if args.fast:
         args.role = "fast"
@@ -221,7 +217,6 @@ def main() -> None:
 
     language = detect_language(path)
 
-    # Incremental file list
     incremental_files: list | None = None
     if args.staged:
         incremental_files = get_staged_files(path)
@@ -251,22 +246,19 @@ def main() -> None:
 
     if args.stream:
         mode = f"incremental ({len(incremental_files)} files)" if incremental_files is not None else "full"
-        print(f"\nClean Code Analysis — {path} ({language}) [{mode}]", file=sys.stderr, flush=True)
+        print(f"\nSecurity Safety Analysis — {path} ({language}) [{mode}]", file=sys.stderr, flush=True)
         if args.agents > 1:
             print(f"Local AI agents: {args.agents}x per file (dedup-merged)", file=sys.stderr, flush=True)
         print(f"Running {len(selected)} checkers...\n", file=sys.stderr, flush=True)
 
     start_total = time.time()
-
     total_checkers = len(selected)
 
-    # Shared state — populated by callbacks as each checker finishes
     _completed: list[dict] = []
     _results_lock = threading.Lock()
-    _completed_count = [0]  # mutable counter for progress bar
+    _completed_count = [0]
 
     def on_checker_done(future, checker_name: str) -> None:
-        """Called immediately when a checker finishes — no waiting for others."""
         try:
             result = future.result()
         except Exception as exc:
@@ -296,19 +288,16 @@ def main() -> None:
                 file=sys.stderr, flush=True,
             )
 
-    # Submit all checkers; callbacks fire immediately as each one completes
-    with ThreadPoolExecutor(max_workers=6) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         for name, mod_path in selected:
             future = executor.submit(
                 _run_checker, name, mod_path, path, language,
                 incremental_files, args.agents, args.no_cache, args.cache_ttl, args.role,
             )
             future.add_done_callback(lambda f, n=name: on_checker_done(f, n))
-    # executor.__exit__ waits for all futures; callbacks have already fired
 
     results = _completed
 
-    # Deduplicate by (file, line, principle), sort by severity
     all_violations: list[dict] = []
     _seen: set[tuple] = set()
     for result in results:
@@ -349,7 +338,7 @@ def main() -> None:
             file=sys.stderr, flush=True,
         )
         if cache_hits:
-            saved_s = round(cache_hits * 1.5)  # ~1.5s saved per cache hit
+            saved_s = round(cache_hits * 1.5)
             print(
                 f"  Cache: {cache_hits} hits / {cache_total} files  (~{saved_s}s saved)",
                 file=sys.stderr, flush=True,
@@ -373,10 +362,10 @@ def main() -> None:
         output_data["incremental_files"] = len(incremental_files)
 
     if args.format == "table":
-        print(f"\nClean Code Analysis — {path} ({language})")
+        print(f"\nSecurity Safety Analysis — {path} ({language})")
         print(f"Files: {total_files} | Violations: {len(all_violations)} | Time: {total_time}ms\n")
         _print_table(all_violations)
-        print("\nSummary by principle:")
+        print("\nSummary by checker:")
         for principle, counts in sorted(summary.items()):
             print(f"  {principle:<28} {counts['count']:>3} total  "
                   f"({counts['high']} high, {counts['medium']} medium, {counts['low']} low)")

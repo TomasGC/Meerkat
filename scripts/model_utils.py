@@ -254,8 +254,12 @@ async def analyze_files_async(
     no_cache: bool = False,
     cache_ttl_days: int = 7,
     timeout: int | None = 600,
+    extra_slots: dict | None = None,
 ) -> list[dict]:
-    """Analyze multiple files concurrently — all HTTP calls in-flight simultaneously."""
+    """Analyze multiple files concurrently — all HTTP calls in-flight simultaneously.
+
+    extra_slots maps a file Path to additional prompt format slots for that file.
+    """
     if prompts_dir is None:
         raise ValueError("prompts_dir is required")
 
@@ -274,8 +278,9 @@ async def analyze_files_async(
 
         source = file_path.read_text(encoding="utf-8", errors="replace")
         results: list[dict] = []
+        file_slots = extra_slots.get(file_path, {}) if extra_slots else {}
         for chunk in split_into_chunks(source, max_chars):
-            prompt = template.format(language=language, source=chunk)
+            prompt = template.format(language=language, source=chunk, **file_slots)
             if agents > 1:
                 responses = await asyncio.gather(
                     *[call_model_async(prompt, role=role, timeout=timeout) for _ in range(agents)],
@@ -329,12 +334,13 @@ def analyze_files_parallel(
     no_cache: bool = False,
     cache_ttl_days: int = 7,
     timeout: int | None = 600,
+    extra_slots: dict | None = None,
 ) -> list[dict]:
     """Analyze multiple files with local AI — all HTTP calls in-flight simultaneously via asyncio."""
     return asyncio.run(analyze_files_async(
         files, language, role, prompt_name, prompts_dir,
         max_chars=max_chars, agents=agents, no_cache=no_cache,
-        cache_ttl_days=cache_ttl_days, timeout=timeout,
+        cache_ttl_days=cache_ttl_days, timeout=timeout, extra_slots=extra_slots,
     ))
 
 

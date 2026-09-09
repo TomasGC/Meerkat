@@ -4,6 +4,49 @@ Commands for `~/.claude/` scripts and tests.
 
 ---
 
+## Security Safety Analyzer (SSA)
+
+### Analyze a project
+
+```bash
+cd ~/.claude/agents/security-safety-analyzer/scripts
+python orchestrate.py --path /path/to/project
+python orchestrate.py --path /path/to/project --full
+python orchestrate.py --path /path/to/project --checks security,crypto
+python orchestrate.py --path /path/to/project --format table
+python orchestrate.py --path /path/to/project --min-severity high --top 20
+python orchestrate.py --path /path/to/project --output report.json
+python orchestrate.py --path /path/to/project --fast
+python orchestrate.py --path /path/to/project --clear-cache
+```
+
+**Checkers**: security, crypto, deserialization, misconfiguration, sensitive_data,
+crash_bugs, concurrency, resource_leaks, error_handling, prompt_injection
+
+**Flags**:
+- (no flags) — incremental: branch-vs-main changed files only
+- `--full` — analyze entire repo
+- `--since REF` / `--staged` — other incremental sources
+- `--min-severity high|medium|low` — filter output
+- `--top N` — keep only the N most severe
+- `--output FILE` — write JSON to file
+- `--fast` / `--role ROLE` — model role override (analyzer, fast, deep, reasoning)
+- `--agents N` — N independent local AI calls per file, dedup-merged
+- `--no-cache` / `--clear-cache` — per-file content-hash cache control
+
+### SSA tests
+
+```bash
+cd ~/.claude/agents/security-safety-analyzer/scripts
+python -m pytest tests/unit/ -q
+python -m pytest tests/integration/mock/ -q
+python -m pytest tests/e2e/ -q
+python -m pytest tests/unit/ tests/integration/mock/ tests/e2e/ -q   # CI-safe (no local AI)
+python -m pytest tests/integration/real/ -q                          # prompt rendering + live AI
+```
+
+---
+
 ## Clean Code Analyzer (CCA)
 
 ### Analyze a project

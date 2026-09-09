@@ -1,0 +1,28 @@
+Analyze this {language} code for cryptographic weaknesses (OWASP A02).
+
+Source file:
+{source}
+
+Already reported by mechanical pattern analysis — do NOT report these again:
+{known_findings}
+
+Detect:
+- Broken or deprecated algorithms (MD5, SHA-1, DES, 3DES, RC4, ECB mode)
+- Passwords stored with a plain hash instead of bcrypt, scrypt or Argon2
+- Predictable randomness used for tokens, session ids, salts or keys
+- Hardcoded, reused or derived-from-constant encryption keys and IVs
+- Missing or disabled TLS certificate validation
+- Secrets compared with a non-constant-time equality check
+- Encryption without integrity (no authenticated mode, no MAC)
+- Key material logged, serialized or committed alongside the ciphertext
+
+Return a JSON array of findings. Each finding:
+{{
+  "weakness_type": "WEAK_ALGORITHM|WEAK_PASSWORD_HASH|WEAK_RANDOM|HARDCODED_KEY|TLS_DISABLED|TIMING_UNSAFE|NO_INTEGRITY|KEY_EXPOSURE|OTHER",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "description": "one sentence describing the specific weakness",
+  "fix": "concrete fix suggestion"
+}}
+
+Return [] if no issues found. Return ONLY the JSON array, no prose.

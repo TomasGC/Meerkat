@@ -1,0 +1,27 @@
+Analyze this {language} code for unsafe deserialization and data integrity failures (OWASP A08).
+
+Source file:
+{source}
+
+Already reported by mechanical pattern analysis — do NOT report these again:
+{known_findings}
+
+Detect:
+- Untrusted input deserialized into arbitrary object graphs
+- Type information taken from the payload instead of being fixed by the code
+- XML parsed with DTD or external entity resolution enabled (XXE)
+- Archive extraction without path validation (zip slip)
+- Signature or checksum not verified before using downloaded content
+- Deserialization callbacks or constructors with side effects
+- Recursive or unbounded payloads accepted without a size or depth limit
+
+Return a JSON array of findings. Each finding:
+{{
+  "issue_type": "UNSAFE_DESERIALIZATION|POLYMORPHIC_TYPE|XXE|ZIP_SLIP|UNVERIFIED_CONTENT|SIDE_EFFECT_CALLBACK|UNBOUNDED_PAYLOAD|OTHER",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "description": "one sentence describing the specific issue",
+  "fix": "concrete fix suggestion"
+}}
+
+Return [] if no issues found. Return ONLY the JSON array, no prose.
