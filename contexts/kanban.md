@@ -4,6 +4,21 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-09-09 - [#12] Security Safety Analyzer (SSA) agent
+
+- New agent `agents/security-safety-analyzer/`: 10 checkers (security, crypto, deserialization, misconfiguration, sensitive_data, crash_bugs, concurrency, resource_leaks, error_handling, prompt_injection), each mechanical pattern/AST pass + AI pass
+- `common/hybrid.py`: shared mechanical-then-AI driver for pattern-table checkers; `common/dedup.py`: renders mechanical findings into the prompt and drops AI findings within 3 lines of one, so the two layers never report the same defect twice
+- `scripts/model_utils.py`: `extra_slots` — per-file prompt format slots, required to pass each file its own known findings
+- CCA `error_handling` checker removed (11 principles now): error handling is a safety concern and SSA owns that detection
+- Tests: 340 unit / 28 integration/mock / 25 integration/real / 10 e2e; `integration/real/test_prompt_templates.py` renders every prompt with the slots its callers supply, catching templates that raise KeyError and silently yield zero AI findings
+- BBA gap audit on SSA closed two real gaps: `common/file_utils.py` had no tests at all, and `--min-severity` / `--top` / `--output` were uncovered at every tier
+
+tags: #ssa #security #hybrid #local-ai #testing
+Ref: https://github.com/TomasGC/Meerkat/issues/12
+Commits: a35af97, c20fcbf, 9172f2e
+
+---
+
 2026-09-08 - [#9] Rework BBA: async pipeline, orchestrate.py, test gap checkers
 
 - `orchestrate.py`: new entry point with incremental (branch-vs-main) + full mode, `--role`, `--fast`, `--clear-cache`, delegates to `parallel_analyzer.py` via subprocess

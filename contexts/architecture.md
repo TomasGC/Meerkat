@@ -2,7 +2,7 @@
 
 **Purpose**: Claude Code optimization framework — delegates mechanical tasks to local tools (local AI + Python scripts), keeps Claude focused on strategic reasoning.
 
-**Last Updated**: 2026-09-04
+**Last Updated**: 2026-09-09
 
 ---
 
@@ -50,10 +50,14 @@ Local AI  Scripts  Agents
 │   │   ├── AGENT.md
 │   │   ├── scripts/                 # orchestrate.py + parallel_analyzer + checkers/ (4 gap) + prompts/local/
 │   │   └── tests/                   # 384 unit / 47 integration/mock / 33 e2e
-│   ├── clean-code-analyzer/         # 12-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, ErrorHandling, Composition)
+│   ├── clean-code-analyzer/         # 11-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, Composition)
 │   │   ├── AGENT.md
-│   │   ├── scripts/                 # orchestrate.py + 12 checkers + common/ (model_utils, cache, file_utils)
-│   │   └── tests/                   # 478 unit + 17 integration/mock (99% coverage)
+│   │   ├── scripts/                 # orchestrate.py + 11 checkers + common/ (model_utils, cache, file_utils)
+│   │   └── tests/                   # 464 unit + 17 integration/mock
+│   ├── security-safety-analyzer/    # 10-checker security and safety analyzer (Security, Crypto, Deserialization, Misconfiguration, SensitiveData, CrashBug, Concurrency, ResourceLeak, ErrorHandling, PromptInjection)
+│   │   ├── AGENT.md
+│   │   └── scripts/                 # orchestrate.py + 10 checkers + common/ (hybrid, dedup, model_utils, cache, file_utils) + prompts/local/
+│   │       └── tests/               # 340 unit / 28 integration/mock / 25 integration/real / 10 e2e
 │   ├── ci-fix-proposer/
 │   ├── code-analyzer/
 │   ├── model-router/
@@ -87,7 +91,7 @@ Local AI  Scripts  Agents
 |---------|------|-------|
 | <1s | Python scripts | Formatting, git ops, commit checks |
 | 2-10s | Ollama hot tier | Syntax validation, quick review |
-| 10-60s | Agents (background) | Test execution, code analysis, test gap detection |
+| 10-60s | Agents (background) | Test execution, code analysis, test gap detection, security and safety analysis |
 | Strategic | Claude | Architecture, bug root cause, refactoring strategy |
 
 ### Local AI Model Tiers

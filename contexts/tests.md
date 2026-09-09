@@ -52,11 +52,18 @@ agents/black-box-analyzer/tests/
 │   │   ├── integration/mock/ # 47 tests — library_analyzer, analyze_library_branches, 4 gap checkers (1 each)
 │   │   ├── integration/real/ # real local AI required
 │   │   └── e2e/             # 33 tests — parallel_analyzer, orchestrate, collect_coverage, diff_analysis, etc.
+│   ├── security-safety-analyzer/
+│   │   └── scripts/tests/
+│   │       ├── conftest.py
+│   │       ├── unit/            # 340 tests — 10 checkers, hybrid driver, dedup, cache, file_utils, orchestrate
+│   │       ├── integration/mock/ # 28 tests — real filesystem, AI mocked at two seams (checker vs hybrid driver)
+│   │       ├── integration/real/ # 25 tests — prompt slot rendering (no server) + live AI per checker
+│   │       └── e2e/             # 10 tests — orchestrate.py CLI, output shaping flags
 │   ├── clean-code-analyzer/
 │   │   ├── scripts/tests/
 │   │   │   ├── pytest.ini
 │   │   │   ├── conftest.py
-│   │   │   ├── unit/            # 478 tests — checkers, model_utils, cache, file_utils, orchestrate, prompts
+│   │   │   ├── unit/            # 464 tests — checkers, model_utils, cache, file_utils, orchestrate, prompts
 │   │   │   ├── integration/mock/ # 17 tests — mocked Ollama, real filesystem/cache
 │   │   │   ├── integration/real/ # real Ollama (devstral required)
 │   │   │   └── e2e/             # full orchestrate.py CLI against fixture directories
@@ -80,7 +87,7 @@ agents/black-box-analyzer/tests/
 
 ## Important: common Namespace Collision
 
-`agents/black-box-analyzer/scripts/common/`, `agents/clean-code-analyzer/scripts/common/`, and `scripts/common/` are three independent packages.
+`agents/black-box-analyzer/scripts/common/`, `agents/clean-code-analyzer/scripts/common/`, `agents/security-safety-analyzer/scripts/common/`, and `scripts/common/` are four independent packages.
 Python's import cache will find whichever is on sys.path first.
 
 **Rule**: Always run BBA, CCA, and scripts tests in **separate pytest invocations**.
@@ -90,6 +97,7 @@ Python's import cache will find whichever is on sys.path first.
 pytest agents/black-box-analyzer/tests -m units
 pytest scripts/cli/tests -m units
 cd agents/clean-code-analyzer/scripts && python -m pytest tests/unit/ -q
+cd agents/security-safety-analyzer/scripts && python -m pytest tests/unit/ -q
 
 # NOT OK (common collision)
 pytest agents/black-box-analyzer/tests scripts/cli/tests -m units
