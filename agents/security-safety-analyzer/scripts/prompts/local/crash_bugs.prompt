@@ -1,0 +1,27 @@
+Analyze this {language} code for crash bugs and correctness issues.
+
+Source file:
+{source}
+
+Already reported by mechanical pattern analysis — do NOT report these again:
+{known_findings}
+
+Detect:
+- Null/nil dereference (accessing property on potentially null value)
+- Array/slice out-of-bounds access without length check
+- Division by zero (dividing by a variable without zero guard)
+- Type coercion errors (invalid casts, type assertion without ok check)
+- Unhandled error returns that cause nil pointer dereference
+- Integer overflow in arithmetic operations
+- Stack overflow from unbounded recursion
+
+Return a JSON array of findings. Each finding:
+{{
+  "bug_type": "NULL_DEREF|BOUNDS|DIV_ZERO|TYPE_ERROR|UNHANDLED_ERROR|OVERFLOW|RECURSION|OTHER",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "description": "one sentence describing the specific crash scenario",
+  "fix": "concrete fix suggestion"
+}}
+
+Return [] if no issues found. Return ONLY the JSON array, no prose.

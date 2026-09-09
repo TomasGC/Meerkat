@@ -1,0 +1,28 @@
+Analyze this {language} code for resource leaks and blocking-async defects.
+
+Source file:
+{source}
+
+Already reported by mechanical pattern analysis — do NOT report these again:
+{known_findings}
+
+Detect:
+- Handles (files, sockets, connections, readers, streams) not closed on every path
+- Cleanup that only runs on the success path, skipped when an exception is thrown
+- defer, finally or using placed inside a loop so cleanup piles up until the function exits
+- Async work started and never awaited, so failures are lost and ordering is undefined
+- Blocking waits on asynchronous work that can deadlock a captured context
+- Timers, subscriptions, watchers or event handlers never cancelled or unregistered
+- Connection pools, executors or clients created per call instead of reused
+- Goroutines, threads or tasks that can outlive their caller with no cancellation signal
+
+Return a JSON array of findings. Each finding:
+{{
+  "leak_type": "UNCLOSED_HANDLE|CLEANUP_ON_SUCCESS_ONLY|DEFER_IN_LOOP|UNAWAITED_TASK|BLOCKING_WAIT|UNCANCELLED_TIMER|PER_CALL_CLIENT|UNBOUNDED_WORKER|OTHER",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "description": "one sentence describing the specific leak and how it is reached",
+  "fix": "concrete fix suggestion"
+}}
+
+Return [] if no issues found. Return ONLY the JSON array, no prose.

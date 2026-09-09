@@ -1,0 +1,29 @@
+Analyze this {language} code for security misconfiguration (OWASP A05).
+
+Source file:
+{source}
+
+Already reported by mechanical pattern analysis — do NOT report these again:
+{known_findings}
+
+Detect:
+- Debug, verbose or developer error pages reachable outside development
+- CORS policies that accept any origin, header or method, especially with credentials
+- Authentication or authorization globally disabled or bypassed by default
+- Cookies without Secure, HttpOnly or a restrictive SameSite
+- Missing security headers on responses (CSP, HSTS, X-Content-Type-Options)
+- Containers or services running as root, privileged, or sharing host namespaces
+- Default credentials, sample endpoints or admin consoles left enabled
+- Services bound to every interface when a loopback bind would do
+- Overly broad filesystem, bucket or IAM permissions
+
+Return a JSON array of findings. Each finding:
+{{
+  "misconfig_type": "DEBUG_EXPOSED|PERMISSIVE_CORS|AUTH_DISABLED|INSECURE_COOKIE|MISSING_HEADERS|CONTAINER_PRIVILEGE|DEFAULT_CREDENTIALS|EXPOSED_BIND|BROAD_PERMISSIONS|OTHER",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "description": "one sentence describing the specific misconfiguration",
+  "fix": "concrete fix suggestion"
+}}
+
+Return [] if no issues found. Return ONLY the JSON array, no prose.

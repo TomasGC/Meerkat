@@ -1,0 +1,26 @@
+Analyze this {language} code for prompt injection vulnerabilities.
+
+Source file:
+{source}
+
+Already reported by mechanical pattern analysis — do NOT report these again:
+{known_findings}
+
+Detect:
+- User-controlled data interpolated directly into LLM prompt strings without sanitization
+- Indirect prompt injection (user content stored in DB/files later used in prompts)
+- System prompt leakage (system prompt exposed to user via model output or logs)
+- Injection through external tool outputs (tool results injected into prompts unchecked)
+- Missing input validation before including user data in LLM context
+- Role confusion (user input that could override system instructions)
+
+Return a JSON array of findings. Each finding:
+{{
+  "injection_type": "DIRECT_INTERPOLATION|INDIRECT_INJECTION|SYSTEM_PROMPT_LEAK|TOOL_OUTPUT_INJECTION|MISSING_VALIDATION|ROLE_CONFUSION|OTHER",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "description": "one sentence describing the specific injection risk",
+  "fix": "concrete fix suggestion"
+}}
+
+Return [] if no issues found. Return ONLY the JSON array, no prose.

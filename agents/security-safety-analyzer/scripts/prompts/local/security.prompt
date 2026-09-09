@@ -1,0 +1,28 @@
+Analyze this {language} code for security vulnerabilities.
+
+Source file:
+{source}
+
+Already reported by mechanical pattern analysis — do NOT report these again:
+{known_findings}
+
+Detect:
+- SQL injection (string concatenation or formatting in queries)
+- XSS (unsanitized output to HTML/DOM)
+- IDOR (direct object references without authorization checks)
+- Missing authentication/authorization on sensitive operations
+- Hardcoded secrets, API keys, passwords, tokens
+- Path traversal (user-controlled file paths)
+- Command injection (user input in shell/exec calls)
+- Prompt injection (user data interpolated into LLM prompts without sanitization)
+
+Return a JSON array of findings. Each finding:
+{{
+  "vulnerability_type": "SQL_INJECTION|XSS|IDOR|MISSING_AUTH|HARDCODED_SECRET|PATH_TRAVERSAL|COMMAND_INJECTION|PROMPT_INJECTION|OTHER",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "description": "one sentence describing the specific vulnerability",
+  "fix": "concrete fix suggestion"
+}}
+
+Return [] if no vulnerabilities found. Return ONLY the JSON array, no prose.
