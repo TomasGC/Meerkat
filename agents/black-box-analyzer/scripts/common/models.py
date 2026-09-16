@@ -234,6 +234,18 @@ class Parameter:
             "constraints": self.constraints,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Parameter":
+        """Rebuild from a to_dict() payload (used by the analysis cache)."""
+        return cls(
+            name=data["name"],
+            param_type=data["param_type"],
+            data_type=data["data_type"],
+            required=data.get("required", True),
+            default_value=data.get("default_value"),
+            constraints=data.get("constraints", {}),
+        )
+
 
 @dataclass
 class EntryPoint:
@@ -269,6 +281,19 @@ class EntryPoint:
             "metadata": self.metadata,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "EntryPoint":
+        """Rebuild from a to_dict() payload."""
+        return cls(
+            type=EntryPointType(data["type"]),
+            name=data["name"],
+            params=[Parameter.from_dict(p) for p in data.get("params", [])],
+            file_path=data["file_path"],
+            line_number=data["line_number"],
+            framework=data.get("framework"),
+            metadata=data.get("metadata", {}),
+        )
+
 
 @dataclass
 class Endpoint:
@@ -288,23 +313,27 @@ class Endpoint:
         return {
             "path": self.path,
             "method": self.method.value,
-            "params": [
-                {
-                    "name": p.name,
-                    "param_type": p.param_type,
-                    "data_type": p.data_type,
-                    "required": p.required,
-                    "default_value": p.default_value,
-                    "constraints": p.constraints,
-                }
-                for p in self.params
-            ],
+            "params": [p.to_dict() for p in self.params],
             "response_codes": self.response_codes,
             "file_path": self.file_path,
             "line_number": self.line_number,
             "framework": self.framework,
             "handler_name": self.handler_name,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Endpoint":
+        """Rebuild from a to_dict() payload."""
+        return cls(
+            path=data["path"],
+            method=HTTPMethod(data["method"]),
+            params=[Parameter.from_dict(p) for p in data.get("params", [])],
+            response_codes=data.get("response_codes", []),
+            file_path=data["file_path"],
+            line_number=data["line_number"],
+            framework=data.get("framework"),
+            handler_name=data.get("handler_name"),
+        )
 
 
 @dataclass
@@ -335,6 +364,21 @@ class TestCase:
             "test_type": self.test_type,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TestCase":
+        """Rebuild from a to_dict() payload."""
+        return cls(
+            name=data["name"],
+            file_path=data["file_path"],
+            line_number=data["line_number"],
+            framework=TestFramework(data["framework"]),
+            tested_endpoint=data.get("tested_endpoint"),
+            tested_method=HTTPMethod(data["tested_method"]) if data.get("tested_method") else None,
+            tested_inputs=data.get("tested_inputs", []),
+            expected_outputs=data.get("expected_outputs", []),
+            test_type=data.get("test_type", "unknown"),
+        )
+
 
 @dataclass
 class Scenario:
@@ -358,6 +402,18 @@ class Scenario:
             "description": self.description,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Scenario":
+        """Rebuild from a to_dict() payload."""
+        return cls(
+            endpoint=data["endpoint"],
+            method=HTTPMethod(data["method"]),
+            input_combination=data["input_combination"],
+            expected_output=data["expected_output"],
+            scenario_type=data["scenario_type"],
+            description=data.get("description", ""),
+        )
+
 
 @dataclass
 class CoverageGap:
@@ -374,6 +430,15 @@ class CoverageGap:
             "is_tested": self.is_tested,
             "related_tests": [t.to_dict() for t in self.related_tests],
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "CoverageGap":
+        """Rebuild from a to_dict() payload."""
+        return cls(
+            scenario=Scenario.from_dict(data["scenario"]),
+            is_tested=data["is_tested"],
+            related_tests=[TestCase.from_dict(t) for t in data.get("related_tests", [])],
+        )
 
 
 @dataclass
@@ -399,6 +464,19 @@ class RiskAssessment:
             "risk_level": self.risk_level,
             "reasoning": self.reasoning,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RiskAssessment":
+        """Rebuild from a to_dict() payload."""
+        return cls(
+            gap=CoverageGap.from_dict(data["gap"]),
+            business_impact=data["business_impact"],
+            technical_risk=data["technical_risk"],
+            failure_probability=data["failure_probability"],
+            risk_score=data["risk_score"],
+            risk_level=data["risk_level"],
+            reasoning=data["reasoning"],
+        )
 
     @staticmethod
     def calculate_risk_level(score: RiskScore) -> str:
@@ -435,6 +513,18 @@ class CoverageMatrix:
             "by_endpoint": self.by_endpoint,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "CoverageMatrix":
+        """Rebuild from a to_dict() payload."""
+        return cls(
+            total_scenarios=data["total_scenarios"],
+            tested_scenarios=data["tested_scenarios"],
+            untested_scenarios=data["untested_scenarios"],
+            coverage_percent=data["coverage_percent"],
+            gaps=[CoverageGap.from_dict(g) for g in data.get("gaps", [])],
+            by_endpoint=data.get("by_endpoint", {}),
+        )
+
 
 @dataclass
 class AnalysisResult:
@@ -462,3 +552,16 @@ class AnalysisResult:
             "risk_assessment": [ra.to_dict() for ra in self.risk_assessment],
             "metadata": self.metadata,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "AnalysisResult":
+        """Rebuild from a to_dict() payload."""
+        return cls(
+            project_type=ProjectType(data["project_type"]),
+            entry_points=[EntryPoint.from_dict(ep) for ep in data.get("entry_points", [])],
+            test_cases=[TestCase.from_dict(tc) for tc in data.get("test_cases", [])],
+            scenarios=[Scenario.from_dict(s) for s in data.get("scenarios", [])],
+            coverage_matrix=CoverageMatrix.from_dict(data["coverage_matrix"]),
+            risk_assessment=[RiskAssessment.from_dict(ra) for ra in data.get("risk_assessment", [])],
+            metadata=data.get("metadata", {}),
+        )
