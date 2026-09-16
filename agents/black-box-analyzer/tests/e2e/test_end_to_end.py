@@ -145,61 +145,43 @@ def test_full_python_project_analysis(sample_python_project, temp_dir):
     assert analysis["summary"]["total_entry_points"] == 4
 
 
-@pytest.mark.skip(reason="Cache integration not yet implemented in parallel_analyzer")
 def test_incremental_cache(sample_go_project, temp_dir):
-    """Test incremental cache speeds up repeated runs."""
-    import time
-
+    """Test repeated runs are served from cache instead of re-analyzed."""
     output_file = temp_dir / "analysis.json"
 
-    # First run (no cache)
-    start = time.time()
-    result1 = subprocess.run(
-        [
-            sys.executable,
-            str(scripts_dir / "parallel_analyzer.py"),
-            str(sample_go_project),
-            "--output",
-            str(output_file),
-            "--max-workers",
-            "2",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    first_run_time = time.time() - start
+    def run():
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(scripts_dir / "parallel_analyzer.py"),
+                str(sample_go_project),
+                "--output",
+                str(output_file),
+                "--max-workers",
+                "2",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, f"Analysis failed: {result.stderr}"
+        return json.loads(output_file.read_text())
 
-    assert result1.returncode == 0
+    first = run()
+    second = run()
 
-    # Second run (with cache)
-    start = time.time()
-    result2 = subprocess.run(
-        [
-            sys.executable,
-            str(scripts_dir / "parallel_analyzer.py"),
-            str(sample_go_project),
-            "--output",
-            str(output_file),
-            "--max-workers",
-            "2",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    second_run_time = time.time() - start
+    # Deterministic cache signal, not wall-clock timing (flaky under load)
+    assert first["cache"]["enabled"] is True
+    assert first["cache"]["hits"] == 0
+    assert first["cache"]["misses"] >= 1
 
-    assert result2.returncode == 0
+    assert second["cache"]["hits"] >= 1
+    assert second["cache"]["misses"] == 0
 
-    # Second run should be significantly faster (cache hit)
-    # Allow some variance, but expect at least 2x speedup
-    assert second_run_time < first_run_time, \
-        f"Cache didn't speed up: first={first_run_time:.2f}s, second={second_run_time:.2f}s"
-
-    # Verify cache hit message in output (if verbose)
-    # Note: This might not always appear depending on verbosity
+    # A cache hit must reproduce the analysis exactly
+    assert second["results"] == first["results"]
+    assert second["summary"] == first["summary"]
 
 
-@pytest.mark.skip(reason="Cache integration not yet implemented in parallel_analyzer")
 def test_cache_invalidation_on_file_change(sample_go_project, temp_dir):
     """Test cache invalidates when source files change."""
     output_file = temp_dir / "analysis.json"
@@ -251,6 +233,9 @@ def test_cache_invalidation_on_file_change(sample_go_project, temp_dir):
 
         # Should detect new endpoint
         assert analysis2["summary"]["total_entry_points"] > analysis1["summary"]["total_entry_points"]
+
+        # ...and must have re-analyzed rather than served the stale entry
+        assert analysis2["cache"]["hits"] == 0
 
     finally:
         # Restore original content
@@ -337,9 +322,8 @@ def test_diff_analysis(sample_go_project, temp_dir):
         test_go.write_text(original_content)
 
 
-@pytest.mark.skip(reason="Cache integration not yet implemented in parallel_analyzer")
 def test_clear_cache_flag(sample_go_project, temp_dir):
-    """Test --clear-cache flag."""
+    """Test --clear-cache discards cached results before running."""
     from common.cache import AnalysisCache
 
     # Create some cache
@@ -356,18 +340,24 @@ def test_clear_cache_flag(sample_go_project, temp_dir):
         check=True,
     )
 
-    # Verify cache exists
-    cache = AnalysisCache()
+    # Must be scoped the way a production run scopes it, otherwise this
+    # inspects a different directory than the one that was written
+    cache = AnalysisCache(project_path=sample_go_project)
     cache_info = cache.get_cache_info()
     assert cache_info["status"] == "active"
+    assert cache_info["cached_analyzers"], "no analyzer result was cached"
 
-    # Clear cache
+    # --clear-cache clears *then* re-runs, so the observable proof that the
+    # clear happened is that the run reports no cache hits
+    cleared_output = temp_dir / "cleared.json"
     result = subprocess.run(
         [
             sys.executable,
             str(scripts_dir / "parallel_analyzer.py"),
             str(sample_go_project),
             "--clear-cache",
+            "--output",
+            str(cleared_output),
         ],
         capture_output=True,
         text=True,
@@ -375,9 +365,9 @@ def test_clear_cache_flag(sample_go_project, temp_dir):
 
     assert result.returncode == 0
 
-    # Verify cache cleared
-    cache_info = cache.get_cache_info()
-    assert cache_info["status"] == "empty"
+    report = json.loads(cleared_output.read_text())
+    assert report["cache"]["hits"] == 0, "cache was not cleared before the run"
+    assert report["cache"]["misses"] >= 1
 
 
 def test_no_cache_flag(sample_go_project, temp_dir):
@@ -415,8 +405,9 @@ def test_no_cache_flag(sample_go_project, temp_dir):
 
     assert result2.returncode == 0
 
-    # Both should produce same results
-    # (No cache hit messages in result2 output)
+    report2 = json.loads(output_file.read_text())
+    assert report2["cache"]["enabled"] is False
+    assert report2["cache"]["hits"] == 0, "--no-cache must not serve cached results"
 
 
 def test_project_info_json_written_alongside_output(sample_go_project, temp_dir):

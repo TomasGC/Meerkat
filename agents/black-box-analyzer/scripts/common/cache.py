@@ -11,12 +11,41 @@ Performance:
 
 import hashlib
 import json
+import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .models import Endpoint, TestCase
+from .models import AnalysisResult, Endpoint, Scenario, TestCase
+
+# Source globs per language. Previously duplicated inline in both
+# get_cached_endpoints and save_endpoints, where the two copies could drift.
+_SOURCE_FILE_PATTERNS = {
+    "go": ["*.go"],
+    "typescript": ["*.ts", "*.tsx"],
+    "javascript": ["*.js", "*.jsx"],
+    "csharp": ["*.cs"],
+    "python": ["*.py"],
+    "java": ["*.java"],
+}
+
+_FALLBACK_SOURCE_PATTERNS = ["*.go"]
+_FALLBACK_TEST_PATTERNS = ["*_test.go"]
+
+_CACHE_ENV_VAR = "BBA_CACHE_DIR"
+_MODEL_SUBDIR = "models"
+
+
+def _cache_home() -> Path:
+    """Cache root, overridable via BBA_CACHE_DIR.
+
+    Read on every call rather than captured at import time so tests (including
+    subprocess-based ones) can redirect it away from the real user cache.
+    """
+    override = os.environ.get(_CACHE_ENV_VAR)
+    return Path(override) if override else Path.home() / ".cache" / "black-box-analyzer"
 
 
 class AnalysisCache:
@@ -31,7 +60,7 @@ class AnalysisCache:
             project_path: Project root — used to scope cache per project (avoids cross-project pollution)
         """
         if cache_dir is None:
-            base = Path.home() / ".cache" / "black-box-analyzer"
+            base = _cache_home()
             if project_path is not None:
                 # Scope by a short hash of the absolute project path
                 project_slug = hashlib.sha256(str(project_path.resolve()).encode()).hexdigest()[:12]
@@ -93,6 +122,111 @@ class AnalysisCache:
 
         return file_hashes
 
+    def _source_patterns(self, language: str) -> list[str]:
+        """Source globs for a language."""
+        return _SOURCE_FILE_PATTERNS.get(language, _FALLBACK_SOURCE_PATTERNS)
+
+    def _test_patterns(self, language: str) -> list[str]:
+        """Test globs for a language."""
+        from .constants import TEST_FILE_PATTERNS
+
+        return TEST_FILE_PATTERNS.get(language, _FALLBACK_TEST_PATTERNS)
+
+    def _all_cache_files(self) -> list[Path]:
+        """Every file this cache owns, including per-analyzer results."""
+        return [
+            self.endpoints_cache,
+            self.tests_cache,
+            self.scenarios_cache,
+            self.metadata_cache,
+            *self.cache_dir.glob("result_*.json"),
+        ]
+
+    def _result_cache_path(self, analyzer: str) -> Path:
+        """Cache file holding one analyzer's AnalysisResult."""
+        return self.cache_dir / f"result_{re.sub(r'[^A-Za-z0-9_.-]', '_', analyzer)}.json"
+
+    def get_cached_result(
+        self, project_path: Path, language: str, analyzer: str
+    ) -> AnalysisResult | None:
+        """
+        Get one analyzer's cached result, or None if the cache is stale.
+
+        Validity requires the language plus every source and test file hash to
+        match what was recorded at save time, so any edit to the project
+        invalidates the entry.
+
+        Args:
+            project_path: Project root directory
+            language: Programming language
+            analyzer: Analyzer name (one cache entry per analyzer)
+
+        Returns:
+            Cached AnalysisResult or None if cache invalid
+        """
+        cache_path = self._result_cache_path(analyzer)
+        if not cache_path.exists():
+            return None
+
+        try:
+            payload = json.loads(cache_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return None
+
+        if payload.get("language") != language:
+            return None
+
+        source_hashes = self._hash_directory(project_path, self._source_patterns(language))
+        if payload.get("source_file_hashes") != source_hashes:
+            return None
+
+        test_hashes = self._hash_directory(project_path, self._test_patterns(language))
+        if payload.get("test_file_hashes") != test_hashes:
+            return None
+
+        try:
+            return AnalysisResult.from_dict(payload["result"])
+        except (KeyError, TypeError, ValueError):
+            # Schema drift between versions - treat as a miss rather than crash
+            return None
+
+    def save_result(
+        self, project_path: Path, language: str, analyzer: str, result: AnalysisResult
+    ) -> None:
+        """
+        Save one analyzer's result, recording the hashes that validate it.
+
+        Args:
+            project_path: Project root directory
+            language: Programming language
+            analyzer: Analyzer name (one cache entry per analyzer)
+            result: Analysis result to cache
+        """
+        cached_at = datetime.now().isoformat()
+        payload = {
+            "language": language,
+            "analyzer": analyzer,
+            "cached_at": cached_at,
+            "source_file_hashes": self._hash_directory(
+                project_path, self._source_patterns(language)
+            ),
+            "test_file_hashes": self._hash_directory(project_path, self._test_patterns(language)),
+            "result": result.to_dict(),
+        }
+
+        try:
+            self._result_cache_path(analyzer).write_text(
+                json.dumps(payload, indent=2), encoding="utf-8"
+            )
+        except OSError:
+            # Cache writes are best-effort; a failure must not fail the analysis
+            return
+
+        metadata = self._load_metadata()
+        metadata["language"] = language
+        metadata.setdefault("results_cached_at", {})[analyzer] = cached_at
+        self._save_metadata(metadata)
+
     def get_cached_endpoints(
         self, project_path: Path, language: str
     ) -> list[Endpoint] | None:
@@ -120,17 +254,7 @@ class AnalysisCache:
             return None
 
         # Get current file hashes
-        patterns_map = {
-            "go": ["*.go"],
-            "typescript": ["*.ts", "*.tsx"],
-            "javascript": ["*.js", "*.jsx"],
-            "csharp": ["*.cs"],
-            "python": ["*.py"],
-            "java": ["*.java"],
-        }
-
-        patterns = patterns_map.get(language, ["*.go"])
-        current_hashes = self._hash_directory(project_path, patterns)
+        current_hashes = self._hash_directory(project_path, self._source_patterns(language))
 
         # Compare with cached hashes
         cached_hashes = metadata.get("source_file_hashes", {})
@@ -142,36 +266,8 @@ class AnalysisCache:
         # Load cached endpoints
         try:
             endpoints_data = json.loads(self.endpoints_cache.read_text(encoding="utf-8"))
-
-            # Reconstruct Endpoint objects from JSON
-            from .models import HTTPMethod, Parameter
-
-            endpoints = []
-            for ep_dict in endpoints_data:
-                endpoint = Endpoint(
-                    path=ep_dict["path"],
-                    method=HTTPMethod(ep_dict["method"]),
-                    params=[
-                        Parameter(
-                            name=p["name"],
-                            param_type=p["param_type"],
-                            data_type=p["data_type"],
-                            required=p.get("required", True),
-                            default_value=p.get("default_value"),
-                            constraints=p.get("constraints", {}),
-                        )
-                        for p in ep_dict.get("params", [])
-                    ],
-                    response_codes=ep_dict.get("response_codes", []),
-                    file_path=ep_dict["file_path"],
-                    line_number=ep_dict["line_number"],
-                    framework=ep_dict.get("framework"),
-                    handler_name=ep_dict.get("handler_name"),
-                )
-                endpoints.append(endpoint)
-
-            return endpoints
-        except (OSError, json.JSONDecodeError, KeyError):
+            return [Endpoint.from_dict(ep) for ep in endpoints_data]
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
             return None
 
     def save_endpoints(
@@ -186,17 +282,7 @@ class AnalysisCache:
             endpoints: Endpoints to cache
         """
         # Calculate source file hashes
-        patterns_map = {
-            "go": ["*.go"],
-            "typescript": ["*.ts", "*.tsx"],
-            "javascript": ["*.js", "*.jsx"],
-            "csharp": ["*.cs"],
-            "python": ["*.py"],
-            "java": ["*.java"],
-        }
-
-        patterns = patterns_map.get(language, ["*.go"])
-        source_hashes = self._hash_directory(project_path, patterns)
+        source_hashes = self._hash_directory(project_path, self._source_patterns(language))
 
         # Convert endpoints to JSON
         endpoints_data = [ep.to_dict() for ep in endpoints]
@@ -236,10 +322,7 @@ class AnalysisCache:
             return None
 
         # Get current test file hashes
-        from .constants import TEST_FILE_PATTERNS
-
-        patterns = TEST_FILE_PATTERNS.get(language, ["*_test.go"])
-        current_hashes = self._hash_directory(project_path, patterns)
+        current_hashes = self._hash_directory(project_path, self._test_patterns(language))
 
         # Compare with cached hashes
         cached_hashes = metadata.get("test_file_hashes", {})
@@ -251,27 +334,8 @@ class AnalysisCache:
         # Load cached tests
         try:
             tests_data = json.loads(self.tests_cache.read_text(encoding="utf-8"))
-
-            # Reconstruct TestCase objects from JSON
-            from .models import HTTPMethod, TestFramework
-
-            tests = []
-            for test_dict in tests_data:
-                test = TestCase(
-                    name=test_dict["name"],
-                    file_path=test_dict["file_path"],
-                    line_number=test_dict["line_number"],
-                    framework=TestFramework(test_dict["framework"]),
-                    tested_endpoint=test_dict.get("tested_endpoint"),
-                    tested_method=HTTPMethod(test_dict["tested_method"]) if test_dict.get("tested_method") else None,
-                    tested_inputs=test_dict.get("tested_inputs", []),
-                    expected_outputs=test_dict.get("expected_outputs", []),
-                    test_type=test_dict.get("test_type", "unknown"),
-                )
-                tests.append(test)
-
-            return tests
-        except (OSError, json.JSONDecodeError, KeyError):
+            return [TestCase.from_dict(tc) for tc in tests_data]
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
             return None
 
     def save_tests(self, project_path: Path, language: str, tests: list[TestCase]):
@@ -284,10 +348,7 @@ class AnalysisCache:
             tests: Test cases to cache
         """
         # Calculate test file hashes
-        from .constants import TEST_FILE_PATTERNS
-
-        patterns = TEST_FILE_PATTERNS.get(language, ["*_test.go"])
-        test_hashes = self._hash_directory(project_path, patterns)
+        test_hashes = self._hash_directory(project_path, self._test_patterns(language))
 
         # Convert tests to JSON
         tests_data = [t.to_dict() for t in tests]
@@ -328,24 +389,8 @@ class AnalysisCache:
         # Load cached scenarios
         try:
             scenarios_data = json.loads(self.scenarios_cache.read_text(encoding="utf-8"))
-
-            # Reconstruct Scenario objects from JSON
-            from .models import HTTPMethod, Scenario
-
-            scenarios = []
-            for s_dict in scenarios_data:
-                scenario = Scenario(
-                    endpoint=s_dict["endpoint"],
-                    method=HTTPMethod(s_dict["method"]),
-                    input_combination=s_dict["input_combination"],
-                    expected_output=s_dict["expected_output"],
-                    scenario_type=s_dict["scenario_type"],
-                    description=s_dict.get("description", ""),
-                )
-                scenarios.append(scenario)
-
-            return scenarios
-        except (OSError, json.JSONDecodeError, KeyError):
+            return [Scenario.from_dict(s) for s in scenarios_data]
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
             return None
 
     def save_scenarios(self, endpoints_hash: str, scenarios: list):
@@ -368,16 +413,23 @@ class AnalysisCache:
         metadata["scenarios_cached_at"] = datetime.now().isoformat()
         self._save_metadata(metadata)
 
-    def invalidate_all(self):
-        """Invalidate entire cache (delete all cache files)."""
-        for cache_file in [
-            self.endpoints_cache,
-            self.tests_cache,
-            self.scenarios_cache,
-            self.metadata_cache,
-        ]:
+    def invalidate_all(self, include_projects: bool = False):
+        """Invalidate cache files.
+
+        Args:
+            include_projects: Also clear every project-scoped subdirectory.
+                Required when this instance points at the unscoped base
+                directory, whose own files stay empty because every real run
+                writes to a per-project subdirectory below it.
+        """
+        for cache_file in self._all_cache_files():
             if cache_file.exists():
                 cache_file.unlink()
+
+        if include_projects:
+            for sub in self.cache_dir.iterdir():
+                if sub.is_dir() and sub.name != _MODEL_SUBDIR:
+                    AnalysisCache(cache_dir=sub).invalidate_all()
 
         print(f"Cache invalidated: {self.cache_dir}", file=sys.stderr)
 
@@ -394,16 +446,7 @@ class AnalysisCache:
         metadata = self._load_metadata()
 
         # Calculate cache size
-        total_size = sum(
-            f.stat().st_size
-            for f in [
-                self.endpoints_cache,
-                self.tests_cache,
-                self.scenarios_cache,
-                self.metadata_cache,
-            ]
-            if f.exists()
-        )
+        total_size = sum(f.stat().st_size for f in self._all_cache_files() if f.exists())
 
         return {
             "status": "active",
@@ -415,6 +458,7 @@ class AnalysisCache:
             "scenarios_cached_at": metadata.get("scenarios_cached_at"),
             "source_file_count": len(metadata.get("source_file_hashes", {})),
             "test_file_count": len(metadata.get("test_file_hashes", {})),
+            "cached_analyzers": sorted(metadata.get("results_cached_at", {})),
         }
 
     def _load_metadata(self) -> dict[str, Any]:
@@ -437,7 +481,10 @@ class AnalysisCache:
 # ---------------------------------------------------------------------------
 import time  # noqa: E402
 
-_MODEL_CACHE_DIR = Path.home() / ".cache" / "black-box-analyzer" / "models"
+
+def _model_cache_dir() -> Path:
+    """Model-result cache directory (honours BBA_CACHE_DIR)."""
+    return _cache_home() / _MODEL_SUBDIR
 
 
 def _model_file_hash(file_path: Path) -> str:
@@ -450,7 +497,7 @@ def _model_file_hash(file_path: Path) -> str:
 def get_model_cached(file_path: Path, analyzer: str, max_age_days: int = 7) -> list[dict] | None:
     """Return cached local AI results, or None if missing/expired."""
     key = f"{_model_file_hash(file_path)}_{analyzer}"
-    cache_file = _MODEL_CACHE_DIR / f"{key}.json"
+    cache_file = _model_cache_dir() / f"{key}.json"
     if not cache_file.exists():
         return None
     if max_age_days > 0:
@@ -469,9 +516,10 @@ def get_model_cached(file_path: Path, analyzer: str, max_age_days: int = 7) -> l
 
 def set_model_cached(file_path: Path, analyzer: str, results: list[dict]) -> None:
     """Cache local AI results for file+analyzer."""
-    _MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    model_dir = _model_cache_dir()
+    model_dir.mkdir(parents=True, exist_ok=True)
     key = f"{_model_file_hash(file_path)}_{analyzer}"
-    cache_file = _MODEL_CACHE_DIR / f"{key}.json"
+    cache_file = model_dir / f"{key}.json"
     try:
         cache_file.write_text(json.dumps(results), encoding="utf-8")
     except OSError:
@@ -480,10 +528,11 @@ def set_model_cached(file_path: Path, analyzer: str, results: list[dict]) -> Non
 
 def clear_model_cache() -> int:
     """Clear all local AI cached results. Returns number of entries deleted."""
-    if not _MODEL_CACHE_DIR.exists():
+    model_dir = _model_cache_dir()
+    if not model_dir.exists():
         return 0
     count = 0
-    for f in _MODEL_CACHE_DIR.glob("*.json"):
+    for f in model_dir.glob("*.json"):
         try:
             f.unlink()
             count += 1

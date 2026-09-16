@@ -42,7 +42,7 @@ from analyzers import (
     MessageQueueAnalyzer,
     SmartContractAnalyzer,
 )
-from common.cache import AnalysisCache
+from common.cache import AnalysisCache, clear_model_cache
 from common.models import ProjectType, AnalysisResult
 from library_analyzer import LibraryAnalyzer
 
@@ -160,34 +160,61 @@ class AnalyzerRouter:
             print("\n🚀 Phase 2-4: Running analyzers (parallel)...")
 
         results = {}
+        cache = AnalysisCache(project_path=project_path) if use_cache else None
+        language = project_info.language.value
 
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit analyzer tasks
-            futures = {
-                executor.submit(
-                    analyzer.analyze,
-                    project_path,
-                    project_info,
-                ): analyzer
-                for analyzer in analyzers
-            }
+        # Serve whatever the cache still validates; only the rest gets analyzed
+        pending = []
+        cache_hits = 0
 
-            # Wait for completion with progress
-            with tqdm(total=len(futures), desc="Analyzing", disable=not verbose) as pbar:
-                for future in as_completed(futures):
-                    analyzer = futures[future]
-                    try:
-                        result = future.result()
-                        results[result.project_type] = result
+        for analyzer in analyzers:
+            cached = (
+                cache.get_cached_result(project_path, language, analyzer.__class__.__name__)
+                if cache
+                else None
+            )
+            if cached is None:
+                pending.append(analyzer)
+                continue
 
-                        if verbose:
-                            print(f"  ✅ {analyzer.__class__.__name__}: {len(result.entry_points)} entry points, {len(result.scenarios)} scenarios")
+            results[cached.project_type] = cached
+            cache_hits += 1
+            if verbose:
+                print(f"  ⚡ {analyzer.__class__.__name__}: loaded from cache")
 
-                    except Exception as e:
-                        if verbose:
-                            print(f"  ❌ {analyzer.__class__.__name__} failed: {e}")
+        if pending:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # Submit analyzer tasks
+                futures = {
+                    executor.submit(
+                        analyzer.analyze,
+                        project_path,
+                        project_info,
+                    ): analyzer
+                    for analyzer in pending
+                }
 
-                    pbar.update(1)
+                # Wait for completion with progress
+                with tqdm(total=len(futures), desc="Analyzing", disable=not verbose) as pbar:
+                    for future in as_completed(futures):
+                        analyzer = futures[future]
+                        try:
+                            result = future.result()
+                            results[result.project_type] = result
+
+                            if cache:
+                                cache.save_result(
+                                    project_path, language, analyzer.__class__.__name__, result
+                                )
+
+                            if verbose:
+                                print(f"  ✅ {analyzer.__class__.__name__}: {len(result.entry_points)} entry points, {len(result.scenarios)} scenarios")
+
+                        except Exception as e:
+                            if verbose:
+                                print(f"  ❌ {analyzer.__class__.__name__} failed: {e}")
+
+                        pbar.update(1)
 
         # Phase 5: Aggregate results (for hybrid projects)
         if len(results) > 1:
@@ -203,7 +230,12 @@ class AnalyzerRouter:
                 print(f"  ✅ Overall coverage: {aggregated.coverage_matrix.coverage_percent:.2f}%")
 
         # Phase 6: Generate final report
-        return self._generate_report(project_info, results, verbose)
+        cache_stats = {
+            "enabled": use_cache,
+            "hits": cache_hits,
+            "misses": len(pending),
+        }
+        return self._generate_report(project_info, results, verbose, cache_stats)
 
     def _aggregate_results(
         self,
@@ -270,6 +302,7 @@ class AnalyzerRouter:
         project_info,
         results: dict[ProjectType, AnalysisResult],
         verbose: bool,
+        cache_stats: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Generate final analysis report.
 
@@ -277,6 +310,7 @@ class AnalyzerRouter:
             project_info: Project metadata
             results: Analysis results per type
             verbose: Verbose output
+            cache_stats: Cache enabled/hits/misses counters for this run
 
         Returns:
             Final report dictionary
@@ -286,6 +320,9 @@ class AnalyzerRouter:
             "project_info": project_info.to_dict(),
             "results": {},
         }
+
+        if cache_stats is not None:
+            report["cache"] = cache_stats
 
         # Add results per type
         for project_type, result in results.items():
@@ -431,10 +468,15 @@ Supported project types (19):
 
     # Handle cache clearing
     if args.clear_cache:
-        cache = AnalysisCache()
-        cache.invalidate_all()
+        # Must be project-scoped: an unscoped instance clears the shared base
+        # directory, not the per-project subdirectory a real run writes to
+        cache = AnalysisCache(project_path=args.project_path)
+        # With no project path this is the base directory, so it must recurse
+        # into the per-project subdirectories to clear anything at all
+        cache.invalidate_all(include_projects=args.project_path is None)
+        cleared_models = clear_model_cache()
         if args.verbose:
-            print("✅ Cache cleared")
+            print(f"✅ Cache cleared ({cleared_models} model entries)")
         if not args.project_path:
             return 0
 
