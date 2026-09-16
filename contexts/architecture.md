@@ -49,7 +49,7 @@ Local AI  Scripts  Agents
 │   ├── black-box-analyzer/          # Universal test gap analyzer (19+ project types)
 │   │   ├── AGENT.md
 │   │   ├── scripts/                 # orchestrate.py + parallel_analyzer + checkers/ (4 gap) + prompts/local/
-│   │   └── tests/                   # 384 unit / 47 integration/mock / 33 e2e
+│   │   └── tests/                   # 414 unit / 47 integration/mock / 30 integration/real / 36 e2e
 │   ├── clean-code-analyzer/         # 11-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, Composition)
 │   │   ├── AGENT.md
 │   │   ├── scripts/                 # orchestrate.py + 11 checkers + common/ (model_utils, cache, file_utils)

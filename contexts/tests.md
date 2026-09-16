@@ -48,10 +48,10 @@ agents/black-box-analyzer/tests/
 ├── agents/
 │   ├── black-box-analyzer/tests/
 │   │   ├── conftest.py
-│   │   ├── unit/            # 384 tests — checkers/_utils, 4 gap checkers (7 each), parse_test_files, etc.
+│   │   ├── unit/            # 414 tests — checkers/_utils, 4 gap checkers (7 each), models from_dict, cache, parse_test_files, etc.
 │   │   ├── integration/mock/ # 47 tests — library_analyzer, analyze_library_branches, 4 gap checkers (1 each)
-│   │   ├── integration/real/ # real local AI required
-│   │   └── e2e/             # 33 tests — parallel_analyzer, orchestrate, collect_coverage, diff_analysis, etc.
+│   │   ├── integration/real/ # 30 tests — real local AI required (skipped without a server)
+│   │   └── e2e/             # 36 tests — parallel_analyzer, orchestrate, collect_coverage, diff_analysis, cache lifecycle
 │   ├── security-safety-analyzer/
 │   │   └── scripts/tests/
 │   │       ├── conftest.py
@@ -129,3 +129,18 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 ```
+
+---
+
+## Cache Isolation (BBA)
+
+`agents/black-box-analyzer/tests/conftest.py` has an autouse `isolated_cache_dir`
+fixture that sets `BBA_CACHE_DIR` to a per-session tmp directory.
+
+Set as an **environment variable**, not a monkeypatched attribute: the e2e tests
+run `parallel_analyzer.py` through `subprocess.run`, which cannot see a patched
+attribute but does inherit the env. Without it, tests write into the real
+`~/.cache/black-box-analyzer`.
+
+`common/cache.py` reads it lazily via `_cache_home()` on every call — capturing it
+at import time would break subprocess tests that set it after import.

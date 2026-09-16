@@ -6,6 +6,9 @@
 
 **Format**: `#ISSUE: type: description`
 
+**`docs` exception**: `docs: description` — documentation commits never carry an
+issue number, no exceptions.
+
 **Types**: feat, fix, refactor, test, docs, chore
 
 **Examples**:
@@ -14,15 +17,18 @@
 #3: fix: resolve common namespace collision in pytest
 #3: refactor: reorganize test suite into 4-tier co-located structure
 #1: feat: add universal black-box test analyzer agent
+docs: document BBA analysis result cache
 ```
 
 **Rules**:
-- Always prefix with issue number
+- Always prefix with issue number, except `docs` commits which never have one
 - Description: WHAT/WHY, not HOW/WHO
 - No stats (+XX lines), no implementation details, no emoji
 
 **Bad**: `#3: feat: add caching (+806 lines) 🎉`
 **Good**: `#3: feat: add system information caching for faster page loads`
+**Bad**: `#24: docs: document the cache`
+**Good**: `docs: document the cache`
 
 ---
 
