@@ -5,7 +5,7 @@ import pytest
 from pathlib import Path
 from io import StringIO
 
-from common.cli.base import BaseCLIScript, create_cli_script
+from lib.cli.base import BaseCLIScript, create_cli_script
 
 class MockScript(BaseCLIScript):
     """Mock script for testing."""

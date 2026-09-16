@@ -23,7 +23,7 @@ from cli.generate_comment import (
     get_commits_in_range,
     get_current_branch,
 )
-from common.cli.base import BaseCLIScript
+from lib.cli.base import BaseCLIScript
 
 
 def generate_descriptions(categories: dict[str, int], style: str = "professional") -> list[str]:
@@ -214,5 +214,5 @@ class GenerateKanbanEntryScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(GenerateKanbanEntryScript)

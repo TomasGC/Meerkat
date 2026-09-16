@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from common.integrations import (
+from lib.integrations import (
     get_issue_url,
     get_pr_url,
     get_profile_detection_info,
@@ -66,10 +66,10 @@ def test_validate_profile_invalid_regex():
     finally:
         profile_path.unlink()
 
-@patch('common.integrations.load_integrations')
+@patch('lib.integrations.load_integrations')
 def test_get_issue_url_github(mock_load):
     """Test GitHub issue URL generation."""
-    from common.integrations import IntegrationConfig
+    from lib.integrations import IntegrationConfig
 
     mock_load.return_value = IntegrationConfig(
         profile_name="github",
@@ -87,10 +87,10 @@ def test_get_issue_url_github(mock_load):
     url = get_issue_url("owner/repo", "#123")
     assert url == "https://github.com/owner/repo/issues/123"
 
-@patch('common.integrations.load_integrations')
+@patch('lib.integrations.load_integrations')
 def test_get_issue_url_gitlab(mock_load):
     """Test GitLab issue URL generation."""
-    from common.integrations import IntegrationConfig
+    from lib.integrations import IntegrationConfig
 
     mock_load.return_value = IntegrationConfig(
         profile_name="gitlab",
@@ -108,10 +108,10 @@ def test_get_issue_url_gitlab(mock_load):
     url = get_issue_url("owner/repo", "#123")
     assert url == "https://gitlab.com/owner/repo/-/issues/123"
 
-@patch('common.integrations.load_integrations')
+@patch('lib.integrations.load_integrations')
 def test_get_pr_url_github(mock_load):
     """Test GitHub PR URL generation."""
-    from common.integrations import IntegrationConfig
+    from lib.integrations import IntegrationConfig
 
     mock_load.return_value = IntegrationConfig(
         profile_name="github",
@@ -129,10 +129,10 @@ def test_get_pr_url_github(mock_load):
     url = get_pr_url("owner/repo", "456")
     assert url == "https://github.com/owner/repo/pull/456"
 
-@patch('common.integrations.load_integrations')
+@patch('lib.integrations.load_integrations')
 def test_get_pr_url_gitlab(mock_load):
     """Test GitLab MR URL generation."""
-    from common.integrations import IntegrationConfig
+    from lib.integrations import IntegrationConfig
 
     mock_load.return_value = IntegrationConfig(
         profile_name="gitlab",

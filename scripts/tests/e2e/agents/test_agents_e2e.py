@@ -9,6 +9,7 @@ These tests validate agent → scripts delegation and autonomous execution.
 """
 
 import json
+import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 import sys
@@ -46,14 +47,12 @@ func TestGetUser(t *testing.T) {
 }
 """)
 
-    with patch("cli.detect_project_type.subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(returncode=0, stdout="go\n", stderr="")
-        from cli.detect_project_type import DetectProjectTypeScript
-        import argparse
+    from cli.detect_project_type import DetectProjectTypeScript
+    import argparse
 
-        script = DetectProjectTypeScript()
-        args = argparse.Namespace(path=tmp_path, format="json")
-        result = script.execute(args)
+    script = DetectProjectTypeScript()
+    args = argparse.Namespace(path=tmp_path, format="json")
+    result = script.execute(args)
 
     assert result.get("type") in ("go", "unknown") or "type" in result
 
@@ -63,32 +62,26 @@ def test_black_box_analyzer_extracts_endpoints(tmp_path):
     api_file = tmp_path / "api.go"
     api_file.write_text("""
 package main
-func setupRoutes(r *Router) {
-    r.GET("/api/users", getUsers)
-    r.POST("/api/users", createUser)
-    r.GET("/api/users/:id", getUser)
-    r.PUT("/api/users/:id", updateUser)
-    r.DELETE("/api/users/:id", deleteUser)
+func setupRoutes(router *gin.Engine) {
+    router.GET("/api/users", getUsers)
+    router.POST("/api/users", createUser)
+    router.GET("/api/users/:id", getUser)
+    router.PUT("/api/users/:id", updateUser)
+    router.DELETE("/api/users/:id", deleteUser)
 }
 """)
 
-    with patch("cli.extract_endpoints.subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout=json.dumps({
-                "endpoints": [
-                    {"path": "/api/users", "method": "GET"},
-                    {"path": "/api/users", "method": "POST"},
-                    {"path": "/api/users/:id", "method": "GET"},
-                    {"path": "/api/users/:id", "method": "PUT"},
-                    {"path": "/api/users/:id", "method": "DELETE"},
-                ]
-            }),
-            stderr=""
-        )
-        # Would call extract endpoint script
-        endpoints_data = json.loads(mock_run.return_value.stdout)
+    extractor = Path.home() / ".claude/agents/black-box-analyzer/scripts/extract_api_endpoints.py"
+    result = subprocess.run(
+        [sys.executable, str(extractor), str(tmp_path), "--language", "go"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
 
+    endpoints_data = json.loads(result.stdout)
+    assert endpoints_data["endpoint_count"] == 5
     assert len(endpoints_data["endpoints"]) == 5
 
 
@@ -217,29 +210,28 @@ def process_data(y):  # Duplicate function!
 
 def test_code_reviewer_agent_security_analysis():
     """code-reviewer agent must detect security vulnerabilities."""
-    code = """
-import sqlite3
+    from cli.analyze_commit_quality import AnalyzeCommitQualityScript
+    import argparse
 
-def search_users(user_id):
-    query = f"SELECT * FROM users WHERE id = {user_id}"
-    # SQL Injection vulnerability!
-    db = sqlite3.connect(":memory:")
-    return db.execute(query).fetchall()
+    diff = '''diff --git a/src/users.py b/src/users.py
+--- a/src/users.py
++++ b/src/users.py
+@@ -1,2 +1,6 @@
++def search_users(user_id):
++    return db.execute(f"SELECT * FROM users WHERE id = {user_id}").fetchall()
++
++password = "password123"
+'''
 
-def login(username, password):
-    # Hardcoded credentials
-    if username == "admin" and password == "password123":
-        return True
-    return False
-"""
+    script = AnalyzeCommitQualityScript()
+    with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0, stdout=diff, stderr="")
+        args = argparse.Namespace(commit=None, staged=True, format="json")
+        result = script.execute(args)
 
-    security_issues = []
-    if "f\"SELECT" in code:
-        security_issues.append("SQL Injection detected")
-    if "password=" in code and "password123" in code:
-        security_issues.append("Hardcoded credentials detected")
-
-    assert len(security_issues) >= 2
+    rules = {v["rule"] for v in result["violations"] if v["type"] == "security"}
+    assert "sql_injection" in rules
+    assert "hardcoded_secret" in rules
 
 
 # ---------------------------------------------------------------------------

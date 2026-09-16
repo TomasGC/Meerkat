@@ -14,8 +14,8 @@ from typing import Any
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript, create_cli_script
-from common.models import TestCoverageResult
+from lib.cli.base import BaseCLIScript, create_cli_script
+from lib.models import TestCoverageResult
 
 
 @dataclass

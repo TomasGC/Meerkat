@@ -3,8 +3,9 @@
 
 import pytest
 from pathlib import Path
+from unittest.mock import patch
 
-from common.file_utils import read_file_safe, read_files_safe, FileReadResult
+from lib.file_utils import read_file_safe, read_files_safe, FileReadResult
 
 class TestFileReadResult:
     """Test FileReadResult dataclass."""
@@ -122,24 +123,22 @@ class TestReadFileSafe:
         assert "codec" in result.error.lower() or "decode" in result.error.lower()
 
     def test_read_file_permission_error(self, tmp_path):
-        """Test reading file with permission error (Unix only)."""
-        import platform
-        if platform.system() == "Windows":
-            pytest.skip("Permission test not applicable on Windows")
-
+        """Test reading a file the process is not allowed to open."""
         test_file = tmp_path / "noperm.txt"
         test_file.write_text("Secret", encoding="utf-8")
-        test_file.chmod(0o000)  # Remove all permissions
 
-        try:
+        # chmod is a no-op on Windows, so the failure is raised at the read
+        # seam instead of relying on filesystem permissions. This also keeps
+        # the error branch covered on every platform.
+        with patch.object(
+            Path, "read_text", side_effect=PermissionError(13, "Permission denied")
+        ):
             result = read_file_safe(test_file)
 
-            assert result.exists is True
-            assert result.content is None
-            assert result.error is not None
-            assert "Permission denied" in result.error
-        finally:
-            test_file.chmod(0o644)  # Restore for cleanup
+        assert result.exists is True
+        assert result.content is None
+        assert result.error is not None
+        assert "Permission denied" in result.error
 
     def test_read_file_multiline(self, tmp_path):
         """Test reading multiline file."""

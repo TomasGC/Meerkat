@@ -21,8 +21,8 @@ from typing import Any, Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript
-from common.utils import run_command
+from lib.cli.base import BaseCLIScript
+from lib.utils import run_command
 
 
 # Error patterns for categorization (order matters - most specific first)
@@ -422,5 +422,5 @@ class AnalyzeCIFailureScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(AnalyzeCIFailureScript)

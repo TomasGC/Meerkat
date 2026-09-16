@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from cli.search_kanban import KanbanEntry, filter_entries, parse_kanban_file
-from common.utils import write_file_safe
+from lib.utils import write_file_safe
 
 @pytest.fixture
 def sample_kanban(tmp_path):

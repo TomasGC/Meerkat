@@ -43,10 +43,38 @@ tests/**/*.pyc
 .Python
 
 # Coverage reports
-tests/htmlcov/
-tests/.coverage
-tests/coverage.xml
+htmlcov/
+.coverage*
+coverage.*
 *.cover
+
+# Python build artifacts
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+sdist/
+var/
+wheels/
+parts/
+*.egg-info/
+*.egg
+.installed.cfg
+*$py.class
+*.so
+
+# Test caches and temp fixtures
+.pytest_cache/
+.tox/
+.nox/
+**/tests/temp-*/
+**/tests/fixtures/temp-*/
+
+# Agent run artifacts
+agents/*/scripts/project_info.json
+agents/*/scripts/.claude/
 
 # IDE
 .vscode/

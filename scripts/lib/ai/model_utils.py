@@ -15,9 +15,9 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-# model_config lives in the same scripts/ directory
-sys.path.insert(0, str(Path(__file__).parent))
-from model_config import get_model, _load as _load_config
+# the shared library is rooted at scripts/, two levels up from lib/ai/
+sys.path.insert(0, str(Path(__file__).parents[2]))
+from lib.config.model_config import get_model, _load as _load_config
 
 _THINK_RE = _re.compile(r'<think>.*?</think>', _re.DOTALL)
 

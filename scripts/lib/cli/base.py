@@ -19,8 +19,8 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from common.formatters import format_json
-from common.logger import get_defaults
+from lib.formatters import format_json
+from lib.logger import get_defaults
 
 
 class BaseCLIScript(ABC):

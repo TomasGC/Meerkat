@@ -19,7 +19,7 @@ def test_call_model_returns_stdout_on_success():
     mock_result = MagicMock()
     mock_result.returncode = 0
     mock_result.stdout = '  [{"method": "Foo"}]  '
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result):
             result = call_model("prompt", role="fast", timeout=30)
     assert result == '[{"method": "Foo"}]'
@@ -29,7 +29,7 @@ def test_call_model_returns_none_on_nonzero_rc(capsys):
     mock_result = MagicMock()
     mock_result.returncode = 1
     mock_result.stderr = "model not found"
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result):
             result = call_model("prompt")
     assert result is None
@@ -37,7 +37,7 @@ def test_call_model_returns_none_on_nonzero_rc(capsys):
 
 
 def test_call_model_returns_none_on_file_not_found(capsys):
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", side_effect=FileNotFoundError()):
             result = call_model("prompt")
     assert result is None
@@ -45,7 +45,7 @@ def test_call_model_returns_none_on_file_not_found(capsys):
 
 def test_call_model_returns_none_on_timeout(capsys):
     import subprocess as _sp
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", side_effect=_sp.TimeoutExpired(cmd="cli", timeout=5)):
             result = call_model("prompt", timeout=5)
     assert result is None
@@ -56,7 +56,7 @@ def test_call_model_passes_role_and_timeout():
     mock_result = MagicMock()
     mock_result.returncode = 0
     mock_result.stdout = "ok"
-    with patch("model_utils.get_model", return_value="test-model") as mock_get:
+    with patch("lib.ai.model_utils.get_model", return_value="test-model") as mock_get:
         with patch("subprocess.run", return_value=mock_result) as mock_run:
             call_model("my prompt", role="deep", timeout=45)
     mock_get.assert_called_with("deep")
@@ -72,7 +72,7 @@ def test_analyze_file_returns_empty_on_call_model_none(tmp_path):
     prompts_dir.mkdir()
     (prompts_dir / "prompt_name.prompt").write_text("{language}:{source}")
 
-    with patch("model_utils.call_model", return_value=None):
+    with patch("lib.ai.model_utils.call_model", return_value=None):
         result = analyze_file_with_model(src, "python", "analyzer", "prompt_name",
                                          prompts_dir=prompts_dir)
     assert result == []
@@ -86,7 +86,7 @@ def test_analyze_file_annotates_results(tmp_path):
     (prompts_dir / "prompt_name.prompt").write_text("{language}:{source}")
 
     response = json.dumps([{"method": "Bar", "branches": []}])
-    with patch("model_utils.call_model", return_value=response):
+    with patch("lib.ai.model_utils.call_model", return_value=response):
         result = analyze_file_with_model(src, "csharp", "analyzer", "prompt_name",
                                          prompts_dir=prompts_dir, no_cache=True)
 
@@ -110,8 +110,8 @@ def test_analyze_file_passes_language_and_role(tmp_path):
         captured["language"] = "go" if "go" in prompt else None
         return "[]"
 
-    with patch("model_utils.get_model", return_value="test-model"):
-        with patch("model_utils.call_model", side_effect=fake_call_model):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("lib.ai.model_utils.call_model", side_effect=fake_call_model):
             analyze_file_with_model(src, "go", "deep", "analyze_library_branches",
                                     prompts_dir=prompts_dir)
 

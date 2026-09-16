@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-_FIND_DUPLICATES = Path.home() / ".claude/scripts/cli/agents/code_analyzer/find_duplicates.py"
+_FIND_DUPLICATES = Path.home() / ".claude/scripts/cli/find_duplicates.py"
 
 
 def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False) -> dict:

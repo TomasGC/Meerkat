@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch, mock_open
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-import model_config as mc
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+import lib.config.model_config as mc
 
 _SAMPLE_CONFIG = {
     "local": {
@@ -37,7 +37,6 @@ def _reset_singleton():
 
 # ── get_model: basic role resolution ─────────────────────────────────────────
 
-@pytest.mark.unit
 def test_get_model_local_fast(tmp_path):
     """get_model('fast', 'local') returns local fast model name."""
     _reset_singleton()
@@ -48,7 +47,6 @@ def test_get_model_local_fast(tmp_path):
     assert result == "qwen2.5-coder:7b"
 
 
-@pytest.mark.unit
 def test_get_model_local_analyzer(tmp_path):
     """get_model('analyzer', 'local') returns local analyzer model."""
     _reset_singleton()
@@ -59,7 +57,6 @@ def test_get_model_local_analyzer(tmp_path):
     assert result == "devstral-small-2"
 
 
-@pytest.mark.unit
 def test_get_model_online_fast(tmp_path):
     """get_model('fast', 'online') returns online fast model name."""
     _reset_singleton()
@@ -70,7 +67,6 @@ def test_get_model_online_fast(tmp_path):
     assert result == "claude-haiku-4-5-20251001"
 
 
-@pytest.mark.unit
 def test_get_model_online_deep(tmp_path):
     """get_model('deep', 'online') returns online deep model name."""
     _reset_singleton()
@@ -83,7 +79,6 @@ def test_get_model_online_deep(tmp_path):
 
 # ── Singleton: _load() called only once ──────────────────────────────────────
 
-@pytest.mark.unit
 def test_singleton_load_called_once(tmp_path):
     """_load() reads the file only on first call; subsequent calls use cached dict."""
     _reset_singleton()
@@ -100,7 +95,6 @@ def test_singleton_load_called_once(tmp_path):
 
 # ── Auto-copy: template copied when local config missing ─────────────────────
 
-@pytest.mark.unit
 def test_auto_copy_template_when_config_missing(tmp_path):
     """When local config is absent, template is copied and used."""
     _reset_singleton()
@@ -116,7 +110,6 @@ def test_auto_copy_template_when_config_missing(tmp_path):
     assert result == "qwen2.5-coder:7b"
 
 
-@pytest.mark.unit
 def test_auto_copy_skipped_when_template_missing(tmp_path):
     """When both local config and template are absent, _load returns empty dict."""
     _reset_singleton()
@@ -132,7 +125,6 @@ def test_auto_copy_skipped_when_template_missing(tmp_path):
 
 # ── Missing role / provider: fallback and KeyError ───────────────────────────
 
-@pytest.mark.unit
 def test_missing_role_returns_fallback(tmp_path):
     """get_model with unknown role returns fallback when provided."""
     _reset_singleton()
@@ -143,7 +135,6 @@ def test_missing_role_returns_fallback(tmp_path):
     assert result == "some-default"
 
 
-@pytest.mark.unit
 def test_missing_role_raises_without_fallback(tmp_path):
     """get_model with unknown role and no fallback raises KeyError."""
     _reset_singleton()
@@ -154,7 +145,6 @@ def test_missing_role_raises_without_fallback(tmp_path):
             mc.get_model("unknown_role")
 
 
-@pytest.mark.unit
 def test_missing_provider_returns_fallback(tmp_path):
     """get_model with unknown provider returns fallback when provided."""
     _reset_singleton()
@@ -165,7 +155,6 @@ def test_missing_provider_returns_fallback(tmp_path):
     assert result == "fallback-model"
 
 
-@pytest.mark.unit
 def test_missing_provider_raises_without_fallback(tmp_path):
     """get_model with unknown provider and no fallback raises KeyError."""
     _reset_singleton()
@@ -178,7 +167,6 @@ def test_missing_provider_raises_without_fallback(tmp_path):
 
 # ── Malformed JSON: _load handles gracefully ─────────────────────────────────
 
-@pytest.mark.unit
 def test_malformed_json_returns_empty_dict(tmp_path):
     """Malformed local_models_config.json causes _load to silently return {}."""
     _reset_singleton()

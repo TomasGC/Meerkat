@@ -36,7 +36,7 @@ python3 -c "
 import sys, json
 from pathlib import Path
 sys.path.insert(0, str(Path.home() / '.claude' / 'scripts'))
-from model_config import get_model
+from lib.config.model_config import get_model
 import json
 
 config_path = Path.home() / '.claude' / 'configs' / 'local_models_config.json'
@@ -67,7 +67,7 @@ for role in ['fast', 'analyzer', 'deep', 'reasoning', 'guard']:
 3. Use `get_model(role, provider)` to resolve the model name
 
 ```python
-from model_config import get_model
+from lib.config.model_config import get_model
 
 role = "fast"           # from classification above
 provider = "local"      # or "online" if local unavailable

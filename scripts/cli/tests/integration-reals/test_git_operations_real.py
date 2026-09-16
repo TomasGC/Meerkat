@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-pytestmark = [pytest.mark.integration_real, pytest.mark.requires_git]
+pytestmark = pytest.mark.requires_git
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -55,9 +55,9 @@ def test_check_git_repo_detects_valid_repo(git_repo):
     import argparse
     from cli.check_git_repo import CheckGitRepoScript
     script = CheckGitRepoScript()
-    args = argparse.Namespace(path=git_repo, format="json")
+    args = argparse.Namespace(path=git_repo, info=False, format="json")
     result = script.execute(args)
-    assert result["is_git_repo"] is True
+    assert result["isRepo"] is True
 
 def test_check_git_repo_detects_non_repo(tmp_path):
     import argparse
@@ -65,9 +65,9 @@ def test_check_git_repo_detects_non_repo(tmp_path):
     non_repo = tmp_path / "not_a_repo"
     non_repo.mkdir()
     script = CheckGitRepoScript()
-    args = argparse.Namespace(path=non_repo, format="json")
+    args = argparse.Namespace(path=non_repo, info=False, format="json")
     result = script.execute(args)
-    assert result["is_git_repo"] is False
+    assert result["isRepo"] is False
 
 # ---------------------------------------------------------------------------
 # Real: get_commit_info.py
@@ -95,7 +95,7 @@ def test_get_commit_info_multiple(git_repo_with_commits):
     try:
         os.chdir(git_repo_with_commits)
         script = GetCommitInfoScript()
-        args = argparse.Namespace(hash=None, count=3, include_files=False, format="json")
+        args = argparse.Namespace(hash="HEAD", count=3, include_files=False, format="json")
         result = script.execute(args)
         commits = result.get("commits", [])
         assert len(commits) >= 1
@@ -115,10 +115,11 @@ def test_get_branch_summary_main_branch(git_repo):
         os.chdir(git_repo)
         script = GetBranchSummaryScript()
         args = argparse.Namespace(
-            base=None, branch=None, include_stats=False, format="json"
+            base_branch="", no_uncommitted=False, format_markdown=False, format="json"
         )
         result = script.execute(args)
-        assert "branch" in result or "current_branch" in result
+        assert result["success"] is True
+        assert result["summary"].current_branch
     finally:
         os.chdir(old_dir)
 
@@ -157,15 +158,14 @@ def test_find_git_repos_no_repos(tmp_path):
 
 def test_extract_issue_from_real_commit(git_repo_with_commits):
     import argparse
-    from cli.extract_issue import ExtractIssueScript
+    from cli.extract_issue import ExtractTicketScript
     import os
     old_dir = os.getcwd()
     try:
         os.chdir(git_repo_with_commits)
-        script = ExtractIssueScript()
+        script = ExtractTicketScript()
         args = argparse.Namespace(
-            branch=None, from_commit=True, format="json",
-            integration_profile=None
+            branch=None, from_commit=True, format="json"
         )
         result = script.execute(args)
         # The commit message contains "#1:"
@@ -186,8 +186,7 @@ def test_analyze_commit_quality_real_diff(git_repo_with_commits):
         os.chdir(git_repo_with_commits)
         script = AnalyzeCommitQualityScript()
         args = argparse.Namespace(
-            commits="HEAD", diff=None, format="json",
-            checks=["security", "quality"]
+            commit="HEAD", staged=False, format="json"
         )
         result = script.execute(args)
         assert "violations" in result or "issues" in result or "total_violations" in result

@@ -13,7 +13,7 @@ from common.file_utils import discover_files, _LANG_EXTENSIONS, _TEST_MARKERS
 from common.model_utils import analyze_files_parallel, check_server_available, PROMPTS_DIR
 
 _PROMPT = "yagni_speculative"
-_FIND_UNUSED = Path.home() / ".claude/scripts/cli/agents/code_analyzer/find_unused_code.py"
+_FIND_UNUSED = Path.home() / ".claude/scripts/cli/find_unused_code.py"
 
 
 def run(

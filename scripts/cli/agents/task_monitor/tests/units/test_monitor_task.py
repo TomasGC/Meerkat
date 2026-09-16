@@ -9,15 +9,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Load monitor_task module with model_config.get_model mocked so we don't hit disk
-_MONITOR_DIR = Path(__file__).parent.parent  # scripts/cli/agents/task_monitor/
-_SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent.parent  # ~/.claude/scripts
+_MONITOR_DIR = Path(__file__).parent.parent.parent  # scripts/cli/agents/task_monitor/
+_SCRIPTS_DIR = Path(__file__).parents[5]  # ~/.claude/scripts
 sys.path.insert(0, str(_SCRIPTS_DIR))
 sys.path.insert(0, str(_MONITOR_DIR))
 
 # Stub model_config before the module is imported (it calls get_model at import time)
-_fake_mc = types.ModuleType("model_config")
+_fake_mc = types.ModuleType("lib.config.model_config")
 _fake_mc.get_model = lambda role, *a, **kw: f"test-model-{role}"
-sys.modules["model_config"] = _fake_mc
+sys.modules["lib.config.model_config"] = _fake_mc
 sys.modules.pop("monitor_task", None)
 
 # Now safe to import

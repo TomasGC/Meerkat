@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Load switch-profile.py via importlib (hyphen in filename prevents normal import)
-_SCRIPT_PATH = Path(__file__).parent.parent.parent / "cli" / "switch-profile.py"
+_SCRIPT_PATH = Path(__file__).parent.parent.parent / "switch-profile.py"
 _spec = importlib.util.spec_from_file_location("switch_profile_cli", _SCRIPT_PATH)
 _mod = importlib.util.module_from_spec(_spec)  # type: ignore
 _spec.loader.exec_module(_mod)  # type: ignore

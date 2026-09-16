@@ -9,7 +9,7 @@ import pytest
 from cli.get_branch_summary import (
     get_current_branch,
     get_default_base_branch)
-from common.models import BranchCommit, BranchSummary, FileChange, UncommittedChanges
+from lib.models import BranchCommit, BranchSummary, FileChange, UncommittedChanges
 
 def test_get_default_base_branch_main():
     """Test detecting main as default branch."""

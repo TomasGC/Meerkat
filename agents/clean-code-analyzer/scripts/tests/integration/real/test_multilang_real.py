@@ -64,11 +64,11 @@ def test_solid_finds_violations_in_typescript(tmp_path):
 @ollama_skip
 @pytest.mark.integration_real
 def test_mechanical_checkers_skip_non_python_gracefully(tmp_path):
-    """Error handling checker on TypeScript returns success with empty or regex-based results."""
+    """Naming checker on TypeScript returns success with empty or regex-based results."""
     fixture = FIXTURES / "dirty_typescript"
     if not fixture.exists():
         pytest.skip("TypeScript fixture missing")
-    from checkers.check_error_handling import run
+    from checkers.check_naming import run
     result = run(fixture, "typescript")
     # Should not crash — may return 0 violations (AST only works on Python)
     assert result.get("success") is not None

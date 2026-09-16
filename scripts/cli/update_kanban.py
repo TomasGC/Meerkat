@@ -24,8 +24,8 @@ from cli.extract_issue import extract_issue
 from cli.generate_comment import categorize_file, get_commit_files, get_commits_in_range
 from cli.generate_kanban_entry import generate_descriptions
 from cli.search_kanban import KanbanEntry, parse_kanban_file
-from common.cli.base import BaseCLIScript
-from common.utils import run_command
+from lib.cli.base import BaseCLIScript
+from lib.utils import run_command
 
 
 def find_kanban_file(start_path: Path = None) -> Path | None:
@@ -170,11 +170,11 @@ def update_existing_entry(
 def insert_entry_at_top(content: str, entry: str) -> str:
     """Insert entry at top of entries section."""
     # Find first --- marker
-    match = re.search(r"(.*?---\s*\n)", content, re.DOTALL)
+    match = re.search(r"(?ms)(.*?^---[ \t]*\n)", content)
     if match:
         header = match.group(1)
-        rest = content[match.end():]
-        return f"{header}\n{entry}\n\n---{rest}"
+        rest = content[match.end():].lstrip("\n")
+        return f"{header}\n{entry}\n\n---\n\n{rest}"
     else:
         # No --- found, just prepend
         return f"{entry}\n\n{content}"
@@ -407,5 +407,5 @@ class UpdateKanbanScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(UpdateKanbanScript)

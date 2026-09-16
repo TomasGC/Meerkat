@@ -8,7 +8,7 @@ import pytest
 from cli.get_commit_info import (
     get_commit_files,
     get_commit_info)
-from common.models import GitCommitInfo
+from lib.models import GitCommitInfo
 
 def test_get_commit_info_head():
     """Test getting HEAD commit."""

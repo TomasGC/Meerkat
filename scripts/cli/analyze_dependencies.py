@@ -18,7 +18,7 @@ from typing import Any, Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript
+from lib.cli.base import BaseCLIScript
 
 
 def analyze_package_json(content: str, top_n: int) -> dict:
@@ -399,5 +399,5 @@ class AnalyzeDependenciesScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(AnalyzeDependenciesScript)

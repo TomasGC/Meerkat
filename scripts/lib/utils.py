@@ -188,6 +188,8 @@ def run_command(
             cwd=cwd,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False
         )
@@ -289,7 +291,7 @@ def extract_issue_from_branch(branch_name: str) -> str | None:
         >>> extract_issue_from_branch("feature/#123-add-auth")
         "#123"
     """
-    from common.integrations import get_issue_format
+    from lib.integrations import get_issue_format
 
     issue_pattern = get_issue_format()
     match = re.search(issue_pattern, branch_name)

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from cli.update_section_in_markdown import update_section_in_markdown
-from common.utils import write_file_safe
+from lib.utils import write_file_safe
 
 @pytest.fixture
 def sample_markdown(tmp_path):
