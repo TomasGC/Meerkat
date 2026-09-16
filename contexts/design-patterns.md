@@ -11,7 +11,7 @@
 2. **Checker Strategy** — CCA (11 checkers), BBA (4 gap checkers) and SSA (10 checkers) share the same `run(path, language, **kwargs) -> dict` interface; orchestrators treat them uniformly
 3. **Mechanical vs Semantic Split** — checkers categorized by whether they need a model (AST/grep = mechanical, SOLID/KISS/etc = semantic); different execution paths, same output contract
 4. **Async Pipeline** — `asyncio.run(gather(*tasks, return_exceptions=True))` fans out all N file HTTP requests simultaneously; GPU is the only bottleneck
-5. **Content-Hash Cache** — model results keyed by `(file, checker, role, content_hash)`; invalidation is implicit (hash changes on file edit), no TTL management required at write time
+5. **Content-Hash Cache** — model results keyed by `(file, checker, role, content_hash)`, BBA analysis results by `(analyzer, language, all source+test hashes)`; invalidation is implicit (hash changes on file edit), no TTL management required at write time. Known limit: only source/test globs are hashed, so dependency-manifest edits do not invalidate
 6. **Branch-vs-Main Incremental** — `git diff base...HEAD --name-only` (three-dot = since merge-base, not since branch creation); avoids false positives when main has moved
 7. **Facade Orchestration** — `orchestrate.py` is a pure coordinator: discovers checkers via `importlib`, inspects `run()` signatures via `inspect.signature`, passes only the params each checker declares
 10. **Singleton (model_config.py)** — config loaded once per process via class-level `_instance`; all callers share the same parsed JSON with no repeated file I/O
@@ -21,6 +21,8 @@
 12. **Mechanical-then-AI Reconciliation (SSA)** — a checker's deterministic findings are both rendered into the prompt (`{known_findings}` slot) and used as a ±3-line proximity filter over the AI findings; neither layer needs to know what the other detects
 13. **Per-file Prompt Slots** — `analyze_files_parallel(..., extra_slots={path: {...}})` gives each file its own template values, so one prompt template serves N files with N different contexts
 14. **Table-driven Rules** — SSA pattern checkers declare `{language: [(regex, message, severity, suggestion)]}` plus a `"*"` bucket for language-agnostic rules; `common/hybrid.py` is the only executor, so a new checker is a rule table and a prompt
+15. **Env-var Override for Subprocess Test Isolation (BBA)** — `BBA_CACHE_DIR` redirects the cache root and is read lazily on every call, never captured at import. A monkeypatched attribute cannot cross a `subprocess.run` boundary; an inherited env var can, so the same autouse fixture isolates in-process and e2e tests alike
+16. **Deterministic Signal over Timing** — cache behaviour is asserted through counters the run reports (`{"enabled", "hits", "misses"}`), not by comparing wall-clock durations between runs, which is flaky under load
 
 ---
 

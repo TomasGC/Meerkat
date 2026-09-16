@@ -101,8 +101,14 @@ python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --path /path/t
 - `--fast` — use `fast` model role (lighter, quicker)
 - `--role ROLE` — override model role: analyzer, fast, deep, reasoning
 - `--agents N` — N independent local AI calls per file, dedup-merged
-- `--no-cache` — bypass per-file local AI cache
-- `--clear-cache` — delete all cached local AI results and exit
+- `--no-cache` — bypass both caches: per-analyzer `AnalysisResult` cache and per-file local AI cache
+- `--clear-cache` — delete cached analysis results + local AI results, then continue the run (`orchestrate.py` exits after clearing; `parallel_analyzer.py` only exits early when no project path is given)
+
+**Cache**:
+- Analysis results cached per `(analyzer, language, source+test file hashes)` in `~/.cache/black-box-analyzer/<project-hash>/result_<Analyzer>.json`
+- Invalidation is implicit: any edit to a source or test file changes its hash. Dependency manifests (`go.mod`, `package.json`) are **not** hashed, so a dependency bump alone does not invalidate
+- `BBA_CACHE_DIR` overrides the cache root (used by tests to avoid touching the real user cache)
+- Report JSON carries a `cache` block: `{"enabled": bool, "hits": int, "misses": int}`
 
 ### BBA tests
 

@@ -12,6 +12,16 @@ import tempfile
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def isolated_cache_dir(tmp_path_factory, monkeypatch):
+    """Redirect the analysis cache so tests never touch the real user cache.
+
+    Set as an environment variable, not a monkeypatched attribute, so the
+    subprocess-based e2e tests inherit it too.
+    """
+    monkeypatch.setenv("BBA_CACHE_DIR", str(tmp_path_factory.mktemp("bba-cache")))
+
+
 @pytest.fixture
 def temp_dir():
     with tempfile.TemporaryDirectory() as tmpdir:

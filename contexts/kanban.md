@@ -4,6 +4,21 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-09-16 - [#24] BBA analysis result cache
+
+- `common/models.py`: `from_dict` on all 9 dataclasses, mirroring each `to_dict`; enums rebuilt from their values so cached payloads deserialize into typed objects
+- `common/cache.py`: per-analyzer `AnalysisResult` cache keyed on `(analyzer, language, source+test file hashes)`; `BBA_CACHE_DIR` env override read lazily; `invalidate_all(include_projects=)` recurses into per-project subdirs
+- `parallel_analyzer.py`: cache checked per analyzer before submission — hits skip the work, not just the reporting; report gains a `cache` block (enabled/hits/misses)
+- Two latent bugs fixed: `orchestrate.py --clear-cache` never cleared the analysis cache, and an unscoped `--clear-cache` targeted the always-empty base directory
+- Tests: 3 previously-skipped cache e2e tests un-skipped and rewritten to assert cache counters instead of comparing wall-clock times; `test_no_cache_flag` asserted instead of ending on a comment; 30 new unit tests (14 `from_dict`, 16 result cache)
+- Autouse `BBA_CACHE_DIR` fixture stops the subprocess-based e2e tests writing into the real `~/.cache/black-box-analyzer`
+
+tags: #bba #cache #testing
+Ref: https://github.com/TomasGC/Meerkat/issues/24
+Commits: 6446fa6, f273a82
+
+---
+
 2026-09-09 - [#12] Security Safety Analyzer (SSA) agent
 
 - New agent `agents/security-safety-analyzer/`: 10 checkers (security, crypto, deserialization, misconfiguration, sensitive_data, crash_bugs, concurrency, resource_leaks, error_handling, prompt_injection), each mechanical pattern/AST pass + AI pass

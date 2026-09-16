@@ -24,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from common.cache import clear_model_cache
+from common.cache import AnalysisCache, clear_model_cache
 
 
 def _detect_base_branch(path: Path) -> str | None:
@@ -71,6 +71,9 @@ def main() -> None:
 
     if args.clear_cache:
         cleared = clear_model_cache()
+        # The analysis cache is separate from the model cache and must go too,
+        # otherwise a "cleared" cache still serves stale AnalysisResults
+        AnalysisCache().invalidate_all(include_projects=True)
         print(f"Cleared {cleared} cached result(s).")
         return
 
