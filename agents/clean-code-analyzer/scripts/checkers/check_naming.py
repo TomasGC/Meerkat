@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Naming checker — magic numbers, magic strings, bad names (pure grep/regex)."""
 
+import ast
 import re
 import time
 from pathlib import Path
@@ -17,7 +18,10 @@ _CONST_ASSIGNMENT_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,}\s*=")
 _MAGIC_STRING_CONDITION_RE = re.compile(r'(?:==|!=|in\s)\s*["\']([^"\']{3,})["\']')
 _SINGLE_LETTER_VAR_RE = re.compile(r"\b([a-zA-Z])\s*=\s*(?![\s]*for\b)")
 _LOOP_VAR_RE = re.compile(r"for\s+([a-zA-Z])\s+in\b")
-_BOOL_METHOD_RE = re.compile(r"def\s+((?!is_|has_|can_|should_)[a-z]\w*)\s*\(self")
+
+# Methods that yield a bool are expected to read as a question
+_BOOL_NAME_PREFIXES = ("is_", "has_", "can_", "should_")
+_BOOL_EXEMPT_NAMES = frozenset({"run", "execute", "start", "stop", "init", "setup"})
 
 _ALLOWED_SHORT = {"id", "db", "ok", "err", "ctx", "req", "res", "ip", "os", "io",
                   "fn", "cb", "dt", "ts", "pk", "fk", "ui", "ux", "vm", "fs"}
@@ -26,6 +30,64 @@ _ALLOWED_SHORT = {"id", "db", "ok", "err", "ctx", "req", "res", "ip", "os", "io"
 
 def _is_test_file(path: Path) -> bool:
     return any(marker in path.name.lower() for marker in _TEST_MARKERS)
+
+
+def _returns_bool(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    """True when the annotation says bool, or every returned value is a bool literal."""
+    annotation = node.returns
+    if isinstance(annotation, ast.Name) and annotation.id == "bool":
+        return True
+    if annotation is not None:
+        # Annotated as something else — trust the annotation
+        return False
+
+    returned = [
+        n.value for n in ast.walk(node)
+        if isinstance(n, ast.Return) and n.value is not None
+    ]
+    if not returned:
+        return False
+    return all(
+        isinstance(v, ast.Constant) and isinstance(v.value, bool)
+        for v in returned
+    )
+
+
+def _bool_method_violations(source: str, rel: str) -> list[dict]:
+    """Flag bool-returning methods whose names don't read as a question.
+
+    Return type drives this, not the name alone: the earlier regex matched every
+    method lacking an is_/has_/can_/should_ prefix, so ordinary getters such as
+    `get_active_users` were reported as boolean-naming violations.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+
+    violations = []
+    for cls in ast.walk(tree):
+        if not isinstance(cls, ast.ClassDef):
+            continue
+        for node in cls.body:
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if not (node.args.args and node.args.args[0].arg == "self"):
+                continue
+            name = node.name
+            if name.startswith(_BOOL_NAME_PREFIXES) or name in _BOOL_EXEMPT_NAMES:
+                continue
+            if not _returns_bool(node):
+                continue
+            violations.append({
+                "principle": "Naming",
+                "file": rel,
+                "line": node.lineno,
+                "severity": "low",
+                "message": f"Method `{name}` returns bool but name doesn't start with is/has/can/should",
+                "suggestion": f"Rename to `is_{name}`, `has_{name}`, or `can_{name}`",
+            })
+    return violations
 
 
 def _check_file(file: Path, root: Path) -> list[dict]:
@@ -92,19 +154,8 @@ def _check_file(file: Path, root: Path) -> list[dict]:
                     "suggestion": "Use a descriptive name that conveys intent",
                 })
 
-        # Boolean methods not starting with is/has/can/should (Python only)
-        if file.suffix == ".py":
-            for m in _BOOL_METHOD_RE.finditer(line):
-                name = m.group(1)
-                if name not in ("run", "execute", "start", "stop", "init", "setup"):
-                    violations.append({
-                        "principle": "Naming",
-                        "file": rel,
-                        "line": i,
-                        "severity": "low",
-                        "message": f"Method `{name}` may return bool but name doesn't start with is/has/can/should",
-                        "suggestion": f"Rename to `is_{name}`, `has_{name}`, or `can_{name}`",
-                    })
+    if file.suffix == ".py":
+        violations.extend(_bool_method_violations("\n".join(lines), rel))
 
     return violations
 

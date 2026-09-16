@@ -1,3 +1,40 @@
+---
+name: security-safety-analyzer
+description: |
+  Autonomous security and safety analyzer (ssa). Checks vulnerabilities, cryptographic failures, unsafe deserialization, misconfiguration, sensitive-data exposure, crash bugs, concurrency issues, resource leaks, error handling, and prompt injection. Each checker runs a mechanical pattern pass plus an AI pass, delegating detection to Python scripts and local AI to minimize Claude token usage.
+
+  <example>
+  Context: User wants a security review of a project
+  user: "Check this project for security vulnerabilities"
+  assistant: "I'll use the security-safety-analyzer to run all checkers in parallel"
+  <commentary>
+  All 10 checkers run in parallel via scripts + local AI. Claude only synthesizes the report. Token saved: 25-40K.
+  </commentary>
+  </example>
+
+  <example>
+  Context: User wants crypto and secrets checks only
+  user: "Check for weak crypto and hardcoded secrets in src/"
+  assistant: "I'll use security-safety-analyzer with --checks crypto,sensitive_data"
+  <commentary>
+  Targeted mode. Only the two named checkers run. Token saved: 20-35K.
+  </commentary>
+  </example>
+
+  <example>
+  Context: User asks for a threat model
+  user: "What is the threat model for our payment flow?"
+  assistant: "This requires strategic reasoning — I'll handle it directly"
+  <commentary>
+  Threat modeling is a design activity → Claude directly. ssa is for code-level detection only.
+  </commentary>
+  </example>
+
+tools: Bash, Read, Grep, Glob
+model: haiku
+color: red
+---
+
 # Security Safety Analyzer (SSA)
 
 Autonomous security and safety analysis agent. Runs 10 checkers in parallel to detect vulnerabilities, cryptographic failures, unsafe deserialization, misconfiguration, sensitive-data exposure, crash bugs, concurrency issues, resource leaks, error handling gaps, and prompt injection risks.
@@ -127,7 +164,7 @@ agents/security-safety-analyzer/
     ├── common/
     │   ├── hybrid.py            # Shared mechanical-then-AI driver (pattern-table checkers)
     │   ├── dedup.py             # known_findings rendering + proximity dedup
-    │   ├── model_utils.py       # Shim → scripts/model_utils.py
+    │   ├── model_utils.py       # Shim → scripts/lib/ai/model_utils.py
     │   ├── cache.py             # SSA-scoped content-hash cache
     │   └── file_utils.py        # File discovery + language detection
     ├── prompts/

@@ -9,7 +9,7 @@ class TestAgents:
 
     def test_agents_exist(self):
         agents_dir = Path.home() / ".claude" / "agents"
-        for agent in ["task-delegator", "test-runner", "code-reviewer", "git-helper", "ollama-router"]:
+        for agent in ["task-delegator", "test-runner", "code-reviewer", "git-helper", "model-router"]:
             assert (agents_dir / agent / "AGENT.md").exists(), f"Agent {agent} not found"
 
     def test_agent_structure(self):
