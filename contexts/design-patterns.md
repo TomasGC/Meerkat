@@ -15,7 +15,7 @@
 6. **Branch-vs-Main Incremental** — `git diff base...HEAD --name-only` (three-dot = since merge-base, not since branch creation); avoids false positives when main has moved
 7. **Facade Orchestration** — `orchestrate.py` is a pure coordinator: discovers checkers via `importlib`, inspects `run()` signatures via `inspect.signature`, passes only the params each checker declares
 10. **Singleton (model_config.py)** — config loaded once per process via class-level `_instance`; all callers share the same parsed JSON with no repeated file I/O
-11. **Shim / Thin Re-export** — `agents/*/scripts/common/model_utils.py` re-exports from `scripts/model_utils.py`; agents keep a stable local import path, shared logic lives in one place
+11. **Shim / Thin Re-export** — `agents/*/scripts/common/model_utils.py` re-exports from `scripts/lib/ai/model_utils.py`; agents keep a stable local import path, shared logic lives in one place
 8. **Co-located Test Pyramid** — tests live next to source (`agent/tests/unit/`, `agent/tests/integration/mock/`, etc.); each level has its own `conftest.py` managing `sys.path`
 9. **Prompt Template** — `.prompt` files are Python format-string templates (`{code}`, `{language}`, `{file_path}`); validated structurally by unit tests, semantic correctness by integration/real tests
 12. **Mechanical-then-AI Reconciliation (SSA)** — a checker's deterministic findings are both rendered into the prompt (`{known_findings}` slot) and used as a ±3-line proximity filter over the AI findings; neither layer needs to know what the other detects
@@ -23,6 +23,8 @@
 14. **Table-driven Rules** — SSA pattern checkers declare `{language: [(regex, message, severity, suggestion)]}` plus a `"*"` bucket for language-agnostic rules; `common/hybrid.py` is the only executor, so a new checker is a rule table and a prompt
 15. **Env-var Override for Subprocess Test Isolation (BBA)** — `BBA_CACHE_DIR` redirects the cache root and is read lazily on every call, never captured at import. A monkeypatched attribute cannot cross a `subprocess.run` boundary; an inherited env var can, so the same autouse fixture isolates in-process and e2e tests alike
 16. **Deterministic Signal over Timing** — cache behaviour is asserted through counters the run reports (`{"enabled", "hits", "misses"}`), not by comparing wall-clock durations between runs, which is flaky under load
+17. **Atomic Cache Write** — cache entries are written to a `tempfile.mkstemp` file in the same directory then moved into place with `os.replace`; a crash mid-write leaves the previous entry intact instead of a truncated file. The private writer raises, the public `set()` swallows, so a cache failure never breaks its caller
+18. **Self-Verifying Cache Entry** — an entry stores the `query`/`filters` that produced it and `get()` rejects any entry whose stored request differs from the one being served. Cache keys are truncated hashes, so identity cannot be inferred from the filename alone
 
 ---
 
@@ -75,10 +77,12 @@ Mechanical checkers (`check_dry`, `check_error_handling`, etc.) have no `role` p
 
 ## Namespace Isolation
 
-Four independent `common/` packages exist:
-- `scripts/common/` — shared CLI utilities
+Four independent `common/` packages exist (the shared library `scripts/lib/` is deliberately not one of them):
 - `agents/black-box-analyzer/scripts/common/` — BBA-specific utilities
 - `agents/clean-code-analyzer/scripts/common/` — CCA-specific utilities (model_utils shim, cache, file_utils)
 - `agents/security-safety-analyzer/scripts/common/` — SSA-specific utilities (hybrid driver, dedup, model_utils shim, cache, file_utils)
+- `skills/search-tech/scripts/common/` — search-tech utilities (cache, logger, models, utils)
 
-**Rule**: never run tests from two different agents in the same pytest invocation — Python's import cache resolves `common` to whichever is first on `sys.path`.
+**Rule**: never run tests from two different `common/` owners in the same pytest invocation — Python's import cache resolves `common` to whichever is first on `sys.path`. This is why `skills/search-tech` is absent from the root `pytest.ini` `testpaths`: including it would collide with the agents' packages. Its suite is run separately from `skills/search-tech/scripts/`.
+
+`template-base/common/` is a template directory, not a Python package — it holds no `.py` and never enters `sys.path`.

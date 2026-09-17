@@ -95,3 +95,31 @@ def test_script_selective_checks(script, temp_project, monkeypatch):
 
     assert result["success"] is True
     assert result["checks_performed"] == ["dead_code"]
+
+
+class TestModelResolution:
+    """Verify get_model() is used for model selection in _ask_ollama_dead_code."""
+
+    def test_ask_ollama_uses_get_model_with_fast_role(self, tmp_path):
+        """_ask_ollama_dead_code calls get_model('fast', ...) to resolve the model name."""
+        from unittest.mock import patch, MagicMock
+        import cli.analyze_code_patterns as mod
+
+        item = {"name": "unused_fn", "file": "mod.py"}
+        instance = AnalyzeCodePatternsScript()
+
+        captured_roles = []
+
+        def fake_get_model(role, provider="local", fallback=None):
+            captured_roles.append(role)
+            return fallback or "test-model"
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "yes"
+
+        with patch.object(mod, "_get_model", fake_get_model):
+            with patch("cli.analyze_code_patterns.subprocess.run", return_value=mock_result):
+                instance._ask_ollama_dead_code(item)
+
+        assert "fast" in captured_roles, "get_model should be called with role='fast'"

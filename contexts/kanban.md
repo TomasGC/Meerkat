@@ -4,6 +4,21 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-09-17 - [#16] Restructure scripts into lib and cli
+
+- `scripts/common/` split into `scripts/lib/` (`ai/model_utils`, `config/model_config`, `cli/BaseCLIScript`); name freed so the four agent-local `common/` packages no longer collide with a shared one
+- `skills/search-tech`: per-query result cache (atomic temp-file + `os.replace`, 1h TTL, entry stores its own query/filters and is rejected on mismatch)
+- Test suite restored to green: `--import-mode=importlib` in root `pytest.ini`, SSA `AGENT.md` frontmatter added (agent had never been registered), `model-router` rename propagated
+- CCA e2e no longer needs docker-compose — `local_ai_service` fixture reads `local.base_url` from config, so switching provider is a config edit
+- `check_naming` product bug fixed: the bool-naming rule flagged every unprefixed instance method; now an AST return-type check gates it, clearing false positives on ordinary getters
+- Multi-agent dedup e2e dropped its cross-sample count ratio (unsound: each run is an independent nondeterministic sample, both bounds observed to fail); merge exactness moved to unit tests with fixed responses
+
+tags: #refactor #scripts-lib #testing #cache #local-ai
+Ref: https://github.com/TomasGC/Meerkat/issues/16
+Commits: af54702, 6e52c85, 989b49f
+
+---
+
 2026-09-16 - [#24] BBA analysis result cache
 
 - `common/models.py`: `from_dict` on all 9 dataclasses, mirroring each `to_dict`; enums rebuilt from their values so cached payloads deserialize into typed objects

@@ -13,8 +13,6 @@ import pytest
 from cli.format_commit_message import FormatCommitMessageScript
 from cli.analyze_commit_quality import AnalyzeCommitQualityScript
 
-pytestmark = pytest.mark.integration_mock
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -106,23 +104,24 @@ index abc123..def456 100644
     with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=clean_diff, stderr="")
         args = argparse.Namespace(
-            commits=None, diff=None, format="json",
-            checks=["security", "quality"]
+            commit=None, staged=True, format="json"
         )
         result = quality_script.execute(args)
     assert "violations" in result or "issues" in result or "passed" in result
 
 def test_quality_detects_hardcoded_secret(quality_script):
     import argparse
-    diff_with_secret = """
+    diff_with_secret = """diff --git a/src/config.py b/src/config.py
+--- a/src/config.py
++++ b/src/config.py
+@@ -1,2 +1,4 @@
 +API_KEY = "sk_live_abc123def456"
 +password = "SuperSecret123!"
 """
     with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=diff_with_secret, stderr="")
         args = argparse.Namespace(
-            commits=None, diff=None, format="json",
-            checks=["security"]
+            commit=None, staged=True, format="json"
         )
         result = quality_script.execute(args)
     # Should detect security violations
@@ -131,7 +130,10 @@ def test_quality_detects_hardcoded_secret(quality_script):
 
 def test_quality_detects_todo_comment(quality_script):
     import argparse
-    diff_with_todo = """
+    diff_with_todo = """diff --git a/src/process.py b/src/process.py
+--- a/src/process.py
++++ b/src/process.py
+@@ -1,2 +1,5 @@
 +# TODO: fix this later
 +def process():
 +    pass
@@ -139,8 +141,7 @@ def test_quality_detects_todo_comment(quality_script):
     with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=diff_with_todo, stderr="")
         args = argparse.Namespace(
-            commits=None, diff=None, format="json",
-            checks=["quality"]
+            commit=None, staged=True, format="json"
         )
         result = quality_script.execute(args)
     violations = result.get("violations", result.get("issues", []))

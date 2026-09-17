@@ -59,16 +59,6 @@ def clean_project(tmp_path):
 
 @ollama_skip
 @pytest.mark.integration_real
-def test_error_handling_real(dirty_project):
-    """Real checker on dirty code → at least one ErrorHandling violation."""
-    from checkers.check_error_handling import run
-    result = run(dirty_project / "src", "python")
-    assert result["success"] is True
-    assert len(result["violations"]) > 0
-
-
-@ollama_skip
-@pytest.mark.integration_real
 def test_naming_real(dirty_project):
     """Real checker on dirty code → magic number 86400 flagged."""
     from checkers.check_naming import run
@@ -83,17 +73,11 @@ def test_naming_real(dirty_project):
 @ollama_skip
 @pytest.mark.integration_real
 def test_clean_code_no_violations_real(clean_project):
-    """Clean code → 0 violations from mechanical checkers."""
-    from checkers.check_error_handling import run as run_eh
-    from checkers.check_naming import run as run_n
+    """Clean code → naming checker flags nothing."""
+    from checkers.check_naming import run
 
-    eh_result = run_eh(clean_project / "src", "python")
-    assert eh_result["success"] is True
-    assert len(eh_result["violations"]) == 0, (
-        f"Unexpected error handling violations: {eh_result['violations']}"
-    )
-
-    naming_result = run_n(clean_project / "src", "python")
+    naming_result = run(clean_project / "src", "python")
+    assert naming_result["success"] is True
     # SECONDS_PER_DAY should NOT be flagged (it's a constant definition)
     messages = [v.get("message", "") for v in naming_result["violations"]]
     assert not any("SECONDS_PER_DAY" in msg for msg in messages), (

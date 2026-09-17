@@ -12,8 +12,8 @@ from typing import Any
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript, create_cli_script
-from common.utils import run_command
+from lib.cli.base import BaseCLIScript, create_cli_script
+from lib.utils import run_command
 
 
 class CheckGitRepoScript(BaseCLIScript):

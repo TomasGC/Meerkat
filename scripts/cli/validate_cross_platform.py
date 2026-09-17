@@ -21,7 +21,7 @@ import re
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript
+from lib.cli.base import BaseCLIScript
 
 
 def check_hardcoded_paths(content: str, errors: list, warnings: list) -> None:
@@ -449,5 +449,5 @@ class ValidateCrossPlatformScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(ValidateCrossPlatformScript)

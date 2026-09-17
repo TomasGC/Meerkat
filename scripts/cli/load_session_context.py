@@ -16,9 +16,9 @@ from typing import Any, Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript
-from common.integrations import get_issue_format
-from common.utils import run_command
+from lib.cli.base import BaseCLIScript
+from lib.integrations import get_issue_format
+from lib.utils import run_command
 
 
 def get_issue_from_branch(cwd: Optional[Path] = None) -> Optional[str]:
@@ -192,5 +192,5 @@ class LoadSessionContextScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(LoadSessionContextScript)

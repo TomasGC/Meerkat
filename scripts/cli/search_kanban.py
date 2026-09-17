@@ -17,7 +17,7 @@ from typing import Any
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript
+from lib.cli.base import BaseCLIScript
 
 
 @dataclass
@@ -55,8 +55,15 @@ def parse_kanban_file(file_path: Path) -> list[KanbanEntry]:
         # No entries yet
         return []
 
-    # Entries section is between first two ---
-    entries_section = sections[1].strip()
+    # Entries live in every section after the header and before the trailing
+    # notes section (identified by its markdown heading).
+    body_sections = []
+    for section in sections[1:]:
+        if re.search(r"(?m)^##\s", section):
+            break
+        body_sections.append(section)
+
+    entries_section = "\n".join(body_sections).strip()
 
     # Split entries by date pattern (YYYY-MM-DD)
     entries = []
@@ -230,7 +237,7 @@ class SearchKanbanScript(BaseCLIScript):
             # Filter entries
             results = filter_entries(
                 entries,
-                issue_id=args.issue_id,
+                issue_id=args.issue,
                 tag=args.tag,
                 date=args.date,
                 date_from=args.date_from,
@@ -240,7 +247,7 @@ class SearchKanbanScript(BaseCLIScript):
             self.metrics.track("search_kanban", {
                 "results": len(results),
                 "criteria": {
-                    "issue": args.issue_id is not None,
+                    "issue": args.issue is not None,
                     "tag": args.tag is not None,
                     "date": args.date is not None or args.date_from is not None or args.date_to is not None
                 }
@@ -312,5 +319,5 @@ class SearchKanbanScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(SearchKanbanScript)

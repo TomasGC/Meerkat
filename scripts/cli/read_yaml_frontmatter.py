@@ -22,8 +22,8 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-from common.cli.base import BaseCLIScript
-from common.formatters import format_yaml
+from lib.cli.base import BaseCLIScript
+from lib.formatters import format_yaml
 
 
 def extract_frontmatter(file_path: Path) -> Optional[dict]:
@@ -191,5 +191,5 @@ class ReadYamlFrontmatterScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(ReadYamlFrontmatterScript)

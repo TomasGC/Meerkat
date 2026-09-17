@@ -13,7 +13,7 @@ from cli.generate_test_scaffold import (
     generate_python_tests,
     generate_test_scaffold,
 )
-from common.utils import write_file_safe
+from lib.utils import write_file_safe
 
 def test_detect_language_powershell():
     """Test language detection for PowerShell."""

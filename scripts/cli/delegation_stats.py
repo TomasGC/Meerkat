@@ -19,7 +19,7 @@ from typing import Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.base_cli import BaseCLIScript
+from lib.base_cli import BaseCLIScript
 
 
 class DelegationStats(BaseCLIScript):

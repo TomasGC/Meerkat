@@ -12,4 +12,4 @@ from cli.safe_read_context import (
     read_rules,
     safe_read_context
 )
-from common.file_utils import read_file_safe
+from lib.file_utils import read_file_safe

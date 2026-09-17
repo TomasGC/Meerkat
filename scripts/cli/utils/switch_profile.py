@@ -11,8 +11,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript
-from common.integrations import list_profiles, load_integrations, switch_profile
+from lib.cli.base import BaseCLIScript
+from lib.integrations import list_profiles, load_integrations, switch_profile
 
 
 class SwitchProfileScript(BaseCLIScript):
@@ -103,7 +103,7 @@ class SwitchProfileScript(BaseCLIScript):
 
 def main():
     """CLI entry point."""
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(SwitchProfileScript)
 
 

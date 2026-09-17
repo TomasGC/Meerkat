@@ -262,7 +262,7 @@ python ~/.claude/scripts/cli/analyze_commit_quality.py
 
 ### Common Modules
 
-**Location**: `~/.claude/scripts/common/`
+**Location**: `~/.claude/scripts/lib/`
 
 ```
 common/
@@ -274,7 +274,7 @@ common/
 
 **Import example**:
 ```python
-from common.integrations import load_integrations
+from lib.integrations import load_integrations
 
 config = load_integrations()
 print(config.vcs_provider)  # github
@@ -354,7 +354,7 @@ python ~/.claude/scripts/cli/switch-profile.py work --force
 ## FAQ
 
 **Q: Where are scripts located?**  
-A: `~/.claude/scripts/cli/` for user-facing scripts, `~/.claude/scripts/common/` for shared modules.
+A: `~/.claude/scripts/cli/` for user-facing scripts, `~/.claude/scripts/lib/` for shared modules.
 
 **Q: Python version required?**  
 A: Python 3.12+ (uses type hints, dataclasses, pattern matching).

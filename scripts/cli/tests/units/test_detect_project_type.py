@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from cli.detect_project_type import detect_project_type
-from common.utils import write_file_safe
+from lib.utils import write_file_safe
 
 def test_detect_cypress_project(tmp_path):
     """Test detecting Cypress project."""

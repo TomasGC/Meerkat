@@ -15,12 +15,12 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
-    from model_config import get_model as _get_model
+    from lib.config.model_config import get_model as _get_model
 except ImportError:
     _get_model = None
 
-from common.cli.base import BaseCLIScript
-from common.utils import run_command
+from lib.cli.base import BaseCLIScript
+from lib.utils import run_command
 
 
 class AnalyzeCodePatternsScript(BaseCLIScript):
@@ -274,7 +274,7 @@ Respond with only 'yes' or 'no'.
 
 def main():
     """CLI entry point."""
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(AnalyzeCodePatternsScript)
 
 

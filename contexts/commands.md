@@ -122,6 +122,24 @@ python -m pytest tests/unit/ tests/integration/mock/ -q  # CI-safe (no local AI 
 
 ---
 
+## search-tech Skill
+
+```bash
+cd ~/.claude/skills/search-tech/scripts
+python -m pytest tests/ -q
+```
+
+**Cache**: results cached under `~/.cache/search-tech`, keyed by a truncated
+sha256 of `(query, filters)`, 1 hour TTL. Entries carry the query and filters
+that produced them and are rejected on mismatch. Writes are atomic
+(temp file + rename), and a write failure is swallowed so a cache problem never
+breaks a search.
+
+**Not in root `testpaths`** — its `common/` package would collide with the
+agents'. Run it from its own directory, in its own invocation.
+
+---
+
 ## Tests
 
 ### Run by tier (from ~/.claude/)
@@ -133,7 +151,7 @@ pytest agents/black-box-analyzer/tests/e2e/ -v
 
 pytest scripts/cli/tests/units/ -v
 pytest scripts/cli/tests/integration-mocks/ -v
-pytest scripts/common/tests/units/ -v
+pytest scripts/lib/tests/units/ -v
 pytest scripts/tests/e2e/ -v
 ```
 
@@ -144,19 +162,19 @@ pytest agents/black-box-analyzer/tests/unit/ -v
 pytest agents/black-box-analyzer/tests/unit/ agents/black-box-analyzer/tests/integration/mock/ -q
 
 # Scripts only
-pytest scripts/tests scripts/cli/tests scripts/common/tests -m units
+pytest scripts/tests scripts/cli/tests scripts/lib/tests -m units
 ```
 
 ### CI-safe (no local AI required)
 ```bash
 pytest agents/black-box-analyzer/tests/unit/ agents/black-box-analyzer/tests/integration/mock/ -q
-pytest scripts/tests scripts/cli/tests scripts/common/tests -m "units or integration_mocks"
+pytest scripts/tests scripts/cli/tests scripts/lib/tests -m "units or integration_mocks"
 ```
 
 ### Full suites (separate invocations)
 ```bash
 pytest agents/black-box-analyzer/tests -v
-pytest scripts/tests scripts/cli/tests scripts/common/tests -v
+pytest scripts/tests scripts/cli/tests scripts/lib/tests -v
 ```
 
 ---
@@ -200,5 +218,5 @@ python scripts/cli/update_kanban.py --auto
 ## Syntax Check
 
 ```bash
-python -m py_compile scripts/cli/*.py scripts/common/*.py
+python -m py_compile scripts/cli/*.py scripts/lib/*.py
 ```

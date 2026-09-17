@@ -20,7 +20,7 @@ from typing import Any, Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript
+from lib.cli.base import BaseCLIScript
 
 
 def get_validation_script_path(script_name: str) -> Optional[Path]:
@@ -494,5 +494,5 @@ class RunAllValidationsScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(RunAllValidationsScript)

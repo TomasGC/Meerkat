@@ -8,7 +8,7 @@ _SHARED = Path.home() / ".claude" / "scripts"
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
-from model_utils import (  # noqa: F401
+from lib.ai.model_utils import (  # noqa: F401
     LOCAL_AI_HOST,
     LOCAL_AI_PORT,
     check_server_available,

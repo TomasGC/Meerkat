@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from cli.find_git_repos import find_git_repos, get_repo_info
-from common.utils import run_command, write_file_safe
+from lib.utils import run_command, write_file_safe
 
 @pytest.fixture
 def multi_repo_structure(tmp_path):

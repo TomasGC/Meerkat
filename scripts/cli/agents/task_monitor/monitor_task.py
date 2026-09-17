@@ -21,7 +21,7 @@ from typing import Optional, Dict, List
 
 _SCRIPTS_DIR = Path.home() / ".claude" / "scripts"
 sys.path.insert(0, str(_SCRIPTS_DIR))
-from model_config import get_model as _get_model
+from lib.config.model_config import get_model as _get_model
 _DEFAULT_MODEL = _get_model("fast")
 
 

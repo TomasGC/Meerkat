@@ -84,7 +84,7 @@ def test_no_cache_flag_bypasses(tmp_path, source_file):
     _SHARED = Path.home() / ".claude" / "scripts"
     if str(_SHARED) not in sys.path:
         sys.path.insert(0, str(_SHARED))
-    import model_utils as model_mod
+    import lib.ai.model_utils as model_mod
 
     call_count = [0]
     prompts_dir = tmp_path / "prompts"

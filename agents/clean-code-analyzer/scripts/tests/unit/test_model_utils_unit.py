@@ -17,8 +17,8 @@ _SHARED = Path.home() / ".claude" / "scripts"
 if str(_SHARED) not in sys.path:
     sys.path.append(str(_SHARED))
 
-import model_utils as mu
-from model_utils import (
+import lib.ai.model_utils as mu
+from lib.ai.model_utils import (
     call_model,
     call_model_async,
     call_model_multi,
@@ -37,7 +37,7 @@ from model_utils import (
 def test_check_server_available_true_when_model_present():
     """Returns True when subprocess shows model in list."""
     mock_result = MagicMock(returncode=0, stdout="NAME\ntest-model\nother:model\n")
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result):
             mu._AVAILABILITY_CACHE.clear()
             result = mu.check_server_available("fast")
@@ -48,7 +48,7 @@ def test_check_server_available_true_when_model_present():
 def test_check_server_available_false_when_model_missing():
     """Returns False when model not in list."""
     mock_result = MagicMock(returncode=0, stdout="NAME\nother:model\n")
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result):
             mu._AVAILABILITY_CACHE.clear()
             result = mu.check_server_available("fast")
@@ -58,7 +58,7 @@ def test_check_server_available_false_when_model_missing():
 @pytest.mark.unit
 def test_check_server_available_file_not_found_returns_false():
     """FileNotFoundError (binary absent) → False, not an exception."""
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", side_effect=FileNotFoundError):
             mu._AVAILABILITY_CACHE.clear()
             result = check_server_available("analyzer")
@@ -70,7 +70,7 @@ def test_availability_cache_hit():
     """Second check_server_available call uses cache; subprocess called only once."""
     mu._AVAILABILITY_CACHE.clear()
     mock_result = MagicMock(returncode=0, stdout="test-model\n")
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result) as mock_sub:
             check_server_available("fast")
             check_server_available("fast")
@@ -83,7 +83,7 @@ def test_availability_cache_hit():
 def test_call_model_passes_prompt_via_stdin():
     """call_model passes the prompt through stdin=prompt."""
     mock_result = MagicMock(returncode=0, stdout='[{"line": 1}]')
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result) as mock_run:
             result = mu.call_model("my prompt", role="fast")
     call_kwargs = mock_run.call_args
@@ -97,7 +97,7 @@ def test_call_model_passes_prompt_via_stdin():
 def test_call_model_returns_stdout():
     """call_model returns stripped stdout on success."""
     mock_result = MagicMock(returncode=0, stdout="  hello world  ")
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result):
             result = mu.call_model("prompt")
     assert result == "hello world"
@@ -106,7 +106,7 @@ def test_call_model_returns_stdout():
 @pytest.mark.unit
 def test_call_model_file_not_found():
     """Local AI CLI not in PATH → None returned, no exception."""
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", side_effect=FileNotFoundError):
             result = call_model("prompt")
     assert result is None
@@ -115,7 +115,7 @@ def test_call_model_file_not_found():
 @pytest.mark.unit
 def test_call_model_timeout():
     """Subprocess times out → None returned, no exception."""
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("cli", 30)):
             result = call_model("prompt")
     assert result is None
@@ -125,7 +125,7 @@ def test_call_model_timeout():
 def test_call_model_nonzero_exit_returns_none():
     """Subprocess returns non-zero exit code → None."""
     mock_result = MagicMock(returncode=1, stderr="model error", stdout="")
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result):
             result = mu.call_model("prompt")
     assert result is None
@@ -142,7 +142,7 @@ def test_http_generate_returns_response_text():
     mock_conn = MagicMock()
     mock_conn.getresponse.return_value = mock_resp
 
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch.object(http.client, "HTTPConnection", return_value=mock_conn):
             result = mu._http_generate("some prompt", "fast")
     assert result == "test output"
@@ -154,7 +154,7 @@ def test_http_generate_falls_back_to_subprocess_on_connection_refused():
     mock_conn = MagicMock()
     mock_conn.request.side_effect = ConnectionRefusedError()
 
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch.object(http.client, "HTTPConnection", return_value=mock_conn):
             with patch.object(mu, "call_model", return_value="fallback result") as mock_sub:
                 result = mu._http_generate("prompt", "fast")
@@ -170,7 +170,7 @@ def test_http_generate_non_200():
     mock_resp.status = 500
     mock_conn = MagicMock()
     mock_conn.getresponse.return_value = mock_resp
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("http.client.HTTPConnection", return_value=mock_conn):
             result = _http_generate("prompt", "fast")
     assert result is None
@@ -181,7 +181,7 @@ def test_http_generate_general_exception_returns_none():
     """Non-connection exception in _http_generate → returns None."""
     mock_conn = MagicMock()
     mock_conn.request.side_effect = ValueError("unexpected error")
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch.object(http.client, "HTTPConnection", return_value=mock_conn):
             result = mu._http_generate("prompt", "fast")
     assert result is None
@@ -196,7 +196,7 @@ def test_http_generate_conn_close_exception_no_crash():
     mock_conn = MagicMock()
     mock_conn.getresponse.return_value = mock_resp
     mock_conn.close.side_effect = Exception("close failed")
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch.object(http.client, "HTTPConnection", return_value=mock_conn):
             result = mu._http_generate("prompt", "fast")
     assert result == "ok"
@@ -255,7 +255,7 @@ def test_extract_json_object_invalid_braced_content():
 def test_call_model_multi_n1_single_call():
     """N=1 → single call to call_model (subprocess path)."""
     mock_result = MagicMock(returncode=0, stdout='[{"line": 5, "principle": "S", "file": "a.py"}]')
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result) as mock_sub:
             result = call_model_multi("prompt", role="fast", n=1)
     assert mock_sub.call_count == 1
@@ -267,7 +267,7 @@ def test_call_model_multi_n3_deduplicates():
     """N=3 → 3 subprocess calls, identical results deduped to 1 item."""
     item_json = '[{"line": 5, "principle": "S", "file": "a.py"}]'
     mock_result = MagicMock(returncode=0, stdout=item_json)
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", return_value=mock_result):
             result = call_model_multi("prompt", role="fast", n=3)
     assert len(result) == 1
@@ -280,7 +280,7 @@ def test_call_model_multi_n2_merges_unique():
         MagicMock(returncode=0, stdout='[{"line": 5, "principle": "S", "file": "a.py"}]'),
         MagicMock(returncode=0, stdout='[{"line": 10, "principle": "D", "file": "a.py"}]'),
     ]
-    with patch("model_utils.get_model", return_value="test-model"):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", side_effect=responses * 10):
             result = call_model_multi("prompt", role="fast", n=2)
     assert len(result) == 2
@@ -355,8 +355,8 @@ def test_analyze_files_async_returns_violations(tmp_path):
         '[{"principle":"S","line":1,"severity":"high",'
         '"violation":"too much","suggestion":"split"}]'
     )
-    with patch("model_utils.get_model", return_value="test-model"):
-        with patch("model_utils._http_generate", return_value=response_json):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("lib.ai.model_utils._http_generate", return_value=response_json):
             results = asyncio.run(
                 analyze_files_async([f], "python", "analyzer", "solid_analysis",
                                     prompts_dir=prompts_dir, no_cache=True)
@@ -377,8 +377,8 @@ def test_analyze_files_async_empty_on_failure(tmp_path):
     prompts_dir.mkdir()
     (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
 
-    with patch("model_utils.get_model", return_value="test-model"):
-        with patch("model_utils._http_generate", return_value=None):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("lib.ai.model_utils._http_generate", return_value=None):
             results = asyncio.run(
                 analyze_files_async([f], "python", "analyzer", "solid_analysis",
                                     prompts_dir=prompts_dir, no_cache=True)
@@ -406,8 +406,8 @@ def test_analyze_files_async_extra_slots_injected(tmp_path):
         captured.append(prompt)
         return "[]"
 
-    with patch("model_utils.get_model", return_value="test-model"):
-        with patch("model_utils._http_generate", side_effect=capture):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("lib.ai.model_utils._http_generate", side_effect=capture):
             asyncio.run(
                 analyze_files_async([f], "python", "analyzer", "solid_analysis",
                                     prompts_dir=prompts_dir, no_cache=True,
@@ -436,8 +436,8 @@ def test_analyze_files_async_extra_slots_are_per_file(tmp_path):
         captured.append(prompt)
         return "[]"
 
-    with patch("model_utils.get_model", return_value="test-model"):
-        with patch("model_utils._http_generate", side_effect=capture):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("lib.ai.model_utils._http_generate", side_effect=capture):
             asyncio.run(
                 analyze_files_async([first, second], "python", "analyzer", "solid_analysis",
                                     prompts_dir=prompts_dir, no_cache=True,
@@ -470,8 +470,8 @@ def test_analyze_files_async_without_extra_slots_unchanged(tmp_path):
         captured.append(prompt)
         return "[]"
 
-    with patch("model_utils.get_model", return_value="test-model"):
-        with patch("model_utils._http_generate", side_effect=capture):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("lib.ai.model_utils._http_generate", side_effect=capture):
             asyncio.run(
                 analyze_files_async([f], "python", "analyzer", "solid_analysis",
                                     prompts_dir=prompts_dir, no_cache=True)
@@ -522,7 +522,7 @@ def test_analyze_files_async_prompt_not_found(tmp_path):
 
 @pytest.mark.unit
 def test_analyze_files_async_agents_greater_than_1(tmp_path):
-    """analyze_files_async with agents=2 runs multiple calls and deduplicates."""
+    """agents=2 with identical responses collapses to a single violation."""
     import asyncio
     f = tmp_path / "mod.py"
     f.write_text("class X: pass\n")
@@ -531,14 +531,41 @@ def test_analyze_files_async_agents_greater_than_1(tmp_path):
     (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
 
     response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
-    with patch("model_utils.get_model", return_value="test-model"):
-        with patch("model_utils._http_generate", return_value=response_json):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("lib.ai.model_utils._http_generate", return_value=response_json):
             results = asyncio.run(
                 analyze_files_async([f], "python", "analyzer", "solid_analysis",
                                     prompts_dir=prompts_dir, agents=2, no_cache=True)
             )
 
-    assert len(results) >= 1
+    # Both agents returned the same (file, line, principle) key — exactly one survives.
+    # `>= 1` would also pass with dedup removed entirely.
+    assert len(results) == 1
+
+
+@pytest.mark.unit
+def test_analyze_files_async_agents_keeps_distinct_findings(tmp_path):
+    """agents=2 with differing responses keeps both — dedup must not over-merge."""
+    import asyncio
+    f = tmp_path / "mod.py"
+    f.write_text("class X: pass\n")
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
+
+    responses = [
+        '[{"principle":"S","line":1,"severity":"high","violation":"a","suggestion":"s"}]',
+        '[{"principle":"O","line":2,"severity":"low","violation":"b","suggestion":"s"}]',
+    ]
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("lib.ai.model_utils._http_generate", side_effect=responses):
+            results = asyncio.run(
+                analyze_files_async([f], "python", "analyzer", "solid_analysis",
+                                    prompts_dir=prompts_dir, agents=2, no_cache=True)
+            )
+
+    assert len(results) == 2
+    assert {r["principle"] for r in results} == {"S", "O"}
 
 
 @pytest.mark.unit
@@ -552,8 +579,8 @@ def test_analyze_files_async_writes_cache(tmp_path):
     (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
 
     response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
-    with patch("model_utils.get_model", return_value="test-model"):
-        with patch("model_utils._http_generate", return_value=response_json):
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("lib.ai.model_utils._http_generate", return_value=response_json):
             with patch.object(mu, "_CACHE_AVAILABLE", True):
                 with patch.object(mu, "_get_cached", return_value=None):
                     with patch.object(mu, "_set_cached") as mock_set:

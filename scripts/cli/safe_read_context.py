@@ -15,8 +15,8 @@ from typing import Any, Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript
-from common.file_utils import read_file_safe
+from lib.cli.base import BaseCLIScript
+from lib.file_utils import read_file_safe
 
 
 def read_kanban(claude_dir: Path) -> Optional[dict]:
@@ -304,5 +304,5 @@ class SafeReadContextScript(BaseCLIScript):
 
 
 if __name__ == "__main__":
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(SafeReadContextScript)

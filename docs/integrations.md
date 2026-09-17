@@ -331,7 +331,7 @@ python ~/.claude/scripts/cli/switch-profile.py gitlab
 ### Load Current Profile
 
 ```python
-from common.integrations import load_integrations
+from lib.integrations import load_integrations
 
 config = load_integrations()
 
@@ -343,7 +343,7 @@ print(config.issue_format)      # #(\d+)
 ### Shortcut Functions
 
 ```python
-from common.integrations import (
+from lib.integrations import (
     get_vcs_provider,
     get_issues_provider,
     get_issue_format
@@ -354,7 +354,7 @@ issues = get_issues_provider()  # "github"
 pattern = get_issue_format()    # "#(\d+)"
 ```
 
-**Full API**: See `~/.claude/scripts/common/integrations.py`
+**Full API**: See `~/.claude/scripts/lib/integrations.py`
 
 </details>
 

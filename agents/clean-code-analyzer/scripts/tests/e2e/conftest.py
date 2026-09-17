@@ -1,71 +1,31 @@
-"""E2E conftest — starts/stops Docker Ollama container for the test session."""
+"""E2E conftest — reaches the configured local AI provider, whichever it is."""
 
-import http.client
-import subprocess
-import time
+import sys
 from pathlib import Path
 
 import pytest
 
-E2E_DIR = Path(__file__).parent
+_SCRIPTS = Path(__file__).parent.parent.parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
 
-
-def _docker_available() -> bool:
-    try:
-        return subprocess.run(
-            ["docker", "info"],
-            capture_output=True,
-            timeout=5,
-        ).returncode == 0
-    except Exception:
-        return False
-
-
-def _ollama_up() -> bool:
-    try:
-        conn = http.client.HTTPConnection("localhost", 11434, timeout=3)
-        conn.request("GET", "/api/tags")
-        return conn.getresponse().status == 200
-    except Exception:
-        return False
-
-
-requires_docker = pytest.mark.skipif(
-    not _docker_available(), reason="Docker not available"
+from common.model_utils import (  # noqa: E402
+    LOCAL_AI_HOST,
+    LOCAL_AI_PORT,
+    check_server_available,
 )
 
 
 @pytest.fixture(scope="session")
-def ollama_service():
-    """Session-scoped fixture: spin up Ollama via docker-compose, yield, tear down."""
-    if not _docker_available():
-        pytest.skip("Docker not available")
+def local_ai_service():
+    """Session-scoped: require the configured local AI provider to be reachable.
 
-    compose = E2E_DIR / "docker-compose.yml"
-    subprocess.run(
-        ["docker-compose", "-f", str(compose), "up", "-d"],
-        check=True,
-        timeout=60,
-    )
-
-    # Wait up to 3 minutes for Ollama to become healthy
-    for _ in range(36):
-        if _ollama_up():
-            break
-        time.sleep(5)
-    else:
-        pytest.fail("Ollama container did not become healthy after 3 minutes")
-
-    # Pull the model used by checkers
-    subprocess.run(
-        ["docker", "exec", "cca-ollama", "ollama", "pull", "qwen2.5-coder:7b"],
-        check=True,
-        timeout=300,
-    )
-
+    The endpoint and model come from local.base_url in
+    configs/local_models_config.json, so switching provider is a config edit
+    rather than a test change.
+    """
+    if not check_server_available():
+        pytest.skip(
+            f"Local AI provider not reachable at {LOCAL_AI_HOST}:{LOCAL_AI_PORT}"
+        )
     yield
-
-    subprocess.run(
-        ["docker-compose", "-f", str(compose), "down"],
-        timeout=30,
-    )

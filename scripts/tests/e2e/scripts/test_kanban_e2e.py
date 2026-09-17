@@ -57,12 +57,11 @@ def test_search_empty_kanban(kanban_file, capsys):
     from cli.search_kanban import SearchKanbanScript
     from unittest.mock import patch
     script = SearchKanbanScript()
-    with patch("cli.search_kanban.find_kanban_file", return_value=kanban_file):
-        exit_code = script.run(["--issue", "#1", "--format", "json"])
+    exit_code = script.run(["--issue", "#1", "--path", str(kanban_file), "--format", "json"])
     assert exit_code == 0
     captured = capsys.readouterr()
     data = json.loads(captured.out)
-    assert data["total"] == 0
+    assert data["count"] == 0
 
 
 # ---------------------------------------------------------------------------
@@ -88,12 +87,11 @@ def test_kanban_full_lifecycle(kanban_file, capsys):
     # Step 2: Verify entry was created
     search_script = SearchKanbanScript()
     capsys.readouterr()  # clear buffer
-    with patch("cli.search_kanban.find_kanban_file", return_value=kanban_file):
-        exit_code = search_script.run(["--issue", "#1", "--format", "json"])
+    exit_code = search_script.run(["--issue", "#1", "--path", str(kanban_file), "--format", "json"])
     assert exit_code == 0
     captured = capsys.readouterr()
     data = json.loads(captured.out)
-    assert data["total"] >= 1
+    assert data["count"] >= 1
 
     # Step 3: Update same issue with additional commit
     capsys.readouterr()
@@ -137,15 +135,13 @@ def test_kanban_multiple_issues(kanban_file, capsys):
 
     # Search for each
     capsys.readouterr()
-    with patch("cli.search_kanban.find_kanban_file", return_value=kanban_file):
-        search_script.run(["--issue", "#1", "--format", "json"])
+    search_script.run(["--issue", "#1", "--path", str(kanban_file), "--format", "json"])
     data1 = json.loads(capsys.readouterr().out)
-    assert data1["total"] >= 1
+    assert data1["count"] >= 1
 
-    with patch("cli.search_kanban.find_kanban_file", return_value=kanban_file):
-        search_script.run(["--issue", "#2", "--format", "json"])
+    search_script.run(["--issue", "#2", "--path", str(kanban_file), "--format", "json"])
     data2 = json.loads(capsys.readouterr().out)
-    assert data2["total"] >= 1
+    assert data2["count"] >= 1
 
 
 # ---------------------------------------------------------------------------
@@ -163,8 +159,7 @@ def test_kanban_search_text_format(kanban_file, capsys):
 
     capsys.readouterr()
     search_script = SearchKanbanScript()
-    with patch("cli.search_kanban.find_kanban_file", return_value=kanban_file):
-        exit_code = search_script.run(["--issue", "#5", "--format", "text"])
+    exit_code = search_script.run(["--issue", "#5", "--path", str(kanban_file), "--format", "text"])
     assert exit_code == 0
     captured = capsys.readouterr()
     assert "#5" in captured.out or len(captured.out) > 0
@@ -174,6 +169,5 @@ def test_kanban_search_summary_format(kanban_file, capsys):
     from cli.search_kanban import SearchKanbanScript
     from unittest.mock import patch
     search_script = SearchKanbanScript()
-    with patch("cli.search_kanban.find_kanban_file", return_value=kanban_file):
-        exit_code = search_script.run(["--issue", "#99", "--format", "summary"])
+    exit_code = search_script.run(["--issue", "#99", "--path", str(kanban_file), "--format", "summary"])
     assert exit_code == 0

@@ -78,7 +78,7 @@ def test_script_execution_success(script, temp_git_repo, monkeypatch):
         format = "json"
         commit = None
 
-    monkeypatch.setattr(script, "logger", script.logger)
+    monkeypatch.chdir(temp_git_repo)
     result = script.execute(Args())
 
     assert result["success"] is True

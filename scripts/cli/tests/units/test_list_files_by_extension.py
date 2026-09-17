@@ -9,7 +9,7 @@ from cli.list_files_by_extension import (
     DEFAULT_EXCLUDES,
     find_files_by_extension,
     is_excluded)
-from common.utils import write_file_safe
+from lib.utils import write_file_safe
 
 @pytest.fixture
 def sample_project(tmp_path):

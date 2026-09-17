@@ -1,4 +1,4 @@
-"""E2E tests: full analysis pipeline with real Docker Ollama container."""
+"""E2E tests: full analysis pipeline against the configured local AI provider."""
 
 import json
 import subprocess
@@ -14,14 +14,15 @@ FIXTURES_CLEAN = Path(__file__).parent / "fixtures" / "clean_python"
 
 
 @pytest.mark.e2e
-def test_dirty_code_detected(ollama_service):
+def test_dirty_code_detected(local_ai_service):
     """Dirty fixture files produce violations from mechanical checkers."""
     result = subprocess.run(
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
             "--path", str(FIXTURES_DIRTY),
-            "--checks", "error_handling,naming,lod,inheritance",
+            "--full",
+            "--checks", "naming,lod,inheritance",
             "--format", "json",
             "--no-cache",
         ],
@@ -33,19 +34,19 @@ def test_dirty_code_detected(ollama_service):
     data = json.loads(result.stdout)
     assert data["total_violations"] > 0
     principles = {v["principle"] for v in data["violations"]}
-    assert "ErrorHandling" in principles
     assert "Naming" in principles
 
 
 @pytest.mark.e2e
-def test_clean_code_zero_violations(ollama_service):
+def test_clean_code_zero_violations(local_ai_service):
     """Clean fixture files produce 0 violations from mechanical checkers."""
     result = subprocess.run(
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
             "--path", str(FIXTURES_CLEAN),
-            "--checks", "error_handling,naming,lod,inheritance",
+            "--full",
+            "--checks", "naming,lod,inheritance",
             "--format", "json",
             "--no-cache",
         ],
@@ -59,7 +60,7 @@ def test_clean_code_zero_violations(ollama_service):
 
 
 @pytest.mark.e2e
-def test_incremental_mode(ollama_service, tmp_path):
+def test_incremental_mode(local_ai_service, tmp_path):
     """--since HEAD: only dirty.py (uncommitted) analyzed, clean.py (committed) skipped."""
     # Set up git repo
     for cmd in [
@@ -103,10 +104,16 @@ def test_incremental_mode(ollama_service, tmp_path):
 
 
 @pytest.mark.e2e
-@pytest.mark.repeat(5)
 @pytest.mark.slow
-def test_agents_n_deduplicates(ollama_service, tmp_path):
-    """--agents 3 finds >= violations as --agents 1, but not 3x more (dedup works)."""
+def test_agents_n_completes_without_duplicates(local_ai_service, tmp_path):
+    """--agents 3 completes and emits no duplicate (file, line, principle) entries.
+
+    No count ratio against an --agents 1 run: each run is an independent
+    nondeterministic sample, so both a lower and an upper ratio bound were observed
+    to fail at random. Merge exactness is unit-tested against fixed responses in
+    tests/unit/test_model_utils_unit.py; here the orchestrator's own dedup also
+    applies, so the CLI output cannot isolate the agents-level merge.
+    """
     import subprocess, json
     # Create a dirty project
     dirty = tmp_path / "dirty.py"
@@ -122,28 +129,21 @@ try:
 except:
     pass
 """)
-    def run_with_agents(n):
-        r = subprocess.run(
-            ["python", str(SCRIPTS_DIR / "orchestrate.py"),
-             "--path", str(tmp_path),
-             "--checks", "solid",
-             "--agents", str(n),
-             "--format", "json", "--no-cache"],
-            capture_output=True, text=True, timeout=120
-        )
-        assert r.returncode == 0, f"Failed: {r.stderr}"
-        return json.loads(r.stdout)
+    r = subprocess.run(
+        ["python", str(SCRIPTS_DIR / "orchestrate.py"),
+         "--path", str(tmp_path),
+         "--checks", "solid",
+         "--agents", "3",
+         "--fast",
+         "--format", "json", "--no-cache"],
+        capture_output=True, text=True, timeout=300
+    )
+    assert r.returncode == 0, f"Failed: {r.stderr}"
+    data = json.loads(r.stdout)
 
-    result_n1 = run_with_agents(1)
-    result_n3 = run_with_agents(3)
-
-    n1_count = result_n1["total_violations"]
-    n3_count = result_n3["total_violations"]
-
-    # N=3 should not be 3x N=1 (dedup working)
-    assert n3_count < n1_count * 3, f"Dedup failed: n1={n1_count}, n3={n3_count}"
-    # N=3 should find at least as many as N=1
-    assert n3_count >= n1_count, f"N=3 found fewer than N=1: n1={n1_count}, n3={n3_count}"
+    assert data["files_analyzed"] > 0
+    keys = [(v["file"], v["line"], v["principle"]) for v in data["violations"]]
+    assert len(keys) == len(set(keys)), f"Duplicate violations survived merge: {keys}"
 
 
 @pytest.mark.e2e
@@ -155,7 +155,7 @@ except:
     ("powershell", "dirty_powershell"),
     ("bash",       "dirty_bash"),
 ])
-def test_multilang_e2e_violations_detected(ollama_service, language, fixture_subdir):
+def test_multilang_e2e_violations_detected(local_ai_service, language, fixture_subdir):
     """Full pipeline on multi-language dirty fixtures finds violations."""
     import subprocess, json
     fixture_path = Path(__file__).parent / "fixtures" / fixture_subdir

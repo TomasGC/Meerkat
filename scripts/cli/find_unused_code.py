@@ -14,8 +14,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cli.base import BaseCLIScript
-from common.utils import run_command
+from lib.cli.base import BaseCLIScript
+from lib.utils import run_command
 
 
 @dataclass
@@ -248,7 +248,7 @@ class FindUnusedCodeScript(BaseCLIScript):
 
 def main():
     """CLI entry point."""
-    from common.cli.base import create_cli_script
+    from lib.cli.base import create_cli_script
     create_cli_script(FindUnusedCodeScript)
 
 

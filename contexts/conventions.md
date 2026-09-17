@@ -54,8 +54,8 @@ docs: document BBA analysis result cache
 ### Model Configuration
 
 - All model names live in `configs/local_models_config.json` only — never hardcoded in scripts or agents
-- `scripts/model_config.py`: singleton reader; `get_model(role, provider="local")` resolves role → model name
-- `scripts/model_utils.py`: shared local AI client; imported via shims at `agents/*/scripts/common/model_utils.py`
+- `scripts/lib/config/model_config.py`: singleton reader; `get_model(role, provider="local")` resolves role → model name
+- `scripts/lib/ai/model_utils.py`: shared local AI client; imported via shims at `agents/*/scripts/common/model_utils.py`
 - Roles: `analyzer`, `fast`, `deep`, `reasoning`, `guard`
 
 ### CCA (Clean Code Analyzer)

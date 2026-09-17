@@ -7,7 +7,7 @@ from textwrap import dedent
 import pytest
 
 from cli.read_yaml_frontmatter import extract_frontmatter, parse_yaml_simple
-from common.utils import write_file_safe
+from lib.utils import write_file_safe
 
 def test_extract_frontmatter_valid(tmp_path):
     """Test extracting valid YAML frontmatter."""

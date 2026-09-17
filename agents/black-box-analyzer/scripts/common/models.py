@@ -53,6 +53,9 @@ class HTTPMethod(Enum):
 class TestFramework(Enum):
     """Supported test frameworks."""
 
+    # Name starts with "Test", so pytest tries to collect it as a test class.
+    __test__ = False
+
     # Go
     GO_TESTING = "testing"
 
@@ -339,6 +342,9 @@ class Endpoint:
 @dataclass
 class TestCase:
     """Test case definition."""
+
+    # Name starts with "Test", so pytest tries to collect it as a test class.
+    __test__ = False
 
     name: str
     file_path: str

@@ -88,7 +88,7 @@ def test_run_prompt_formats_and_calls_model(tmp_path):
         captured["role"] = role
         return "response"
 
-    with patch("model_utils.call_model", side_effect=fake_call_model):
+    with patch("lib.ai.model_utils.call_model", side_effect=fake_call_model):
         result = run_prompt("greet", tmp_path, role="fast", timeout=60, subject="World")
 
     assert result == "response"
@@ -100,7 +100,7 @@ def test_run_prompt_missing_kwarg_raises(tmp_path):
     prompt_file = tmp_path / "tpl.prompt"
     prompt_file.write_text("Hello {subject} and {other}!", encoding="utf-8")
 
-    with patch("model_utils.call_model", return_value="ok"):
+    with patch("lib.ai.model_utils.call_model", return_value="ok"):
         with pytest.raises(KeyError):
             run_prompt("tpl", tmp_path, subject="World")
 
@@ -109,7 +109,7 @@ def test_run_prompt_propagates_none_from_call_model(tmp_path):
     prompt_file = tmp_path / "p.prompt"
     prompt_file.write_text("hi {x}", encoding="utf-8")
 
-    with patch("model_utils.call_model", return_value=None):
+    with patch("lib.ai.model_utils.call_model", return_value=None):
         assert run_prompt("p", tmp_path, x="v") is None
 
 

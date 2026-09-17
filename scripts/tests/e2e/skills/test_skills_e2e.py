@@ -33,13 +33,13 @@ def test_analyze_commit_skill_triggers_quality_check():
     with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout="+x = 1\n+y = 2\n",
+            stdout="--- a/a.py\n+++ b/a.py\n@@ -1,2 +1,4 @@\n+x = 1\n+y = 2\n",
             stderr=""
         )
-        args = argparse.Namespace(commits="HEAD", diff=None, format="json", checks=["security", "quality"])
+        args = argparse.Namespace(commit="HEAD", staged=False, format="json")
         result = script.execute(args)
     assert isinstance(result, dict)
-    assert "violations" in result or "issues" in result or "total_violations" in result
+    assert "violations" in result
 
 
 def test_analyze_commit_skill_clean_code_passes():
@@ -48,14 +48,16 @@ def test_analyze_commit_skill_clean_code_passes():
     import argparse
 
     script = AnalyzeCommitQualityScript()
-    clean_diff = "+def process_data(items: list[str]) -> list[str]:\n+    return [i.strip() for i in items]\n"
+    clean_diff = (
+        "--- a/process.py\n+++ b/process.py\n@@ -1,2 +1,4 @@\n"
+        "+def process_data(items: list[str]) -> list[str]:\n"
+        "+    return [i.strip() for i in items]\n"
+    )
     with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=clean_diff, stderr="")
-        args = argparse.Namespace(commits="HEAD", diff=None, format="json", checks=["security", "quality"])
+        args = argparse.Namespace(commit="HEAD", staged=False, format="json")
         result = script.execute(args)
-    violations = result.get("violations", result.get("issues", []))
-    total = result.get("total_violations", len(violations))
-    assert total == 0 or isinstance(violations, list)
+    assert result["violations"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -68,15 +70,13 @@ def test_update_context_skill_generates_entry(tmp_path):
     import argparse
 
     script = GenerateKanbanEntryScript()
-    with patch("cli.generate_kanban_entry.subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="M scripts/cli/auth.py\nA scripts/tests/test_auth.py\n",
-            stderr=""
-        )
+    files = ["scripts/cli/auth.py", "scripts/tests/test_auth.py"]
+    with patch("cli.generate_kanban_entry.get_commit_files", return_value=files):
         args = argparse.Namespace(
             commits="abc123",
             issue="#1",
+            auto=False,
+            base_branch="",
             style="professional",
             max_bullets=5,
             format="json"
@@ -98,12 +98,13 @@ def test_update_context_skill_writes_kanban(tmp_path):
         issue="#1",
         commits="abc123",
         description="Implemented authentication feature",
-        date="2026-05-29",
+        ref="",
+        no_backup=True,
+        auto=False,
         format="json",
         kanban_file=kanban
     )
-    with patch("cli.update_kanban.find_kanban_file", return_value=kanban):
-        result = script.execute(args)
+    result = script.execute(args)
 
     assert result["success"] is True
     content = kanban.read_text()
@@ -165,7 +166,7 @@ Professional and concise.
 """)
 
     script = ValidateSkillStructureScript()
-    args = argparse.Namespace(file=valid_skill, strict=False, format="json")
+    args = argparse.Namespace(file=valid_skill, type="auto", strict=False, format="json")
     result = script.execute(args)
     assert result["valid"] is True
 
@@ -208,11 +209,6 @@ def test_start_session_skill_loads_context(tmp_path):
         project_root=tmp_path,
         format="json"
     )
-    with patch("cli.load_session_context.subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="main\n",
-            stderr=""
-        )
+    with patch("cli.load_session_context.run_command", return_value=(0, "main\n", "")):
         result = script.execute(args)
     assert isinstance(result, dict)

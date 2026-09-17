@@ -10,7 +10,7 @@ from cli.validate_skill_structure import (
     StructureValidationResult,
     detect_type,
     validate_structure)
-from common.utils import write_file_safe
+from lib.utils import write_file_safe
 
 def test_detect_type_skill():
     """Test type detection for skill file."""
