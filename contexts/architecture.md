@@ -73,7 +73,7 @@ Local AI  Scripts  Agents
 │   │   └── utils/switch_profile.py
 │   ├── lib/                         # Shared library — importable by scripts, skills, plugins, agents
 │   │   ├── ai/                      # model_utils — local AI client
-│   │   ├── config/                  # model_config — role-based model map
+│   │   ├── config/                  # model_config (roles) + language_config (languages, skip dirs, standards)
 │   │   └── cli/                     # BaseCLIScript + tests/
 │   └── tests/                       # Scripts-level tests (e2e, integration-reals)
 │
@@ -83,7 +83,7 @@ Local AI  Scripts  Agents
 ├── rules/                           # Auto-loaded coding standards (14 languages)
 ├── hooks/                           # Automation hooks
 ├── integrations/                    # Environment profiles
-├── configs/                         # Delegation configuration
+├── configs/                         # template_ + local_ config pairs: models, languages, delegation
 └── docs/                            # User documentation
 ```
 
@@ -106,6 +106,23 @@ Local AI  Scripts  Agents
 | Warm | qwen2.5-coder:14b, deepseek-coder-v2:16b | 9-16 GB | Deep review |
 | Cold | llama3.3:70b | 42 GB (SWAP) | Critical architecture |
 | Semantic | devstral-small-2 | ~14 GB | Semantic code analysis (CCA default) |
+
+---
+
+## Shared Language Configuration
+
+One declarative table, `configs/template_languages_config.json`, is the only place
+language knowledge lives. `scripts/lib/config/language_config.py` is its singleton
+reader; `local_languages_config.json` is auto-copied on first import and merges over
+the template, so a field added to the template later still reaches an older local file.
+
+Per language: extensions, skip directories, `kind` (code / markup / data / query /
+config), `has_inheritance`, comment style, filename pattern, the matching
+`rules/standards-*.md`, and build / test / format commands. `sql` and `vue` carry
+dialect blocks, resolved from file content where the extension is ambiguous.
+
+CCA, SSA and BBA all discover files from this one table, so they can no longer
+disagree about which files exist.
 
 ---
 

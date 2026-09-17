@@ -65,7 +65,7 @@ agents/black-box-analyzer/tests/
 │   │   ├── scripts/tests/
 │   │   │   ├── pytest.ini
 │   │   │   ├── conftest.py
-│   │   │   ├── unit/            # 465 tests — checkers, model_utils, cache, file_utils, orchestrate, prompts
+│   │   │   ├── unit/            # 469 tests — checkers, model_utils, cache, file_utils, orchestrate, prompts
 │   │   │   ├── integration/mock/ # 17 tests — mocked Ollama, real filesystem/cache
 │   │   │   ├── integration/real/ # 16 tests — real Ollama (devstral required)
 │   │   │   ├── e2e/             # 9 tests — orchestrate.py CLI, config-driven local_ai_service fixture
@@ -80,7 +80,7 @@ agents/black-box-analyzer/tests/
     ├── tests/conftest.py + e2e/ + integration-reals/
     ├── cli/tests/conftest.py + units/ + integration-mocks/ + integration-reals/
     ├── cli/agents/task_monitor/tests/units/    # no conftest — in root testpaths
-    ├── lib/tests/conftest.py + units/
+    ├── lib/tests/conftest.py + units/      # 177 tests — 152 language_config, model_config, model_utils
     └── lib/cli/tests/conftest.py + units/
 
 skills/
