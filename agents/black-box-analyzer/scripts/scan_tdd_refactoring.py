@@ -13,22 +13,16 @@ import json
 import sys
 from pathlib import Path
 
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+from lib.config import language_config
 from common.model_utils import analyze_file_with_model, check_server_available, PROMPTS_DIR
 
-# Source file extensions per language (same as analyze_library_branches.py)
-LANGUAGE_EXTENSIONS = {
-    "csharp": [".cs"],
-    "python": [".py"],
-    "kotlin": [".kt"],
-    "java": [".java"],
-    "go": [".go"],
-    "rust": [".rs"],
-    "ruby": [".rb"],
-    "typescript": [".ts"],
-    "javascript": [".js"],
-    "swift": [".swift"],
-    "cpp": [".cpp", ".cc", ".cxx", ".hpp"],
-}
+# Source file extensions per language — code only: refactoring anti-patterns cannot
+# be scanned in yaml or sql, and those must not win detect_language's vote.
+LANGUAGE_EXTENSIONS = language_config.languages_of_kind("code")
 
 ANTI_PATTERNS = [
     "static_method_call",       # calling static methods on concrete types

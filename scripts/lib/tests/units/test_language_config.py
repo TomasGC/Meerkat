@@ -2,6 +2,7 @@
 """Tests for lib/config/language_config.py"""
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -55,13 +56,96 @@ class TestLoad:
         assert lc._load() == {}
 
     def test_malformed_json_is_swallowed(self, tmp_path, monkeypatch):
+        """A broken local file must degrade to the template, not to nothing."""
         local = tmp_path / "local.json"
         local.write_text("{ not json")
 
         monkeypatch.setattr(lc, "_config", {})
         monkeypatch.setattr(lc, "_CONFIG_PATH", local)
 
-        assert lc._load() == {}
+        assert lc.extensions("python") == [".py"]
+
+
+class TestTemplateMerge:
+    """Local config overrides the template, but never hides fields added to it later."""
+
+    @pytest.fixture
+    def paths(self, tmp_path, monkeypatch):
+        template = tmp_path / "template.json"
+        local = tmp_path / "local.json"
+        monkeypatch.setattr(lc, "_config", {})
+        monkeypatch.setattr(lc, "_TEMPLATE_PATH", template)
+        monkeypatch.setattr(lc, "_CONFIG_PATH", local)
+        return template, local
+
+    def test_new_template_field_reaches_an_older_local_file(self, paths):
+        """The bug this merge exists for: a local file written before `kind` existed."""
+        template, local = paths
+        template.write_text(json.dumps({"languages": {"toy": {"extensions": [".toy"], "kind": "code"}}}))
+        local.write_text(json.dumps({"languages": {"toy": {"extensions": [".toy"]}}}))
+
+        assert lc.languages_of_kind("code") == {"toy": [".toy"]}
+
+    def test_local_value_wins_over_template(self, paths):
+        template, local = paths
+        template.write_text(json.dumps({"languages": {"toy": {"extensions": [".toy"]}}}))
+        local.write_text(json.dumps({"languages": {"toy": {"extensions": [".custom"]}}}))
+
+        assert lc.extensions("toy") == [".custom"]
+
+    def test_local_only_language_is_kept(self, paths):
+        template, local = paths
+        template.write_text(json.dumps({"languages": {"toy": {"extensions": [".toy"]}}}))
+        local.write_text(json.dumps({"languages": {"mine": {"extensions": [".mine"]}}}))
+
+        assert lc.extensions("toy") == [".toy"]
+        assert lc.extensions("mine") == [".mine"]
+
+    def test_merge_is_recursive(self):
+        base = {"a": {"b": {"c": 1, "d": 2}}, "keep": 1}
+        override = {"a": {"b": {"c": 9}}}
+        assert lc._merge(base, override) == {"a": {"b": {"c": 9, "d": 2}}, "keep": 1}
+
+    def test_merge_replaces_lists_instead_of_concatenating(self):
+        assert lc._merge({"x": [1, 2]}, {"x": [3]}) == {"x": [3]}
+
+    def test_merge_does_not_mutate_base(self):
+        base = {"a": {"b": 1}}
+        lc._merge(base, {"a": {"b": 2}})
+        assert base == {"a": {"b": 1}}
+
+
+class TestLanguagesOfKind:
+    """Kind restriction, so data and query languages never win a source-language vote."""
+
+    def test_code_kind_matches_the_bba_library_languages(self):
+        code = lc.languages_of_kind("code")
+        assert len(code) == 15
+        for language in ("python", "csharp", "kotlin", "java", "go", "rust",
+                         "ruby", "typescript", "javascript", "swift", "cpp"):
+            assert language in code
+
+    @pytest.mark.parametrize("language", ["sql", "yaml", "dockerfile", "razor", "vue"])
+    def test_non_code_languages_excluded(self, language):
+        assert language not in lc.languages_of_kind("code")
+
+    def test_markup_kind(self):
+        assert set(lc.languages_of_kind("markup")) == {"razor", "vue"}
+
+    def test_several_kinds_at_once(self):
+        combined = lc.languages_of_kind("data", "query")
+        assert set(combined) == {"yaml", "sql"}
+
+    def test_unknown_kind_is_empty(self):
+        assert lc.languages_of_kind("interpretive_dance") == {}
+
+    def test_every_shipped_language_declares_a_kind(self):
+        """A language with no kind silently disappears from every kind-filtered table."""
+        assert [name for name, lang in lc.all_languages().items() if not lang.get("kind")] == []
+
+    def test_result_is_a_copy(self):
+        lc.languages_of_kind("code")["python"].append(".nope")
+        assert lc.extensions("python") == [".py"]
 
 
 class TestLanguages:
@@ -159,24 +243,24 @@ class TestSkipDirs:
 class TestExtensionsWhere:
     """Capability lookup, replacing CCA's exclusion-derived _CLASS_LANG_EXTS."""
 
-    @pytest.mark.parametrize("ext", [".cs", ".java", ".kt", ".ts", ".rb", ".py"])
-    def test_class_languages_included(self, ext):
-        assert ext in lc.extensions_where("has_classes")
+    @pytest.mark.parametrize("ext", [".cs", ".java", ".kt", ".ts", ".rb", ".py", ".go", ".razor"])
+    def test_inheritance_languages_included(self, ext):
+        assert ext in lc.extensions_where("has_inheritance")
 
-    @pytest.mark.parametrize("ext", [".sql", ".yaml", ".yml", ".sh", ".bash", ".vue", ".go"])
-    def test_non_class_languages_excluded(self, ext):
+    @pytest.mark.parametrize("ext", [".sql", ".yaml", ".yml", ".sh", ".bash", ".vue", ".pl"])
+    def test_non_inheritance_languages_excluded(self, ext):
         """The old set was 'everything except python/bash/yaml/dockerfile', which
         would have admitted .sql and .vue as soon as they became visible."""
-        assert ext not in lc.extensions_where("has_classes")
+        assert ext not in lc.extensions_where("has_inheritance")
 
     def test_value_false_selects_the_complement(self):
-        assert ".sql" in lc.extensions_where("has_classes", value=False)
-        assert ".cs" not in lc.extensions_where("has_classes", value=False)
+        assert ".sql" in lc.extensions_where("has_inheritance", value=False)
+        assert ".cs" not in lc.extensions_where("has_inheritance", value=False)
 
     def test_missing_field_counts_as_false(self, custom_config):
         custom_config({"languages": {"toy": {"extensions": [".toy"]}}})
-        assert lc.extensions_where("has_classes") == set()
-        assert lc.extensions_where("has_classes", value=False) == {".toy"}
+        assert lc.extensions_where("has_inheritance") == set()
+        assert lc.extensions_where("has_inheritance", value=False) == {".toy"}
 
 
 class TestCommentStyle:
@@ -230,6 +314,40 @@ class TestStandards:
 
     def test_unknown_dialect_returns_none(self):
         assert lc.standards_for("sql", "oracle") is None
+
+
+class TestStandardsForFile:
+    """Per-file resolution: extension or filename -> language -> dialect -> document."""
+
+    def test_extension_only(self):
+        assert lc.standards_for_file(Path("src/app.ts")) == "rules/standards-typescript.md"
+
+    def test_dialectless_sql_file_has_no_document(self):
+        """sql declares no dialect-free standards: without content there is nothing to name."""
+        assert lc.standards_for_file(Path("schema.sql")) is None
+
+    def test_sql_dialect_resolved_from_content(self):
+        content = "CREATE TABLE t (a NVARCHAR(9))\nGO\n"
+        assert lc.standards_for_file(Path("schema.sql"), content) == "rules/standards-sqlserver.md"
+        assert lc.standards_for_file(Path("schema.sql"), "CREATE TABLE t (id SERIAL)") == \
+            "rules/standards-postgresql.md"
+
+    def test_vue_dialect_resolved_from_content(self):
+        assert lc.standards_for_file(Path("App.vue"), '<script setup lang="ts">') == \
+            "rules/standards-typescript.md"
+        assert lc.standards_for_file(Path("App.vue"), "<script>") == "rules/standards-javascript.md"
+
+    def test_filename_matched_language(self):
+        assert lc.standards_for_file(Path("deploy/Dockerfile")) == "rules/standards-docker.md"
+
+    def test_language_without_document(self):
+        assert lc.standards_for_file(Path("main.go")) is None
+
+    def test_unknown_extension(self):
+        assert lc.standards_for_file(Path("notes.zzz")) is None
+
+    def test_accepts_a_string_path(self):
+        assert lc.standards_for_file("src/app.ts") == "rules/standards-typescript.md"
 
 
 class TestCommands:

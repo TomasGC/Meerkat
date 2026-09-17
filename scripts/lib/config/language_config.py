@@ -18,19 +18,35 @@ _TEMPLATE_PATH = _CLAUDE_DIR / "configs" / "template_languages_config.json"
 _config: dict = {}
 
 
+def _read(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _merge(base: dict, override: dict) -> dict:
+    """Recursive merge; override wins on scalars and lists."""
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
 def _load() -> dict:
     global _config
     if _config:
         return _config
     if not _CONFIG_PATH.exists():
-        if _TEMPLATE_PATH.exists():
-            shutil.copy(_TEMPLATE_PATH, _CONFIG_PATH)
-        else:
+        if not _TEMPLATE_PATH.exists():
             return _config
-    try:
-        _config = json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        pass
+        shutil.copy(_TEMPLATE_PATH, _CONFIG_PATH)
+    # Template is the base, local overrides it — so a field added to the template
+    # later still reaches a local file written before that field existed.
+    _config = _merge(_read(_TEMPLATE_PATH), _read(_CONFIG_PATH))
     return _config
 
 
@@ -54,6 +70,15 @@ def extensions(language: str | None = None) -> list[str]:
 def language_extensions() -> dict[str, list[str]]:
     """language -> [ext], the shape the agents' _LANG_EXTENSIONS used."""
     return {name: list(lang.get("extensions", [])) for name, lang in all_languages().items()}
+
+
+def languages_of_kind(*kinds: str) -> dict[str, list[str]]:
+    """language -> [ext], restricted to the given kinds (code, markup, data, query, config)."""
+    return {
+        name: list(lang.get("extensions", []))
+        for name, lang in all_languages().items()
+        if lang.get("kind") in kinds
+    }
 
 
 def language_for_extension(ext: str) -> str | None:
@@ -113,6 +138,23 @@ def standards_for(language: str, dialect: str | None = None) -> str | None:
     if dialect is not None:
         return _load().get("dialects", {}).get(language, {}).get(dialect, {}).get("standards")
     return get_language(language).get("standards")
+
+
+def standards_for_file(path: Path, content: str | None = None) -> str | None:
+    """Standards document for a file. Resolves the dialect when content is given.
+
+    A .sql file alone cannot say whether it is T-SQL or PostgreSQL; its content can.
+    """
+    path = Path(path)
+    language = language_for_extension(path.suffix)
+    if language is None:
+        language = next((n for n in all_languages() if matches_filename(n, path.name)), None)
+    if language is None:
+        return None
+    dialect = detect_dialect(language, content) if content is not None else None
+    if dialect:
+        return standards_for(language, dialect) or standards_for(language)
+    return standards_for(language)
 
 
 def commands_for(language: str) -> dict[str, str | None]:

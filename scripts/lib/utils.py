@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from .config import language_config
 from .models import ComponentType
 
 
@@ -147,23 +148,7 @@ def detect_language(file_path: Path) -> str | None:
     Returns:
         Language name or None if unknown
     """
-    extension_map = {
-        ".py": "python",
-        ".ps1": "powershell",
-        ".psm1": "powershell",
-        ".sh": "bash",
-        ".bash": "bash",
-        ".js": "javascript",
-        ".ts": "typescript",
-        ".go": "go",
-        ".cs": "csharp",
-        ".java": "java",
-        ".rb": "ruby",
-        ".pl": "perl",
-    }
-
-    suffix = file_path.suffix.lower()
-    return extension_map.get(suffix)
+    return language_config.language_for_extension(file_path.suffix)
 
 
 def run_command(
