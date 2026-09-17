@@ -20,6 +20,10 @@ LANGUAGE_INDICATORS = {
     "rust": ["Cargo.toml", "Cargo.lock"],
     "swift": ["Package.swift", "*.xcodeproj"],
     "cpp": ["CMakeLists.txt", "*.cpp", "*.hpp"],
+    # Last: content-only languages, so a polyglot project that merely contains
+    # .sql or .sol files keeps its host language.
+    "solidity": ["foundry.toml", "hardhat.config.js", "hardhat.config.ts", "*.sol"],
+    "sql": ["*.sql"],
 }
 
 # Framework detection patterns (in package files)
@@ -48,6 +52,44 @@ FRAMEWORK_PATTERNS = {
     "spring": r"org\.springframework",
     "quarkus": r"io\.quarkus",
     "micronaut": r"io\.micronaut",
+    # CLI frameworks
+    "cobra": r"github\.com/spf13/cobra",
+    "urfave_cli": r"github\.com/urfave/cli",
+    "clap": r'clap\s*=|"clap"',
+    "click": r"\bclick\b",
+    "typer": r"\btyper\b",
+    "commander": r'"commander"',
+    "yargs": r'"yargs"',
+    "picocli": r"info\.picocli",
+    # Frontend frameworks
+    "react": r'"react"',
+    "vue": r'"vue"',
+    "angular": r'"@angular/core"',
+    "nextjs": r'"next"',
+    "remix": r'"@remix-run/',
+    "sveltekit": r'"@sveltejs/kit"',
+    # LLM / AI agent frameworks
+    "langchain": r"\blangchain\b",
+    "llamaindex": r"llama[-_]index",
+    "crewai": r"\bcrewai\b",
+    "openai": r"\bopenai\b",
+    "anthropic": r"\banthropic\b",
+    # Background worker frameworks
+    "celery": r"\bcelery\b",
+    "sidekiq": r"\bsidekiq\b",
+    "bull": r'"bull"',
+    "asynq": r"hibiken/asynq",
+    # Message queue clients
+    "kafka": r"kafka[-_]python|confluent[-_]kafka|aiokafka|\bkafkajs\b|segmentio/kafka-go",
+    "pika": r"\bpika\b",
+    "amqplib": r'"amqplib"',
+    # Serverless
+    "serverless": r'"serverless"|serverless[-_]framework',
+    # Blockchain toolchains
+    "hardhat": r'"hardhat"',
+    "truffle": r'"truffle"',
+    "ethers": r'"ethers"',
+    "web3": r"\bweb3\b",
 }
 
 # Test file patterns (glob patterns)
@@ -432,17 +474,30 @@ BLOCKCHAIN_PATTERNS = {
     "move_function": re.compile(r"public\s+entry\s+fun\s+(\w+)"),
 }
 
-# Project type file indicators (files that definitively indicate a project type)
-PROJECT_TYPE_INDICATORS = {
-    "android": ["AndroidManifest.xml", "build.gradle", "settings.gradle.kts"],
-    "ios": ["Info.plist", "*.xcodeproj", "*.xcworkspace"],
-    "wpf": ["*.xaml", "App.xaml"],
-    "qt": ["*.pro", "CMakeLists.txt"],
-    "nextjs": ["next.config.js", "next.config.ts"],
-    "angular": ["angular.json"],
-    "vue": ["vue.config.js", "vite.config.ts"],
-    "sql": ["*.sql", "migrations/"],
-    "serverless": ["serverless.yml", "template.yaml", "function.json"],
-    "celery": ["celeryconfig.py", "celery.py"],
-    "blockchain": ["*.sol", "Cargo.toml", "*.move"],
+# File markers that on their own identify a project type, keyed by ProjectType
+# value. Only unambiguous markers belong here — `build.gradle` would make every
+# Gradle project Android, `Cargo.toml` every Rust project a smart contract, and
+# `CMakeLists.txt` every CMake project a Qt desktop app.
+PROJECT_TYPE_FILE_MARKERS = {
+    "android_app": ["AndroidManifest.xml"],
+    "ios_app": ["Info.plist", "*.xcodeproj", "*.xcworkspace"],
+    "desktop_windows": ["App.xaml"],
+    "desktop_linux": ["*.pro"],
+    "fullstack": [
+        "next.config.js",
+        "next.config.ts",
+        "remix.config.js",
+        "svelte.config.js",
+    ],
+    "frontend_angular": ["angular.json"],
+    "frontend_vue": ["vue.config.js"],
+    "sql_project": ["*.sql"],
+    "serverless": [
+        "serverless.yml",
+        "serverless.yaml",
+        "template.yaml",
+        "function.json",
+    ],
+    "background_worker": ["celeryconfig.py"],
+    "smart_contract": ["*.sol", "*.move", "foundry.toml"],
 }

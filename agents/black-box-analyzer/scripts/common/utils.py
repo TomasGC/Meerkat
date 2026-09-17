@@ -136,6 +136,9 @@ def find_project_root(start_path: Path) -> Path | None:
         "pom.xml",
         "build.gradle",
         "Cargo.toml",
+        "foundry.toml",
+        "hardhat.config.js",
+        "hardhat.config.ts",
     ]
 
     current = start_path.resolve()
@@ -151,6 +154,12 @@ def find_project_root(start_path: Path) -> Path | None:
                 # Exact file
                 if (current / indicator).exists():
                     return current
+
+        # Never climb past the enclosing repository. Without this, a directory
+        # holding no manifest resolves to whatever ancestor happens to have one,
+        # which can be an unrelated project several levels up.
+        if (current / ".git").exists():
+            break
 
         # Move up one level
         parent = current.parent

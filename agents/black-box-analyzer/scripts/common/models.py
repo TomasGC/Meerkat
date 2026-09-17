@@ -33,6 +33,8 @@ class Language(Enum):
     RUST = "rust"
     SWIFT = "swift"
     CPP = "cpp"
+    SQL = "sql"
+    SOLIDITY = "solidity"
     UNKNOWN = "unknown"
 
 

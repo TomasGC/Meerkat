@@ -74,20 +74,31 @@ def test_risk_for_scenario_happy_path_scores_12():
     assert risk.failure_probability == 2
     assert risk.risk_score == 12
 
-def test_can_analyze_zero_endpoints():
+def test_can_analyze_no_detected_types():
     project_info = MagicMock()
     project_info.endpoint_count = 0
+    project_info.project_types = []
     project_info.metadata = {}
     assert LibraryAnalyzer().can_analyze(project_info) is True
+
+def test_cannot_analyze_zero_endpoints_with_detected_type():
+    """A CLI or Android project serves no HTTP but is not a library."""
+    project_info = MagicMock()
+    project_info.endpoint_count = 0
+    project_info.project_types = [ProjectType.CLI_APP]
+    project_info.metadata = {}
+    assert LibraryAnalyzer().can_analyze(project_info) is False
 
 def test_can_analyze_is_library_flag():
     project_info = MagicMock()
     project_info.endpoint_count = 5
+    project_info.project_types = [ProjectType.REST_API]
     project_info.metadata = {"is_library": True}
     assert LibraryAnalyzer().can_analyze(project_info) is True
 
 def test_cannot_analyze_has_endpoints_no_flag():
     project_info = MagicMock()
     project_info.endpoint_count = 3
+    project_info.project_types = [ProjectType.REST_API]
     project_info.metadata = {}
     assert LibraryAnalyzer().can_analyze(project_info) is False
