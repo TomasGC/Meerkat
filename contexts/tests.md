@@ -49,9 +49,10 @@ agents/black-box-analyzer/tests/
 ├── agents/
 │   ├── black-box-analyzer/tests/
 │   │   ├── conftest.py
-│   │   ├── unit/            # 414 tests — checkers/_utils, 4 gap checkers (7 each), models from_dict, cache, parse_test_files, etc.
+│   │   ├── unit/            # 415 tests — checkers/_utils, 4 gap checkers (7 each), models from_dict, cache, parse_test_files, LibraryAnalyzer routing
 │   │   ├── integration/mock/ # 47 tests — library_analyzer, analyze_library_branches, 4 gap checkers (1 each)
-│   │   ├── integration/real/ # 30 tests — real local AI required (skipped without a server)
+│   │   ├── integration/real/ # 30 tests — 20 universal detection over fixtures/ (no AI), model_utils, open_report
+│   │   │   └── fixtures/     # 10 minimal projects, one per detected type — see note below
 │   │   └── e2e/             # 36 tests — parallel_analyzer, orchestrate, collect_coverage, diff_analysis, cache lifecycle
 │   ├── security-safety-analyzer/
 │   │   └── scripts/tests/
@@ -149,3 +150,25 @@ attribute but does inherit the env. Without it, tests write into the real
 
 `common/cache.py` reads it lazily via `_cache_home()` on every call — capturing it
 at import time would break subprocess tests that set it after import.
+
+---
+
+## Detection Fixtures (BBA real tier)
+
+`tests/integration/real/fixtures/` holds ten minimal projects, one per detected
+project type. Each is written against the exact regexes its analyzer uses, so a
+fixture edit is a contract change:
+
+- Every fixture is detected on a **strong** signal (file marker or manifest
+  framework), never the ≥2-pattern fallback — pattern counts are a safety net,
+  not the thing under test.
+- No fixture source may live under `build/`, `dist/`, `bin/` or any other
+  `EXCLUDED_DIRS` entry: `walk_files` would skip it.
+- No fixture file may be named `test_*.py` — pytest would collect it.
+- `sql_project` deliberately carries no manifest. `find_project_root` stops at
+  the enclosing `.git`, so it resolves to the fixture itself rather than an
+  ancestor.
+- `hybrid_project` resolves to language **java** on purpose: `count_endpoints`
+  globs only `*.kt` for Kotlin and `APIAnalyzer` never walks `*.kt`, so a Kotlin
+  controller yields zero endpoints and no `REST_API`. Its Activity sits in
+  `app/` so no top-level `*.kt` wins the language vote.

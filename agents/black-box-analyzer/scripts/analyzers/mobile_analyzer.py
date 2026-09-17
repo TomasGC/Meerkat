@@ -130,6 +130,37 @@ class MobileAnalyzer(BaseAnalyzer):
                     )
                 )
 
+            # Click handlers: XML-bound `android:onClick` targets and listener
+            # lambdas. Android has no @IBAction equivalent, so these two idioms are
+            # the only way a UI interaction surfaces in Kotlin source — without them
+            # no Android project ever yields a UI_HANDLER entry point.
+            for pattern, handler_type in (
+                (re.compile(r"fun\s+(\w+)\s*\(\s*\w+\s*:\s*View\s*\)"), "on_click_attribute"),
+                (re.compile(r"(\w+)\.setOnClickListener"), "click_listener"),
+            ):
+                for match in pattern.finditer(content):
+                    handler_name = match.group(1)
+                    line_num = content[: match.start()].count("\n") + 1
+
+                    entry_points.append(
+                        EntryPoint(
+                            type=EntryPointType.UI_HANDLER,
+                            name=handler_name,
+                            params=[
+                                Parameter(
+                                    name="view",
+                                    param_type="view",
+                                    data_type="View",
+                                    required=True,
+                                )
+                            ],
+                            file_path=format_path_relative(file_path, project_path),
+                            line_number=line_num,
+                            framework="android",
+                            metadata={"handler_type": handler_type},
+                        )
+                    )
+
         return entry_points
 
     def _extract_android_lifecycle(

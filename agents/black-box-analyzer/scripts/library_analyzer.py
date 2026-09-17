@@ -102,8 +102,13 @@ class LibraryAnalyzer:
     """Analyzer for library/SDK projects — white-box, any language."""
 
     def can_analyze(self, project_info) -> bool:
-        """Activate when project has 0 HTTP endpoints."""
-        return project_info.metadata.get("is_library", False) or project_info.endpoint_count == 0
+        """Activate only when no specific project type was detected.
+
+        Gating on `endpoint_count == 0` claimed every CLI, Android, SQL, worker and
+        contract project too — none of which serve HTTP — so they were routed here
+        in addition to their own analyzer.
+        """
+        return project_info.metadata.get("is_library", False) or not project_info.project_types
 
     def analyze(self, project_path: Path, project_info, agents: int = 1,
                 typed_agents: bool = False, include_e2e: bool = False) -> AnalysisResult:

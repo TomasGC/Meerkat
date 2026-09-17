@@ -1,0 +1,9 @@
+plugins {
+    id 'com.android.application'
+    id 'org.springframework.boot' version '3.2.5'
+}
+
+android {
+    namespace 'com.example.hybrid'
+    compileSdk 34
+}

@@ -17,11 +17,23 @@ from pathlib import Path
 
 from common.constants import (
     API_PATH_PREFIXES,
+    BLOCKCHAIN_PATTERNS,
+    CLI_PATTERNS,
+    DESKTOP_PATTERNS,
     ENDPOINT_PATTERNS,
     FRAMEWORK_PATTERNS,
+    FRONTEND_PATTERNS,
+    FULLSTACK_PATTERNS,
     LANGUAGE_INDICATORS,
+    LLM_PATTERNS,
+    MESSAGE_QUEUE_PATTERNS,
+    MOBILE_PATTERNS,
+    PROJECT_TYPE_FILE_MARKERS,
+    SERVERLESS_PATTERNS,
+    SQL_PATTERNS,
     TEST_FILE_PATTERNS,
     TEST_FRAMEWORK_PATTERNS,
+    WORKER_PATTERNS,
 )
 from common.models import Language, ProjectInfo, ProjectType, TestFramework
 from common.utils import find_project_root, read_file_safe, walk_files
@@ -248,6 +260,165 @@ def infer_project_type(frameworks: list[str], endpoint_count: int) -> str:
         return "REST API"
 
 
+# Extensions scanned for source-pattern signals. Deliberately not filtered by the
+# detected language: a hybrid project mixes languages, and detection must see all
+# of them or the second type stays invisible.
+_SIGNAL_EXTENSIONS = [
+    "*.go", "*.py", "*.ts", "*.tsx", "*.js", "*.jsx", "*.cs", "*.java", "*.kt",
+    "*.swift", "*.rb", "*.rs", "*.sol", "*.sql", "*.cpp", "*.h", "*.xaml", "*.vue",
+]
+
+# Minimum distinct source patterns a type needs when it has no file or manifest
+# marker. One hit is not enough — several of these patterns are broad enough to
+# match ordinary code (`def perform(`, `class \w+Tool`).
+_MIN_PATTERN_HITS = 2
+
+# Per type: the manifest frameworks that imply it, and the pattern table its own
+# analyzer already uses for extraction. Reusing that table keeps detection and
+# extraction from drifting apart. `prefixes` narrows a shared table (MOBILE_PATTERNS
+# covers both Android and iOS) to the keys belonging to this type.
+_TYPE_SIGNALS: dict[ProjectType, dict] = {
+    ProjectType.CLI_APP: {
+        "frameworks": (
+            "cobra", "urfave_cli", "clap", "click", "typer", "commander", "yargs",
+            "picocli",
+        ),
+        "patterns": CLI_PATTERNS,
+    },
+    ProjectType.ANDROID_APP: {"patterns": MOBILE_PATTERNS, "prefixes": ("android_",)},
+    ProjectType.IOS_APP: {"patterns": MOBILE_PATTERNS, "prefixes": ("ios_",)},
+    ProjectType.FRONTEND_REACT: {
+        "frameworks": ("react",),
+        "patterns": FRONTEND_PATTERNS,
+        "prefixes": ("react_",),
+    },
+    ProjectType.FRONTEND_VUE: {
+        "frameworks": ("vue",),
+        "patterns": FRONTEND_PATTERNS,
+        "prefixes": ("vue_",),
+    },
+    ProjectType.FRONTEND_ANGULAR: {
+        "frameworks": ("angular",),
+        "patterns": FRONTEND_PATTERNS,
+        "prefixes": ("angular_",),
+    },
+    ProjectType.FULLSTACK: {
+        "frameworks": ("nextjs", "remix", "sveltekit"),
+        "patterns": FULLSTACK_PATTERNS,
+    },
+    ProjectType.LLM_AI_AGENT: {
+        "frameworks": ("langchain", "llamaindex", "crewai", "openai", "anthropic"),
+        "patterns": LLM_PATTERNS,
+    },
+    ProjectType.SQL_PROJECT: {"patterns": SQL_PATTERNS},
+    ProjectType.SERVERLESS: {
+        "frameworks": ("serverless",),
+        "patterns": SERVERLESS_PATTERNS,
+    },
+    ProjectType.BACKGROUND_WORKER: {
+        "frameworks": ("celery", "sidekiq", "bull", "asynq"),
+        "patterns": WORKER_PATTERNS,
+    },
+    ProjectType.MESSAGE_QUEUE: {
+        "frameworks": ("kafka", "pika", "amqplib"),
+        "patterns": MESSAGE_QUEUE_PATTERNS,
+    },
+    ProjectType.SMART_CONTRACT: {
+        "frameworks": ("hardhat", "truffle", "ethers", "web3"),
+        "patterns": BLOCKCHAIN_PATTERNS,
+    },
+    ProjectType.DESKTOP_WINDOWS: {
+        "patterns": DESKTOP_PATTERNS,
+        "prefixes": ("wpf_", "winforms_"),
+    },
+    ProjectType.DESKTOP_MAC: {"patterns": DESKTOP_PATTERNS, "prefixes": ("macos_",)},
+    ProjectType.DESKTOP_LINUX: {
+        "patterns": DESKTOP_PATTERNS,
+        "prefixes": ("qt_", "gtk_"),
+    },
+}
+
+
+def _has_file_marker(project_path: Path, project_type: ProjectType) -> bool:
+    """Check for a file that on its own identifies this project type."""
+    for marker in PROJECT_TYPE_FILE_MARKERS.get(project_type.value, []):
+        if next(walk_files(project_path, [marker]), None) is not None:
+            return True
+    return False
+
+
+def _count_pattern_hits(sources: dict[Path, str], signal: dict) -> int:
+    """Count distinct pattern keys from a type's table matching any source file.
+
+    Several tables carry plain strings as file hints rather than compiled patterns
+    (`"android_manifest": "AndroidManifest.xml"`); those are covered by
+    PROJECT_TYPE_FILE_MARKERS and skipped here.
+    """
+    prefixes = signal.get("prefixes", ())
+    hits = 0
+
+    for key, pattern in signal["patterns"].items():
+        if not isinstance(pattern, re.Pattern):
+            continue
+        if prefixes and not key.startswith(prefixes):
+            continue
+        if any(pattern.search(content) for content in sources.values()):
+            hits += 1
+
+    return hits
+
+
+def detect_project_types(
+    project_path: Path, frameworks: list[str], endpoint_count: int
+) -> list[ProjectType]:
+    """
+    Detect every project type present, not only API types.
+
+    A type is included when it has a file marker or a manifest framework, or when
+    at least _MIN_PATTERN_HITS distinct source patterns from its own analyzer's
+    table match. HYBRID is appended when more than one type is found.
+
+    Args:
+        project_path: Project root directory
+        frameworks: Detected frameworks
+        endpoint_count: Number of HTTP endpoints
+
+    Returns:
+        List of detected ProjectType values (empty means library/unknown)
+    """
+    sources: dict[Path, str] = {}
+    for file_path in walk_files(project_path, _SIGNAL_EXTENSIONS):
+        content = read_file_safe(file_path)
+        if content:
+            sources[file_path] = content
+
+    framework_set = {f.lower() for f in frameworks}
+    types: list[ProjectType] = []
+
+    # API types come from endpoint counting, which already works
+    if endpoint_count > 0:
+        framework_str = " ".join(framework_set)
+        if "graphql" in framework_str:
+            types.append(ProjectType.GRAPHQL_API)
+        elif "grpc" in framework_str:
+            types.append(ProjectType.GRPC_API)
+        else:
+            types.append(ProjectType.REST_API)
+
+    for project_type, signal in _TYPE_SIGNALS.items():
+        if _has_file_marker(project_path, project_type):
+            types.append(project_type)
+        elif framework_set & {f.lower() for f in signal.get("frameworks", ())}:
+            types.append(project_type)
+        elif _count_pattern_hits(sources, signal) >= _MIN_PATTERN_HITS:
+            types.append(project_type)
+
+    if len(types) > 1:
+        types.append(ProjectType.HYBRID)
+
+    return types
+
+
 def analyze_project(project_path: Path) -> ProjectInfo:
     """
     Analyze project structure and detect all metadata.
@@ -286,22 +457,14 @@ def analyze_project(project_path: Path) -> ProjectInfo:
     # Phase 6: Infer project type
     project_type = infer_project_type(frameworks, endpoint_count)
 
-    # Determine project type: 0 endpoints → LIBRARY mode (white-box analysis)
-    if endpoint_count == 0:
-        primary = ProjectType.UNKNOWN  # will be resolved by LibraryAnalyzer
-        types: list[ProjectType] = []
-        is_library = True
-    else:
-        # Map infer_project_type() string to correct ProjectType enum
-        _type_map = {
-            "GraphQL API": ProjectType.GRAPHQL_API,
-            "gRPC Service": ProjectType.GRPC_API,
-            "Microservice": ProjectType.REST_API,
-            "REST API": ProjectType.REST_API,
-        }
-        primary = _type_map.get(project_type, ProjectType.REST_API)
-        types = [primary]
-        is_library = False
+    # Phase 7: Detect every project type present. Endpoint count alone cannot do
+    # this — a CLI, Android or SQL project serves no HTTP and previously fell into
+    # the library branch, making all non-API types unreachable.
+    types = detect_project_types(project_path, frameworks, endpoint_count)
+
+    # Nothing recognised → library mode (white-box analysis)
+    is_library = not types
+    primary = types[0] if types else ProjectType.UNKNOWN
 
     return ProjectInfo(
         language=language,
