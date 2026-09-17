@@ -1,0 +1,63 @@
+{
+  "skip_dirs": [
+    ".git", ".svn", "node_modules", "vendor", "bin", "obj", "dist", "build",
+    "out", "target", "coverage", ".nyc_output", "__pycache__", ".pytest_cache",
+    ".venv", "venv", ".tox", "eggs", ".eggs"
+  ],
+  "languages": {
+    "python":     { "extensions": [".py"], "kind": "code", "comment_style": "hash", "has_inheritance": true,
+                    "standards": null, "build": null, "test": "python -m pytest", "format": "black ." },
+    "typescript": { "extensions": [".ts", ".tsx"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": "rules/standards-typescript.md", "build": "npm run build", "test": "npm test", "format": "npx prettier --write ." },
+    "javascript": { "extensions": [".js", ".jsx", ".mjs", ".cjs"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": "rules/standards-javascript.md", "build": "npm run build", "test": "npm test", "format": "npx prettier --write ." },
+    "vue":        { "extensions": [".vue"], "kind": "markup", "comment_style": "slash", "has_inheritance": false,
+                    "standards": "rules/standards-vuejs3.md", "build": "npm run build", "test": "npm test", "format": "npx prettier --write ." },
+    "csharp":     { "extensions": [".cs"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": null, "build": "dotnet build", "test": "dotnet test", "format": "dotnet format" },
+    "razor":      { "extensions": [".cshtml", ".razor"], "kind": "markup", "comment_style": "slash", "has_inheritance": true,
+                    "standards": "rules/standards-cshtml.md", "build": "dotnet build", "test": null, "format": "dotnet format" },
+    "go":         { "extensions": [".go"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": null, "build": "go build ./...", "test": "go test ./...", "format": "gofmt -w ." },
+    "java":       { "extensions": [".java"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": null, "build": "mvn compile", "test": "mvn test", "format": null },
+    "kotlin":     { "extensions": [".kt", ".kts"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": null, "build": "gradle build", "test": "gradle test", "format": null },
+    "swift":      { "extensions": [".swift"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": null, "build": "swift build", "test": "swift test", "format": null },
+    "rust":       { "extensions": [".rs"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": null, "build": "cargo build", "test": "cargo test", "format": "cargo fmt" },
+    "ruby":       { "extensions": [".rb"], "kind": "code", "comment_style": "hash", "has_inheritance": true,
+                    "standards": null, "build": null, "test": "bundle exec rspec", "format": null },
+    "cpp":        { "extensions": [".cpp", ".cc", ".cxx", ".hpp"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": null, "build": "cmake --build .", "test": "ctest", "format": "clang-format -i" },
+    "php":        { "extensions": [".php"], "kind": "code", "comment_style": "slash", "has_inheritance": true,
+                    "standards": null, "build": null, "test": "vendor/bin/phpunit", "format": null },
+    "perl":       { "extensions": [".pl", ".pm"], "kind": "code", "comment_style": "hash", "has_inheritance": false,
+                    "standards": null, "build": null, "test": "prove -r t", "format": null },
+    "powershell": { "extensions": [".ps1", ".psm1", ".psd1"], "kind": "code", "comment_style": "hash", "has_inheritance": true,
+                    "standards": "rules/standards-powershell.md", "build": null, "test": "Invoke-Pester", "format": null },
+    "bash":       { "extensions": [".sh", ".bash"], "kind": "code", "comment_style": "hash", "has_inheritance": false,
+                    "standards": "rules/standards-bash.md", "build": null, "test": "bats .", "format": "shfmt -w ." },
+    "sql":        { "extensions": [".sql"], "kind": "query", "comment_style": "dash", "has_inheritance": false,
+                    "standards": null, "build": null, "test": null, "format": null },
+    "yaml":       { "extensions": [".yaml", ".yml"], "kind": "data", "comment_style": "hash", "has_inheritance": false,
+                    "standards": null, "build": null, "test": null, "format": null },
+    "dockerfile": { "extensions": [], "filename_pattern": "^[Dd]ockerfile(\\.\\w+)?$", "kind": "config", "comment_style": "hash", "has_inheritance": false,
+                    "standards": "rules/standards-docker.md", "build": "docker build .", "test": null, "format": null }
+  },
+  "dialects": {
+    "sql": {
+      "mssql":      { "patterns": ["(?mi)^\\s*GO\\s*$", "(?i)\\bNVARCHAR\\b", "(?i)\\[dbo\\]\\."],
+                      "standards": "rules/standards-sqlserver.md" },
+      "postgresql": { "patterns": ["(?i)\\bSERIAL\\b", "::\\w+", "(?i)\\bRETURNING\\b"],
+                      "standards": "rules/standards-postgresql.md" }
+    },
+    "vue": {
+      "typescript": { "patterns": ["<script[^>]*\\blang\\s*=\\s*[\"']ts[\"']"],
+                      "standards": "rules/standards-typescript.md" },
+      "javascript": { "patterns": [], "default": true,
+                      "standards": "rules/standards-javascript.md" }
+    }
+  }
+}

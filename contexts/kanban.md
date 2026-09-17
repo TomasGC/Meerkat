@@ -4,6 +4,34 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-09-17 - [#17] Shared language and tooling configuration
+
+- `configs/template_languages_config.json` + `scripts/lib/config/language_config.py`: 20 languages with extensions, skip dirs, kind, standards document, build/test/format commands, sql and vue dialect detection
+- Nine hardcoded language tables across CCA, SSA, BBA and `scripts/` replaced by config reads; CCA and BBA now discover the same 18 files over the BBA fixtures (12 and 14 before)
+- `has_inheritance` and `kind` declared per language instead of derived by exclusion, so the inheritance scan and library detection stay identical while the visible language set grows
+- Local config merges over the template, so a field added to the template later reaches a local file written before it existed
+- `check_server_available` probes `/api/tags` on the configured `local.base_url` instead of shelling out to `ollama list`, and defaults to the `analyzer` role the semantic checkers load
+- `language_config` covered by 152 unit tests; CCA availability tests rewritten against the HTTP seam
+
+tags: #config #languages #refactor #local-ai
+Ref: https://github.com/TomasGC/Meerkat/issues/17
+Commits: 4aab9c5, 8e53040, f680b16
+
+---
+
+2026-09-17 - [#25] Universal project type detection
+
+- `detect_project_types` returns every type present instead of stopping at the first API match, unblocking 20 skipped detection tests
+- Android click handlers emit UI handler entry points, so a mobile project no longer reports zero entry points
+- 10 minimal fixture projects under `tests/integration/real/fixtures/`, one per detected type, each written against the regexes its analyzer already uses
+- `find_project_root` stops at the enclosing `.git`, so a manifest-less fixture resolves to itself rather than an unrelated ancestor
+
+tags: #bba #detection #testing
+Ref: https://github.com/TomasGC/Meerkat/issues/25
+Commits: d1361bd, 7813424, 6573687
+
+---
+
 2026-09-17 - [#16] Restructure scripts into lib and cli
 
 - `scripts/common/` split into `scripts/lib/` (`ai/model_utils`, `config/model_config`, `cli/BaseCLIScript`); name freed so the four agent-local `common/` packages no longer collide with a shared one

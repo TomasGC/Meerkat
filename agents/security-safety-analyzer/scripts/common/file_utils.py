@@ -1,34 +1,21 @@
 #!/usr/bin/env python3
 """File discovery, language detection, and git incremental utilities."""
 
-import re
 import subprocess
+import sys
 from pathlib import Path
 
-_DOCKERFILE_PATTERN = re.compile(r'^[Dd]ockerfile(\.\w+)?$')
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+from lib.config import language_config
 
 _DISCOVERY_CACHE: dict[tuple, list[Path]] = {}
 
-_SKIP_DIRS = {
-    ".git", "node_modules", "bin", "obj", "dist", "__pycache__",
-    ".venv", "venv", "vendor", ".pytest_cache", "coverage", ".nyc_output",
-    "build", "out", "target", ".tox", "eggs", ".eggs",
-}
-
-_LANG_EXTENSIONS: dict[str, list[str]] = {
-    "python": [".py"],
-    "typescript": [".ts", ".tsx"],
-    "javascript": [".js", ".jsx", ".mjs", ".cjs"],
-    "csharp": [".cs"],
-    "razor": [".cshtml", ".razor"],
-    "go": [".go"],
-    "powershell": [".ps1", ".psm1", ".psd1"],
-    "bash": [".sh", ".bash"],
-    "yaml": [".yaml", ".yml"],
-    "dockerfile": [],
-}
-
-_ALL_EXTENSIONS = {ext for exts in _LANG_EXTENSIONS.values() for ext in exts}
+_SKIP_DIRS = language_config.skip_dirs()
+_LANG_EXTENSIONS: dict[str, list[str]] = language_config.language_extensions()
+_ALL_EXTENSIONS = set(language_config.extensions())
 
 _TEST_MARKERS = ("test", "spec", "fixture", "mock", "migration")
 
@@ -51,7 +38,7 @@ def discover_files(path: Path, extensions: list[str] | None = None) -> list[Path
     for item in path.rglob("*"):
         if item.is_file():
             match = item.suffix in target_exts or (
-                include_dockerfiles and bool(_DOCKERFILE_PATTERN.match(item.name))
+                include_dockerfiles and language_config.matches_filename("dockerfile", item.name)
             )
             if match and not any(part in _SKIP_DIRS for part in item.parts):
                 results.append(item)

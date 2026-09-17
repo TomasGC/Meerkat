@@ -6,24 +6,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
 from common.constants import EXCLUDED_DIRS
+from lib.config import language_config
 
 _TEST_MARKERS = ("test", "spec", "fixture", "mock")
 
-_LANG_EXTENSIONS: dict[str, list[str]] = {
-    "python": [".py"],
-    "typescript": [".ts", ".tsx"],
-    "javascript": [".js", ".jsx", ".mjs"],
-    "csharp": [".cs"],
-    "go": [".go"],
-    "java": [".java"],
-    "kotlin": [".kt"],
-    "ruby": [".rb"],
-    "rust": [".rs"],
-    "swift": [".swift"],
-    "powershell": [".ps1", ".psm1"],
-}
-_ALL_EXTENSIONS = {e for exts in _LANG_EXTENSIONS.values() for e in exts}
+# Full table on purpose: gap checkers look for test files of any language.
+_LANG_EXTENSIONS: dict[str, list[str]] = language_config.language_extensions()
+_ALL_EXTENSIONS = set(language_config.extensions())
 
 
 def is_test_file(f: Path) -> bool:

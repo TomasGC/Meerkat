@@ -1,50 +1,35 @@
 #!/usr/bin/env python3
 """File discovery, language detection, and git incremental utilities."""
 
-import re
 import subprocess
+import sys
 from pathlib import Path
 
-_DOCKERFILE_PATTERN = re.compile(r'^[Dd]ockerfile(\.\w+)?$')
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+from lib.config import language_config
 
 # Cache file discovery results — avoids repeated rglob across 12 checkers on same path
 _DISCOVERY_CACHE: dict[tuple, list[Path]] = {}
 
 
-_SKIP_DIRS = {
-    ".git", "node_modules", "bin", "obj", "dist", "__pycache__",
-    ".venv", "venv", "vendor", ".pytest_cache", "coverage", ".nyc_output",
-    "build", "out", "target", ".tox", "eggs", ".eggs",
-}
+_SKIP_DIRS = language_config.skip_dirs()
+_LANG_EXTENSIONS: dict[str, list[str]] = language_config.language_extensions()
+_ALL_EXTENSIONS = set(language_config.extensions())
+_HASH_COMMENT_EXTS = frozenset(language_config.comment_style_extensions("hash"))
 
-_LANG_EXTENSIONS: dict[str, list[str]] = {
-    "python": [".py"],
-    "typescript": [".ts", ".tsx"],
-    "javascript": [".js", ".jsx", ".mjs", ".cjs"],
-    "csharp": [".cs"],
-    "razor": [".cshtml", ".razor"],
-    "go": [".go"],
-    "powershell": [".ps1", ".psm1", ".psd1"],
-    "bash": [".sh", ".bash"],
-    "yaml": [".yaml", ".yml"],    # includes docker-compose, kubernetes, github actions
-    "dockerfile": [],             # discovered by filename pattern, not extension
-}
-
-_ALL_EXTENSIONS = {ext for exts in _LANG_EXTENSIONS.values() for ext in exts}
-
-_HASH_COMMENT_EXTS = frozenset(
-    ext for lang in ("python", "powershell", "bash", "yaml") for ext in _LANG_EXTENSIONS.get(lang, [])
-)
-
+# Python is excluded deliberately: check_inheritance handles it through a
+# dedicated AST pass, and would scan every .py file twice otherwise.
 _CLASS_LANG_EXTS = frozenset(
-    ext for lang, exts in _LANG_EXTENSIONS.items()
-    if lang not in ("python", "bash", "yaml", "dockerfile") for ext in exts
+    language_config.extensions_where("has_inheritance") - set(language_config.extensions("python"))
 )
 
 
 def is_hash_comment_file(path: Path) -> bool:
-    """True if file uses # for comments (Python, PS, Bash, YAML, Dockerfile)."""
-    return path.suffix in _HASH_COMMENT_EXTS or bool(_DOCKERFILE_PATTERN.match(path.name))
+    """True if file uses # for comments (Python, PS, Bash, YAML, Ruby, Perl, Dockerfile)."""
+    return path.suffix in _HASH_COMMENT_EXTS or language_config.matches_filename("dockerfile", path.name)
 
 _TEST_MARKERS = ("test", "spec", "fixture", "mock", "migration")
 
@@ -67,7 +52,7 @@ def discover_files(path: Path, extensions: list[str] | None = None) -> list[Path
     for item in path.rglob("*"):
         if item.is_file():
             match = item.suffix in target_exts or (
-                include_dockerfiles and bool(_DOCKERFILE_PATTERN.match(item.name))
+                include_dockerfiles and language_config.matches_filename("dockerfile", item.name)
             )
             if match and not any(part in _SKIP_DIRS for part in item.parts):
                 results.append(item)

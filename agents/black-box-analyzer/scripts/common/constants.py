@@ -5,6 +5,14 @@ Framework patterns, regex, and configuration constants.
 """
 
 import re
+import sys
+from pathlib import Path
+
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+from lib.config import language_config
 
 # Language detection patterns
 LANGUAGE_INDICATORS = {
@@ -270,21 +278,7 @@ RISK_THRESHOLDS = {
 }
 
 # File exclusions (don't parse these directories)
-EXCLUDED_DIRS = {
-    "node_modules",
-    "vendor",
-    "bin",
-    "obj",
-    "dist",
-    "build",
-    ".git",
-    ".svn",
-    "__pycache__",
-    ".pytest_cache",
-    ".venv",
-    "venv",
-    "target",
-}
+EXCLUDED_DIRS = language_config.skip_dirs()
 
 # Common API path prefixes
 API_PATH_PREFIXES = [

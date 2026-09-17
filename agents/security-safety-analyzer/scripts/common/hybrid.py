@@ -11,10 +11,10 @@ import time
 from pathlib import Path
 
 from common.dedup import drop_near_duplicates, format_known_findings
-from common.file_utils import _DOCKERFILE_PATTERN, discover_files, _LANG_EXTENSIONS, _TEST_MARKERS
+from common.file_utils import discover_files, language_config, _LANG_EXTENSIONS, _TEST_MARKERS
 from common.model_utils import analyze_files_parallel, check_server_available, PROMPTS_DIR
 
-_ALL_EXTENSIONS = {ext for exts in _LANG_EXTENSIONS.values() for ext in exts}
+_ALL_EXTENSIONS = set(language_config.extensions())
 
 # (pattern, message, severity, suggestion)
 Rule = tuple[re.Pattern, str, str, str]
@@ -22,11 +22,11 @@ Rule = tuple[re.Pattern, str, str, str]
 
 def resolve_language(file: Path, language: str) -> str:
     """Map a file to its language, resolving the "mixed" placeholder by name or extension."""
-    if _DOCKERFILE_PATTERN.match(file.name):
+    if language_config.matches_filename("dockerfile", file.name):
         return "dockerfile"
     if language != "mixed":
         return language
-    return next((lang for lang, exts in _LANG_EXTENSIONS.items() if file.suffix in exts), "unknown")
+    return language_config.language_for_extension(file.suffix) or "unknown"
 
 
 def select_files(path: Path, language: str, files: list | None) -> list[Path]:

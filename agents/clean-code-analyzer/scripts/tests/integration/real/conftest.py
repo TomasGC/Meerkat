@@ -1,19 +1,21 @@
-"""Conftest for real-Ollama integration tests — skip if Ollama not running."""
+"""Conftest for real-provider integration tests — skip if the configured server is down."""
 
-import http.client
+import sys
+from pathlib import Path
+
 import pytest
 
+_SCRIPTS = Path(__file__).parent.parent.parent.parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
 
-def _ollama_running() -> bool:
-    try:
-        conn = http.client.HTTPConnection("localhost", 11434, timeout=3)
-        conn.request("GET", "/api/tags")
-        return conn.getresponse().status == 200
-    except Exception:
-        return False
-
+from common.model_utils import (  # noqa: E402
+    LOCAL_AI_HOST,
+    LOCAL_AI_PORT,
+    check_server_available,
+)
 
 ollama_skip = pytest.mark.skipif(
-    not _ollama_running(),
-    reason="Ollama not running on localhost:11434",
+    not check_server_available(),
+    reason=f"Local AI provider not reachable at {LOCAL_AI_HOST}:{LOCAL_AI_PORT}",
 )

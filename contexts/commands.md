@@ -140,6 +140,28 @@ agents'. Run it from its own directory, in its own invocation.
 
 ---
 
+## Language Configuration
+
+`configs/template_languages_config.json` — committed default, 20 languages.
+`configs/local_languages_config.json` — auto-copied on first import, gitignored, user-editable.
+
+```python
+from lib.config import language_config
+
+language_config.extensions("kotlin")            # ['.kt', '.kts']
+language_config.language_for_extension(".tsx")  # 'typescript'
+language_config.languages_of_kind("code")       # 15 languages, excludes yaml/sql/dockerfile
+language_config.skip_dirs()                     # 19 directories
+language_config.extensions_where("has_inheritance")
+language_config.standards_for_file(path, content)  # resolves sql/vue dialect from content
+```
+
+The local file overrides the template field by field. To drop a language locally set
+`extensions: []` — deleting its block is not enough, the template puts it back.
+Delete `local_languages_config.json` to reset.
+
+---
+
 ## Tests
 
 ### Run by tier (from ~/.claude/)

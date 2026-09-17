@@ -14,6 +14,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript, create_cli_script
+from lib.config import language_config
 from lib.utils import run_command
 
 
@@ -99,15 +100,7 @@ class ValidateScriptSyntaxScript(BaseCLIScript):
 
     def _detect_language(self, file_path: Path) -> str:
         """Detect language from file extension."""
-        extension_map = {
-            ".ps1": "powershell",
-            ".psm1": "powershell",
-            ".py": "python",
-            ".sh": "bash",
-            ".bash": "bash",
-            ".pl": "perl",
-        }
-        return extension_map.get(file_path.suffix.lower(), "unknown")
+        return language_config.language_for_extension(file_path.suffix) or "unknown"
 
     def _validate_syntax(self, file_path: Path, language: str) -> ValidationResult:
         """Validate script syntax."""
