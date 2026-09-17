@@ -44,6 +44,7 @@ agents/black-box-analyzer/tests/
 ~/.claude/
 ├── conftest.py                                          # root: auto-mark by dir
 ├── pytest.ini                                           # testpaths + markers
+│                                                        # + --import-mode=importlib (duplicate package names across trees)
 │
 ├── agents/
 │   ├── black-box-analyzer/tests/
@@ -63,10 +64,12 @@ agents/black-box-analyzer/tests/
 │   │   ├── scripts/tests/
 │   │   │   ├── pytest.ini
 │   │   │   ├── conftest.py
-│   │   │   ├── unit/            # 464 tests — checkers, model_utils, cache, file_utils, orchestrate, prompts
+│   │   │   ├── unit/            # 465 tests — checkers, model_utils, cache, file_utils, orchestrate, prompts
 │   │   │   ├── integration/mock/ # 17 tests — mocked Ollama, real filesystem/cache
-│   │   │   ├── integration/real/ # real Ollama (devstral required)
-│   │   │   └── e2e/             # full orchestrate.py CLI against fixture directories
+│   │   │   ├── integration/real/ # 16 tests — real Ollama (devstral required)
+│   │   │   ├── e2e/             # 9 tests — orchestrate.py CLI, config-driven local_ai_service fixture
+│   │   │   └── test_*.py        # 73 tests at tests/ root, outside the 4 tiers — cache,
+│   │   │                        # check_comments/inheritance/lod/naming, file_utils, orchestrate
 │   └── tests/
 │       └── integration-reals/  # cross-agent Ollama tests (not BBA-specific)
 │           ├── test_agents.py
@@ -75,22 +78,23 @@ agents/black-box-analyzer/tests/
 └── scripts/
     ├── tests/conftest.py + e2e/ + integration-reals/
     ├── cli/tests/conftest.py + units/ + integration-mocks/ + integration-reals/
-    ├── cli/agents/ci_fix_proposer/tests/conftest.py + units/
-    ├── cli/agents/code_analyzer/tests/conftest.py + units/
-    ├── cli/agents/task_monitor/tests/conftest.py + units/
-    ├── cli/skills/analyze_commit/tests/conftest.py + units/
-    ├── common/tests/conftest.py + units/
-    └── common/cli/tests/conftest.py + units/
+    ├── cli/agents/task_monitor/tests/units/    # no conftest — in root testpaths
+    ├── lib/tests/conftest.py + units/
+    └── lib/cli/tests/conftest.py + units/
+
+skills/
+└── search-tech/scripts/tests/       # 113 tests — cache, logger, models, utils
+                                     # separate invocation: own common/ package
 ```
 
 ---
 
 ## Important: common Namespace Collision
 
-`agents/black-box-analyzer/scripts/common/`, `agents/clean-code-analyzer/scripts/common/`, `agents/security-safety-analyzer/scripts/common/`, and `scripts/common/` are four independent packages.
+`agents/black-box-analyzer/scripts/common/`, `agents/clean-code-analyzer/scripts/common/`, `agents/security-safety-analyzer/scripts/common/` and `skills/search-tech/scripts/common/` are four independent packages. The shared library is `scripts/lib/` and is deliberately not named `common`.
 Python's import cache will find whichever is on sys.path first.
 
-**Rule**: Always run BBA, CCA, and scripts tests in **separate pytest invocations**.
+**Rule**: Always run BBA, CCA, SSA and search-tech tests in **separate pytest invocations**.
 
 ```bash
 # OK
@@ -98,6 +102,7 @@ pytest agents/black-box-analyzer/tests -m units
 pytest scripts/cli/tests -m units
 cd agents/clean-code-analyzer/scripts && python -m pytest tests/unit/ -q
 cd agents/security-safety-analyzer/scripts && python -m pytest tests/unit/ -q
+cd skills/search-tech/scripts && python -m pytest tests/ -q
 
 # NOT OK (common collision)
 pytest agents/black-box-analyzer/tests scripts/cli/tests -m units

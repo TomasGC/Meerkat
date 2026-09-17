@@ -53,7 +53,7 @@ Local AI  Scripts  Agents
 │   ├── clean-code-analyzer/         # 11-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, Composition)
 │   │   ├── AGENT.md
 │   │   ├── scripts/                 # orchestrate.py + 11 checkers + common/ (model_utils, cache, file_utils)
-│   │   └── tests/                   # 464 unit + 17 integration/mock
+│   │   └── tests/                   # 465 unit / 17 integration/mock / 16 integration/real / 9 e2e / 73 untiered
 │   ├── security-safety-analyzer/    # 10-checker security and safety analyzer (Security, Crypto, Deserialization, Misconfiguration, SensitiveData, CrashBug, Concurrency, ResourceLeak, ErrorHandling, PromptInjection)
 │   │   ├── AGENT.md
 │   │   └── scripts/                 # orchestrate.py + 10 checkers + common/ (hybrid, dedup, model_utils, cache, file_utils) + prompts/local/
@@ -68,14 +68,18 @@ Local AI  Scripts  Agents
 │
 ├── scripts/                         # Python 3.12+ automation
 │   ├── cli/                         # 37 CLI scripts + co-located tests
-│   │   ├── agents/ci_fix_proposer/  # + tests/
-│   │   ├── agents/code_analyzer/    # + tests/
-│   │   └── skills/analyze_commit/   # + tests/
-│   ├── common/                      # Shared libraries + co-located tests
-│   │   └── cli/                     # + tests/
+│   │   ├── tests/                   # units/ + integration-mocks/ + integration-reals/
+│   │   ├── agents/task_monitor/     # + tests/units/
+│   │   └── utils/switch_profile.py
+│   ├── lib/                         # Shared library — importable by scripts, skills, plugins, agents
+│   │   ├── ai/                      # model_utils — local AI client
+│   │   ├── config/                  # model_config — role-based model map
+│   │   └── cli/                     # BaseCLIScript + tests/
 │   └── tests/                       # Scripts-level tests (e2e, integration-reals)
 │
 ├── skills/                          # User-invocable slash commands
+│   └── search-tech/                 # Tech search skill
+│       └── scripts/                 # common/ (cache, logger, models, utils) + tests/ (113 tests)
 ├── rules/                           # Auto-loaded coding standards (14 languages)
 ├── hooks/                           # Automation hooks
 ├── integrations/                    # Environment profiles

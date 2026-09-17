@@ -750,7 +750,7 @@ projects/**/*.jsonl
 - CLAUDE.md, settings.json
 - contexts/*.md (except *.local.md)
 - docs/*.md
-- scripts/cli/*.py, scripts/common/*.py
+- scripts/cli/*.py, scripts/lib/*.py
 - agents/*/AGENT.md, agents/*/scripts/*.py
 - integrations/default.json
 - rules/*.md
