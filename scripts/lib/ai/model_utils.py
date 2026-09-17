@@ -35,7 +35,7 @@ def _parse_local_server() -> tuple[str, int]:
 
 LOCAL_AI_HOST, LOCAL_AI_PORT = _parse_local_server()
 
-# Availability cache — avoids repeated subprocess calls
+# Availability cache — avoids re-probing the server for every checker
 _AVAILABILITY_CACHE: dict[str, bool] = {}
 
 # Optional per-file result cache — resolved at call time based on sys.path
@@ -54,23 +54,36 @@ except ImportError:
         pass
 
 
-def check_server_available(role: str = "fast") -> bool:
-    """Return True if local AI server is reachable and the model for role is available."""
+def _model_listed(model: str) -> bool:
+    """True if the server's model list contains model."""
+    try:
+        conn = http.client.HTTPConnection(LOCAL_AI_HOST, LOCAL_AI_PORT, timeout=10)
+        try:
+            conn.request("GET", "/api/tags")
+            response = conn.getresponse()
+            if response.status != 200:
+                return False
+            names = [m.get("name", "") for m in json.loads(response.read()).get("models", [])]
+        finally:
+            conn.close()
+    except Exception:
+        return False
+    # a config naming "devstral-small-2" must match the served tag "devstral-small-2:latest"
+    return any(n == model or n.startswith(f"{model}:") for n in names)
+
+
+def check_server_available(role: str = "analyzer") -> bool:
+    """Return True if the configured server has the model for role available.
+
+    Queries local.base_url, so a provider on another host or port is seen; shelling
+    out to an `ollama` binary would only ever see a local Ollama install, and would
+    report unavailable for a reachable server that has no CLI next to it.
+    """
     model = get_model(role)
     if model in _AVAILABILITY_CACHE:
         return _AVAILABILITY_CACHE[model]
-    try:
-        result = subprocess.run(
-            ["ollama", "list"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        available = result.returncode == 0 and model in result.stdout
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        available = False
-    _AVAILABILITY_CACHE[model] = available
-    return available
+    _AVAILABILITY_CACHE[model] = _model_listed(model)
+    return _AVAILABILITY_CACHE[model]
 
 
 def split_into_chunks(source: str, max_chars: int) -> list[str]:

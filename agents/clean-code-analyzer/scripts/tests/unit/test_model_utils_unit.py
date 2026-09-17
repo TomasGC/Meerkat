@@ -33,12 +33,20 @@ from lib.ai.model_utils import (
 
 # ── check_server_available ─────────────────────────────────────────────────────
 
+def _tags_response(names: list[str], status: int = 200) -> MagicMock:
+    """Mock an /api/tags response listing these model names."""
+    response = MagicMock(status=status)
+    response.read.return_value = json.dumps({"models": [{"name": n} for n in names]}).encode()
+    return response
+
+
 @pytest.mark.unit
 def test_check_server_available_true_when_model_present():
-    """Returns True when subprocess shows model in list."""
-    mock_result = MagicMock(returncode=0, stdout="NAME\ntest-model\nother:model\n")
+    """Returns True when /api/tags lists the model."""
+    conn = MagicMock()
+    conn.getresponse.return_value = _tags_response(["test-model", "other:model"])
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
-        with patch("subprocess.run", return_value=mock_result):
+        with patch("http.client.HTTPConnection", return_value=conn):
             mu._AVAILABILITY_CACHE.clear()
             result = mu.check_server_available("fast")
     assert result is True
@@ -46,35 +54,79 @@ def test_check_server_available_true_when_model_present():
 
 @pytest.mark.unit
 def test_check_server_available_false_when_model_missing():
-    """Returns False when model not in list."""
-    mock_result = MagicMock(returncode=0, stdout="NAME\nother:model\n")
+    """Returns False when the model is not in the list."""
+    conn = MagicMock()
+    conn.getresponse.return_value = _tags_response(["other:model"])
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
-        with patch("subprocess.run", return_value=mock_result):
+        with patch("http.client.HTTPConnection", return_value=conn):
             mu._AVAILABILITY_CACHE.clear()
             result = mu.check_server_available("fast")
     assert result is False
 
 
 @pytest.mark.unit
-def test_check_server_available_file_not_found_returns_false():
-    """FileNotFoundError (binary absent) → False, not an exception."""
+def test_check_server_available_unreachable_returns_false():
+    """A refused connection → False, not an exception."""
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
-        with patch("subprocess.run", side_effect=FileNotFoundError):
+        with patch("http.client.HTTPConnection", side_effect=OSError("refused")):
             mu._AVAILABILITY_CACHE.clear()
             result = check_server_available("analyzer")
     assert result is False
 
 
 @pytest.mark.unit
-def test_availability_cache_hit():
-    """Second check_server_available call uses cache; subprocess called only once."""
-    mu._AVAILABILITY_CACHE.clear()
-    mock_result = MagicMock(returncode=0, stdout="test-model\n")
+def test_check_server_available_non_200_returns_false():
+    """A server answering something other than 200 is not usable."""
+    conn = MagicMock()
+    conn.getresponse.return_value = _tags_response(["test-model"], status=503)
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
-        with patch("subprocess.run", return_value=mock_result) as mock_sub:
+        with patch("http.client.HTTPConnection", return_value=conn):
+            mu._AVAILABILITY_CACHE.clear()
+            result = check_server_available("analyzer")
+    assert result is False
+
+
+@pytest.mark.unit
+def test_tagged_model_matches_untagged_config_name():
+    """Config names a model without a tag; the server serves it as ':latest'."""
+    conn = MagicMock()
+    conn.getresponse.return_value = _tags_response(["test-model:latest"])
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("http.client.HTTPConnection", return_value=conn):
+            mu._AVAILABILITY_CACHE.clear()
+            assert check_server_available("analyzer") is True
+
+
+@pytest.mark.unit
+def test_a_longer_model_name_is_not_a_match():
+    """'test-model' must not be satisfied by 'test-model-vision' — a different model."""
+    conn = MagicMock()
+    conn.getresponse.return_value = _tags_response(["test-model-vision:latest"])
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("http.client.HTTPConnection", return_value=conn):
+            mu._AVAILABILITY_CACHE.clear()
+            assert check_server_available("analyzer") is False
+
+
+@pytest.mark.unit
+def test_availability_cache_hit():
+    """Second check_server_available call uses cache; the server is probed only once."""
+    mu._AVAILABILITY_CACHE.clear()
+    conn = MagicMock()
+    conn.getresponse.return_value = _tags_response(["test-model"])
+    with patch("lib.ai.model_utils.get_model", return_value="test-model"):
+        with patch("http.client.HTTPConnection", return_value=conn) as mock_conn:
             check_server_available("fast")
             check_server_available("fast")
-    assert mock_sub.call_count == 1
+    assert mock_conn.call_count == 1
+
+
+@pytest.mark.unit
+def test_default_role_is_the_one_checkers_use():
+    """The bare call in the e2e fixture must gate on the same role the run loads."""
+    import inspect
+    default = inspect.signature(mu.check_server_available).parameters["role"].default
+    assert default == "analyzer"
 
 
 # ── call_model ─────────────────────────────────────────────────────────────────
