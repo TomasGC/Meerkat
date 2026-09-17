@@ -2,18 +2,9 @@
 """E2E tests for universal project type detection and analysis.
 
 Tests all 19 project types with real fixtures.
-
-NOTE: These tests are skipped because universal detection is not yet implemented.
-This is future work planned for Phase 2+ of the refactoring.
 """
 
-import pytest
 from pathlib import Path
-
-# Skip all tests in this file - universal detection not yet implemented
-pytestmark = pytest.mark.skip(reason="Universal detection not yet implemented (future work)")
-
-# Add scripts directory to path (parent/scripts)
 
 import pytest
 from analyze_project_structure import analyze_project as detect_project_structure

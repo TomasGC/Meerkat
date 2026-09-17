@@ -1,0 +1,13 @@
+service: user-service
+
+provider:
+  name: aws
+  runtime: python3.12
+
+functions:
+  createUser:
+    handler: create_user.lambda_handler
+  getUser:
+    handler: get_user.lambda_handler
+  deleteUser:
+    handler: delete_user.lambda_handler
