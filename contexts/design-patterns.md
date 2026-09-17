@@ -25,6 +25,8 @@
 16. **Deterministic Signal over Timing** — cache behaviour is asserted through counters the run reports (`{"enabled", "hits", "misses"}`), not by comparing wall-clock durations between runs, which is flaky under load
 17. **Atomic Cache Write** — cache entries are written to a `tempfile.mkstemp` file in the same directory then moved into place with `os.replace`; a crash mid-write leaves the previous entry intact instead of a truncated file. The private writer raises, the public `set()` swallows, so a cache failure never breaks its caller
 18. **Self-Verifying Cache Entry** — an entry stores the `query`/`filters` that produced it and `get()` rejects any entry whose stored request differs from the one being served. Cache keys are truncated hashes, so identity cannot be inferred from the filename alone
+19. **Detection Reuses Extraction Tables** — a project type is detected with the same `*_PATTERNS` table its analyzer already uses for extraction, filtered by key prefix where a table is shared (`android_*` vs `ios_*`). Detection and extraction cannot drift apart, because adding a rule to a table updates both. Strong signals (file marker, manifest framework) admit a type outright; source patterns need `_MIN_PATTERN_HITS = 2` distinct keys, since single patterns like `def perform(` match ordinary code
+20. **Repo-Boundary Guard on Upward Search** — `find_project_root` stops at the first enclosing `.git` instead of climbing to whatever ancestor happens to hold a manifest. Without it a manifest-less directory silently analyses an unrelated parent project
 
 ---
 
