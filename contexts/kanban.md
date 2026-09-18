@@ -4,6 +4,22 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-09-18 - [#18] Extract shared analysis engine from SSA
+
+- `scripts/lib/engine/`: six modules pulled out of SSA — `finding.py` (checker-contract TypedDict, `principle` kept as wire name), `cache.py`, `dedup.py`, `discovery.py` (renamed from `file_utils.py`), `hybrid.py`, `orchestrator.py`
+- Cache directory, checker registry, `max_workers`, `app_name` and `label_singular` are now caller-supplied parameters — the only substantive differences between the CCA and SSA copies, per issue #18's diff analysis
+- SSA keeps thin shims at `agents/security-safety-analyzer/scripts/common/{cache,dedup,file_utils,hybrid}.py`; `orchestrate.py` shrinks to its checker registry plus a five-line call into the engine
+- `run_hybrid`'s AI client now comes straight from `lib.ai.model_utils` instead of through the agent-specific shim; `prompts_dir` moves from an import-time constant to a parameter, with SSA's shim injecting its own default
+- Two patch-seam relocations found only by running tests, not by reading the issue: `common.file_utils.subprocess.run` needed `subprocess` re-imported in the shim (same stdlib module object, so no test edits); the five driver-based checkers' `common.hybrid.check_server_available`/`analyze_files_parallel` patches moved to `lib.engine.hybrid` across 7 test files, since that's where the real call site now lives
+- SSA's 378 CI-safe tests stayed green after every extraction step (cache, dedup, discovery, hybrid, orchestrator) — fidelity proof per the issue, not just a final check
+- Live smoke run on a mixed Python/C# fixture against the local devstral model: mechanical (Crypto's MD5 rule) and AI-layer findings (SQL/command injection) both present, no cross-layer duplicates within a checker
+
+tags: #engine #refactor #ssa #shared-library
+Ref: https://github.com/TomasGC/Meerkat/issues/18
+Commits: 2c9ebef, 87f550d, b89ce4c, d6ff455, 18cdef1
+
+---
+
 2026-09-17 - [#17] Shared language and tooling configuration
 
 - `configs/template_languages_config.json` + `scripts/lib/config/language_config.py`: 20 languages with extensions, skip dirs, kind, standards document, build/test/format commands, sql and vue dialect detection

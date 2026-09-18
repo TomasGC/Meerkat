@@ -56,7 +56,8 @@ Local AI  Scripts  Agents
 │   │   └── tests/                   # 465 unit / 17 integration/mock / 16 integration/real / 9 e2e / 73 untiered
 │   ├── security-safety-analyzer/    # 10-checker security and safety analyzer (Security, Crypto, Deserialization, Misconfiguration, SensitiveData, CrashBug, Concurrency, ResourceLeak, ErrorHandling, PromptInjection)
 │   │   ├── AGENT.md
-│   │   └── scripts/                 # orchestrate.py + 10 checkers + common/ (hybrid, dedup, model_utils, cache, file_utils) + prompts/local/
+│   │   └── scripts/                 # orchestrate.py (registry + call into lib.engine.orchestrator) + 10 checkers
+│   │       │                        # + common/ (thin shims over lib.engine: hybrid, dedup, cache, file_utils; model_utils shims lib.ai) + prompts/local/
 │   │       └── tests/               # 340 unit / 28 integration/mock / 25 integration/real / 10 e2e
 │   ├── ci-fix-proposer/
 │   ├── code-analyzer/
@@ -74,6 +75,9 @@ Local AI  Scripts  Agents
 │   ├── lib/                         # Shared library — importable by scripts, skills, plugins, agents
 │   │   ├── ai/                      # model_utils — local AI client
 │   │   ├── config/                  # model_config (roles) + language_config (languages, skip dirs, standards)
+│   │   ├── engine/                  # shared analysis engine (extracted from SSA, issue #18): finding, cache,
+│   │   │                            # dedup, discovery, hybrid, orchestrator — cache dir/registry/max_workers/labels
+│   │   │                            # are caller-supplied params, no agent name hardcoded; SSA is the only consumer so far
 │   │   └── cli/                     # BaseCLIScript + tests/
 │   └── tests/                       # Scripts-level tests (e2e, integration-reals)
 │
