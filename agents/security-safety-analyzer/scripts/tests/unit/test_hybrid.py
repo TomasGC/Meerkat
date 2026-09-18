@@ -6,7 +6,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from common.hybrid import resolve_language, run_hybrid, scan_patterns, select_files
+from common.hybrid import run_hybrid
+from lib.engine.hybrid import resolve_language, scan_patterns, select_files
 
 _RULES = {
     "python": [(re.compile(r'\bdanger\b'), "Danger called", "high", "Stop calling danger")],
@@ -95,7 +96,7 @@ class TestScanPatterns:
 
 class TestRunHybrid:
     def test_returns_checker_contract(self, tmp_path):
-        with patch("common.hybrid.check_server_available", return_value=False):
+        with patch("lib.engine.hybrid.check_server_available", return_value=False):
             result = run_hybrid(tmp_path, "python", "Test", "prompt", _RULES)
         assert result["principle"] == "Test"
         assert result["success"] is True
@@ -105,7 +106,7 @@ class TestRunHybrid:
 
     def test_mechanical_findings_reported_without_server(self, tmp_path):
         f = _make_file(tmp_path, "a.py", "danger()\n")
-        with patch("common.hybrid.check_server_available", return_value=False):
+        with patch("lib.engine.hybrid.check_server_available", return_value=False):
             result = run_hybrid(tmp_path, "python", "Test", "prompt", _RULES, files=[f])
         assert [v["message"] for v in result["violations"]] == ["Danger called"]
 
@@ -113,8 +114,8 @@ class TestRunHybrid:
         f = _make_file(tmp_path, "a.py", "x = 1\n")
         fake_item = {"source_file": str(f), "issue_type": "SOMETHING", "line": 1,
                      "severity": "low", "description": "detail", "fix": "do this"}
-        with patch("common.hybrid.check_server_available", return_value=True), \
-             patch("common.hybrid.analyze_files_parallel", return_value=[fake_item]):
+        with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+             patch("lib.engine.hybrid.analyze_files_parallel", return_value=[fake_item]):
             result = run_hybrid(tmp_path, "python", "Test", "prompt", _RULES, files=[f])
         assert result["violations"][0]["message"] == "[SOMETHING]: detail"
         assert result["violations"][0]["suggestion"] == "do this"
@@ -123,8 +124,8 @@ class TestRunHybrid:
         f = _make_file(tmp_path, "a.py", "x = 1\n")
         fake_item = {"source_file": str(f), "leak_type": "UNCLOSED_HANDLE", "line": 1,
                      "description": "detail", "fix": ""}
-        with patch("common.hybrid.check_server_available", return_value=True), \
-             patch("common.hybrid.analyze_files_parallel", return_value=[fake_item]):
+        with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+             patch("lib.engine.hybrid.analyze_files_parallel", return_value=[fake_item]):
             result = run_hybrid(tmp_path, "python", "Test", "prompt", _RULES,
                                 files=[f], ai_type_key="leak_type")
         assert result["violations"][0]["message"].startswith("[UNCLOSED_HANDLE]")
@@ -132,8 +133,8 @@ class TestRunHybrid:
     def test_default_severity_applied_when_absent(self, tmp_path):
         f = _make_file(tmp_path, "a.py", "x = 1\n")
         fake_item = {"source_file": str(f), "issue_type": "X", "line": 1, "description": "d", "fix": ""}
-        with patch("common.hybrid.check_server_available", return_value=True), \
-             patch("common.hybrid.analyze_files_parallel", return_value=[fake_item]):
+        with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+             patch("lib.engine.hybrid.analyze_files_parallel", return_value=[fake_item]):
             result = run_hybrid(tmp_path, "python", "Test", "prompt", _RULES,
                                 files=[f], default_severity="high")
         assert result["violations"][0]["severity"] == "high"
@@ -142,8 +143,8 @@ class TestRunHybrid:
         f = _make_file(tmp_path, "a.py", "danger()\n")
         fake_item = {"source_file": str(f), "issue_type": "DUP", "line": 2,
                      "description": "same thing", "fix": ""}
-        with patch("common.hybrid.check_server_available", return_value=True), \
-             patch("common.hybrid.analyze_files_parallel", return_value=[fake_item]):
+        with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+             patch("lib.engine.hybrid.analyze_files_parallel", return_value=[fake_item]):
             result = run_hybrid(tmp_path, "python", "Test", "prompt", _RULES, files=[f])
         assert [v["message"] for v in result["violations"]] == ["Danger called"]
 
@@ -155,13 +156,13 @@ class TestRunHybrid:
             captured["extra_slots"] = kwargs.get("extra_slots")
             return []
 
-        with patch("common.hybrid.check_server_available", return_value=True), \
-             patch("common.hybrid.analyze_files_parallel", side_effect=fake_analyze):
+        with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+             patch("lib.engine.hybrid.analyze_files_parallel", side_effect=fake_analyze):
             run_hybrid(tmp_path, "python", "Test", "prompt", _RULES, files=[f])
         assert "Danger called" in captured["extra_slots"][f]["known_findings"]
 
     def test_ai_not_called_when_no_files(self, tmp_path):
-        with patch("common.hybrid.check_server_available", return_value=True), \
-             patch("common.hybrid.analyze_files_parallel") as analyze:
+        with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+             patch("lib.engine.hybrid.analyze_files_parallel") as analyze:
             run_hybrid(tmp_path, "python", "Test", "prompt", _RULES, files=[])
         analyze.assert_not_called()

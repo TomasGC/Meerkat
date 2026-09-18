@@ -11,7 +11,7 @@ from checkers import check_misconfiguration
 def _run(tmp_path: Path, name: str, content: str, language: str) -> list[dict]:
     f = tmp_path / name
     f.write_text(content)
-    with patch("common.hybrid.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = check_misconfiguration.run(tmp_path, language, files=[f])
     assert result["success"] is True
     assert result["principle"] == "Misconfiguration"
@@ -21,7 +21,7 @@ def _run(tmp_path: Path, name: str, content: str, language: str) -> list[dict]:
 def _run_discovered(tmp_path: Path, name: str, content: str) -> list[dict]:
     """Dockerfiles have no extension, so they are only reachable through discovery."""
     (tmp_path / name).write_text(content)
-    with patch("common.hybrid.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         return check_misconfiguration.run(tmp_path, "mixed")["violations"]
 
 
