@@ -142,7 +142,7 @@ def test_hybrid_driver_checker_returns_valid_schema(tmp_path, module_path, princ
     import importlib
     mod = importlib.import_module(module_path)
 
-    with patch("common.hybrid.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = mod.run(project, "python")
 
     assert result["principle"] == principle
@@ -163,7 +163,7 @@ def test_hybrid_driver_checker_finds_violations_mechanically(tmp_path, module_pa
     import importlib
     mod = importlib.import_module(module_path)
 
-    with patch("common.hybrid.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = mod.run(project, "python")
 
     assert len(result["violations"]) >= 1, (
@@ -184,8 +184,8 @@ def test_hybrid_driver_checker_passes_known_findings_to_ai(tmp_path, module_path
         captured["extra_slots"] = kwargs.get("extra_slots")
         return []
 
-    with patch("common.hybrid.check_server_available", return_value=True), \
-         patch("common.hybrid.analyze_files_parallel", side_effect=fake_analyze):
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+         patch("lib.engine.hybrid.analyze_files_parallel", side_effect=fake_analyze):
         mod.run(project, "python")
 
     slots = captured["extra_slots"]
