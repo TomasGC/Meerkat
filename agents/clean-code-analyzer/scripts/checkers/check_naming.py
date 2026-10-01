@@ -3,11 +3,15 @@
 
 import ast
 import re
-import time
+import sys
 from pathlib import Path
 
-from common.file_utils import _SKIP_DIRS, _ALL_EXTENSIONS
-from common.file_utils import _TEST_MARKERS
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+from lib.engine.discovery import _SKIP_DIRS, _ALL_EXTENSIONS, _TEST_MARKERS
+from lib.engine.hybrid import run_hybrid
 
 # Numbers that are generally acceptable as literals
 _OK_NUMBERS = {"0", "1", "2", "-1", "100", "200", "201", "204", "400", "401",
@@ -160,11 +164,7 @@ def _check_file(file: Path, root: Path) -> list[dict]:
     return violations
 
 
-def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False) -> dict:
-    start = time.time()
-    violations = []
-    source_files: list[Path]
-
+def _mechanical(path: Path, files: list | None) -> tuple[list[dict], int]:
     if files is not None:
         source_files = list(files)
     elif path.is_file():
@@ -176,15 +176,11 @@ def run(path: Path, language: str, files: list | None = None, agents: int = 1, n
                 p for p in path.rglob(f"*{ext}")
                 if not any(part in _SKIP_DIRS for part in p.parts)
             )
-    files = source_files
-
+    violations = []
     for file in source_files:
         violations.extend(_check_file(file, path))
+    return violations, len(source_files)
 
-    return {
-        "principle": "Naming",
-        "success": True,
-        "violations": violations,
-        "files_analyzed": len(source_files),
-        "duration_ms": int((time.time() - start) * 1000),
-    }
+
+def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False) -> dict:
+    return run_hybrid(path, language, "Naming", None, {}, files=files, mechanical_fn=_mechanical)

@@ -3,10 +3,15 @@
 
 import ast
 import re
-import time
+import sys
 from pathlib import Path
 
-from common.file_utils import _SKIP_DIRS, _CLASS_LANG_EXTS
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+from lib.engine.discovery import _SKIP_DIRS, _CLASS_LANG_EXTS
+from lib.engine.hybrid import run_hybrid
 
 # Grep patterns for non-Python deep inheritance
 _EXTENDS_RE = re.compile(r"class\s+\w+\s+extends\s+(\w+)")  # TS/JS/Java
@@ -144,11 +149,9 @@ def _check_non_python(files: list[Path], root: Path) -> list[dict]:
     return violations
 
 
-def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False) -> dict:
-    start = time.time()
+def _mechanical(path: Path, files: list | None) -> tuple[list[dict], int]:
     py_files: list[Path] = []
     other_files: list[Path] = []
-
     if files is not None:
         for f in files:
             if f.suffix == ".py":
@@ -168,13 +171,9 @@ def run(path: Path, language: str, files: list | None = None, agents: int = 1, n
             for p in path.rglob(f"*{ext}"):
                 if not any(part in _SKIP_DIRS for part in p.parts):
                     other_files.append(p)
-
     violations = _check_python(py_files, path) + _check_non_python(other_files, path)
+    return violations, len(py_files) + len(other_files)
 
-    return {
-        "principle": "CompositionOverInheritance",
-        "success": True,
-        "violations": violations,
-        "files_analyzed": len(py_files) + len(other_files),
-        "duration_ms": int((time.time() - start) * 1000),
-    }
+
+def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False) -> dict:
+    return run_hybrid(path, language, "CompositionOverInheritance", None, {}, files=files, mechanical_fn=_mechanical)

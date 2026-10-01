@@ -1,7 +1,10 @@
 """Unit tests for checkers/check_cqrs.py — mocks local AI calls.
 
-Pattern mirrors test_check_solid_unit.py: patch check_server_available
-and analyze_files_parallel as bound names in the checker module.
+Pattern mirrors test_check_solid_unit.py: check_cqrs keeps its own
+check_server_available guard (hard-fails when the AI server is down), then
+delegates to lib.engine.hybrid.run_hybrid(). The guard is patched on the
+checker module; the AI pass itself is patched on lib.engine.hybrid, since
+that's where run_hybrid's real call sites live.
 """
 
 from pathlib import Path
@@ -13,17 +16,12 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-try:
-    import checkers.check_cqrs as cqrs_mod
-    from checkers.check_cqrs import run
-    _CQRS_AVAILABLE = True
-except ImportError:
-    _CQRS_AVAILABLE = False
-
-pytestmark = pytest.mark.skipif(not _CQRS_AVAILABLE, reason="check_cqrs not implemented yet")
+import checkers.check_cqrs as cqrs_mod
+from checkers.check_cqrs import run
 
 _CHECK_AVAILABLE = "checkers.check_cqrs.check_server_available"
-_ANALYZE_PARALLEL = "checkers.check_cqrs.analyze_files_parallel"
+_HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"
+_HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
 
 
 @pytest.mark.unit
@@ -43,7 +41,8 @@ def test_cqrs_returns_violations_when_server_available(tmp_path):
         }
     ]
     with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_ANALYZE_PARALLEL, return_value=mock_items):
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=mock_items):
         result = run(tmp_path, "python")
 
     assert result["success"] is True
@@ -55,7 +54,8 @@ def test_cqrs_empty_when_no_violations(tmp_path):
     """Empty response → 0 violations, success=True."""
     (tmp_path / "app.py").write_text("class QueryService: pass\n")
     with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_ANALYZE_PARALLEL, return_value=[]):
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]):
         result = run(tmp_path, "python")
 
     assert result["success"] is True
@@ -95,7 +95,8 @@ def test_cqrs_files_param_uses_only_given_files(tmp_path):
     other.write_text("class X: pass\n")
 
     with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
         run(tmp_path, "python", files=[explicit])
 
     called_files = mock_analyze.call_args[0][0]
@@ -112,7 +113,8 @@ def test_cqrs_test_files_excluded_in_discovery(tmp_path):
     test_file.write_text("def test_order(): pass\n")
 
     with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
         run(tmp_path, "python")
 
     called_files = mock_analyze.call_args[0][0]

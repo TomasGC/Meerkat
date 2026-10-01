@@ -8,8 +8,11 @@ import pytest
 
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
-import common.file_utils as fu
+import lib.engine.discovery as fu
 from checkers.check_naming import run as run_naming
 
 
@@ -115,3 +118,16 @@ def test_naming_single_file_path(tmp_path):
     result = run_naming(f, "python")
     assert result["success"] is True
     assert result["files_analyzed"] == 1
+
+
+@pytest.mark.unit
+def test_naming_files_list_excludes_other_files_on_disk(tmp_path):
+    """Only the files passed in `files=` are scanned, even when others violate on disk."""
+    target = tmp_path / "a.py"
+    other = tmp_path / "b.py"
+    target.write_text("timeout = 12345\n")
+    other.write_text("retries = 67890\n")
+    result = run_naming(tmp_path, "python", files=[target])
+    assert result["files_analyzed"] == 1
+    assert result["violations"]
+    assert all(v["file"] == "a.py" for v in result["violations"])

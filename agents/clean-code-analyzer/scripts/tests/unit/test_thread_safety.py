@@ -101,8 +101,14 @@ def test_concurrent_deduplication_stable():
 def test_cache_concurrent_writes_no_corruption(tmp_path):
     """Multiple threads writing different cache entries don't corrupt each other."""
     import threading
-    from common.cache import set_cached, get_cached
+    from pathlib import Path
 
+    _SHARED = Path.home() / ".claude" / "scripts"
+    if str(_SHARED) not in sys.path:
+        sys.path.insert(0, str(_SHARED))
+    from lib.engine.cache import set_cached, get_cached
+
+    cache_dir = tmp_path / ".cache"
     files = []
     for i in range(10):
         f = tmp_path / f"mod_{i}.py"
@@ -117,8 +123,8 @@ def test_cache_concurrent_writes_no_corruption(tmp_path):
                        "severity": "high", "message": f"v{idx}", "suggestion": "fix"}]
         barrier.wait()
         try:
-            set_cached(file_path, "solid", violations)
-            result = get_cached(file_path, "solid")
+            set_cached(cache_dir, file_path, "solid", violations)
+            result = get_cached(cache_dir, file_path, "solid")
             if result != violations:
                 errors.append(f"Corruption on {file_path.name}: expected {violations}, got {result}")
         except Exception as exc:

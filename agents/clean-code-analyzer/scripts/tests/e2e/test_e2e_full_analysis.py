@@ -1,6 +1,7 @@
 """E2E tests: full analysis pipeline against the configured local AI provider."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -143,6 +144,28 @@ def test_incremental_branch_vs_main_default_mode(tmp_path):
     data = _run_mechanical(tmp_path)
 
     _assert_only_a_py(data)
+
+
+@pytest.mark.e2e
+def test_clear_cache_honours_cca_cache_dir(tmp_path):
+    """--clear-cache empties the CCA_CACHE_DIR directory, never the real user cache."""
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+    entries = [cache_dir / "aaa_SOLID.json", cache_dir / "bbb_KISS.json"]
+    for entry in entries:
+        entry.write_text("[]")
+
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS_DIR / "orchestrate.py"), "--clear-cache"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={**os.environ, "CCA_CACHE_DIR": str(cache_dir)},
+    )
+
+    assert result.returncode == 0, f"stderr: {result.stderr}"
+    assert not any(entry.exists() for entry in entries)
+    assert "Cleared 2" in result.stderr
 
 
 @pytest.mark.e2e

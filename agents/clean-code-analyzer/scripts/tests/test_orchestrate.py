@@ -7,7 +7,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from orchestrate import _build_summary, _SEVERITY_ORDER
+from orchestrate import _build_summary
+from lib.engine.orchestrator import _SEVERITY_ORDER
 
 
 class TestBuildSummary:
