@@ -9,15 +9,7 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-try:
-    from checkers.check_comments import run
-    _COMMENTS_AVAILABLE = True
-except ImportError:
-    _COMMENTS_AVAILABLE = False
-
-pytestmark = pytest.mark.skipif(
-    not _COMMENTS_AVAILABLE, reason="check_comments not implemented yet"
-)
+from checkers.check_comments import run
 
 
 @pytest.mark.unit
@@ -158,3 +150,16 @@ def test_comments_single_file_path(tmp_path):
     result = run(f, "python")
     assert result["success"] is True
     assert result["files_analyzed"] == 1
+
+
+@pytest.mark.unit
+def test_comments_files_list_excludes_other_files_on_disk(tmp_path):
+    """Only the files passed in `files=` are scanned, even when others violate on disk."""
+    target = tmp_path / "a.py"
+    other = tmp_path / "b.py"
+    target.write_text("# TODO: fix this\nx = 1\n")
+    other.write_text("# TODO: fix that\ny = 2\n")
+    result = run(tmp_path, "python", files=[target])
+    assert result["files_analyzed"] == 1
+    assert result["violations"]
+    assert all(v["file"] == "a.py" for v in result["violations"])

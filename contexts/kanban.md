@@ -4,6 +4,17 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-01 - [#19] Port CCA onto the shared analysis engine
+- All 11 CCA checkers route through `lib.engine.hybrid.run_hybrid` (new `mechanical_fn`, `format_ai_violation`, optional `prompt`), so mechanical and AI findings are reconciled; `orchestrate.py` is a thin shim, `common/cache.py` and `common/file_utils.py` are gone
+- Per-file AI result cache moved into `run_hybrid` (content hash + prompt + role + agents); failed AI calls are never cached; `CCA_CACHE_DIR` overrides the cache dir
+- Pre-existing bugs fixed: KISS and YAGNI mechanical findings sat on line 0, `find_unused_code` let json/md/yaml win the language vote, the incremental e2e test asserted nothing; mechanical checkers now honour the incremental file list
+- SSA gained Kotlin weak-crypto and empty-catch rules and a Python eval/exec rule
+- Shared golden fixtures (`fixtures/projects/` + `fixtures/golden/`): python/go/kotlin projects, expected CCA and SSA findings compared field by field, AI responses replayed at `call_model_async`; CCA drops 2 duplicate AI findings, SSA 14
+- rattler-devkit mechanical counts unchanged after the port (DRY 0, Naming 197, Comments 368, LoD 95); CCA 529, SSA 399, scripts/lib 198, scripts/cli 437 tests green
+tags: #cca #engine #refactor #golden-tests #ssa
+Ref: https://github.com/TomasGC/Meerkat/issues/19
+Commits: 89eeb6c, 1757fe8, afe6348, 8de0eba, 8f1efa1
+
 2026-09-18 - [#18] Extract shared analysis engine from SSA
 
 - `scripts/lib/engine/`: six modules pulled out of SSA — `finding.py` (checker-contract TypedDict, `principle` kept as wire name), `cache.py`, `dedup.py`, `discovery.py` (renamed from `file_utils.py`), `hybrid.py`, `orchestrator.py`

@@ -21,6 +21,7 @@ class ComplexityMetric:
     """Code complexity metric."""
     file: str
     function: str
+    line: int
     cyclomatic: int
     nesting_depth: int
     lines: int
@@ -85,6 +86,7 @@ class CalculateComplexityScript(BaseCLIScript):
                             metrics.append(ComplexityMetric(
                                 file=str(file.relative_to(path.parent if path.is_file() else path)),
                                 function=node.name,
+                                line=node.lineno,
                                 cyclomatic=cyclomatic,
                                 nesting_depth=nesting,
                                 lines=lines,
@@ -103,6 +105,7 @@ class CalculateComplexityScript(BaseCLIScript):
                 {
                     "file": m.file,
                     "function": m.function,
+                    "line": m.line,
                     "cyclomatic_complexity": m.cyclomatic,
                     "nesting_depth": m.nesting_depth,
                     "lines": m.lines,

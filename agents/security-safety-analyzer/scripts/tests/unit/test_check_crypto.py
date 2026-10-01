@@ -132,3 +132,24 @@ class TestShellChecks:
 
     def test_verified_download_is_clean(self, tmp_path):
         assert _run(tmp_path, "safe.sh", "curl https://x/a\nsha256sum a\n", "bash") == []
+
+
+class TestKotlinChecks:
+    def test_detects_weak_message_digest(self, tmp_path):
+        for algo in ("MD5", "SHA-1", "SHA1"):
+            v = _run(tmp_path, "Hash.kt", f'val md = MessageDigest.getInstance("{algo}")\n', "kotlin")
+            assert [x["message"] for x in v] == [check_crypto._WEAK_HASH], algo
+
+    def test_strong_message_digest_is_clean(self, tmp_path):
+        assert _run(tmp_path, "Hash.kt", 'val md = MessageDigest.getInstance("SHA-256")\n', "kotlin") == []
+
+    def test_detects_obsolete_cipher(self, tmp_path):
+        v = _run(tmp_path, "Enc.kt", 'val c = Cipher.getInstance("DESede/CBC/PKCS5Padding")\n', "kotlin")
+        assert any("Obsolete symmetric cipher" in x["message"] for x in v)
+
+    def test_detects_ecb_mode(self, tmp_path):
+        v = _run(tmp_path, "Enc.kt", 'val c = Cipher.getInstance("AES/ECB/PKCS5Padding")\n', "kotlin")
+        assert [x["message"] for x in v] == ["ECB mode leaks plaintext structure"]
+
+    def test_aes_gcm_is_clean(self, tmp_path):
+        assert _run(tmp_path, "Enc.kt", 'val c = Cipher.getInstance("AES/GCM/NoPadding")\n', "kotlin") == []

@@ -22,6 +22,9 @@ _GREP_PATTERNS = {
     "javascript": [
         (re.compile(r"catch\s*\([^)]*\)\s*\{\s*\}"), "Empty catch block"),
     ],
+    "kotlin": [
+        (re.compile(r"catch\s*\([^)]*\)\s*\{\s*\}"), "Empty catch block"),
+    ],
     "go": [
         (re.compile(r"if err != nil \{\s*\}"), "Empty error check block"),
         (re.compile(r"_ = \w+\.(\w+)\("), "Error explicitly discarded with _"),

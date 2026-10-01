@@ -218,3 +218,21 @@ class TestRunFunction:
         with patch("checkers.check_security.check_server_available", return_value=False):
             result = run(tmp_path, "python", files=[clean])
         assert all(v["file"] != "dirty.py" for v in result["violations"])
+
+
+class TestPythonDynamicCode:
+    @pytest.mark.parametrize("line", ["return eval(expression)\n", "exec(source, scope)\n", "x = eval (s)\n"])
+    def test_detects_eval_and_exec(self, tmp_path, line):
+        f = _make_file(tmp_path, "dyn.py", line)
+        messages = [v["message"] for v in _mechanical_check(f, tmp_path, "python")]
+        assert messages == ["eval()/exec() runs dynamic code — code injection risk"]
+
+    @pytest.mark.parametrize("line", [
+        "value = ast.literal_eval(text)\n",
+        "model.eval()\n",
+        "cursor.execute(query, params)\n",
+        "retrieval(data)\n",
+    ])
+    def test_lookalikes_do_not_match(self, tmp_path, line):
+        f = _make_file(tmp_path, "dyn.py", line)
+        assert _mechanical_check(f, tmp_path, "python") == []

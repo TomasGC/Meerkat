@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"injection_type\": \"DIRECT_INTERPOLATION\", \"line\": 87, \"severity\": \"high\", \"description\": \"User text formatted straight into the prompt\", \"fix\": \"Pass user text as a delimited slot\"}]"
+}

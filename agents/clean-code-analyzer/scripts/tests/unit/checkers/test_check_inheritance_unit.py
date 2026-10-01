@@ -188,3 +188,23 @@ def test_inheritance_check_non_python_oserror_skips(tmp_path):
         result = run(tmp_path, "typescript")
     assert result["success"] is True
     assert result["violations"] == []
+
+
+@pytest.mark.unit
+def test_inheritance_files_list_excludes_other_files_on_disk(tmp_path):
+    """Only the files passed in `files=` are scanned, even when others violate on disk."""
+    chain = (
+        "class A: pass\nclass B(A): pass\nclass C(B): pass\n"
+        "class D(C): pass\nclass E(D): pass\n"
+    )
+    target = tmp_path / "a.py"
+    other = tmp_path / "b.py"
+    target.write_text(chain)
+    other.write_text(
+        "class V: pass\nclass W(V): pass\nclass X(W): pass\n"
+        "class Y(X): pass\nclass Z(Y): pass\n"
+    )
+    result = run(tmp_path, "python", files=[target])
+    assert result["files_analyzed"] == 1
+    assert result["violations"]
+    assert all(v["file"] == "a.py" for v in result["violations"])

@@ -129,3 +129,16 @@ def test_lod_run_with_files_list(tmp_path):
     result = run(tmp_path, "python", files=[f])
     assert result["success"] is True
     assert result["files_analyzed"] == 1
+
+
+@pytest.mark.unit
+def test_lod_files_list_excludes_other_files_on_disk(tmp_path):
+    """Only the files passed in `files=` are scanned, even when others violate on disk."""
+    target = tmp_path / "a.py"
+    other = tmp_path / "b.py"
+    target.write_text("result = obj.service.repository.find_by_id(42)\n")
+    other.write_text("value = obj.service.repository.find_by_id(43)\n")
+    result = run(tmp_path, "python", files=[target])
+    assert result["files_analyzed"] == 1
+    assert result["violations"]
+    assert all(v["file"] == "a.py" for v in result["violations"])

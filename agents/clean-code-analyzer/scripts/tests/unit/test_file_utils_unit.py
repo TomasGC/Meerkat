@@ -1,4 +1,4 @@
-"""Unit tests for common/file_utils.py."""
+"""Unit tests for lib/engine/discovery.py."""
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -9,8 +9,13 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-import common.file_utils as fu
-from common.file_utils import get_changed_files, get_staged_files, detect_language, read_file_safe
+# Add scripts to path for lib imports
+_SCRIPTS = Path.home() / ".claude" / "scripts"
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+import lib.engine.discovery as fu
+from lib.engine.discovery import get_changed_files, get_staged_files, detect_language, read_file_safe
 
 
 @pytest.fixture(autouse=True)

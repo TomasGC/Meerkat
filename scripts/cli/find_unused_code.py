@@ -15,6 +15,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript
+from lib.config import language_config
 from lib.utils import run_command
 
 
@@ -112,14 +113,18 @@ class FindUnusedCodeScript(BaseCLIScript):
         return result
 
     def _detect_language(self, path: Path) -> str:
-        """Auto-detect language from file extensions."""
+        """Auto-detect language from the most common source-file extension.
+
+        Only extensions of `kind == "code"` languages vote: data and markup files
+        (json, md, yaml) must never outnumber the sources they sit beside.
+        """
         if path.is_file():
             ext = path.suffix
         else:
-            # Check most common file in directory
+            code_exts = {e for exts in language_config.languages_of_kind("code").values() for e in exts}
             exts = {}
             for file in path.rglob("*"):
-                if file.is_file():
+                if file.is_file() and file.suffix in code_exts:
                     ext = file.suffix
                     exts[ext] = exts.get(ext, 0) + 1
 

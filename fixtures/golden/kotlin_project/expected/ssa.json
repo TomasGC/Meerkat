@@ -1,0 +1,76 @@
+{
+  "agent": "ssa",
+  "project": "kotlin_project",
+  "violations": [
+    {
+      "principle": "Security",
+      "file": "Service.kt",
+      "line": 10,
+      "severity": "high",
+      "message": "Hardcoded secret or credential",
+      "suggestion": "Use environment variables or a secrets manager; never hardcode credentials"
+    },
+    {
+      "principle": "Crypto",
+      "file": "Service.kt",
+      "line": 20,
+      "severity": "high",
+      "message": "Weak hash algorithm — MD5 and SHA-1 are broken for security use",
+      "suggestion": "Use SHA-256 or better; for passwords use bcrypt, scrypt or Argon2"
+    },
+    {
+      "principle": "ErrorHandling",
+      "file": "Service.kt",
+      "line": 23,
+      "severity": "high",
+      "message": "Empty catch block",
+      "suggestion": "Handle or log the exception; never silently swallow errors"
+    },
+    {
+      "principle": "CrashBug",
+      "file": "Service.kt",
+      "line": 24,
+      "severity": "medium",
+      "message": "[TYPE_ERROR]: toInt throws NumberFormatException on non-numeric input",
+      "suggestion": "Use toIntOrNull and handle null"
+    }
+  ],
+  "reconciliation": {
+    "Concurrency": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "CrashBug": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "Crypto": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "Deserialization": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "Misconfiguration": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "PromptInjection": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "ResourceLeak": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "Security": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "SensitiveData": {
+      "ai_items": 0,
+      "dropped": 0
+    }
+  }
+}

@@ -2,10 +2,15 @@
 """Comments checker — TODO/FIXME, commented-out code, explain-WHAT comments."""
 
 import re
-import time
+import sys
 from pathlib import Path
 
-from common.file_utils import _SKIP_DIRS, _ALL_EXTENSIONS, _HASH_COMMENT_EXTS, is_hash_comment_file
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+from lib.engine.discovery import _SKIP_DIRS, _ALL_EXTENSIONS, _HASH_COMMENT_EXTS, is_hash_comment_file
+from lib.engine.hybrid import run_hybrid
 
 _TODO_RE = re.compile(r"#\s*(TODO|FIXME|HACK|XXX|BUG|NOCOMMIT)\b", re.IGNORECASE)
 _TODO_RE_SLASH = re.compile(r"//\s*(TODO|FIXME|HACK|XXX|BUG|NOCOMMIT)\b", re.IGNORECASE)
@@ -86,10 +91,7 @@ def _check_file(file: Path, root: Path) -> list[dict]:
     return violations
 
 
-def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False) -> dict:
-    start = time.time()
-    violations = []
-
+def _mechanical(path: Path, files: list | None) -> tuple[list[dict], int]:
     if files is not None:
         source_files = list(files)
     elif path.is_file():
@@ -101,14 +103,11 @@ def run(path: Path, language: str, files: list | None = None, agents: int = 1, n
                 p for p in path.rglob(f"*{ext}")
                 if not any(part in _SKIP_DIRS for part in p.parts)
             )
-
+    violations = []
     for file in source_files:
         violations.extend(_check_file(file, path))
+    return violations, len(source_files)
 
-    return {
-        "principle": "Comments",
-        "success": True,
-        "violations": violations,
-        "files_analyzed": len(source_files),
-        "duration_ms": int((time.time() - start) * 1000),
-    }
+
+def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False) -> dict:
+    return run_hybrid(path, language, "Comments", None, {}, files=files, mechanical_fn=_mechanical)

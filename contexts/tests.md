@@ -65,12 +65,11 @@ agents/black-box-analyzer/tests/
 │   │   ├── scripts/tests/
 │   │   │   ├── pytest.ini
 │   │   │   ├── conftest.py
-│   │   │   ├── unit/            # 469 tests — checkers, model_utils, cache, file_utils, orchestrate, prompts
-│   │   │   ├── integration/mock/ # 17 tests — mocked Ollama, real filesystem/cache
-│   │   │   ├── integration/real/ # 16 tests — real Ollama (devstral required)
-│   │   │   ├── e2e/             # 9 tests — orchestrate.py CLI, config-driven local_ai_service fixture
-│   │   │   └── test_*.py        # 73 tests at tests/ root, outside the 4 tiers — cache,
-│   │   │                        # check_comments/inheritance/lod/naming, file_utils, orchestrate
+│   │   │   ├── unit/            # checkers (via lib.engine.hybrid), model_utils, orchestrate shim, prompts
+│   │   │   ├── integration/mock/ # unit + mock = 526 — incl. test_golden_projects.py (replayed AI) and cache round-trip
+│   │   │   ├── integration/real/ # live AI: checkers, multi-language, test_engine_real.py (cache + reconciliation invariant)
+│   │   │   ├── e2e/             # 15 — orchestrate.py CLI, real-git incremental modes, --clear-cache, test_golden_cli.py
+│   │   │   └── test_*.py        # tests at tests/ root, outside the 4 tiers — cache, checkers, discovery, orchestrate
 │   └── tests/
 │       └── integration-reals/  # cross-agent Ollama tests (not BBA-specific)
 │           ├── test_agents.py
@@ -80,7 +79,7 @@ agents/black-box-analyzer/tests/
     ├── tests/conftest.py + e2e/ + integration-reals/
     ├── cli/tests/conftest.py + units/ + integration-mocks/ + integration-reals/
     ├── cli/agents/task_monitor/tests/units/    # no conftest — in root testpaths
-    ├── lib/tests/conftest.py + units/      # 177 tests — 152 language_config, model_config, model_utils
+    ├── lib/tests/conftest.py + units/      # 198 tests — language_config, model_config, model_utils (incl. failed-call tracking), golden runner
     └── lib/cli/tests/conftest.py + units/
 
 skills/
@@ -172,3 +171,41 @@ fixture edit is a contract change:
   globs only `*.kt` for Kotlin and `APIAnalyzer` never walks `*.kt`, so a Kotlin
   controller yields zero endpoints and no `REST_API`. Its Activity sits in
   `app/` so no top-level `*.kt` wins the language vote.
+
+---
+
+## Golden Fixtures (CCA + SSA)
+
+`~/.claude/fixtures/` is shared test data, owned by no agent:
+
+- `fixtures/projects/<p>/` — `python_project`, `go_project`, `kotlin_project`: **source only**, seeded with
+  clean-code and security issues on purpose. Never imported or run.
+- `fixtures/golden/<p>/expected/<agent>.json` — every issue the agent must find, all fields compared
+  (`principle, file, line, severity, message, suggestion`, posix paths), plus per-checker reconciliation counts.
+- `fixtures/golden/<p>/ai_responses/<agent>/<prompt>.json` — recorded model responses, replayed at
+  `lib.ai.model_utils.call_model_async` by `scripts/lib/testing/golden.py`. An unmatched call, a missing
+  response or an unused response is an error — a silent `[]` can never pass.
+
+Rules:
+- Metadata stays out of `projects/`: json files there would skew language detection and could be scanned.
+- No `__init__.py`, no `test_*` file, no directory name from `language_config.skip_dirs()` under `fixtures/`.
+- Fake secrets must not match a real provider format (no `sk_live_`, `AKIA`, `ghp_`): push protection.
+- `.gitignore` needs `!/fixtures/projects/`: the unanchored `projects/` rule would ignore it.
+- Regenerating expected files (`scripts/cli/update_golden.py`) snapshots whatever the code does — hand-check
+  every changed record as a genuine intended issue before committing.
+
+---
+
+## Known Environmental Exclusions
+
+With the local model mostly offloaded to CPU, two tests can exceed their limits; exclude them, don't "fix" them:
+- SSA `tests/integration/mock/test_orchestrate.py` — runs a full orchestrate.py against the live AI with no timeout
+  (`--ignore` it). Despite the tier name it is not mocked.
+- CCA `e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates` — 300s limit; passes in ~193s
+  when the GPU is free. The node id has no `tests/` prefix: CCA's rootdir is `scripts/tests`.
+
+## Worktrees Are Not Faithful
+
+Checkers and shims insert `~/.claude/scripts` as the shared-library path, so tests run in a git worktree import
+the **main checkout's** `lib/`, not the worktree's. Compare a worktree run against pristine `main` in a worktree,
+never against the main checkout.

@@ -139,6 +139,8 @@ projects/**/*.jsonl
 
 # Projects directory (contains user-specific sessions and memory)
 projects/
+# ...but not the shared golden fixture projects
+!/fixtures/projects/
 
 # Credentials files (contain enterprise OAuth tokens)
 creds.*.json

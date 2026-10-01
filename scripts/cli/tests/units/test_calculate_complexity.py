@@ -96,3 +96,14 @@ def test_script_execution_success(script, temp_complex_file, monkeypatch):
     assert result["success"] is True
     assert result["files_analyzed"] == 1
     assert "complexity_issues" in result
+
+def test_complexity_issue_reports_def_line(script, temp_complex_file):
+    """Each complexity issue carries the line of its function's def statement."""
+    class Args:
+        path = temp_complex_file.parent
+        threshold = 5
+
+    result = script.execute(Args())
+
+    issues = {i["function"]: i for i in result["complexity_issues"]}
+    assert issues["complex_function"]["line"] == 5

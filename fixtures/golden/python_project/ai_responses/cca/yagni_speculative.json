@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"pattern\": \"speculative-feature\", \"line\": 26, \"severity\": \"medium\", \"violation\": \"kitchen_sink takes five flags that no caller passes\", \"suggestion\": \"Remove the function until a caller needs it\"}]"
+}

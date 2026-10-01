@@ -8,7 +8,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.file_utils import (
+# Add scripts to path for lib imports
+_SCRIPTS = Path.home() / ".claude" / "scripts"
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from lib.engine.discovery import (
     _DISCOVERY_CACHE,
     detect_language,
     discover_files,

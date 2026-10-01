@@ -1,0 +1,3 @@
+{
+  "Service.kt": "[{\"bug_type\": \"TYPE_ERROR\", \"line\": 24, \"severity\": \"medium\", \"description\": \"toInt throws NumberFormatException on non-numeric input\", \"fix\": \"Use toIntOrNull and handle null\"}]"
+}

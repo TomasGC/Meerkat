@@ -1,4 +1,11 @@
-"""Unit tests for checkers/check_ddd.py — local AI mocked via check_server_available / analyze_files_parallel."""
+"""Unit tests for checkers/check_ddd.py — local AI mocked via check_server_available / analyze_files_parallel.
+
+check_ddd.run() keeps its own check_server_available guard (hard-fails when
+the AI server is down), then delegates to lib.engine.hybrid.run_hybrid(). The
+guard is patched on the checker module; the AI pass itself (run_hybrid's own
+availability gate + analyze_files_parallel + file discovery) is exercised
+through lib.engine.hybrid, since that's where the real call sites live.
+"""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -9,23 +16,19 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-try:
-    from checkers.check_ddd import run
-    _DDD_AVAILABLE = True
-except ImportError:
-    _DDD_AVAILABLE = False
+from checkers.check_ddd import run
 
-pytestmark = pytest.mark.skipif(
-    not _DDD_AVAILABLE, reason="check_ddd not importable"
-)
+_CHECK_AVAILABLE = "checkers.check_ddd.check_server_available"
+_HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"
+_HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
 
 
 # ── Local AI unavailable ────────────────────────────────────────────────────────
 
 @pytest.mark.unit
 def test_ddd_server_unavailable_returns_failure(tmp_path):
-    """Local AI not available → success: False, violations: []."""
-    with patch("checkers.check_ddd.check_server_available", return_value=False):
+    """Local AI not available → success: False, violations: [] (checker's own guard)."""
+    with patch(_CHECK_AVAILABLE, return_value=False):
         result = run(tmp_path, "python")
     assert result["success"] is False
     assert result["violations"] == []
@@ -50,9 +53,10 @@ def test_ddd_anemic_model_violation_mapped(tmp_path):
         "suggestion": "Move domain logic into the entity",
         "line": 1,
     }
-    with patch("checkers.check_ddd.check_server_available", return_value=True):
-        with patch("checkers.check_ddd.analyze_files_parallel", return_value=[raw_item]):
-            result = run(tmp_path, "python", files=[f])
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[raw_item]):
+        result = run(tmp_path, "python", files=[f])
 
     assert result["success"] is True
     assert len(result["violations"]) == 1
@@ -69,9 +73,10 @@ def test_ddd_empty_response_no_violations(tmp_path):
     """Local AI returns [] → success: True, violations: []."""
     f = tmp_path / "good.py"
     f.write_text("class Order:\n    def place(self): pass\n")
-    with patch("checkers.check_ddd.check_server_available", return_value=True):
-        with patch("checkers.check_ddd.analyze_files_parallel", return_value=[]):
-            result = run(tmp_path, "python", files=[f])
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]):
+        result = run(tmp_path, "python", files=[f])
     assert result["success"] is True
     assert result["violations"] == []
 
@@ -80,28 +85,33 @@ def test_ddd_empty_response_no_violations(tmp_path):
 
 @pytest.mark.unit
 def test_ddd_files_none_discovers_all(tmp_path):
-    """files=None → discover_files is used (mocked to return a single file)."""
+    """files=None → real file discovery finds the file (no explicit files list needed)."""
     f = tmp_path / "model.py"
     f.write_text("class Foo: pass\n")
-    with patch("checkers.check_ddd.check_server_available", return_value=True):
-        with patch("checkers.check_ddd.discover_files", return_value=[f]) as mock_discover:
-            with patch("checkers.check_ddd.analyze_files_parallel", return_value=[]):
-                result = run(tmp_path, "python", files=None)
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+        result = run(tmp_path, "python", files=None)
     assert result["success"] is True
-    mock_discover.assert_called_once()
+    called_files = mock_analyze.call_args[0][0]
+    assert f in called_files
 
 
 @pytest.mark.unit
 def test_ddd_files_provided_skips_discovery(tmp_path):
-    """files=[path] → discover_files NOT called; provided list used directly."""
+    """files=[path] → only the provided file is analyzed; other files on disk are ignored."""
     f = tmp_path / "model.py"
     f.write_text("class Foo: pass\n")
-    with patch("checkers.check_ddd.check_server_available", return_value=True):
-        with patch("checkers.check_ddd.discover_files") as mock_discover:
-            with patch("checkers.check_ddd.analyze_files_parallel", return_value=[]):
-                result = run(tmp_path, "python", files=[f])
+    other = tmp_path / "other.py"
+    other.write_text("class Bar: pass\n")
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+        result = run(tmp_path, "python", files=[f])
     assert result["success"] is True
-    mock_discover.assert_not_called()
+    called_files = mock_analyze.call_args[0][0]
+    assert f in called_files
+    assert other not in called_files
 
 
 # ── Chunking (verify analyze_files_parallel is called for large files) ──────────
@@ -112,9 +122,10 @@ def test_ddd_large_file_passed_to_analyze(tmp_path):
     large_file = tmp_path / "big_model.py"
     large_file.write_text("class Big:\n    pass\n" + "# padding\n" * 1000)
 
-    with patch("checkers.check_ddd.check_server_available", return_value=True):
-        with patch("checkers.check_ddd.analyze_files_parallel", return_value=[]) as mock_analyze:
-            run(tmp_path, "python", files=[large_file], no_cache=True)
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+        run(tmp_path, "python", files=[large_file], no_cache=True)
 
     mock_analyze.assert_called_once()
     call_files = mock_analyze.call_args[0][0]

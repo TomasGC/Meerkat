@@ -52,6 +52,9 @@ _INJECTION_PATTERNS = {
          "JWT accepts the none algorithm — signature can be stripped", "high"),
         (re.compile(r'\*\*request\.(?:json|form|data|POST|args)'),
          "Request body splatted into a model — mass assignment risk", "high"),
+        # Bare builtin only: `ast.literal_eval(`, `model.eval()` and `cursor.execute(` must not match.
+        (re.compile(r'(?<![\w.])(?:eval|exec)\s*\('),
+         "eval()/exec() runs dynamic code — code injection risk", "high"),
     ],
     "javascript": [
         (re.compile(r'innerHTML\s*=\s*[^"\'`]'), "innerHTML set from variable — XSS risk", "high"),

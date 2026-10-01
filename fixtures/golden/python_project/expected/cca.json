@@ -1,0 +1,160 @@
+{
+  "agent": "cca",
+  "project": "python_project",
+  "violations": [
+    {
+      "principle": "DRY",
+      "file": "service.py",
+      "line": 9,
+      "severity": "low",
+      "message": "Duplicate block (5 lines, similarity 0.86) also at service.py:17-21",
+      "suggestion": "Extract duplicated logic into a shared function or module"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 9,
+      "severity": "high",
+      "message": "Unused function: process_a",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "DRY",
+      "file": "service.py",
+      "line": 10,
+      "severity": "low",
+      "message": "Duplicate block (5 lines, similarity 0.86) also at service.py:18-22",
+      "suggestion": "Extract duplicated logic into a shared function or module"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 17,
+      "severity": "high",
+      "message": "Unused function: process_b",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "KISS",
+      "file": "service.py",
+      "line": 25,
+      "severity": "high",
+      "message": "High complexity: kitchen_sink — cyclomatic=6, nesting=5, lines=17",
+      "suggestion": "Simplify control flow; extract helper functions to reduce complexity"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 25,
+      "severity": "high",
+      "message": "Unused function: kitchen_sink",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "SOLID:S",
+      "file": "service.py",
+      "line": 44,
+      "severity": "high",
+      "message": "S: OrderService.save_order persists, emails, audits, updates stock and charges payment",
+      "suggestion": "Split persistence, notification and payment into separate collaborators"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 44,
+      "severity": "high",
+      "message": "Unused class: OrderService",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 45,
+      "severity": "high",
+      "message": "Unused function: save_order",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 53,
+      "severity": "high",
+      "message": "Unused function: fingerprint",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 57,
+      "severity": "high",
+      "message": "Unused function: load_session",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 61,
+      "severity": "high",
+      "message": "Unused function: find_order",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 66,
+      "severity": "high",
+      "message": "Unused function: evaluate",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 75,
+      "severity": "high",
+      "message": "Unused function: read_report",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 80,
+      "severity": "high",
+      "message": "Unused function: average",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    },
+    {
+      "principle": "YAGNI",
+      "file": "service.py",
+      "line": 87,
+      "severity": "high",
+      "message": "Unused function: build_prompt",
+      "suggestion": "Remove dead code to reduce maintenance burden"
+    }
+  ],
+  "reconciliation": {
+    "CQRS": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "DDD": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "KISS": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "SLAP": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "SOLID": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "YAGNI": {
+      "ai_items": 1,
+      "dropped": 1
+    }
+  }
+}

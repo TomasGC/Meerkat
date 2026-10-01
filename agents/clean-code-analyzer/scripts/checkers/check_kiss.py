@@ -4,39 +4,34 @@
 import json
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
-from common.file_utils import discover_files, _LANG_EXTENSIONS, _TEST_MARKERS
-from common.model_utils import analyze_files_parallel, check_server_available, PROMPTS_DIR
+from lib.engine.hybrid import run_hybrid
+from common.model_utils import PROMPTS_DIR
 
 _PROMPT = "kiss_overengineering"
 _CALC_COMPLEXITY = Path.home() / ".claude/scripts/cli/calculate_complexity.py"
 
 
-def run(
-    path: Path,
-    language: str,
-    files: list | None = None,
-    agents: int = 1,
-    no_cache: bool = False,
-    role: str = "analyzer",
-) -> dict:
-    start = time.time()
+def _mechanical(path: Path, files: list | None) -> tuple[list[dict], int]:
     violations = []
     files_analyzed = 0
-
-    # Part 1: cyclomatic complexity via existing script (always runs on full path)
     if _CALC_COMPLEXITY.exists():
         try:
             result = subprocess.run(
                 [sys.executable, str(_CALC_COMPLEXITY), "--path", str(path), "--format", "json"],
                 capture_output=True, text=True, timeout=60,
             )
-            if result.returncode == 0 and result.stdout.strip():
-                raw = json.loads(result.stdout)
+            raw = json.loads(result.stdout) if result.returncode == 0 and result.stdout.strip() else None
+            if raw is None or raw.get("success") is False:
+                reason = (raw or {}).get("error") or result.stderr.strip()[:200] or f"exit code {result.returncode}"
+                print(f"[WARN] KISS: {_CALC_COMPLEXITY.name} failed: {reason}", file=sys.stderr)
+            else:
                 files_analyzed = raw.get("files_analyzed", 0)
                 for issue in raw.get("complexity_issues", []):
                     issue_file = issue.get("file", "")
@@ -47,7 +42,7 @@ def run(
                     violations.append({
                         "principle": "KISS",
                         "file": issue_file,
-                        "line": 0,
+                        "line": issue.get("line", 0),
                         "severity": issue.get("severity", "medium"),
                         "message": (
                             f"High complexity: {issue.get('function', '?')} — "
@@ -57,37 +52,24 @@ def run(
                         ),
                         "suggestion": "Simplify control flow; extract helper functions to reduce complexity",
                     })
-        except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError):
-            pass
+        except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as exc:
+            print(f"[WARN] KISS: {_CALC_COMPLEXITY.name} failed: {type(exc).__name__}",
+                  file=sys.stderr)
+    return violations, files_analyzed
 
-    # Part 2: local AI over-engineering scan (only if available)
-    if check_server_available(role):
-        if files is not None:
-            source_files = [f for f in files if f.suffix in {e for exts in _LANG_EXTENSIONS.values() for e in exts}]
-        else:
-            exts = _LANG_EXTENSIONS.get(language) if language != "mixed" else None
-            source_files = discover_files(path, exts)
-            source_files = [f for f in source_files
-                            if not any(m in f.name.lower() for m in _TEST_MARKERS)]
-        if not files_analyzed:
-            files_analyzed = len(source_files)
 
-        for item in analyze_files_parallel(source_files, language, role, _PROMPT, prompts_dir=PROMPTS_DIR, agents=agents, no_cache=no_cache):
-            src = Path(item.get("source_file", ""))
-            rel = str(src.relative_to(path) if src.is_relative_to(path) else src)
-            violations.append({
-                "principle": "KISS",
-                "file": rel,
-                "line": item.get("line", 0),
-                "severity": item.get("severity", "medium"),
-                "message": f"Over-engineering [{item.get('pattern', '?')}]: {item.get('violation', '')}",
-                "suggestion": item.get("suggestion", ""),
-            })
-
+def _format(item: dict, rel: str) -> dict:
     return {
-        "principle": "KISS",
-        "success": True,
-        "violations": violations,
-        "files_analyzed": files_analyzed,
-        "duration_ms": int((time.time() - start) * 1000),
+        "principle": "KISS", "file": rel, "line": item.get("line", 0),
+        "severity": item.get("severity", "medium"),
+        "message": f"Over-engineering [{item.get('pattern', '?')}]: {item.get('violation', '')}",
+        "suggestion": item.get("suggestion", ""),
     }
+
+
+def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False, role: str = "analyzer",
+        cache_dir: Path | None = None, cache_ttl_days: int = 7) -> dict:
+    return run_hybrid(path, language, "KISS", _PROMPT, {}, PROMPTS_DIR,
+                       files=files, agents=agents, no_cache=no_cache, role=role,
+                       cache_dir=cache_dir, cache_ttl_days=cache_ttl_days,
+                       mechanical_fn=_mechanical, format_ai_violation=_format)

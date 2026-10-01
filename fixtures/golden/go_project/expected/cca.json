@@ -1,0 +1,56 @@
+{
+  "agent": "cca",
+  "project": "go_project",
+  "violations": [
+    {
+      "principle": "SLAP",
+      "file": "service.go",
+      "line": 11,
+      "severity": "medium",
+      "message": "ProcessOrder: mixed abstraction levels: order status rule alongside deep address navigation and printing",
+      "suggestion": "Extract the zip lookup and the printing into helpers"
+    },
+    {
+      "principle": "Naming",
+      "file": "service.go",
+      "line": 12,
+      "severity": "medium",
+      "message": "Magic number: 42",
+      "suggestion": "Extract to a named constant (e.g. MAX_RETRIES = 42)"
+    },
+    {
+      "principle": "LawOfDemeter",
+      "file": "service.go",
+      "line": 16,
+      "severity": "low",
+      "message": "Deep property access (5 levels): `o.Customer.Account.Billing.Address.Zip`",
+      "suggestion": "Access only direct collaborators; expose needed data through the immediate object"
+    }
+  ],
+  "reconciliation": {
+    "CQRS": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "DDD": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "KISS": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "SLAP": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "SOLID": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "YAGNI": {
+      "ai_items": 0,
+      "dropped": 0
+    }
+  }
+}

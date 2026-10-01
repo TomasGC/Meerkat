@@ -13,9 +13,10 @@ SCRIPTS_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from orchestrate import (
-    _progress_bar, _build_summary, _SEVERITY_ORDER, _mini_bar,
+    _progress_bar, _build_summary, _mini_bar,
     _estimate_token_savings, _detect_base_branch,
 )
+from lib.engine.orchestrator import _SEVERITY_ORDER, _print_table
 
 
 # ── _progress_bar ───────────────────────────────────────────────────────────────
@@ -237,9 +238,9 @@ def test_orchestrate_default_mode_uses_branch_files(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache",
     ]):
-        with patch("orchestrate._detect_base_branch", return_value="main") as mock_detect:
-            with patch("orchestrate.get_branch_files", return_value=[]) as mock_branch:
-                with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator._detect_base_branch", return_value="main") as mock_detect:
+            with patch("lib.engine.orchestrator.get_branch_files", return_value=[]) as mock_branch:
+                with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
                     out = io.StringIO()
                     with io.StringIO() as _err, patch("sys.stdout", out):
                         orch_main()
@@ -256,9 +257,9 @@ def test_orchestrate_default_mode_falls_back_when_no_base_branch(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache",
     ]):
-        with patch("orchestrate._detect_base_branch", return_value=None):
-            with patch("orchestrate.get_branch_files") as mock_branch:
-                with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator._detect_base_branch", return_value=None):
+            with patch("lib.engine.orchestrator.get_branch_files") as mock_branch:
+                with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
                     out = io.StringIO()
                     with patch("sys.stdout", out):
                         orch_main()
@@ -280,9 +281,9 @@ def test_orchestrate_default_mode_falls_back_when_branch_files_none(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache",
     ]):
-        with patch("orchestrate._detect_base_branch", return_value="main"):
-            with patch("orchestrate.get_branch_files", return_value=None):
-                with patch("orchestrate._run_checker", side_effect=capture_run_checker):
+        with patch("lib.engine.orchestrator._detect_base_branch", return_value="main"):
+            with patch("lib.engine.orchestrator.get_branch_files", return_value=None):
+                with patch("lib.engine.orchestrator._run_checker", side_effect=capture_run_checker):
                     out = io.StringIO()
                     with patch("sys.stdout", out):
                         orch_main()
@@ -305,8 +306,8 @@ def test_orchestrate_staged_empty_list_runs_without_crash(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--staged", "--no-cache",
     ]):
-        with patch("orchestrate.get_staged_files", return_value=[]):
-            with patch("orchestrate._run_checker", side_effect=capture_run_checker):
+        with patch("lib.engine.orchestrator.get_staged_files", return_value=[]):
+            with patch("lib.engine.orchestrator._run_checker", side_effect=capture_run_checker):
                 out = io.StringIO()
                 with patch("sys.stdout", out):
                     orch_main()
@@ -318,22 +319,20 @@ def test_orchestrate_staged_empty_list_runs_without_crash(tmp_path):
 
 @pytest.mark.unit
 def test_print_table_empty_prints_no_violations():
-    """_print_table([]) → prints 'No violations found.'"""
-    from orchestrate import _print_table
+    """_print_table([], "principle") → prints 'No violations found.'"""
     out = io.StringIO()
     with patch("sys.stdout", out):
-        _print_table([])
+        _print_table([], "principle")
     assert "No violations found" in out.getvalue()
 
 
 @pytest.mark.unit
 def test_print_table_with_violations_prints_header_and_row():
     """_print_table with one violation → prints SEVERITY header and file info."""
-    from orchestrate import _print_table
     violations = [{"severity": "high", "principle": "Naming", "file": "a.py", "line": 5, "message": "bad name"}]
     out = io.StringIO()
     with patch("sys.stdout", out):
-        _print_table(violations)
+        _print_table(violations, "principle")
     output = out.getvalue()
     assert "SEVERITY" in output
     assert "a.py" in output
@@ -360,7 +359,8 @@ def test_orchestrate_fast_flag_sets_model_to_fast(tmp_path):
     from orchestrate import main as orch_main
     captured_model = []
 
-    def capture_checker(name, mod_path, path, language, files, agents, no_cache, cache_ttl, model):
+    def capture_checker(name, mod_path, path, language, files, agents, no_cache, cache_ttl, model,
+                        cache_dir=None):
         captured_model.append(model)
         return _DUMMY_RESULT
 
@@ -368,7 +368,7 @@ def test_orchestrate_fast_flag_sets_model_to_fast(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache", "--full", "--fast",
     ]):
-        with patch("orchestrate._run_checker", side_effect=capture_checker):
+        with patch("lib.engine.orchestrator._run_checker", side_effect=capture_checker):
             out = io.StringIO()
             with patch("sys.stdout", out):
                 orch_main()
@@ -385,7 +385,7 @@ def test_orchestrate_clear_cache_calls_clear_and_exits(tmp_path):
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path), "--clear-cache",
     ]):
-        with patch("common.cache.clear_cache", return_value=3) as mock_clear:
+        with patch("lib.engine.orchestrator.clear_cache", return_value=3) as mock_clear:
             with pytest.raises(SystemExit) as exc_info:
                 orch_main()
 
@@ -404,7 +404,7 @@ def test_orchestrate_unknown_checker_prints_warning(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "nonexistent_checker_xyz,naming", "--format", "json", "--no-cache", "--full",
     ]):
-        with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
             with patch("sys.stderr", err):
                 out = io.StringIO()
                 with patch("sys.stdout", out):
@@ -424,7 +424,7 @@ def test_orchestrate_format_table_prints_header(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "table", "--no-cache", "--full",
     ]):
-        with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
             with patch("sys.stdout", out):
                 orch_main()
 
@@ -446,7 +446,7 @@ def test_orchestrate_output_file_writes_json(tmp_path):
         "--checks", "naming", "--format", "json", "--no-cache", "--full",
         "--output", str(output_path),
     ]):
-        with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
             with patch("sys.stderr", err):
                 orch_main()
 
@@ -466,7 +466,7 @@ def test_orchestrate_agents_2_prints_message(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache", "--full", "--agents", "2",
     ]):
-        with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
             with patch("sys.stderr", err):
                 out = io.StringIO()
                 with patch("sys.stdout", out):
@@ -492,7 +492,7 @@ def test_orchestrate_top_limits_output(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache", "--full", "--top", "1",
     ]):
-        with patch("orchestrate._run_checker", return_value=dummy_2):
+        with patch("lib.engine.orchestrator._run_checker", return_value=dummy_2):
             out = io.StringIO()
             with patch("sys.stdout", out):
                 orch_main()
@@ -512,7 +512,7 @@ def test_orchestrate_cache_hits_added_to_output(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache", "--full",
     ]):
-        with patch("orchestrate._run_checker", return_value=dummy_cached):
+        with patch("lib.engine.orchestrator._run_checker", return_value=dummy_cached):
             out = io.StringIO()
             with patch("sys.stdout", out):
                 orch_main()
@@ -532,7 +532,7 @@ def test_orchestrate_checker_future_exception_handled(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache", "--full",
     ]):
-        with patch("orchestrate._run_checker", side_effect=RuntimeError("checker exploded")):
+        with patch("lib.engine.orchestrator._run_checker", side_effect=RuntimeError("checker exploded")):
             out = io.StringIO()
             with patch("sys.stdout", out):
                 orch_main()
@@ -587,7 +587,7 @@ def test_orchestrate_checks_all_runs_all_checkers(tmp_path):
         "--format", "json", "--no-cache", "--full",
         # no --checks → defaults to "all"
     ]):
-        with patch("orchestrate._run_checker", side_effect=count_checker):
+        with patch("lib.engine.orchestrator._run_checker", side_effect=count_checker):
             out = io.StringIO()
             with patch("sys.stdout", out):
                 orch_main()
@@ -620,8 +620,8 @@ def test_orchestrate_staged_not_git_repo_fallback(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--staged", "--no-cache",
     ]):
-        with patch("orchestrate.get_staged_files", return_value=None):
-            with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator.get_staged_files", return_value=None):
+            with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
                 with patch("sys.stderr", err):
                     out = io.StringIO()
                     with patch("sys.stdout", out):
@@ -645,8 +645,8 @@ def test_orchestrate_since_flag_calls_get_changed_files(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--since", "HEAD~1", "--no-cache",
     ]):
-        with patch("orchestrate.get_changed_files", return_value=[f]) as mock_changed:
-            with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator.get_changed_files", return_value=[f]) as mock_changed:
+            with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
                 with patch("sys.stderr", err):
                     out = io.StringIO()
                     with patch("sys.stdout", out):
@@ -664,8 +664,8 @@ def test_orchestrate_since_not_git_repo_fallback(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--since", "main", "--no-cache",
     ]):
-        with patch("orchestrate.get_changed_files", return_value=None):
-            with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator.get_changed_files", return_value=None):
+            with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
                 with patch("sys.stderr", err):
                     out = io.StringIO()
                     with patch("sys.stdout", out):
@@ -691,7 +691,7 @@ def test_run_checker_model_kwarg_passed_to_run(tmp_path):
     fake_module = types.ModuleType("checkers.check_solid_fake")
     fake_module.run = fake_run
 
-    with patch("orchestrate.importlib.import_module", return_value=fake_module):
+    with patch("lib.engine.orchestrator.importlib.import_module", return_value=fake_module):
         result = _run_checker(
             "SOLID", "checkers.check_solid_fake", tmp_path, "python",
             files=None, agents=1, no_cache=True, cache_ttl_days=7, role="analyzer",
@@ -715,7 +715,7 @@ def test_run_checker_cache_ttl_days_kwarg_passed_to_run(tmp_path):
     fake_module = types.ModuleType("checkers.check_fake_ttl")
     fake_module.run = fake_run
 
-    with patch("orchestrate.importlib.import_module", return_value=fake_module):
+    with patch("lib.engine.orchestrator.importlib.import_module", return_value=fake_module):
         result = _run_checker(
             "Fake", "checkers.check_fake_ttl", tmp_path, "python",
             files=None, agents=1, no_cache=True, cache_ttl_days=14, role=None,
@@ -725,31 +725,121 @@ def test_run_checker_cache_ttl_days_kwarg_passed_to_run(tmp_path):
     assert result["success"] is True
 
 
-# ── --clear-cache ImportError path (lines 203-204) ───────────────────────────────
+def _fake_checker_module(name: str, run_fn):
+    import types
+    mod = types.ModuleType(name)
+    mod.run = run_fn
+    return mod
+
 
 @pytest.mark.unit
-def test_orchestrate_clear_cache_import_error_warns(tmp_path):
-    """--clear-cache when cache module unavailable → ImportError caught, warning printed."""
-    import sys
-    from orchestrate import main as orch_main
-    err = io.StringIO()
+def test_run_checker_cache_dir_passed_when_declared(tmp_path):
+    """_run_checker forwards cache_dir only to a checker whose run() declares it."""
+    from orchestrate import _run_checker
+    captured = {}
 
-    saved = sys.modules.get("common.cache")
-    sys.modules["common.cache"] = None  # makes `from common.cache import ...` raise ImportError
+    def fake_run(path, language, files=None, cache_dir=None):
+        captured["cache_dir"] = cache_dir
+        return {"violations": [], "files_analyzed": 0, "success": True}
 
-    try:
-        with patch.object(sys, "argv", ["orchestrate.py", "--path", str(tmp_path), "--clear-cache"]):
-            with patch("sys.stderr", err):
-                with pytest.raises(SystemExit) as exc:
-                    orch_main()
-    finally:
-        if saved is not None:
-            sys.modules["common.cache"] = saved
+    with patch("lib.engine.orchestrator.importlib.import_module",
+               return_value=_fake_checker_module("checkers.fake_cached", fake_run)):
+        _run_checker("Fake", "checkers.fake_cached", tmp_path, "python", cache_dir=tmp_path / "c")
+
+    assert captured["cache_dir"] == tmp_path / "c"
+
+
+@pytest.mark.unit
+def test_run_checker_cache_dir_not_passed_when_undeclared(tmp_path):
+    """A checker without cache_dir in its run() signature is called without it.
+
+    An unexpected keyword would raise TypeError inside run(), which _run_checker
+    turns into success=False — so success=True proves cache_dir was withheld.
+    """
+    from orchestrate import _run_checker
+
+    def fake_run(path, language, files=None):
+        return {"violations": [], "files_analyzed": 0, "success": True}
+
+    with patch("lib.engine.orchestrator.importlib.import_module",
+               return_value=_fake_checker_module("checkers.fake_plain", fake_run)):
+        result = _run_checker("Fake", "checkers.fake_plain", tmp_path, "python", cache_dir=tmp_path / "c")
+
+    assert result["success"] is True, result.get("error")
+
+
+_AI_CHECKERS = ["check_solid", "check_cqrs", "check_ddd", "check_slap", "check_kiss", "check_yagni"]
+_MECHANICAL_CHECKERS = ["check_dry", "check_naming", "check_comments", "check_lod", "check_inheritance"]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("checker", _AI_CHECKERS)
+def test_ai_checker_forwards_cache_dir_and_ttl_to_run_hybrid(tmp_path, checker):
+    """Every AI-backed CCA checker hands cache_dir and cache_ttl_days to run_hybrid."""
+    import importlib
+    mod = importlib.import_module(f"checkers.{checker}")
+    with patch.object(mod, "run_hybrid", return_value=_DUMMY_RESULT) as hybrid:
+        if hasattr(mod, "check_server_available"):
+            with patch.object(mod, "check_server_available", return_value=True):
+                mod.run(tmp_path, "python", cache_dir=tmp_path / "c", cache_ttl_days=3)
         else:
-            sys.modules.pop("common.cache", None)
+            mod.run(tmp_path, "python", cache_dir=tmp_path / "c", cache_ttl_days=3)
+    kwargs = hybrid.call_args.kwargs
+    assert (kwargs["cache_dir"], kwargs["cache_ttl_days"]) == (tmp_path / "c", 3)
 
-    assert exc.value.code == 0
-    assert "warn" in err.getvalue().lower() or "cache" in err.getvalue().lower()
+
+@pytest.mark.unit
+@pytest.mark.parametrize("checker", _MECHANICAL_CHECKERS)
+def test_mechanical_checker_does_not_declare_cache_dir(checker):
+    """Mechanical-only checkers have no AI pass to cache, so the orchestrator withholds cache_dir."""
+    import importlib
+    import inspect
+    params = inspect.signature(importlib.import_module(f"checkers.{checker}").run).parameters
+    assert "cache_dir" not in params
+
+
+@pytest.mark.unit
+def test_main_passes_agent_cache_dir_to_run_checker(tmp_path):
+    """CCA's orchestrate.main() hands its own cache directory to every _run_checker call."""
+    import orchestrate
+    seen = []
+
+    def capture(*args, **kwargs):
+        seen.append(args[-1])
+        return _DUMMY_RESULT
+
+    with patch.object(sys, "argv", ["orchestrate.py", "--path", str(tmp_path),
+                                    "--checks", "naming", "--full"]):
+        with patch("lib.engine.orchestrator._run_checker", side_effect=capture):
+            with patch("builtins.print"):
+                orchestrate.main()
+
+    assert seen == [orchestrate._CACHE_DIR]
+
+
+@pytest.mark.unit
+def test_main_uses_cca_cache_dir_env_var_when_set(tmp_path, monkeypatch):
+    """CCA_CACHE_DIR, read at main() call time, becomes the engine's cache_dir."""
+    import orchestrate
+    override = tmp_path / "cca-cache"
+    monkeypatch.setenv("CCA_CACHE_DIR", str(override))
+
+    with patch("orchestrate._engine_main") as engine_main:
+        orchestrate.main()
+
+    assert engine_main.call_args.kwargs["cache_dir"] == override
+
+
+@pytest.mark.unit
+def test_main_uses_default_cache_dir_when_env_var_unset(monkeypatch):
+    """Without CCA_CACHE_DIR the engine gets the default _CACHE_DIR."""
+    import orchestrate
+    monkeypatch.delenv("CCA_CACHE_DIR", raising=False)
+
+    with patch("orchestrate._engine_main") as engine_main:
+        orchestrate.main()
+
+    assert engine_main.call_args.kwargs["cache_dir"] == orchestrate._CACHE_DIR
 
 
 # ── __main__ guard (line 392) ────────────────────────────────────────────────────
@@ -762,7 +852,7 @@ def test_main_entrypoint_callable(tmp_path):
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache", "--full",
     ]):
-        with patch("orchestrate._run_checker", return_value=_DUMMY_RESULT):
+        with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
             out = io.StringIO()
             with patch("sys.stdout", out):
                 orch_main()

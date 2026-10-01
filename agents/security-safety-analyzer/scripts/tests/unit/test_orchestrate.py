@@ -118,6 +118,40 @@ class TestRunChecker:
         assert "error" in result
         assert result["violations"] == []
 
+    def _fake_module(self, run_fn):
+        import types
+        mod = types.ModuleType("checkers.fake")
+        mod.run = run_fn
+        return mod
+
+    def test_cache_dir_passed_only_when_declared(self, tmp_path):
+        captured = {}
+
+        def declares(path, language, cache_dir=None):
+            captured["cache_dir"] = cache_dir
+            return {"success": True, "violations": []}
+
+        with patch("lib.engine.orchestrator.importlib.import_module",
+                   return_value=self._fake_module(declares)):
+            _run_checker("fake", "checkers.fake", tmp_path, "python", cache_dir=tmp_path / "c")
+        assert captured["cache_dir"] == tmp_path / "c"
+
+    def test_cache_dir_withheld_from_checker_that_does_not_declare_it(self, tmp_path):
+        def plain(path, language, files=None):
+            return {"success": True, "violations": []}
+
+        with patch("lib.engine.orchestrator.importlib.import_module",
+                   return_value=self._fake_module(plain)):
+            result = _run_checker("fake", "checkers.fake", tmp_path, "python", cache_dir=tmp_path / "c")
+        assert result["success"] is True, result.get("error")
+
+    def test_no_ssa_checker_declares_cache_dir(self):
+        import importlib
+        import inspect
+        for key, module_path in CHECKERS.items():
+            params = inspect.signature(importlib.import_module(module_path).run).parameters
+            assert "cache_dir" not in params, key
+
     def test_estimate_token_savings(self):
         savings = _estimate_token_savings(total_violations=10, checkers_run=5)
         assert savings > 0

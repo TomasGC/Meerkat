@@ -19,6 +19,19 @@ _ALL_EXTENSIONS = set(language_config.extensions())
 
 _TEST_MARKERS = ("test", "spec", "fixture", "mock", "migration")
 
+_HASH_COMMENT_EXTS = frozenset(language_config.comment_style_extensions("hash"))
+
+# Python is excluded deliberately: check_inheritance handles it through a
+# dedicated AST pass, and would scan every .py file twice otherwise.
+_CLASS_LANG_EXTS = frozenset(
+    language_config.extensions_where("has_inheritance") - set(language_config.extensions("python"))
+)
+
+
+def is_hash_comment_file(path: Path) -> bool:
+    """True if file uses # for comments (Python, PS, Bash, YAML, Ruby, Perl, Dockerfile)."""
+    return path.suffix in _HASH_COMMENT_EXTS or language_config.matches_filename("dockerfile", path.name)
+
 
 def discover_files(path: Path, extensions: list[str] | None = None) -> list[Path]:
     """Return source files under path, skipping irrelevant directories. Results cached."""
