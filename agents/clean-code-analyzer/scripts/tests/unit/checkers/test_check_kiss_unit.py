@@ -19,6 +19,7 @@ HIGH_COMPLEXITY_OUTPUT = json.dumps({
         {
             "file": "app.py",
             "function": "process_data",
+            "line": 10,
             "cyclomatic_complexity": 15,
             "nesting_depth": 4,
             "lines": 80,
@@ -227,3 +228,18 @@ def test_kiss_files_analyzed_zero_gets_set_from_source_files(tmp_path):
 
     assert result["success"] is True
     assert result["files_analyzed"] >= 1  # set from source_files (line 75)
+
+
+@pytest.mark.unit
+def test_kiss_complexity_violation_carries_def_line(tmp_path, mocked_calc_complexity):
+    """The complexity tool's def line is reported, not a hardcoded 0."""
+    (tmp_path / "app.py").write_text("def process_data(): pass\n")
+
+    with patch("subprocess.run") as mock_run, \
+         patch.object(kiss_mod, "check_server_available", return_value=False):
+        mock_run.return_value = MagicMock(
+            returncode=0, stdout=HIGH_COMPLEXITY_OUTPUT, stderr=""
+        )
+        result = run(tmp_path, "python")
+
+    assert [v["line"] for v in result["violations"]] == [10]

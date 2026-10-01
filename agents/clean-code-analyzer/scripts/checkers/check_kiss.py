@@ -47,7 +47,7 @@ def run(
                     violations.append({
                         "principle": "KISS",
                         "file": issue_file,
-                        "line": 0,
+                        "line": issue.get("line", 0),
                         "severity": issue.get("severity", "medium"),
                         "message": (
                             f"High complexity: {issue.get('function', '?')} — "

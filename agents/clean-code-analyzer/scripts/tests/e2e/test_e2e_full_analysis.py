@@ -59,48 +59,90 @@ def test_clean_code_zero_violations(local_ai_service):
     assert data["total_violations"] == 0, f"Unexpected violations: {data['violations']}"
 
 
-@pytest.mark.e2e
-def test_incremental_mode(local_ai_service, tmp_path):
-    """--since HEAD: only dirty.py (uncommitted) analyzed, clean.py (committed) skipped."""
-    # Set up git repo
-    for cmd in [
-        ["git", "init"],
-        ["git", "config", "user.email", "test@test.com"],
-        ["git", "config", "user.name", "Test"],
-    ]:
-        subprocess.run(cmd, cwd=str(tmp_path), check=True)
+_VIOLATING_SOURCE = "x = 42\n# TODO: x\n"
+_EXTRA_VIOLATION = "y = 99\n# TODO: y\n"
 
-    clean = tmp_path / "clean.py"
-    clean.write_text((FIXTURES_CLEAN / "clean_service.py").read_text())
-    subprocess.run(["git", "add", "."], cwd=str(tmp_path), check=True)
-    subprocess.run(
-        ["git", "commit", "-m", "init"], cwd=str(tmp_path), check=True
-    )
 
-    dirty = tmp_path / "dirty.py"
-    dirty.write_text((FIXTURES_DIRTY / "error_handling_violations.py").read_text())
+def _git(repo: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=str(repo), check=True, capture_output=True)
 
+
+def _init_repo_with_two_violating_files(repo: Path) -> None:
+    """Repo on branch `main` with a.py and b.py committed, both violating naming + comments."""
+    _git(repo, "init", "-b", "main")
+    _git(repo, "config", "user.email", "test@test.com")
+    _git(repo, "config", "user.name", "Test")
+    (repo / "a.py").write_text(_VIOLATING_SOURCE)
+    (repo / "b.py").write_text(_VIOLATING_SOURCE)
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-m", "init")
+
+
+def _append_violation(path: Path) -> None:
+    path.write_text(path.read_text() + _EXTRA_VIOLATION)
+
+
+def _run_mechanical(repo: Path, *mode_flags: str) -> dict:
     result = subprocess.run(
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(tmp_path),
-            "--since", "HEAD",
-            "--checks", "error_handling",
+            "--path", str(repo),
+            *mode_flags,
+            "--checks", "naming,comments",
             "--format", "json",
             "--no-cache",
         ],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=120,
     )
     assert result.returncode == 0, f"stderr: {result.stderr}"
-    data = json.loads(result.stdout)
+    return json.loads(result.stdout)
 
+
+def _assert_only_a_py(data: dict) -> None:
     files = {v["file"] for v in data["violations"]}
-    assert all("dirty" in f for f in files), (
-        f"Expected only dirty.py violations; got: {files}"
-    )
+    assert data["violations"], "Expected violations in a.py; got none"
+    assert files == {"a.py"}, f"Expected only a.py violations; got: {files}"
+
+
+@pytest.mark.e2e
+def test_incremental_since_head_only_modified_file(tmp_path):
+    """--since HEAD: only the modified tracked file is analyzed; the unchanged one is skipped."""
+    _init_repo_with_two_violating_files(tmp_path)
+    _append_violation(tmp_path / "a.py")
+
+    data = _run_mechanical(tmp_path, "--since", "HEAD")
+
+    _assert_only_a_py(data)
+    assert data["incremental_files"] == 1
+
+
+@pytest.mark.e2e
+def test_incremental_staged_only_staged_file(tmp_path):
+    """--staged: of two modified files, only the staged one is analyzed."""
+    _init_repo_with_two_violating_files(tmp_path)
+    _append_violation(tmp_path / "a.py")
+    _append_violation(tmp_path / "b.py")
+    _git(tmp_path, "add", "a.py")
+
+    data = _run_mechanical(tmp_path, "--staged")
+
+    _assert_only_a_py(data)
+
+
+@pytest.mark.e2e
+def test_incremental_branch_vs_main_default_mode(tmp_path):
+    """No incremental flag: auto branch-vs-main analyzes only files changed on the feature branch."""
+    _init_repo_with_two_violating_files(tmp_path)
+    _git(tmp_path, "checkout", "-b", "feature")
+    _append_violation(tmp_path / "a.py")
+    _git(tmp_path, "commit", "-am", "change a")
+
+    data = _run_mechanical(tmp_path)
+
+    _assert_only_a_py(data)
 
 
 @pytest.mark.e2e

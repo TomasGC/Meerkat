@@ -47,7 +47,7 @@ def run(
                     violations.append({
                         "principle": "YAGNI",
                         "file": sym_file,
-                        "line": sym.get("line", 0),
+                        "line": sym.get("line_start", 0),
                         "severity": "high" if sym.get("confidence") == "high" else "medium",
                         "message": f"Unused {sym.get('type', 'symbol')}: {sym.get('name', '?')}",
                         "suggestion": "Remove dead code to reduce maintenance burden",

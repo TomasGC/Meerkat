@@ -79,3 +79,21 @@ def test_script_execution_success(script, temp_python_file, monkeypatch):
     assert result["language"] == "python"
     assert result["total_unused"] >= 1
     assert len(result["unused_symbols"]) >= 1
+
+
+def test_detect_language_ignores_data_files(script, tmp_path):
+    """One .py beside many .json/.md/.yaml files still resolves to python."""
+    (tmp_path / "service.py").touch()
+    data = tmp_path / "expected"
+    data.mkdir()
+    for i in range(10):
+        (data / f"r{i}.json").touch()
+        (data / f"n{i}.md").touch()
+        (data / f"c{i}.yaml").touch()
+    assert script._detect_language(tmp_path) == "python"
+
+
+def test_detect_language_without_sources_is_unknown(script, tmp_path):
+    """A folder holding only data files has no language."""
+    (tmp_path / "a.json").touch()
+    assert script._detect_language(tmp_path) == "unknown"

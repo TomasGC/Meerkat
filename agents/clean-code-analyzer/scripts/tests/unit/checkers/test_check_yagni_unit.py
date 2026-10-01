@@ -27,15 +27,15 @@ pytestmark = pytest.mark.skipif(
 _UNUSED_JSON = json.dumps({
     "files_analyzed": 3,
     "unused_symbols": [
-        {"file": "src/utils.py", "line": 10, "type": "function", "name": "old_helper", "confidence": "high"},
+        {"file": "src/utils.py", "line_start": 10, "type": "function", "name": "old_helper", "confidence": "high"},
     ],
 })
 
 _UNUSED_TWO_FILES_JSON = json.dumps({
     "files_analyzed": 2,
     "unused_symbols": [
-        {"file": "targeted.py", "line": 5, "type": "function", "name": "targeted_func", "confidence": "high"},
-        {"file": "other.py", "line": 8, "type": "function", "name": "other_func", "confidence": "high"},
+        {"file": "targeted.py", "line_start": 5, "type": "function", "name": "targeted_func", "confidence": "high"},
+        {"file": "other.py", "line_start": 8, "type": "function", "name": "other_func", "confidence": "high"},
     ],
 })
 
@@ -200,3 +200,17 @@ def test_yagni_ollama_discover_files_mixed_language(tmp_path):
         result = run(tmp_path, "mixed", files=None)
 
     assert result["success"] is True
+
+
+@pytest.mark.unit
+def test_unused_symbol_carries_line_start(tmp_path):
+    """find_unused_code reports `line_start`; the violation must carry it, not 0."""
+    mock_result = MagicMock(returncode=0, stdout=_UNUSED_JSON)
+    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+        mock_path.exists.return_value = True
+        mock_path.__str__.return_value = "/fake/find_unused.py"
+        with patch("subprocess.run", return_value=mock_result):
+            with patch("checkers.check_yagni.check_server_available", return_value=False):
+                result = run(tmp_path, "python")
+
+    assert [v["line"] for v in result["violations"]] == [10]
