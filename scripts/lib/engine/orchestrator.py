@@ -63,6 +63,7 @@ def _run_checker(
     no_cache: bool = False,
     cache_ttl_days: int = 7,
     role: str | None = None,
+    cache_dir: Path | None = None,
 ) -> dict:
     try:
         mod = importlib.import_module(module_path)
@@ -78,6 +79,8 @@ def _run_checker(
             kwargs["cache_ttl_days"] = cache_ttl_days
         if "role" in params and role is not None:
             kwargs["role"] = role
+        if "cache_dir" in params and cache_dir is not None:
+            kwargs["cache_dir"] = cache_dir
         return mod.run(path, language, **kwargs)
     except Exception as exc:
         return {
@@ -280,6 +283,7 @@ def main(
             future = executor.submit(
                 _run_checker, name, mod_path, path, language,
                 incremental_files, args.agents, args.no_cache, args.cache_ttl, args.role,
+                cache_dir,
             )
             future.add_done_callback(lambda f, n=name: on_checker_done(f, n))
 

@@ -268,10 +268,14 @@ async def analyze_files_async(
     cache_ttl_days: int = 7,
     timeout: int | None = 600,
     extra_slots: dict | None = None,
+    failed: set | None = None,
 ) -> list[dict]:
     """Analyze multiple files concurrently — all HTTP calls in-flight simultaneously.
 
     extra_slots maps a file Path to additional prompt format slots for that file.
+    failed, when given, receives the Path of every file for which at least one chunk
+    produced no usable response (no response, unparseable output, or an exception).
+    A response that parses to an empty list is a clean result, not a failure.
     """
     if prompts_dir is None:
         raise ValueError("prompts_dir is required")
@@ -292,6 +296,7 @@ async def analyze_files_async(
         source = file_path.read_text(encoding="utf-8", errors="replace")
         results: list[dict] = []
         file_slots = extra_slots.get(file_path, {}) if extra_slots else {}
+        chunk_failed = False
         for chunk in split_into_chunks(source, max_chars):
             prompt = template.format(language=language, source=chunk, **file_slots)
             if agents > 1:
@@ -300,10 +305,14 @@ async def analyze_files_async(
                     return_exceptions=True,
                 )
                 seen: set[tuple] = set()
+                chunk_usable = False
                 for resp in responses:
                     if isinstance(resp, Exception) or not resp:
                         continue
-                    for item in extract_json_array(resp) or []:
+                    parsed = extract_json_array(resp)
+                    if parsed is not None:
+                        chunk_usable = True
+                    for item in parsed or []:
                         key = (
                             item.get("file", ""),
                             item.get("line", 0),
@@ -312,10 +321,17 @@ async def analyze_files_async(
                         if key not in seen:
                             seen.add(key)
                             results.append(item)
+                if not chunk_usable:
+                    chunk_failed = True
             else:
                 response = await call_model_async(prompt, role=role, timeout=timeout)
-                if response:
-                    results.extend(extract_json_array(response) or [])
+                parsed = extract_json_array(response) if response else None
+                if parsed is None:
+                    chunk_failed = True
+                results.extend(parsed or [])
+
+        if failed is not None and chunk_failed:
+            failed.add(file_path)
 
         for item in results:
             item["source_file"] = str(file_path)
@@ -328,9 +344,11 @@ async def analyze_files_async(
     tasks = [analyze_one(Path(fp)) for fp in file_paths]
     nested = await asyncio.gather(*tasks, return_exceptions=True)
     all_results: list[dict] = []
-    for item in nested:
+    for fp, item in zip(file_paths, nested):
         if isinstance(item, Exception):
             print(f"[WARN] File analysis error: {item}", file=sys.stderr)
+            if failed is not None:
+                failed.add(Path(fp))
         else:
             all_results.extend(item)
     return all_results
@@ -348,12 +366,17 @@ def analyze_files_parallel(
     cache_ttl_days: int = 7,
     timeout: int | None = 600,
     extra_slots: dict | None = None,
+    failed: set | None = None,
 ) -> list[dict]:
-    """Analyze multiple files with local AI — all HTTP calls in-flight simultaneously via asyncio."""
+    """Analyze multiple files with local AI — all HTTP calls in-flight simultaneously via asyncio.
+
+    See analyze_files_async for the `failed` contract.
+    """
     return asyncio.run(analyze_files_async(
         files, language, role, prompt_name, prompts_dir,
         max_chars=max_chars, agents=agents, no_cache=no_cache,
         cache_ttl_days=cache_ttl_days, timeout=timeout, extra_slots=extra_slots,
+        failed=failed,
     ))
 
 

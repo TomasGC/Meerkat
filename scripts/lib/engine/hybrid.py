@@ -10,6 +10,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from typing import Callable
 
 _SHARED = Path.home() / ".claude" / "scripts"
 if str(_SHARED) not in sys.path:
@@ -17,6 +18,7 @@ if str(_SHARED) not in sys.path:
 
 from lib.ai.model_utils import analyze_files_parallel, check_server_available
 from lib.config import language_config
+from lib.engine.cache import get_cached, set_cached
 from lib.engine.dedup import drop_near_duplicates, format_known_findings
 from lib.engine.discovery import _LANG_EXTENSIONS, _TEST_MARKERS, discover_files
 
@@ -80,51 +82,160 @@ def run_hybrid(
     path: Path,
     language: str,
     principle: str,
-    prompt: str,
+    prompt: str | None,
     rules: dict[str, list[Rule]],
-    prompts_dir: Path,
+    prompts_dir: Path | None = None,
     files: list | None = None,
     agents: int = 1,
     no_cache: bool = False,
     role: str = "analyzer",
     ai_type_key: str = "issue_type",
     default_severity: str = "medium",
+    mechanical_fn: Callable[[Path, list | None], tuple[list[dict], int] | dict] | None = None,
+    format_ai_violation: Callable[[dict, str], dict] | None = None,
+    cache_dir: Path | None = None,
+    cache_ttl_days: int = 7,
 ) -> dict:
-    """Run the mechanical pass, then the AI pass informed by its results."""
+    """Run the mechanical pass, then the AI pass informed by its results.
+
+    `mechanical_fn(path, files) -> (violations, files_analyzed)` replaces the
+    internal regex scan when the checker's mechanical layer isn't a per-line
+    rule table (external subprocess, AST walk, stateful multi-pattern scan).
+    It may instead return a full checker-result dict (with "success") to
+    short-circuit on a hard failure — the AI pass is skipped in that case.
+
+    `format_ai_violation(item, rel_path) -> violation_dict` replaces the
+    default description/fix/principle formatting when a checker's AI prompt
+    returns differently-shaped items (e.g. a dynamic principle tag).
+
+    `prompt=None` skips the AI pass entirely — for checkers with no AI layer.
+
+    `cache_dir` enables a per-file cache of the raw AI items, keyed by file
+    content hash and `(prompt, role, agents)`. Only misses reach the model;
+    hits and fresh items go through the same formatting and reconciliation.
+    `no_cache=True` bypasses it. With `cache_dir=None` nothing is cached here
+    and the result carries no cache counters.
+    """
     start = time.time()
-    source_files = select_files(path, language, files)
+    use_cache = cache_dir is not None and not no_cache
+    cache_key = f"{prompt}__{role}__a{agents}"
+    cache_hits = 0
+    cache_total = 0
 
-    violations: list[dict] = []
     per_file: dict[Path, list[dict]] = {}
-    for file in source_files:
-        per_file[file] = scan_patterns(file, path, resolve_language(file, language), principle, rules)
-        violations.extend(per_file[file])
+    if mechanical_fn is not None:
+        mech_result = mechanical_fn(path, files)
+        if isinstance(mech_result, dict):
+            mech_result["principle"] = principle
+            mech_result["duration_ms"] = int((time.time() - start) * 1000)
+            return mech_result
+        violations, files_analyzed = mech_result
+        violations = list(violations)
+    else:
+        source_files = select_files(path, language, files)
+        violations = []
+        for file in source_files:
+            per_file[file] = scan_patterns(file, path, resolve_language(file, language), principle, rules)
+            violations.extend(per_file[file])
+        files_analyzed = len(source_files)
 
-    if check_server_available(role) and source_files:
-        extra_slots = {
-            f: {"known_findings": format_known_findings(per_file.get(f, []))}
-            for f in source_files
-        }
-        ai_violations = []
-        for item in analyze_files_parallel(source_files, language, role, prompt,
-                                           prompts_dir=prompts_dir, agents=agents,
-                                           no_cache=no_cache, extra_slots=extra_slots):
-            src = Path(item.get("source_file", ""))
-            rel = str(src.relative_to(path) if src.is_relative_to(path) else src)
-            ai_violations.append({
-                "principle": principle,
-                "file": rel,
-                "line": item.get("line", 0),
-                "severity": item.get("severity", default_severity),
-                "message": f"[{item.get(ai_type_key, '?')}]: {item.get('description', '')}",
-                "suggestion": item.get("fix", ""),
-            })
-        violations.extend(drop_near_duplicates(ai_violations, violations))
+    if prompt is not None:
+        source_files = select_files(path, language, files)
+        if check_server_available(role) and source_files:
+            if mechanical_fn is not None:
+                by_file: dict[str, list[dict]] = {}
+                for v in violations:
+                    by_file.setdefault(v.get("file", ""), []).append(v)
 
-    return {
+                def known_for(f: Path) -> list[dict]:
+                    rel = str(f.relative_to(path) if f.is_relative_to(path) else f)
+                    return by_file.get(rel, [])
+            else:
+                def known_for(f: Path) -> list[dict]:
+                    return per_file.get(f, [])
+
+            extra_slots = {
+                f: {"known_findings": format_known_findings(known_for(f))}
+                for f in source_files
+            }
+            if use_cache:
+                raw_items, misses = _read_ai_cache(cache_dir, source_files, cache_key, cache_ttl_days)
+                cache_hits = len(source_files) - len(misses)
+                cache_total = len(source_files)
+                if misses:
+                    failed: set[Path] = set()
+                    fresh = analyze_files_parallel(misses, language, role, prompt,
+                                                   prompts_dir=prompts_dir, agents=agents,
+                                                   no_cache=no_cache,
+                                                   extra_slots={f: extra_slots[f] for f in misses},
+                                                   failed=failed)
+                    # A failed call is not a clean result: leave it uncached so the next run retries it.
+                    _write_ai_cache(cache_dir, [f for f in misses if f not in failed], cache_key, fresh)
+                    raw_items.extend(fresh)
+            else:
+                raw_items = analyze_files_parallel(source_files, language, role, prompt,
+                                                   prompts_dir=prompts_dir, agents=agents,
+                                                   no_cache=no_cache, extra_slots=extra_slots)
+            ai_violations = []
+            for item in raw_items:
+                src = Path(item.get("source_file", ""))
+                rel = str(src.relative_to(path) if src.is_relative_to(path) else src)
+                if format_ai_violation is not None:
+                    ai_violations.append(format_ai_violation(item, rel))
+                else:
+                    ai_violations.append({
+                        "principle": principle,
+                        "file": rel,
+                        "line": item.get("line", 0),
+                        "severity": item.get("severity", default_severity),
+                        "message": f"[{item.get(ai_type_key, '?')}]: {item.get('description', '')}",
+                        "suggestion": item.get("fix", ""),
+                    })
+            violations.extend(drop_near_duplicates(ai_violations, violations))
+            if not files_analyzed:
+                files_analyzed = len(source_files)
+
+    result = {
         "principle": principle,
         "success": True,
         "violations": violations,
-        "files_analyzed": len(source_files),
+        "files_analyzed": files_analyzed,
         "duration_ms": int((time.time() - start) * 1000),
     }
+    if use_cache:
+        result["cache_hits"] = cache_hits
+        result["cache_total"] = cache_total
+    return result
+
+
+def _read_ai_cache(
+    cache_dir: Path, source_files: list[Path], key: str, ttl_days: int,
+) -> tuple[list[dict], list[Path]]:
+    """Return (raw AI items served from cache, files that missed).
+
+    Cached items carry no path: the entry is keyed by content hash, so the
+    current path is re-attached — identical content under a new name must
+    report the new name.
+    """
+    items: list[dict] = []
+    misses: list[Path] = []
+    for f in source_files:
+        cached = get_cached(cache_dir, f, key, ttl_days)
+        if cached is None:
+            misses.append(f)
+            continue
+        items.extend({**item, "source_file": str(f), "source_file_name": f.name} for item in cached)
+    return items, misses
+
+
+def _write_ai_cache(cache_dir: Path, misses: list[Path], key: str, fresh: list[dict]) -> None:
+    """Store each missed file's raw AI items — `[]` included, so a clean file hits next time."""
+    by_file: dict[Path, list[dict]] = {f: [] for f in misses}
+    for item in fresh:
+        src = Path(item.get("source_file", ""))
+        if src in by_file:
+            by_file[src].append(
+                {k: v for k, v in item.items() if k not in ("source_file", "source_file_name")}
+            )
+    for f, items in by_file.items():
+        set_cached(cache_dir, f, key, items)
