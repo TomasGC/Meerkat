@@ -48,6 +48,16 @@ _RULES = {
         (re.compile(r'"math/rand"|\brand\.(?:Intn|Int31|Float64)\s*\('), _WEAK_RANDOM, "medium", _WEAK_RANDOM_FIX),
         (re.compile(r'InsecureSkipVerify\s*:\s*true'), _NO_TLS_VERIFY, "high", _NO_TLS_VERIFY_FIX),
     ],
+    "kotlin": [
+        (re.compile(r'MessageDigest\.getInstance\s*\(\s*"(?:MD5|MD2|SHA-?1)"', re.IGNORECASE),
+         _WEAK_HASH, "high", _WEAK_HASH_FIX),
+        (re.compile(r'Cipher\.getInstance\s*\(\s*"(?:DES|DESede|TripleDES|RC2|RC4|ARCFOUR)\b', re.IGNORECASE),
+         "Obsolete symmetric cipher — DES, 3DES, RC2 and RC4 are no longer safe", "high",
+         "Use AES with an authenticated mode such as GCM"),
+        (re.compile(r'Cipher\.getInstance\s*\(\s*"[^"/]+/ECB/', re.IGNORECASE),
+         "ECB mode leaks plaintext structure", "high",
+         "Use AES/GCM/NoPadding with a random IV"),
+    ],
     "javascript": [
         (re.compile(r'createHash\s*\(\s*["\'](?:md5|sha1)["\']'), _WEAK_HASH, "high", _WEAK_HASH_FIX),
         (re.compile(r'Math\.random\s*\('), _WEAK_RANDOM, "medium", _WEAK_RANDOM_FIX),

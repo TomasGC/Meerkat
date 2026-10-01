@@ -173,3 +173,14 @@ class TestRunFunction:
     def test_empty_dir_no_violations(self, tmp_path):
         result = run(tmp_path, "python")
         assert result["violations"] == []
+
+
+class TestKotlinChecks:
+    def test_detects_empty_catch(self, tmp_path):
+        f = _make_file(tmp_path, "Job.kt", "try { work() } catch (e: Exception) {}\n")
+        result = run(tmp_path, "kotlin", files=[f])
+        assert [(v["line"], v["message"]) for v in result["violations"]] == [(1, "Empty catch block")]
+
+    def test_handled_catch_is_clean(self, tmp_path):
+        f = _make_file(tmp_path, "Job.kt", "try { work() } catch (e: Exception) { log.error(e) }\n")
+        assert run(tmp_path, "kotlin", files=[f])["violations"] == []
