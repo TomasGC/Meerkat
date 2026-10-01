@@ -1,0 +1,3 @@
+{
+  "service.go": "[{\"weakness_type\": \"WEAK_ALGORITHM\", \"line\": 22, \"severity\": \"high\", \"description\": \"md5.Sum used for a checksum\", \"fix\": \"Use sha256.Sum256\"}]"
+}

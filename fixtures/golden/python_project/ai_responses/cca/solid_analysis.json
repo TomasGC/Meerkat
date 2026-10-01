@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"principle\": \"S\", \"line\": 44, \"severity\": \"high\", \"violation\": \"OrderService.save_order persists, emails, audits, updates stock and charges payment\", \"suggestion\": \"Split persistence, notification and payment into separate collaborators\"}]"
+}

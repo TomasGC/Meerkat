@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"issue_type\": \"RACE_CONDITION\", \"line\": 72, \"severity\": \"low\", \"description\": \"sleep used as a delay after login\", \"fix\": \"Use an explicit rate limiter\"}]"
+}

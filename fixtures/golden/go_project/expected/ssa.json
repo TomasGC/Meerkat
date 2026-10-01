@@ -1,0 +1,84 @@
+{
+  "agent": "ssa",
+  "project": "go_project",
+  "violations": [
+    {
+      "principle": "Crypto",
+      "file": "service.go",
+      "line": 4,
+      "severity": "high",
+      "message": "Weak hash algorithm — MD5 and SHA-1 are broken for security use",
+      "suggestion": "Use SHA-256 or better; for passwords use bcrypt, scrypt or Argon2"
+    },
+    {
+      "principle": "Security",
+      "file": "service.go",
+      "line": 9,
+      "severity": "high",
+      "message": "Hardcoded secret or credential",
+      "suggestion": "Use environment variables or a secrets manager; never hardcode credentials"
+    },
+    {
+      "principle": "Crypto",
+      "file": "service.go",
+      "line": 22,
+      "severity": "high",
+      "message": "Weak hash algorithm — MD5 and SHA-1 are broken for security use",
+      "suggestion": "Use SHA-256 or better; for passwords use bcrypt, scrypt or Argon2"
+    },
+    {
+      "principle": "Security",
+      "file": "service.go",
+      "line": 27,
+      "severity": "high",
+      "message": "[COMMAND_INJECTION]: name is passed to sh -c unescaped",
+      "suggestion": "Run the binary directly with fixed arguments"
+    },
+    {
+      "principle": "CrashBug",
+      "file": "service.go",
+      "line": 31,
+      "severity": "high",
+      "message": "Type assertion without comma-ok — panics on a type mismatch",
+      "suggestion": "Use `v, ok := x.(T)` and handle ok == false"
+    }
+  ],
+  "reconciliation": {
+    "Concurrency": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "CrashBug": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "Crypto": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "Deserialization": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "Misconfiguration": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "PromptInjection": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "ResourceLeak": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "Security": {
+      "ai_items": 2,
+      "dropped": 1
+    },
+    "SensitiveData": {
+      "ai_items": 0,
+      "dropped": 0
+    }
+  }
+}

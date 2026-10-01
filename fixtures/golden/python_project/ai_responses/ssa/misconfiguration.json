@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"misconfig_type\": \"DEBUG_EXPOSED\", \"line\": 6, \"severity\": \"high\", \"description\": \"DEBUG hardcoded to True\", \"fix\": \"Read DEBUG from the environment\"}]"
+}

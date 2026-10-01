@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"weakness_type\": \"WEAK_ALGORITHM\", \"line\": 54, \"severity\": \"high\", \"description\": \"MD5 used to fingerprint data\", \"fix\": \"Use hashlib.sha256\"}]"
+}

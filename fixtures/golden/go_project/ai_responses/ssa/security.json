@@ -1,0 +1,3 @@
+{
+  "service.go": "[{\"vulnerability_type\": \"HARDCODED_SECRET\", \"line\": 9, \"severity\": \"high\", \"description\": \"Live API key committed as a constant\", \"fix\": \"Load it from the environment\"}, {\"vulnerability_type\": \"COMMAND_INJECTION\", \"line\": 27, \"severity\": \"high\", \"description\": \"name is passed to sh -c unescaped\", \"fix\": \"Run the binary directly with fixed arguments\"}]"
+}

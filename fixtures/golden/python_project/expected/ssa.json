@@ -1,0 +1,144 @@
+{
+  "agent": "ssa",
+  "project": "python_project",
+  "violations": [
+    {
+      "principle": "Security",
+      "file": "service.py",
+      "line": 5,
+      "severity": "high",
+      "message": "Hardcoded secret or credential",
+      "suggestion": "Use environment variables or a secrets manager; never hardcode credentials"
+    },
+    {
+      "principle": "Misconfiguration",
+      "file": "service.py",
+      "line": 6,
+      "severity": "high",
+      "message": "Debug output enabled — leaks stack traces and configuration",
+      "suggestion": "Guard behind an environment check and disable it outside development"
+    },
+    {
+      "principle": "Crypto",
+      "file": "service.py",
+      "line": 54,
+      "severity": "high",
+      "message": "Weak hash algorithm — MD5 and SHA-1 are broken for security use",
+      "suggestion": "Use SHA-256 or better; for passwords use bcrypt, scrypt or Argon2"
+    },
+    {
+      "principle": "Deserialization",
+      "file": "service.py",
+      "line": 58,
+      "severity": "high",
+      "message": "Untrusted data deserialized into arbitrary objects — remote code execution risk",
+      "suggestion": "Use a data-only format (JSON) with an explicit schema, or restrict allowed types"
+    },
+    {
+      "principle": "Security",
+      "file": "service.py",
+      "line": 62,
+      "severity": "high",
+      "message": "SQL query built with f-string — SQL injection risk",
+      "suggestion": "Use parameterized queries or sanitize/escape all external input"
+    },
+    {
+      "principle": "Security",
+      "file": "service.py",
+      "line": 67,
+      "severity": "high",
+      "message": "eval()/exec() runs dynamic code — code injection risk",
+      "suggestion": "Use parameterized queries or sanitize/escape all external input"
+    },
+    {
+      "principle": "SensitiveData",
+      "file": "service.py",
+      "line": 71,
+      "severity": "high",
+      "message": "Sensitive field written to a log or console — secrets persist in log storage",
+      "suggestion": "Log an identifier or a masked value instead of the secret itself"
+    },
+    {
+      "principle": "Concurrency",
+      "file": "service.py",
+      "line": 72,
+      "severity": "low",
+      "message": "Sleep used to order threads — race prone; synchronize explicitly",
+      "suggestion": "Protect shared state with a lock or use an immutable/atomic alternative"
+    },
+    {
+      "principle": "ResourceLeak",
+      "file": "service.py",
+      "line": 76,
+      "severity": "medium",
+      "message": "File or socket opened outside a with block",
+      "suggestion": "Use a with statement so the handle closes on every path"
+    },
+    {
+      "principle": "Security",
+      "file": "service.py",
+      "line": 76,
+      "severity": "high",
+      "message": "[PATH_TRAVERSAL]: read_report opens a caller-supplied path without validation",
+      "suggestion": "Resolve the path and require it to stay under the reports directory"
+    },
+    {
+      "principle": "CrashBug",
+      "file": "service.py",
+      "line": 82,
+      "severity": "medium",
+      "message": "Division by variable `count` without zero check — ZeroDivisionError risk",
+      "suggestion": "Guard with `if count == 0` or use try/except ZeroDivisionError"
+    },
+    {
+      "principle": "ErrorHandling",
+      "file": "service.py",
+      "line": 83,
+      "severity": "high",
+      "message": "Swallowed exception: bare `except Exception: pass`",
+      "suggestion": "Log the exception or re-raise; never silently swallow"
+    },
+    {
+      "principle": "PromptInjection",
+      "file": "service.py",
+      "line": 88,
+      "severity": "high",
+      "message": "User-controlled variable interpolated directly into prompt f-string — prompt injection risk",
+      "suggestion": "Sanitize or validate user input before including in prompts; use structured slots, not raw interpolation"
+    }
+  ],
+  "reconciliation": {
+    "Concurrency": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "Crypto": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "Deserialization": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "Misconfiguration": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "PromptInjection": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "ResourceLeak": {
+      "ai_items": 1,
+      "dropped": 1
+    },
+    "Security": {
+      "ai_items": 3,
+      "dropped": 2
+    },
+    "SensitiveData": {
+      "ai_items": 1,
+      "dropped": 1
+    }
+  }
+}

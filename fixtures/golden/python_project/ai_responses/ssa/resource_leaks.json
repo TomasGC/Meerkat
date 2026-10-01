@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"leak_type\": \"UNCLOSED_HANDLE\", \"line\": 77, \"severity\": \"medium\", \"description\": \"File handle is read but never closed\", \"fix\": \"Use a with block\"}]"
+}

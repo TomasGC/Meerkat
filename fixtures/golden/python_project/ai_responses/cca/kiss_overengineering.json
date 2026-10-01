@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"pattern\": \"complex-solution\", \"line\": 25, \"severity\": \"high\", \"violation\": \"kitchen_sink nests five conditionals to pick a constant\", \"suggestion\": \"Replace the nesting with a lookup or early returns\"}]"
+}

@@ -1,0 +1,56 @@
+{
+  "agent": "cca",
+  "project": "kotlin_project",
+  "violations": [
+    {
+      "principle": "CompositionOverInheritance",
+      "file": "Service.kt",
+      "line": 7,
+      "severity": "high",
+      "message": "`Level4` inheritance depth 4 (> 3)",
+      "suggestion": "Flatten the hierarchy; use composition to share behaviour"
+    },
+    {
+      "principle": "KISS",
+      "file": "Service.kt",
+      "line": 7,
+      "severity": "medium",
+      "message": "Over-engineering [over-abstraction]: Four empty open classes stacked into a hierarchy that adds no behaviour",
+      "suggestion": "Collapse the hierarchy into one class"
+    },
+    {
+      "principle": "Comments",
+      "file": "Service.kt",
+      "line": 13,
+      "severity": "low",
+      "message": "TODO comment — should be a tracked issue",
+      "suggestion": "Create a GitHub/issue tracker ticket and remove the comment"
+    }
+  ],
+  "reconciliation": {
+    "CQRS": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "DDD": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "KISS": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "SLAP": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "SOLID": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "YAGNI": {
+      "ai_items": 0,
+      "dropped": 0
+    }
+  }
+}

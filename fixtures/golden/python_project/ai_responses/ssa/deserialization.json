@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"issue_type\": \"UNSAFE_DESERIALIZATION\", \"line\": 58, \"severity\": \"high\", \"description\": \"pickle.loads on an opaque session blob\", \"fix\": \"Store sessions as JSON\"}]"
+}

@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"vulnerability_type\": \"HARDCODED_SECRET\", \"line\": 5, \"severity\": \"high\", \"description\": \"Password literal committed in source\", \"fix\": \"Read it from the environment\"}, {\"vulnerability_type\": \"COMMAND_INJECTION\", \"line\": 67, \"severity\": \"high\", \"description\": \"eval executes caller-supplied expression text\", \"fix\": \"Use ast.literal_eval or a parser\"}, {\"vulnerability_type\": \"PATH_TRAVERSAL\", \"line\": 76, \"severity\": \"high\", \"description\": \"read_report opens a caller-supplied path without validation\", \"fix\": \"Resolve the path and require it to stay under the reports directory\"}]"
+}

@@ -1,0 +1,3 @@
+{
+  "service.go": "[{\"function\": \"ProcessOrder\", \"line\": 11, \"severity\": \"medium\", \"violation\": \"mixed abstraction levels: order status rule alongside deep address navigation and printing\", \"suggestion\": \"Extract the zip lookup and the printing into helpers\"}]"
+}
