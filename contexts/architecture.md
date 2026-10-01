@@ -1,8 +1,10 @@
 # Architecture - Meerkat
 
-**Purpose**: Claude Code optimization framework — delegates mechanical tasks to local tools (local AI + Python scripts), keeps Claude focused on strategic reasoning.
+**Purpose**: AI coding assistant optimization framework (Claude Code today) — delegates mechanical tasks to local tools (local AI + Python scripts), keeps the assistant focused on strategic reasoning. Name and vision: see the GitHub wiki.
 
-**Last Updated**: 2026-09-09
+**Direction**: support for other assistants (Codex, others) is planned. Keep the assistant-agnostic core (`scripts/lib/`) separate from the Claude Code host layer (`CLAUDE.md`, skills, hooks, `AGENT.md`, `settings.json`); name the role ("the coding assistant"), not the product, in docs and new designs.
+
+**Last Updated**: 2026-10-01
 
 ---
 
@@ -52,8 +54,9 @@ Local AI  Scripts  Agents
 │   │   └── tests/                   # 415 unit / 47 integration/mock / 30 integration/real (incl. 10 detection fixtures) / 36 e2e
 │   ├── clean-code-analyzer/         # 11-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, Composition)
 │   │   ├── AGENT.md
-│   │   ├── scripts/                 # orchestrate.py + 11 checkers + common/ (model_utils, cache, file_utils)
-│   │   └── tests/                   # 465 unit / 17 integration/mock / 16 integration/real / 9 e2e / 73 untiered
+│   │   ├── scripts/                 # orchestrate.py (registry + call into lib.engine.orchestrator) + 11 checkers
+│   │   │                            # (all via lib.engine.hybrid.run_hybrid) + common/model_utils shim + prompts/local/
+│   │   └── scripts/tests/           # unit + integration/mock (526) / integration/real (live AI) / e2e (15)
 │   ├── security-safety-analyzer/    # 10-checker security and safety analyzer (Security, Crypto, Deserialization, Misconfiguration, SensitiveData, CrashBug, Concurrency, ResourceLeak, ErrorHandling, PromptInjection)
 │   │   ├── AGENT.md
 │   │   └── scripts/                 # orchestrate.py (registry + call into lib.engine.orchestrator) + 10 checkers
@@ -77,9 +80,14 @@ Local AI  Scripts  Agents
 │   │   ├── config/                  # model_config (roles) + language_config (languages, skip dirs, standards)
 │   │   ├── engine/                  # shared analysis engine (extracted from SSA, issue #18): finding, cache,
 │   │   │                            # dedup, discovery, hybrid, orchestrator — cache dir/registry/max_workers/labels
-│   │   │                            # are caller-supplied params, no agent name hardcoded; SSA is the only consumer so far
+│   │   │                            # are caller-supplied params, no agent name hardcoded; used by SSA and CCA (#19)
+│   │   ├── testing/                 # golden.py — golden fixture runner: replay recorded AI responses, compare expected
 │   │   └── cli/                     # BaseCLIScript + tests/
 │   └── tests/                       # Scripts-level tests (e2e, integration-reals)
+│
+├── fixtures/                        # Shared test data, usable by every agent and skill
+│   ├── projects/                    # python_project, go_project, kotlin_project — source only, seeded issues
+│   └── golden/<project>/            # expected/<agent>.json + ai_responses/<agent>/<prompt>.json
 │
 ├── skills/                          # User-invocable slash commands
 │   └── search-tech/                 # Tech search skill

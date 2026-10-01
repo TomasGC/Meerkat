@@ -41,7 +41,7 @@ cd ~/.claude/agents/security-safety-analyzer/scripts
 python -m pytest tests/unit/ -q
 python -m pytest tests/integration/mock/ -q
 python -m pytest tests/e2e/ -q
-python -m pytest tests/unit/ tests/integration/mock/ tests/e2e/ -q   # CI-safe (no local AI)
+python -m pytest tests/unit/ tests/integration/mock/ tests/e2e/ -q --ignore=tests/integration/mock/test_orchestrate.py   # CI-safe (test_orchestrate.py calls live AI)
 python -m pytest tests/integration/real/ -q                          # prompt rendering + live AI
 ```
 
@@ -68,16 +68,35 @@ python ~/.claude/agents/clean-code-analyzer/scripts/orchestrate.py --path /path/
 - `--checks solid,dry` — run specific principles only
 - `--fast` — pass `role="fast"` to all semantic checkers (faster, lower quality)
 - `--role ROLE` — override model role for semantic checkers (analyzer, fast, deep, reasoning)
-- `--no-cache` — bypass per-file content-hash cache
-- `--agents N` — N independent Ollama calls per file, dedup-merged
+- `--no-cache` — bypass the per-file AI result cache
+- `--cache-ttl DAYS` / `--clear-cache` — cache expiry / delete all entries
+- `--agents N` — N independent local AI calls per file, dedup-merged
+
+**Cache**: raw AI results cached per file in `~/.claude/agents/clean-code-analyzer/.cache`, keyed by content
+hash + prompt + role + agent count; files whose AI call failed are never cached. `CCA_CACHE_DIR` overrides the
+directory (read when `main()` runs, so subprocess tests can set it).
 
 ### CCA tests
 
 ```bash
 cd ~/.claude/agents/clean-code-analyzer/scripts
-python -m pytest tests/unit/ -q
-python -m pytest tests/integration/mock/ -q
-python -m pytest tests/unit/ tests/integration/mock/ --cov=checkers --cov=common --cov=orchestrate -q
+python -m pytest tests/unit/ tests/integration/mock/ -q          # CI-safe, incl. golden tests (replayed AI)
+python -m pytest tests/e2e/ -q --deselect e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates
+python -m pytest tests/integration/real/ -q                      # live AI
+```
+
+---
+
+## Golden Fixtures
+
+```bash
+# Golden tests (no live AI — recorded responses are replayed)
+cd ~/.claude/agents/clean-code-analyzer/scripts && python -m pytest tests/integration/mock/test_golden_projects.py tests/e2e/test_golden_cli.py -q
+cd ~/.claude/agents/security-safety-analyzer/scripts && python -m pytest tests/integration/mock/test_golden_projects.py -q
+
+# Regenerate expected files after an intended behavior change, then hand-check every changed record
+python ~/.claude/scripts/cli/update_golden.py --agent cca [--project python_project]
+python ~/.claude/scripts/cli/update_golden.py --agent ssa
 ```
 
 ---
