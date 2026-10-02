@@ -16,19 +16,36 @@ _TEMPLATE_PATH = _CLAUDE_DIR / "configs" / "template_models_config.json"
 _config: dict = {}
 
 
+def _read(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _merge(base: dict, override: dict) -> dict:
+    """Recursive merge; override wins on scalars and lists."""
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
 def _load() -> dict:
     global _config
     if _config:
         return _config
     if not _CONFIG_PATH.exists():
-        if _TEMPLATE_PATH.exists():
-            shutil.copy(_TEMPLATE_PATH, _CONFIG_PATH)
-        else:
+        if not _TEMPLATE_PATH.exists():
             return _config
-    try:
-        _config = json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        pass
+        shutil.copy(_TEMPLATE_PATH, _CONFIG_PATH)
+    # Template is the base, local overrides it — so a role added to the template
+    # later still reaches a local file written before it, and a malformed local
+    # file degrades to the template instead of to an empty config.
+    _config = _merge(_read(_TEMPLATE_PATH), _read(_CONFIG_PATH))
     return _config
 
 
