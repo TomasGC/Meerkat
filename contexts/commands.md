@@ -199,7 +199,15 @@ group_by_language(files, ("code", "data"))       # {language: [files]}, config o
 ```
 
 Kinds: `code`, `markup` (vue, razor), `query` (sql), `data` (yaml), `config` (dockerfile), `prompt` (`.prompt`).
-A checker opts into non-code kinds with a module-level `FILE_KINDS`; SQL is scanned by no checker yet.
+A checker opts into non-code kinds with a module-level `FILE_KINDS`. SQL (#42): SSA security, sensitive_data,
+misconfiguration, error_handling, concurrency, and CCA comments, naming.
+
+```python
+language_config.prompt_language("sql", content)  # 'T-SQL' / 'PostgreSQL' / 'SQL' — what {language} says in a prompt
+```
+
+A dialect pattern added to the template does not reach a `local_languages_config.json` written earlier: lists
+are replaced, not merged. Re-copy the template if the local file has no edits of its own.
 
 The local file overrides the template field by field. To drop a language locally set
 `extensions: []` — deleting its block is not enough, the template puts it back.

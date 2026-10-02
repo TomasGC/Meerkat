@@ -4,6 +4,16 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-03 - [#42] Analyze SQL files with dialect-aware SSA and CCA checkers
+- SSA security, sensitive_data, misconfiguration, error_handling and concurrency accept the `query` kind, with T-SQL and PostgreSQL rules (dynamic SQL by concatenation, printed secrets, `GRANT ALL` / `TO PUBLIC`, `xp_cmdshell`, empty `CATCH`, `WHEN OTHERS THEN NULL`, `NOLOCK`); every rule has a safe-form negative test (`sp_executesql` with parameters, `format(%I/%L)`, `USING`)
+- AI prompts name the detected dialect: `language_config.prompt_language` reads dialect `label`s, `model_utils` fills `{language}` per file (T-SQL / PostgreSQL / SQL), so no checker or prompt changed
+- CCA comments (new `--` comment style) and naming (type sizes like `NVARCHAR(255)` exempt) accept SQL; the other 9 stay code-only, each reason recorded next to `CHECKERS`
+- A repo with no code is labelled by its other files (`sql`, not `unknown`); new golden `sql_project`: SSA 12, CCA 3, BBA 0 findings
+- Tests: scripts 725 → 738, SSA 415 → 455, CCA 540 → 561, BBA 524 → 525; live SSA run on the SQL fixture: pipeline green, model findings noisy
+tags: #sql #ssa #cca #languages #golden-tests
+Ref: https://github.com/TomasGC/Meerkat/issues/42
+Commits: 1fc8bb9, 25c6b2a, b62f7c7, 98c3be0, e5fad1e
+
 2026-10-02 - [#20] Port BBA gap checkers onto the engine, per-language runs
 - BBA's 4 gap checkers (never wired since #9) run on `lib.engine.hybrid` through one `run_gap_checker`: mechanical "no test file in this tier" and AI per-function gaps on every run, AI only on untested files; `orchestrate.py --gaps` runs them with the CCA/SSA CLI; golden expected `bba.json` for the 3 projects
 - The orchestrator runs each checker once per language group it accepts (`FILE_KINDS`, default code), so no prompt reads "mixed" again; SSA misconfiguration and sensitive_data now scan yaml and Dockerfiles, security Razor views; `.prompt` templates are their own `prompt` kind, scanned by prompt_injection only
