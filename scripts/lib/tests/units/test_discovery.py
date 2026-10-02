@@ -72,8 +72,17 @@ class TestDominantLanguageCodeOnly:
         _touch(tmp_path, "a.py", "b.yaml")
         assert dominant_language(tmp_path) == "python"
 
-    def test_only_data_files_is_unknown(self, tmp_path):
-        _touch(tmp_path, "a.yaml", "Dockerfile")
+    def test_repo_without_code_is_voted_on_by_its_other_files(self, tmp_path):
+        """An SQL-only repo reads "sql", not "unknown" (#42)."""
+        _touch(tmp_path, "a.sql", "b.sql", "c.yaml")
+        assert dominant_language(tmp_path) == "sql"
+
+    def test_one_code_file_still_outranks_any_number_of_others(self, tmp_path):
+        _touch(tmp_path, "a.sql", "b.sql", "c.sql", "main.py")
+        assert dominant_language(tmp_path) == "python"
+
+    def test_no_file_with_a_language_is_unknown(self, tmp_path):
+        _touch(tmp_path, "notes.txt", "README")
         assert dominant_language(tmp_path) == "unknown"
 
     def test_skip_dirs_do_not_vote(self, tmp_path):

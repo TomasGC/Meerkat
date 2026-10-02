@@ -54,3 +54,15 @@ def test_report_labels_the_repo_by_its_code(project, tmp_path):
     report = _run(project, tmp_path, "misconfiguration")
     assert report["language"] == "python"
     assert report["languages"] == {"python": 1, "yaml": 1, "dockerfile": 1}
+
+
+def test_sql_only_repo_is_analyzed(tmp_path):
+    """Before #42 no checker accepted the query kind: an SQL-only repo analyzed zero files."""
+    root = tmp_path / "warehouse"
+    root.mkdir()
+    (root / "grants.sql").write_text("GRANT ALL ON orders TO reporting;\n", encoding="utf-8")
+    discovery._DISCOVERY_CACHE.clear()
+    report = _run(root, tmp_path, "misconfiguration,crypto")
+    assert report["language"] == "sql"
+    assert report["languages"] == {"sql": 1}
+    assert [(v["principle"], v["line"]) for v in report["violations"]] == [("Misconfiguration", 1)]
