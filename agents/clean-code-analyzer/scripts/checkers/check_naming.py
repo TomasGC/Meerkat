@@ -13,6 +13,9 @@ if str(_SHARED) not in sys.path:
 from lib.engine.discovery import _SKIP_DIRS, _ALL_EXTENSIONS, _TEST_MARKERS
 from lib.engine.hybrid import run_hybrid
 
+# SQL is analyzed too (#42): magic numbers and strings in procedures and queries
+FILE_KINDS = ("code", "query")
+
 # Numbers that are generally acceptable as literals
 _OK_NUMBERS = {"0", "1", "2", "-1", "100", "200", "201", "204", "400", "401",
                "403", "404", "422", "500", "1000"}
@@ -20,6 +23,11 @@ _OK_NUMBERS = {"0", "1", "2", "-1", "100", "200", "201", "204", "400", "401",
 _MAGIC_NUMBER_RE = re.compile(r"(?<!['\"\w])(\b\d{2,}\b)(?!['\"\w])")
 _CONST_ASSIGNMENT_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,}\s*=")
 _MAGIC_STRING_CONDITION_RE = re.compile(r'(?:==|!=|in\s)\s*["\']([^"\']{3,})["\']')
+# Sizes in SQL type declarations — NVARCHAR(255), DECIMAL(10, 2) — are not magic numbers
+_SQL_TYPE_SIZE_RE = re.compile(
+    r"\b(?:N?VARCHAR|N?CHAR|VARBINARY|BINARY|DECIMAL|NUMERIC|FLOAT|DATETIME2|TIME|BIT)\s*\([^)]*\)",
+    re.IGNORECASE,
+)
 _SINGLE_LETTER_VAR_RE = re.compile(r"\b([a-zA-Z])\s*=\s*(?![\s]*for\b)")
 _LOOP_VAR_RE = re.compile(r"for\s+([a-zA-Z])\s+in\b")
 
@@ -109,7 +117,7 @@ def _check_file(file: Path, root: Path) -> list[dict]:
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
         # Skip comments and blank lines
-        if not stripped or stripped.startswith(("#", "//", "*", "/*", "'")):
+        if not stripped or stripped.startswith(("#", "//", "--", "*", "/*", "'")):
             continue
 
         # Collect loop variables (exempt from single-letter check)
@@ -120,7 +128,7 @@ def _check_file(file: Path, root: Path) -> list[dict]:
             # Skip ALL_CAPS = <value> lines (constant definitions, not magic numbers)
             is_const_def = bool(_CONST_ASSIGNMENT_RE.match(stripped))
             # Magic numbers (strip range(...) calls first to avoid false positives)
-            line_no_range = re.sub(r'\brange\s*\([^)]*\)', '', line)
+            line_no_range = _SQL_TYPE_SIZE_RE.sub('', re.sub(r'\brange\s*\([^)]*\)', '', line))
             for m in _MAGIC_NUMBER_RE.finditer(line_no_range):
                 num = m.group(1)
                 if num not in _OK_NUMBERS and not is_const_def:
