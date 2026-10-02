@@ -34,7 +34,8 @@ class TestFormatKnownFindings:
         assert result.splitlines() == ["- line 1: early", "- line 42: late"]
 
     def test_missing_keys_do_not_raise(self):
-        assert format_known_findings([{}]) == "- line 0: "
+        # No line means a whole-file finding (#20)
+        assert format_known_findings([{}]) == "- whole file: "
 
 
 class TestDropNearDuplicates:

@@ -10,7 +10,19 @@ def format_known_findings(violations: list[dict]) -> str:
     if not violations:
         return _NO_FINDINGS_TEXT
     ordered = sorted(violations, key=lambda v: v.get("line", 0))
-    return "\n".join(f"- line {v.get('line', 0)}: {v.get('message', '')}" for v in ordered)
+    return "\n".join(f"- {_where(v.get('line', 0))}: {v.get('message', '')}" for v in ordered)
+
+
+def _where(line: int) -> str:
+    """Line 0 is a whole-file finding (e.g. "no test file"), not a finding on line zero."""
+    return f"line {line}" if line else "whole file"
+
+
+def _near(ai_line: int, mechanical_line: int, proximity: int) -> bool:
+    """Whole-file findings only match each other: one never hides a per-line finding below it."""
+    if not mechanical_line or not ai_line:
+        return ai_line == mechanical_line
+    return abs(ai_line - mechanical_line) <= proximity
 
 
 def drop_near_duplicates(
@@ -29,7 +41,7 @@ def drop_near_duplicates(
     kept = []
     for violation in ai_violations:
         lines = known.get(violation.get("file", ""), [])
-        if any(abs(violation.get("line", 0) - line) <= proximity for line in lines):
+        if any(_near(violation.get("line", 0), line, proximity) for line in lines):
             continue
         kept.append(violation)
     return kept

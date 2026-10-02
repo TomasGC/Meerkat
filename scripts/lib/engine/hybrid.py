@@ -96,6 +96,7 @@ def run_hybrid(
     format_ai_violation: Callable[[dict, str], dict] | None = None,
     cache_dir: Path | None = None,
     cache_ttl_days: int = 7,
+    ai_filter: Callable[[Path], bool] | None = None,
 ) -> dict:
     """Run the mechanical pass, then the AI pass informed by its results.
 
@@ -110,6 +111,10 @@ def run_hybrid(
     returns differently-shaped items (e.g. a dynamic principle tag).
 
     `prompt=None` skips the AI pass entirely — for checkers with no AI layer.
+
+    `ai_filter(file) -> bool` narrows the AI pass to the files it accepts, for a
+    prompt that only makes sense on some of them (a test-gap prompt cannot see
+    the tests, so it only runs on files the mechanical pass found untested).
 
     `cache_dir` enables a per-file cache of the raw AI items, keyed by file
     content hash and `(prompt, role, agents)`. Only misses reach the model;
@@ -142,6 +147,8 @@ def run_hybrid(
 
     if prompt is not None:
         source_files = select_files(path, language, files)
+        if ai_filter is not None:
+            source_files = [f for f in source_files if ai_filter(f)]
         if check_server_available(role) and source_files:
             if mechanical_fn is not None:
                 by_file: dict[str, list[dict]] = {}
