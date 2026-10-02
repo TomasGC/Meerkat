@@ -1,0 +1,21 @@
+Analyze this {language} code for CQRS (Command Query Responsibility Segregation) violations.
+
+Source file:
+{source}
+
+Return a JSON array of violations:
+{{
+  "method": "method name",
+  "line": <line number>,
+  "type": "command-returns-data|query-has-side-effects|mixed-responsibility",
+  "severity": "high|medium|low",
+  "violation": "what CQRS rule is broken",
+  "suggestion": "how to separate command from query"
+}}
+
+Commands should: mutate state, return void or just an ID/acknowledgment.
+Queries should: return data, have NO side effects (no DB writes, no state mutation).
+Violations: Save() that returns the full entity graph, Get() that increments a counter,
+Process() that both modifies and returns business data.
+
+Return [] if no violations. Return ONLY the JSON array.

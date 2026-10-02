@@ -1,0 +1,19 @@
+Analyze this {language} code for YAGNI (You Aren't Gonna Need It) violations.
+
+Source file:
+{source}
+
+Return a JSON array of violations:
+{{
+  "pattern": "speculative-feature|unused-extension-point|premature-abstraction|future-proofing",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "violation": "what speculative feature was added",
+  "suggestion": "remove or simplify"
+}}
+
+Look for: extension hooks with no current callers, plugin systems with one plugin,
+configuration flags that are never false, abstract base classes with one subclass,
+"future" comments, parameters that are always the same value.
+
+Return [] if no violations. Return ONLY the JSON array.

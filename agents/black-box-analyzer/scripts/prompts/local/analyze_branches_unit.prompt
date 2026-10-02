@@ -1,0 +1,30 @@
+You are a unit test specialist. Analyze this {language} source file and identify ALL branches testable as PURE UNIT TESTS only.
+
+A unit test: pure in-process, no I/O, no network, no file system, no database, no time source. Tests one method in isolation. All external dependencies must be absent or trivially injectable.
+
+For each public method, output a JSON object with:
+- "method": fully qualified name (ClassName.MethodName or function name)
+- "signature": parameter list with types
+- "branches": list of objects, each with:
+  - "condition": what triggers this branch
+  - "outcome": what happens
+  - "test_scenario": one-line unit test description
+  - "test_type_hint": "UNIT"
+
+Focus ONLY on:
+- Null/None/nil guard clauses with no external deps
+- throw/raise/panic on invalid input (pure validation logic)
+- switch/match/when cases on enum or primitive values
+- Boundary comparisons on primitive values (< 0, == 0, > max, empty string/array)
+- Format string construction paths (pure string logic)
+- Early return conditions based on input shape only
+- Pure computation branches (arithmetic, string ops, collection transforms)
+
+SKIP branches that require DB, HTTP, file system, clock, or injected collaborators — those are int_mock or int_real.
+
+Return ONLY a JSON array. No explanation, no markdown.
+
+Source file ({language}):
+```
+{source}
+```

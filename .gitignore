@@ -1,5 +1,7 @@
 # Personal/Local files (user-specific configs, AWS creds, personal notes)
 *local*
+# ...but prompts/local/ holds the agents' local-AI prompt templates: shared code, not personal files
+!**/prompts/local/
 
 # MCP and secrets
 .mcp.json

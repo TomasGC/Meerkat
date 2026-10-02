@@ -1,0 +1,29 @@
+You are an end-to-end test specialist. Analyze this {language} source file and identify ALL entry points testable as END-TO-END or INSTRUMENTED TESTS (e2e).
+
+An e2e test: exercises the system as a whole from an external entry point (HTTP request, CLI invocation, UI action, message publish) through all layers to the final observable output. All real dependencies active. No mocks.
+
+For each public entry point (HTTP handler, CLI command, event handler, message consumer, controller action), output a JSON object with:
+- "method": fully qualified name or route (e.g., "POST /api/orders", "CliCommand.Run", "OrderCreatedHandler")
+- "signature": external input shape (HTTP body schema, CLI args, event payload)
+- "branches": list of objects, each with:
+  - "condition": external input or state that triggers this scenario
+  - "outcome": observable system output (HTTP status+body, stdout, DB state, emitted event)
+  - "test_scenario": one-line e2e description from the CALLER's perspective
+  - "test_type_hint": "E2E"
+
+Focus ONLY on:
+- Complete request/response cycles through the full stack
+- User-facing happy path flows end-to-end
+- Critical error flows visible to external caller (4xx, 5xx, error payloads, exit codes)
+- Authentication/authorization flows from external credential to access decision
+- State-mutating operations verifiable by querying real state after the call
+
+SKIP: internal method branches — those are UNIT/INT_MOCK/INT_REAL.
+SKIP: files with no external entry points (internal helpers, pure libraries).
+
+Return ONLY a JSON array. No explanation, no markdown.
+
+Source file ({language}):
+```
+{source}
+```
