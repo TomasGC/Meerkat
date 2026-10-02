@@ -3,6 +3,30 @@
   "project": "python_project",
   "violations": [
     {
+      "principle": "Misconfiguration",
+      "file": "deploy.yaml",
+      "line": 6,
+      "severity": "high",
+      "message": "Container shares a host namespace — breaks isolation",
+      "suggestion": "Remove the host namespace sharing"
+    },
+    {
+      "principle": "Misconfiguration",
+      "file": "deploy.yaml",
+      "line": 11,
+      "severity": "high",
+      "message": "Container runs privileged — full host access",
+      "suggestion": "Drop privileged and grant only the capabilities needed"
+    },
+    {
+      "principle": "Misconfiguration",
+      "file": "deploy.yaml",
+      "line": 18,
+      "severity": "medium",
+      "message": "[EXPOSED_BIND]: hostPort publishes the service on every node interface",
+      "suggestion": "Drop hostPort and expose the pod through a Service"
+    },
+    {
       "principle": "Security",
       "file": "service.py",
       "line": 5,
@@ -121,8 +145,8 @@
       "dropped": 1
     },
     "Misconfiguration": {
-      "ai_items": 1,
-      "dropped": 1
+      "ai_items": 3,
+      "dropped": 2
     },
     "PromptInjection": {
       "ai_items": 1,

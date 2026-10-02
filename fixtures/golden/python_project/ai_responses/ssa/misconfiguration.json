@@ -1,3 +1,4 @@
 {
-  "service.py": "[{\"misconfig_type\": \"DEBUG_EXPOSED\", \"line\": 6, \"severity\": \"high\", \"description\": \"DEBUG hardcoded to True\", \"fix\": \"Read DEBUG from the environment\"}]"
+  "service.py": "[{\"misconfig_type\": \"DEBUG_EXPOSED\", \"line\": 6, \"severity\": \"high\", \"description\": \"DEBUG hardcoded to True\", \"fix\": \"Read DEBUG from the environment\"}]",
+  "deploy.yaml": "[{\"misconfig_type\": \"EXPOSED_BIND\", \"line\": 18, \"severity\": \"medium\", \"description\": \"hostPort publishes the service on every node interface\", \"fix\": \"Drop hostPort and expose the pod through a Service\"}, {\"misconfig_type\": \"CONTAINER_PRIVILEGE\", \"line\": 11, \"severity\": \"high\", \"description\": \"Container runs privileged\", \"fix\": \"Remove privileged: true\"}]"
 }
