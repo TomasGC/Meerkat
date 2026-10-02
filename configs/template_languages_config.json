@@ -46,6 +46,22 @@
     "dockerfile": { "extensions": [], "filename_pattern": "^[Dd]ockerfile(\\.\\w+)?$", "kind": "config", "comment_style": "hash", "has_inheritance": false,
                     "standards": "rules/standards-docker.md", "build": "docker build .", "test": null, "format": null }
   },
+  "project_indicators": [
+    { "language": "go",         "markers": ["go.mod", "go.sum"] },
+    { "language": "typescript", "markers": ["tsconfig.json", "package.json"] },
+    { "language": "javascript", "markers": ["package.json"] },
+    { "language": "csharp",     "markers": ["*.csproj", "*.sln"] },
+    { "language": "python",     "markers": ["requirements.txt", "pyproject.toml", "setup.py"] },
+    { "language": "kotlin",     "markers": ["build.gradle.kts", "*.kt"] },
+    { "language": "java",       "markers": ["pom.xml", "build.gradle"] },
+    { "language": "ruby",       "markers": ["Gemfile", "Gemfile.lock"] },
+    { "language": "php",        "markers": ["composer.json"] },
+    { "language": "rust",       "markers": ["Cargo.toml", "Cargo.lock"] },
+    { "language": "swift",      "markers": ["Package.swift", "*.xcodeproj"] },
+    { "language": "cpp",        "markers": ["CMakeLists.txt", "*.cpp", "*.hpp"] },
+    { "language": "solidity",   "markers": ["foundry.toml", "hardhat.config.js", "hardhat.config.ts", "*.sol"] },
+    { "language": "sql",        "markers": ["*.sql"] }
+  ],
   "dialects": {
     "sql": {
       "mssql":      { "patterns": ["(?mi)^\\s*GO\\s*$", "(?i)\\bNVARCHAR\\b", "(?i)\\[dbo\\]\\."],

@@ -133,6 +133,18 @@ def matches_filename(language: str, filename: str) -> bool:
     return bool(pattern) and bool(re.match(pattern, filename))
 
 
+def project_indicators() -> dict[str, list[str]]:
+    """language -> marker files/globs that type a project, in priority order (first match wins).
+
+    Kept as an ordered list in the config, separate from `languages`: it answers
+    "what kind of project is this", and its priority differs from the language order.
+    """
+    return {
+        entry["language"]: list(entry.get("markers", []))
+        for entry in _load().get("project_indicators", [])
+    }
+
+
 def standards_for(language: str, dialect: str | None = None) -> str | None:
     """Path to the rules/ document, dialect-specific when a dialect is given."""
     if dialect is not None:

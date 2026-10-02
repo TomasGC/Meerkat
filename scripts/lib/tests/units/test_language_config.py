@@ -411,3 +411,35 @@ class TestDialects:
 
     def test_unknown_language_returns_none(self):
         assert lc.detect_dialect("klingon", "anything") is None
+
+
+class TestProjectIndicators:
+    """Ordered marker-file table used to type a project (BBA), first match wins."""
+
+    def test_order_is_preserved(self, custom_config):
+        custom_config({"project_indicators": [
+            {"language": "go", "markers": ["go.mod"]},
+            {"language": "python", "markers": ["requirements.txt"]},
+            {"language": "sql", "markers": ["*.sql"]},
+        ]})
+        assert list(lc.project_indicators()) == ["go", "python", "sql"]
+
+    def test_shape_is_language_to_markers(self, custom_config):
+        custom_config({"project_indicators": [{"language": "go", "markers": ["go.mod", "go.sum"]}]})
+        assert lc.project_indicators() == {"go": ["go.mod", "go.sum"]}
+
+    def test_returns_a_copy(self, custom_config):
+        custom_config({"project_indicators": [{"language": "go", "markers": ["go.mod"]}]})
+        lc.project_indicators()["go"].append("mutated")
+        assert lc.project_indicators() == {"go": ["go.mod"]}
+
+    def test_missing_block_yields_empty(self, custom_config):
+        custom_config({"languages": {}})
+        assert lc.project_indicators() == {}
+
+    def test_shipped_content_only_languages_come_last(self):
+        """A polyglot project that merely contains .sql or .sol files must keep its host language."""
+        order = list(lc.project_indicators())
+        assert order[-2:] == ["solidity", "sql"]
+        assert order.index("go") < order.index("python")
+        assert order.index("typescript") < order.index("javascript")
