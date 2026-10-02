@@ -93,10 +93,12 @@ python -m pytest tests/integration/real/ -q                      # live AI
 # Golden tests (no live AI — recorded responses are replayed)
 cd ~/.claude/agents/clean-code-analyzer/scripts && python -m pytest tests/integration/mock/test_golden_projects.py tests/e2e/test_golden_cli.py -q
 cd ~/.claude/agents/security-safety-analyzer/scripts && python -m pytest tests/integration/mock/test_golden_projects.py -q
+cd ~/.claude/agents/black-box-analyzer && python -m pytest tests/integration/mock/test_golden_projects.py -q
 
 # Regenerate expected files after an intended behavior change, then hand-check every changed record
 python ~/.claude/scripts/cli/update_golden.py --agent cca [--project python_project]
 python ~/.claude/scripts/cli/update_golden.py --agent ssa
+BBA_CACHE_DIR=$(mktemp -d) python ~/.claude/scripts/cli/update_golden.py --agent bba
 ```
 
 ---
@@ -122,6 +124,20 @@ python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --path /path/t
 - `--agents N` — N independent local AI calls per file, dedup-merged
 - `--no-cache` — bypass both caches: per-analyzer `AnalysisResult` cache and per-file local AI cache
 - `--clear-cache` — delete cached analysis results + local AI results, then continue the run (`orchestrate.py` exits after clearing; `parallel_analyzer.py` only exits early when no project path is given)
+
+### Test-gap checkers (`--gaps`)
+
+```bash
+python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --gaps --path /path/to/project
+python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --gaps --path /path/to/project --full --checks unit,e2e --format table
+python ~/.claude/agents/black-box-analyzer/scripts/orchestrate.py --gaps --clear-cache
+```
+
+`--gaps` hands every other argument to the shared engine CLI, so the flags are CCA's and SSA's
+(`--checks unit,integ_mock,integ_real,e2e`, `--min-severity`, `--top`, `--since`, `--staged`, …), not
+the pipeline's. Each tier reports a whole-file "no test file" finding (line 0) for every source file
+without a test in that tier, and the AI names the functions that most need one — on those files only.
+AI cache: `<BBA cache root>/gaps` (honours `BBA_CACHE_DIR`); the pipeline's `--clear-cache` clears it too.
 
 **Cache**:
 - Analysis results cached per `(analyzer, language, source+test file hashes)` in `~/.cache/black-box-analyzer/<project-hash>/result_<Analyzer>.json`
@@ -161,7 +177,7 @@ agents'. Run it from its own directory, in its own invocation.
 
 ## Language Configuration
 
-`configs/template_languages_config.json` — committed default, 20 languages.
+`configs/template_languages_config.json` — committed default, 21 languages.
 `configs/local_languages_config.json` — auto-copied on first import, gitignored, user-editable.
 
 ```python
@@ -174,7 +190,16 @@ language_config.skip_dirs()                     # 19 directories
 language_config.extensions_where("has_inheritance")
 language_config.standards_for_file(path, content)  # resolves sql/vue dialect from content
 language_config.project_indicators()            # ordered {language: [marker files]}, first match wins (BBA project typing)
+language_config.language_for_file("Dockerfile")  # 'dockerfile' — by extension, else filename pattern
+
+from lib.engine.discovery import dominant_language, group_by_language, is_test_file
+dominant_language(path)                          # code-only vote: language / 'mixed' (<60%) / 'unknown'
+dominant_language(path, threshold=0)             # always the leader
+group_by_language(files, ("code", "data"))       # {language: [files]}, config order — one checker run each
 ```
+
+Kinds: `code`, `markup` (vue, razor), `query` (sql), `data` (yaml), `config` (dockerfile), `prompt` (`.prompt`).
+A checker opts into non-code kinds with a module-level `FILE_KINDS`; SQL is scanned by no checker yet.
 
 The local file overrides the template field by field. To drop a language locally set
 `extensions: []` — deleting its block is not enough, the template puts it back.

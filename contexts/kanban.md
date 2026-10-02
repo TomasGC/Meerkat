@@ -4,6 +4,17 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-02 - [#20] Port BBA gap checkers onto the engine, per-language runs
+- BBA's 4 gap checkers (never wired since #9) run on `lib.engine.hybrid` through one `run_gap_checker`: mechanical "no test file in this tier" and AI per-function gaps on every run, AI only on untested files; `orchestrate.py --gaps` runs them with the CCA/SSA CLI; golden expected `bba.json` for the 3 projects
+- The orchestrator runs each checker once per language group it accepts (`FILE_KINDS`, default code), so no prompt reads "mixed" again; SSA misconfiguration and sensitive_data now scan yaml and Dockerfiles, security Razor views; `.prompt` templates are their own `prompt` kind, scanned by prompt_injection only
+- One code-only vote (`dominant_language`) replaces the engine's all-kinds vote, two BBA copies and `find_unused_code`'s; one BBA detector (`detect_project_language`: markers, then the vote) replaces five; `language_for_file`, `is_test_file`, `group_by_language` shared; 4 SSA checkers lost their inline copies
+- Reconciliation: line-0 (whole-file) findings never proximity-drop a per-line AI finding; tests are skipped in incremental mode as in full mode
+- `python_project` gains a Kubernetes manifest: CCA and BBA goldens unchanged, SSA reports it as yaml; detection before/after on 25 cases, every changed value intended
+- Tests: scripts 677 → 725, BBA 503 → 524, SSA 409 → 415, CCA 540; live `--gaps` smoke run on go_project green
+tags: #bba #engine #languages #golden-tests #ssa
+Ref: https://github.com/TomasGC/Meerkat/issues/20
+Commits: 4cc2036, 6b591d5, f2bfd20, 62d45f4, bc10c10, 7917f2d, 4898228, bd266ef
+
 2026-10-02 - [#29] Fold BBA's LANGUAGE_INDICATORS into the shared language config
 - `configs/template_languages_config.json` gains a top-level, ordered `project_indicators` list; `language_config.project_indicators()` returns it as an ordered `{language: [markers]}` dict, so `LANGUAGE_INDICATORS` keeps its name and shape
 - Ordered list rather than a per-language field: the priority differs from the language order (Go before Python, `solidity`/`sql` last), and `solidity` isn't a scanned language

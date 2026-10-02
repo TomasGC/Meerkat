@@ -4,7 +4,7 @@
 
 **Direction**: support for other assistants (Codex, others) is planned. Keep the assistant-agnostic core (`scripts/lib/`) separate from the Claude Code host layer (`CLAUDE.md`, skills, hooks, `AGENT.md`, `settings.json`); name the role ("the coding assistant"), not the product, in docs and new designs.
 
-**Last Updated**: 2026-10-01
+**Last Updated**: 2026-10-02
 
 ---
 
@@ -50,8 +50,9 @@ Local AI  Scripts  Agents
 ├── agents/                          # Autonomous agents
 │   ├── black-box-analyzer/          # Universal test gap analyzer (19+ project types)
 │   │   ├── AGENT.md
-│   │   ├── scripts/                 # orchestrate.py + parallel_analyzer + checkers/ (4 gap) + prompts/local/
-│   │   └── tests/                   # 415 unit / 47 integration/mock / 30 integration/real (incl. 10 detection fixtures) / 36 e2e
+│   │   ├── scripts/                 # orchestrate.py (parallel_analyzer pipeline; --gaps → lib.engine.orchestrator)
+│   │   │                            # + checkers/ (4 tier gap checkers on lib.engine.hybrid) + prompts/local/
+│   │   └── tests/                   # unit + integration/mock + e2e (524) / integration/real (incl. 10 detection fixtures)
 │   ├── clean-code-analyzer/         # 11-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, Composition)
 │   │   ├── AGENT.md
 │   │   ├── scripts/                 # orchestrate.py (registry + call into lib.engine.orchestrator) + 11 checkers
@@ -80,7 +81,7 @@ Local AI  Scripts  Agents
 │   │   ├── config/                  # model_config (roles) + language_config (languages, skip dirs, standards)
 │   │   ├── engine/                  # shared analysis engine (extracted from SSA, issue #18): finding, cache,
 │   │   │                            # dedup, discovery, hybrid, orchestrator — cache dir/registry/max_workers/labels
-│   │   │                            # are caller-supplied params, no agent name hardcoded; used by SSA and CCA (#19)
+│   │   │                            # are caller-supplied params, no agent name hardcoded; used by SSA, CCA (#19), BBA gaps (#20)
 │   │   ├── testing/                 # golden.py — golden fixture runner: replay recorded AI responses, compare expected
 │   │   └── cli/                     # BaseCLIScript + tests/
 │   └── tests/                       # Scripts-level tests (e2e, integration-reals)
@@ -141,6 +142,21 @@ languages that aren't scanned for files (`solidity`).
 
 CCA, SSA and BBA all discover files from this one table, so they can no longer
 disagree about which files exist.
+
+### Per-language runs (#20)
+
+A repo has no single language. The orchestrator groups the target files by each
+file's own language (`language_for_file`) and runs every checker once per group
+it accepts, with that group's language, then merges the runs into one result.
+A checker declares the kinds it accepts with a module-level `FILE_KINDS`
+(default `("code",)`): SSA misconfiguration adds data + config, sensitive_data
+adds markup + data + config, security adds markup, prompt_injection adds the
+`prompt` kind (`.prompt` templates). No prompt or rule table ever receives "mixed".
+
+The repo-level language is only a report label now: `dominant_language`, a
+code-only vote. The report also lists `languages`: files analyzed per language.
+BBA's pipeline types a whole project with `detect_project_language`: marker
+files first (`project_indicators`), the same vote as fallback.
 
 ---
 
