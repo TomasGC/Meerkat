@@ -9,6 +9,9 @@ For each function needing a unit test, output:
 - "reason": one sentence explaining why a unit test is needed
 - "test_scenario": one-line description of the most important test to write
 
+Already reported by mechanical analysis — do NOT repeat these; name the specific functions instead:
+{known_findings}
+
 Return ONLY a JSON array. Empty array if nothing needs testing. No explanation, no markdown.
 
 Source file ({language}):

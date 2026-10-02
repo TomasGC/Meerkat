@@ -10,6 +10,9 @@ For each flow needing E2E coverage, output:
 - "reason": what user journey this entry point covers
 - "test_scenario": one-line description of the E2E test scenario
 
+Already reported by mechanical analysis — do NOT repeat these; name the specific functions instead:
+{known_findings}
+
 Return ONLY a JSON array. Empty array if no E2E tests are needed. No explanation, no markdown.
 
 Source file ({language}):

@@ -10,6 +10,9 @@ For each uncovered interaction, output:
 - "reason": what specific interaction needs a mock test
 - "test_scenario": one-line description of the mock integration test to write
 
+Already reported by mechanical analysis — do NOT repeat these; name the specific functions instead:
+{known_findings}
+
 Return ONLY a JSON array. Empty array if nothing needs mock integration testing. No explanation, no markdown.
 
 Source file ({language}):

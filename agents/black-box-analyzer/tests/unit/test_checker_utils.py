@@ -132,3 +132,84 @@ def test_find_tier_test_files_does_not_cross_tiers(tmp_path):
 def test_find_tier_test_files_empty_when_no_dirs(tmp_path):
     result = find_tier_test_files(tmp_path, ["unit"])
     assert result == []
+
+
+# --- run_gap_checker (engine port, #20) ---
+
+from unittest.mock import patch
+
+import checkers._utils as utils_mod
+from checkers._utils import run_gap_checker
+
+
+def _gap(tmp_path, **kwargs):
+    return run_gap_checker(
+        tmp_path, "python", tier=["unit"], principle="UNIT_GAP", prompt="unit_gaps",
+        missing_message="No unit test file found for this source file",
+        ai_message=lambda item: f"Missing unit test [{item.get('function')}]", **kwargs,
+    )
+
+
+def _project_with_one_tested_file(tmp_path):
+    (tmp_path / "billing.py").write_text("def a(): pass", encoding="utf-8")
+    (tmp_path / "orders.py").write_text("def b(): pass", encoding="utf-8")
+    unit = tmp_path / "tests" / "unit"
+    unit.mkdir(parents=True)
+    (unit / "test_billing.py").write_text("def test_billing(): pass", encoding="utf-8")
+
+
+def test_gap_ai_only_sees_files_without_a_tier_test(tmp_path):
+    """The prompt cannot see tests, so a file that has some is never sent to it."""
+    _project_with_one_tested_file(tmp_path)
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+         patch("lib.engine.hybrid.analyze_files_parallel", return_value=[]) as ai:
+        _gap(tmp_path)
+    assert [f.name for f in ai.call_args.args[0]] == ["orders.py"]
+
+
+def test_gap_mechanical_finding_reaches_the_prompt(tmp_path):
+    _project_with_one_tested_file(tmp_path)
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+         patch("lib.engine.hybrid.analyze_files_parallel", return_value=[]) as ai:
+        _gap(tmp_path)
+    slots = ai.call_args.kwargs["extra_slots"]
+    assert [s["known_findings"] for s in slots.values()] == ["- whole file: No unit test file found for this source file"]
+
+
+def test_gap_mechanical_finding_kept_when_server_is_up(tmp_path):
+    """Before #20 the server being up replaced the mechanical layer instead of adding to it."""
+    _project_with_one_tested_file(tmp_path)
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+         patch("lib.engine.hybrid.analyze_files_parallel", return_value=[]):
+        result = _gap(tmp_path)
+    assert [(v["file"], v["line"]) for v in result["violations"]] == [("orders.py", 0)]
+
+
+def test_gap_ai_finding_on_first_lines_survives_reconciliation(tmp_path):
+    """A whole-file finding must not proximity-drop a function defined on line 1."""
+    _project_with_one_tested_file(tmp_path)
+    item = {"source_file": str(tmp_path / "orders.py"), "function": "b", "line": 1, "severity": "high"}
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+         patch("lib.engine.hybrid.analyze_files_parallel", return_value=[item]):
+        result = _gap(tmp_path)
+    assert sorted(v["line"] for v in result["violations"]) == [0, 1]
+
+
+def test_gap_no_server_still_reports_mechanical(tmp_path):
+    _project_with_one_tested_file(tmp_path)
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
+        result = _gap(tmp_path)
+    assert result["files_analyzed"] == 2
+    assert [v["message"] for v in result["violations"]] == ["No unit test file found for this source file"]
+
+
+def test_utils_keeps_no_language_table():
+    """Languages and skip dirs come from the shared config through lib.engine.discovery."""
+    assert not hasattr(utils_mod, "_LANG_EXTENSIONS")
+    assert not hasattr(utils_mod, "EXCLUDED_DIRS")
+
+
+def test_find_source_files_skips_migrations(tmp_path):
+    (tmp_path / "0001_initial_migration.py").write_text("pass", encoding="utf-8")
+    (tmp_path / "models.py").write_text("pass", encoding="utf-8")
+    assert [f.name for f in find_source_files(tmp_path, "python")] == ["models.py"]
