@@ -80,17 +80,16 @@ def test_get_model_online_deep(tmp_path):
 # ── Singleton: _load() called only once ──────────────────────────────────────
 
 def test_singleton_load_called_once(tmp_path):
-    """_load() reads the file only on first call; subsequent calls use cached dict."""
+    """Files are read on the first _load() only; later calls use the cached dict."""
     _reset_singleton()
     config_file = tmp_path / "local_models_config.json"
     config_file.write_text(json.dumps(_SAMPLE_CONFIG))
     with patch.object(mc, "_CONFIG_PATH", config_file):
-        with patch.object(Path, "read_text", wraps=config_file.read_text) as mock_read:
-            mc.get_model("fast")
+        mc.get_model("fast")
+        with patch.object(Path, "read_text") as mock_read:
             mc.get_model("deep")
             mc.get_model("analyzer")
-    # read_text should be called at most once (first _load populates cache)
-    assert mock_read.call_count <= 1
+    assert mock_read.call_count == 0
 
 
 # ── Auto-copy: template copied when local config missing ─────────────────────
@@ -165,13 +164,58 @@ def test_missing_provider_raises_without_fallback(tmp_path):
             mc.get_model("fast", provider="nonexistent")
 
 
-# ── Malformed JSON: _load handles gracefully ─────────────────────────────────
+# ── Template merge: template is the base, local overrides it ────────────────
 
-def test_malformed_json_returns_empty_dict(tmp_path):
-    """Malformed local_models_config.json causes _load to silently return {}."""
+def _write_pair(tmp_path, template: dict, local) -> tuple[Path, Path]:
+    template_file = tmp_path / "template_models_config.json"
+    template_file.write_text(json.dumps(template))
+    local_file = tmp_path / "local_models_config.json"
+    local_file.write_text(local if isinstance(local, str) else json.dumps(local))
+    return template_file, local_file
+
+
+def test_template_field_added_later_reaches_older_local_file(tmp_path):
+    """A role added to the template after the local file was written is still visible."""
     _reset_singleton()
-    config_file = tmp_path / "local_models_config.json"
-    config_file.write_text("not valid json {{{")
-    with patch.object(mc, "_CONFIG_PATH", config_file):
-        result = mc._load()
-    assert result == {}
+    template = {"local": {"analyzer": "model-a", "guard": "guard-model"}}
+    older_local = {"local": {"analyzer": "model-a"}}
+    template_file, local_file = _write_pair(tmp_path, template, older_local)
+    with patch.object(mc, "_CONFIG_PATH", local_file), \
+         patch.object(mc, "_TEMPLATE_PATH", template_file):
+        assert mc.get_model("guard") == "guard-model"
+
+
+def test_local_value_wins_over_template(tmp_path):
+    """A role set in the local file overrides the template's value."""
+    _reset_singleton()
+    template = {"local": {"analyzer": "template-model", "fast": "template-fast"}}
+    local = {"local": {"analyzer": "my-model"}}
+    template_file, local_file = _write_pair(tmp_path, template, local)
+    with patch.object(mc, "_CONFIG_PATH", local_file), \
+         patch.object(mc, "_TEMPLATE_PATH", template_file):
+        assert mc.get_model("analyzer") == "my-model"
+        assert mc.get_model("fast") == "template-fast"
+
+
+def test_local_list_and_scalar_override_template(tmp_path):
+    """Override wins on scalars and lists; dicts merge recursively."""
+    _reset_singleton()
+    template = {"local": {"provider": "ollama", "tags": ["a", "b"]}, "online": {"provider": "anthropic"}}
+    local = {"local": {"tags": ["c"]}}
+    template_file, local_file = _write_pair(tmp_path, template, local)
+    with patch.object(mc, "_CONFIG_PATH", local_file), \
+         patch.object(mc, "_TEMPLATE_PATH", template_file):
+        config = mc._load()
+    assert config["local"] == {"provider": "ollama", "tags": ["c"]}
+    assert config["online"] == {"provider": "anthropic"}
+
+
+# ── Malformed JSON: degrades to the template, not to nothing ────────────────
+
+def test_malformed_local_json_degrades_to_template(tmp_path):
+    """A broken local_models_config.json falls back to the template's values."""
+    _reset_singleton()
+    template_file, local_file = _write_pair(tmp_path, _SAMPLE_CONFIG, "not valid json {{{")
+    with patch.object(mc, "_CONFIG_PATH", local_file), \
+         patch.object(mc, "_TEMPLATE_PATH", template_file):
+        assert mc._load() == _SAMPLE_CONFIG
