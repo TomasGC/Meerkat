@@ -11,8 +11,8 @@ from common.hybrid import run_hybrid
 
 _PRINCIPLE = "Misconfiguration"
 _PROMPT = "misconfiguration"
-# Misconfiguration lives in manifests and Dockerfiles as much as in code.
-FILE_KINDS = ("code", "data", "config")
+# Misconfiguration lives in manifests, Dockerfiles and SQL grants as much as in code.
+FILE_KINDS = ("code", "query", "data", "config")
 
 _DEBUG_EXPOSED = "Debug output enabled — leaks stack traces and configuration"
 _DEBUG_FIX = "Guard behind an environment check and disable it outside development"
@@ -85,6 +85,20 @@ _RULES = {
         (re.compile(r'^\s*RUN\s+.*\b(?:curl|wget)\b[^|]*\|\s*(?:ba)?sh'),
          "Build pipes a downloaded script into a shell", "high",
          "Download, verify the checksum, then execute"),
+    ],
+    "sql": [
+        (re.compile(r"(?i)\bGRANT\s+ALL\b"),
+         "GRANT ALL hands out every privilege on the object", "high",
+         "Grant only the privileges the role needs"),
+        (re.compile(r"(?i)\bGRANT\b[^;]*\bTO\s+PUBLIC\b"),
+         "Privilege granted to PUBLIC — every login inherits it", "high",
+         "Grant to a dedicated role instead of PUBLIC"),
+        (re.compile(r"(?i)\bsp_configure\s+'xp_cmdshell'\s*,\s*1"),
+         "xp_cmdshell enabled — SQL can run operating system commands", "high",
+         "Keep xp_cmdshell disabled; run OS work outside the database"),
+        (re.compile(r"(?i)\bSET\s+TRUSTWORTHY\s+ON\b"),
+         "Database marked TRUSTWORTHY — its code can escalate to server-level rights", "high",
+         "Leave TRUSTWORTHY OFF; sign modules that need elevated rights"),
     ],
     "bash": [
         (re.compile(r'\bchmod\s+(?:-R\s+)?777\b'),

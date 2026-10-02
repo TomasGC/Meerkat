@@ -11,6 +11,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from common.file_utils import _LANG_EXTENSIONS as _LANG_EXTS
 
+# SQL error handling is analyzed too (#42); everything else here is code
+FILE_KINDS = ("code", "query")
+
 _GREP_PATTERNS = {
     "csharp": [
         (re.compile(r"catch\s*\([^)]*\)\s*\{\s*\}"), "Empty catch block"),
@@ -37,6 +40,15 @@ _GREP_PATTERNS = {
         (re.compile(r"\|\|\s*true\b"), "Error swallowed with || true"),
         (re.compile(r"\|\|\s*:\s*$"), "Error swallowed with || :"),
         (re.compile(r"2\s*>/dev/null"), "Stderr silently discarded with 2>/dev/null"),
+    ],
+}
+
+
+# Matched against the whole file: these blocks span lines. The finding sits on the line the block opens.
+_BLOCK_PATTERNS = {
+    "sql": [
+        (re.compile(r"(?i)\bBEGIN\s+CATCH\s+END\s+CATCH\b"), "Empty CATCH block"),
+        (re.compile(r"(?i)\bWHEN\s+OTHERS\s+THEN\s+NULL\s*;"), "Every exception swallowed with WHEN OTHERS THEN NULL"),
     ],
 }
 
@@ -111,9 +123,19 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
 
 def _detect_non_python_violations(content: str, filename: str, language: str) -> list[dict]:
     violations = []
+    for pattern, message in _BLOCK_PATTERNS.get(language, []):
+        for match in pattern.finditer(content):
+            violations.append({
+                "principle": "ErrorHandling",
+                "file": filename,
+                "line": content.count("\n", 0, match.start()) + 1,
+                "severity": "high",
+                "message": message,
+                "suggestion": "Handle or log the exception; never silently swallow errors",
+            })
     patterns = _GREP_PATTERNS.get(language, [])
     if not patterns:
-        return []
+        return violations
     lines = content.splitlines()
     for pattern, message in patterns:
         if message is None:
