@@ -6,8 +6,11 @@ from pathlib import Path
 
 import pytest
 
+import common.utils as utils_mod
+from common.models import Language
 from common.utils import (
     count_lines_of_code,
+    detect_language_from_indicators,
     extract_line_number_from_pattern,
     extract_params_from_path,
     find_project_root,
@@ -198,3 +201,38 @@ def test_format_path_relative_outside_root(temp_dir):
     f = Path("/some/other/path/file.py")
     result = format_path_relative(f, temp_dir)
     assert "file.py" in result
+
+
+# ── detect_language_from_indicators ──────────────────────────────────────────
+
+
+def test_detect_first_indicator_in_order_wins(temp_dir, monkeypatch):
+    monkeypatch.setattr(utils_mod, "LANGUAGE_INDICATORS", {"go": ["go.mod"], "python": ["requirements.txt"]})
+    (temp_dir / "go.mod").write_text("module x")
+    (temp_dir / "requirements.txt").write_text("")
+    assert detect_language_from_indicators(temp_dir) == Language.GO
+
+
+def test_detect_glob_marker(temp_dir, monkeypatch):
+    monkeypatch.setattr(utils_mod, "LANGUAGE_INDICATORS", {"csharp": ["*.csproj"]})
+    (temp_dir / "App.csproj").write_text("<Project/>")
+    assert detect_language_from_indicators(temp_dir) == Language.CSHARP
+
+
+def test_detect_skips_language_without_enum_member(temp_dir, monkeypatch):
+    """The config is user-editable: an unknown language must not crash detection."""
+    monkeypatch.setattr(utils_mod, "LANGUAGE_INDICATORS", {"klingon": ["*.kl"], "python": ["setup.py"]})
+    (temp_dir / "x.kl").write_text("")
+    (temp_dir / "setup.py").write_text("")
+    assert detect_language_from_indicators(temp_dir) == Language.PYTHON
+
+
+def test_detect_no_marker_is_unknown(temp_dir):
+    assert detect_language_from_indicators(temp_dir) == Language.UNKNOWN
+
+
+def test_shipped_table_comes_from_config():
+    from common.constants import LANGUAGE_INDICATORS
+    from lib.config import language_config
+    assert LANGUAGE_INDICATORS == language_config.project_indicators()
+    assert list(LANGUAGE_INDICATORS)[-2:] == ["solidity", "sql"]

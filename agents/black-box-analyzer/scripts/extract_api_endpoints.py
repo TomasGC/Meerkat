@@ -20,10 +20,10 @@ from pathlib import Path
 from common.constants import (
     DEFAULT_RESPONSE_CODES,
     ENDPOINT_PATTERNS,
-    LANGUAGE_INDICATORS,
 )
 from common.models import Endpoint, HTTPMethod, Language, Parameter
 from common.utils import (
+    detect_language_from_indicators,
     extract_line_number_from_pattern,
     extract_params_from_path,
     format_path_relative,
@@ -35,15 +35,7 @@ from common.utils import (
 
 def detect_language(project_path: Path) -> Language:
     """Detect project language from indicator files."""
-    for language, indicators in LANGUAGE_INDICATORS.items():
-        for indicator in indicators:
-            if "*" in indicator:
-                if list(project_path.glob(indicator)):
-                    return Language(language)
-            else:
-                if (project_path / indicator).exists():
-                    return Language(language)
-    return Language.UNKNOWN
+    return detect_language_from_indicators(project_path)
 
 
 

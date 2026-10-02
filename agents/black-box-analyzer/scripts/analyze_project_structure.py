@@ -24,7 +24,6 @@ from common.constants import (
     FRAMEWORK_PATTERNS,
     FRONTEND_PATTERNS,
     FULLSTACK_PATTERNS,
-    LANGUAGE_INDICATORS,
     LLM_PATTERNS,
     MESSAGE_QUEUE_PATTERNS,
     MOBILE_PATTERNS,
@@ -36,7 +35,7 @@ from common.constants import (
     WORKER_PATTERNS,
 )
 from common.models import Language, ProjectInfo, ProjectType, TestFramework
-from common.utils import find_project_root, read_file_safe, walk_files
+from common.utils import detect_language_from_indicators, find_project_root, read_file_safe, walk_files
 
 
 def detect_language(project_path: Path) -> Language:
@@ -49,18 +48,7 @@ def detect_language(project_path: Path) -> Language:
     Returns:
         Detected Language enum
     """
-    for language, indicators in LANGUAGE_INDICATORS.items():
-        for indicator in indicators:
-            if "*" in indicator:
-                # Glob pattern
-                if list(project_path.glob(indicator)):
-                    return Language(language)
-            else:
-                # Exact file
-                if (project_path / indicator).exists():
-                    return Language(language)
-
-    return Language.UNKNOWN
+    return detect_language_from_indicators(project_path)
 
 
 def detect_frameworks(project_path: Path, language: Language) -> list[str]:
