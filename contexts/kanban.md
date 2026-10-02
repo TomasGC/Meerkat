@@ -4,6 +4,16 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-02 - [#29] Fold BBA's LANGUAGE_INDICATORS into the shared language config
+- `configs/template_languages_config.json` gains a top-level, ordered `project_indicators` list; `language_config.project_indicators()` returns it as an ordered `{language: [markers]}` dict, so `LANGUAGE_INDICATORS` keeps its name and shape
+- Ordered list rather than a per-language field: the priority differs from the language order (Go before Python, `solidity`/`sql` last), and `solidity` isn't a scanned language
+- The three identical detection loops (`analyze_project_structure`, `extract_api_endpoints`, `parse_test_files`) now share `common.utils.detect_language_from_indicators`; it skips config entries BBA has no `Language` for
+- Detection unchanged: the 3 detectors return the same language on the 10 detection fixtures + 8 synthetic cases (order-sensitive pairs, glob markers, empty), before and after; BBA detection fixtures 20 green
+- Tests: 5 new `language_config`, 5 new BBA helper; BBA 467, scripts 677, CCA 526, SSA 399 green
+tags: #bba #config #languages
+Ref: https://github.com/TomasGC/Meerkat/issues/29
+Commits: d33939b, b1216da
+
 2026-10-02 - [#31] Merge the model config template under the local file
 - `scripts/lib/config/model_config.py` replaced the template with the local file instead of merging over it, so a role added to `template_models_config.json` later never reached an older `local_models_config.json`, and a malformed local file silently yielded an empty config
 - Ported `_read` / `_merge` / `_load` from `language_config.py`: template as base, local merged over it, recursive on dicts, override wins on scalars and lists

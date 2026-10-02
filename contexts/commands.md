@@ -173,6 +173,7 @@ language_config.languages_of_kind("code")       # 15 languages, excludes yaml/sq
 language_config.skip_dirs()                     # 19 directories
 language_config.extensions_where("has_inheritance")
 language_config.standards_for_file(path, content)  # resolves sql/vue dialect from content
+language_config.project_indicators()            # ordered {language: [marker files]}, first match wins (BBA project typing)
 ```
 
 The local file overrides the template field by field. To drop a language locally set

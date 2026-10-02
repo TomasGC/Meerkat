@@ -29,6 +29,7 @@ from pathlib import Path
 from common.constants import TEST_FILE_PATTERNS, TEST_FRAMEWORK_PATTERNS
 from common.models import HTTPMethod, Language, TestCase, TestFramework
 from common.utils import (
+    detect_language_from_indicators,
     extract_line_number_from_pattern,
     format_path_relative,
     read_file_safe,
@@ -117,17 +118,7 @@ def infer_test_type(test_name: str, test_body: str) -> str:
 
 def detect_language(project_path: Path) -> Language:
     """Detect project language from test file patterns."""
-    from common.constants import LANGUAGE_INDICATORS
-
-    for language, indicators in LANGUAGE_INDICATORS.items():
-        for indicator in indicators:
-            if "*" in indicator:
-                if list(project_path.glob(indicator)):
-                    return Language(language)
-            else:
-                if (project_path / indicator).exists():
-                    return Language(language)
-    return Language.UNKNOWN
+    return detect_language_from_indicators(project_path)
 
 
 def detect_test_framework(content: str) -> TestFramework:

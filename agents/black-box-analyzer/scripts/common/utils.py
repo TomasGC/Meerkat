@@ -10,8 +10,27 @@ import sys
 from pathlib import Path
 from typing import Any, Generator
 
-from .constants import EXCLUDED_DIRS
-from .models import Parameter
+from .constants import EXCLUDED_DIRS, LANGUAGE_INDICATORS
+from .models import Language, Parameter
+
+
+def detect_language_from_indicators(project_path: Path) -> Language:
+    """Type a project from its marker files: first indicator that exists wins.
+
+    Order comes from `LANGUAGE_INDICATORS` (config priority). Entries naming a
+    language BBA has no `Language` member for are skipped — the config is user-editable.
+    """
+    known = {member.value for member in Language}
+    for language, markers in LANGUAGE_INDICATORS.items():
+        if language not in known:
+            continue
+        for marker in markers:
+            if "*" in marker:
+                if any(project_path.glob(marker)):
+                    return Language(language)
+            elif (project_path / marker).exists():
+                return Language(language)
+    return Language.UNKNOWN
 
 
 def walk_files(

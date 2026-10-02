@@ -14,25 +14,8 @@ if str(_SHARED) not in sys.path:
 
 from lib.config import language_config
 
-# Language detection patterns
-LANGUAGE_INDICATORS = {
-    "go": ["go.mod", "go.sum"],
-    "typescript": ["tsconfig.json", "package.json"],
-    "javascript": ["package.json"],
-    "csharp": ["*.csproj", "*.sln"],
-    "python": ["requirements.txt", "pyproject.toml", "setup.py"],
-    "kotlin": ["build.gradle.kts", "*.kt"],
-    "java": ["pom.xml", "build.gradle"],
-    "ruby": ["Gemfile", "Gemfile.lock"],
-    "php": ["composer.json"],
-    "rust": ["Cargo.toml", "Cargo.lock"],
-    "swift": ["Package.swift", "*.xcodeproj"],
-    "cpp": ["CMakeLists.txt", "*.cpp", "*.hpp"],
-    # Last: content-only languages, so a polyglot project that merely contains
-    # .sql or .sol files keeps its host language.
-    "solidity": ["foundry.toml", "hardhat.config.js", "hardhat.config.ts", "*.sol"],
-    "sql": ["*.sql"],
-}
+# Project-typing markers, in priority order (first match wins) — from configs/*_languages_config.json
+LANGUAGE_INDICATORS = language_config.project_indicators()
 
 # Framework detection patterns (in package files)
 FRAMEWORK_PATTERNS = {

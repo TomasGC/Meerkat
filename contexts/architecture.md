@@ -133,6 +133,12 @@ config), `has_inheritance`, comment style, filename pattern, the matching
 `rules/standards-*.md`, and build / test / format commands. `sql` and `vue` carry
 dialect blocks, resolved from file content where the extension is ambiguous.
 
+Separately, a top-level `project_indicators` list types a whole project from its
+marker files (`go.mod`, `*.csproj`, …), first match wins (#29). It is an ordered
+list, not a per-language field, because its priority differs from the language
+order (Go before Python, content-only `solidity`/`sql` last) and it can name
+languages that aren't scanned for files (`solidity`).
+
 CCA, SSA and BBA all discover files from this one table, so they can no longer
 disagree about which files exist.
 
