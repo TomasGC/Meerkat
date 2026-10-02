@@ -14,6 +14,8 @@ from common.dedup import drop_near_duplicates, format_known_findings
 
 _PRINCIPLE = "Security"
 _PROMPT = "security"
+# Razor views carry their own injection rules.
+FILE_KINDS = ("code", "markup")
 
 # Mechanical patterns: (regex, message, severity)
 _SECRET_PATTERNS = [
