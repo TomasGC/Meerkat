@@ -432,6 +432,32 @@ class TestLanguageForFile:
         assert lc.language_for_file("a.go") == "go"
 
 
+class TestPromptLanguage:
+    """How a prompt names a file's language (#42)."""
+
+    def test_tsql_dialect_label(self):
+        assert lc.prompt_language("sql", "SELECT * FROM [dbo].orders\nGO\n") == "T-SQL"
+
+    def test_postgresql_dialect_label(self):
+        assert lc.prompt_language("sql", "INSERT INTO t VALUES (1) RETURNING id;") == "PostgreSQL"
+
+    def test_no_dialect_signal_falls_back_to_language_label(self):
+        assert lc.prompt_language("sql", "SELECT 1;") == "SQL"
+
+    def test_without_content_uses_language_label(self):
+        assert lc.prompt_language("sql") == "SQL"
+
+    def test_language_without_label_keeps_its_name(self):
+        assert lc.prompt_language("python", "x = 1") == "python"
+
+    def test_dialect_without_label_keeps_the_language_name(self):
+        """vue's dialects pick a standards file; they carry no prompt label."""
+        assert lc.prompt_language("vue", '<script lang="ts">') == "vue"
+
+    def test_unknown_language_keeps_its_name(self):
+        assert lc.prompt_language("mixed", "x") == "mixed"
+
+
 class TestProjectIndicators:
     """Ordered marker-file table used to type a project (BBA), first match wins."""
 

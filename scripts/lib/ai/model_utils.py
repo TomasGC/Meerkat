@@ -17,6 +17,7 @@ from pathlib import Path
 
 # the shared library is rooted at scripts/, two levels up from lib/ai/
 sys.path.insert(0, str(Path(__file__).parents[2]))
+from lib.config import language_config
 from lib.config.model_config import get_model, _load as _load_config
 
 _THINK_RE = _re.compile(r'<think>.*?</think>', _re.DOTALL)
@@ -235,8 +236,9 @@ def analyze_file_with_model(
         return []
 
     results: list[dict] = []
+    prompt_language = language_config.prompt_language(language, source)
     for chunk in split_into_chunks(source, max_chars):
-        prompt = template.format(language=language, source=chunk)
+        prompt = template.format(language=prompt_language, source=chunk)
         if agents > 1:
             results.extend(call_model_multi(prompt, role=role, n=agents))
         else:
@@ -295,10 +297,13 @@ async def analyze_files_async(
 
         source = file_path.read_text(encoding="utf-8", errors="replace")
         results: list[dict] = []
-        file_slots = extra_slots.get(file_path, {}) if extra_slots else {}
+        # The prompt names the file's dialect (T-SQL, PostgreSQL) where one is detected;
+        # a caller's own per-file "language" slot still wins.
+        slots = {"language": language_config.prompt_language(language, source),
+                 **(extra_slots.get(file_path, {}) if extra_slots else {})}
         chunk_failed = False
         for chunk in split_into_chunks(source, max_chars):
-            prompt = template.format(language=language, source=chunk, **file_slots)
+            prompt = template.format(source=chunk, **slots)
             if agents > 1:
                 responses = await asyncio.gather(
                     *[call_model_async(prompt, role=role, timeout=timeout) for _ in range(agents)],

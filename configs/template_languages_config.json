@@ -39,7 +39,7 @@
                     "standards": "rules/standards-powershell.md", "build": null, "test": "Invoke-Pester", "format": null },
     "bash":       { "extensions": [".sh", ".bash"], "kind": "code", "comment_style": "hash", "has_inheritance": false,
                     "standards": "rules/standards-bash.md", "build": null, "test": "bats .", "format": "shfmt -w ." },
-    "sql":        { "extensions": [".sql"], "kind": "query", "comment_style": "dash", "has_inheritance": false,
+    "sql":        { "extensions": [".sql"], "kind": "query", "label": "SQL", "comment_style": "dash", "has_inheritance": false,
                     "standards": null, "build": null, "test": null, "format": null },
     "yaml":       { "extensions": [".yaml", ".yml"], "kind": "data", "comment_style": "hash", "has_inheritance": false,
                     "standards": null, "build": null, "test": null, "format": null },
@@ -66,9 +66,13 @@
   ],
   "dialects": {
     "sql": {
-      "mssql":      { "patterns": ["(?mi)^\\s*GO\\s*$", "(?i)\\bNVARCHAR\\b", "(?i)\\[dbo\\]\\."],
+      "mssql":      { "label": "T-SQL",
+                      "patterns": ["(?mi)^\\s*GO\\s*$", "(?i)\\bNVARCHAR\\b", "(?i)\\[dbo\\]\\.",
+                                   "(?i)\\bsp_executesql\\b", "(?i)\\bBEGIN\\s+TRY\\b", "@@\\w+"],
                       "standards": "rules/standards-sqlserver.md" },
-      "postgresql": { "patterns": ["(?i)\\bSERIAL\\b", "::\\w+", "(?i)\\bRETURNING\\b"],
+      "postgresql": { "label": "PostgreSQL",
+                      "patterns": ["(?i)\\bSERIAL\\b", "::\\w+", "(?i)\\bRETURNING\\b",
+                                   "(?i)\\bLANGUAGE\\s+plpgsql\\b", "\\$\\$", "(?i)\\bRAISE\\s+(?:NOTICE|EXCEPTION)\\b"],
                       "standards": "rules/standards-postgresql.md" }
     },
     "vue": {

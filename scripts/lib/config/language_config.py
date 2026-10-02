@@ -185,6 +185,21 @@ def dialects(language: str) -> dict[str, dict]:
     return _load().get("dialects", {}).get(language, {})
 
 
+def prompt_language(language: str, content: str | None = None) -> str:
+    """How a prompt names a file's language.
+
+    The detected dialect's `label` (T-SQL, PostgreSQL) when content resolves one,
+    else the language's own `label` (SQL), else its config name. The dialect is
+    what decides valid syntax, and so what an injection or a bug even looks like.
+    """
+    if content is not None:
+        dialect = detect_dialect(language, content)
+        label = dialects(language).get(dialect, {}).get("label") if dialect else None
+        if label:
+            return label
+    return get_language(language).get("label", language)
+
+
 def detect_dialect(language: str, content: str) -> str | None:
     """Dialect whose patterns hit most often in content.
 
