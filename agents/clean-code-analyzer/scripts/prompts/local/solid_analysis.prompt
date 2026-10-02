@@ -1,0 +1,21 @@
+Analyze this {language} code for SOLID principle violations.
+
+Source file:
+{source}
+
+Return a JSON array of violations. Each violation:
+{{
+  "principle": "S|O|L|I|D",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "violation": "description of what rule is broken",
+  "suggestion": "concrete fix"
+}}
+
+S = Single Responsibility: class has more than one reason to change
+O = Open/Closed: modification instead of extension pattern
+L = Liskov Substitution: subclass breaks parent contract
+I = Interface Segregation: fat interface, clients forced to depend on unused methods
+D = Dependency Inversion: depends on concrete class instead of abstraction
+
+Return [] if no violations found. Return ONLY the JSON array, no prose.

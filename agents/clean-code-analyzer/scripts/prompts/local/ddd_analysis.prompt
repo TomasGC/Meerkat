@@ -1,0 +1,25 @@
+Analyze this {language} code for Domain-Driven Design (DDD) violations.
+
+Source file:
+{source}
+
+Return a JSON array of violations:
+{{
+  "pattern": "anemic-domain-model|business-logic-in-service|ubiquitous-language-violation|aggregate-boundary-violation|missing-value-object",
+  "class_or_method": "name",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "violation": "what DDD principle is broken",
+  "suggestion": "how to fix with DDD patterns"
+}}
+
+Anemic domain model: entity/aggregate with only getters/setters and no behavior methods.
+Business logic in service: service/controller containing domain rules (calculations, validations)
+  that belong in the domain model.
+Ubiquitous language violation: technical names (UserData, ProcessItem) for domain concepts
+  that should use domain language.
+Aggregate boundary: directly referencing internal entities of another aggregate.
+Missing value object: primitive obsession where a Value Object would capture business rules
+  (Money, Email, Address as raw strings/ints).
+
+Return [] if no violations. Return ONLY the JSON array.

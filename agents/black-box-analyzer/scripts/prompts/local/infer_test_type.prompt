@@ -1,0 +1,7 @@
+Classify this test as exactly one of: unit, int_mock, int_real, e2e.
+Rules: unit=pure in-process no I/O; int_mock=uses mocks/stubs for deps; int_real=hits real DB/FS/HTTP; e2e=full instrumented UI/browser.
+Reply with ONLY the classification word.
+
+Test name: {test_name}
+Test body (first 600 chars):
+{test_body}

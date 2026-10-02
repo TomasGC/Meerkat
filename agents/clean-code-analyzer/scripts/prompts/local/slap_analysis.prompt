@@ -1,0 +1,19 @@
+Analyze this {language} code for SLAP (Single Level of Abstraction Principle) violations.
+
+Source file:
+{source}
+
+Return a JSON array of violations:
+{{
+  "function": "function name",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "violation": "mixed abstraction levels: high-level X alongside low-level Y",
+  "suggestion": "extract low-level details into helper function"
+}}
+
+SLAP: each function should operate at one level of abstraction.
+Violation: a function that calls high-level orchestration methods (ProcessOrder, SendEmail)
+  alongside low-level implementation details (parsing strings, bit manipulation, SQL queries).
+
+Return [] if no violations. Return ONLY the JSON array.

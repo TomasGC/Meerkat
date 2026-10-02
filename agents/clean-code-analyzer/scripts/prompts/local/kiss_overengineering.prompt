@@ -1,0 +1,19 @@
+Analyze this {language} code for KISS (Keep It Simple) violations and over-engineering.
+
+Source file:
+{source}
+
+Return a JSON array of violations:
+{{
+  "pattern": "over-abstraction|premature-generalization|unnecessary-pattern|complex-solution|speculative-design",
+  "line": <line number>,
+  "severity": "high|medium|low",
+  "violation": "what makes this unnecessarily complex",
+  "suggestion": "simpler alternative"
+}}
+
+Look for: abstract factories for a single implementation, strategy pattern when a simple if suffices,
+generic type parameters that are never varied, visitor pattern on 2 types,
+builder pattern for 2-field objects, over-parameterized functions.
+
+Return [] if no violations. Return ONLY the JSON array.
