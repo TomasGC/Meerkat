@@ -22,10 +22,21 @@ _SHARED = Path.home() / ".claude" / "scripts"
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
+from lib.config import language_config
 from lib.engine.cache import clear_cache
-from lib.engine.discovery import detect_language, get_branch_files, get_changed_files, get_staged_files
+from lib.engine.discovery import (
+    discover_files,
+    dominant_language,
+    get_branch_files,
+    get_changed_files,
+    get_staged_files,
+    group_by_language,
+)
 
 _SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
+
+# A checker module may declare `FILE_KINDS`; without it, it analyzes code only.
+_DEFAULT_FILE_KINDS = ("code",)
 
 
 def _progress_bar(completed: int, total: int, width: int = 28) -> str:
@@ -91,6 +102,65 @@ def _run_checker(
             "files_analyzed": 0,
             "duration_ms": 0,
         }
+
+
+def _file_kinds(module_path: str) -> tuple[str, ...] | None:
+    """The language kinds a checker analyzes. None when the module cannot be imported."""
+    try:
+        return tuple(getattr(importlib.import_module(module_path), "FILE_KINDS", _DEFAULT_FILE_KINDS))
+    except Exception:
+        return None
+
+
+def _run_by_language(
+    name: str,
+    module_path: str,
+    path: Path,
+    groups: dict[str, list[Path]],
+    agents: int = 1,
+    no_cache: bool = False,
+    cache_ttl_days: int = 7,
+    role: str | None = None,
+    cache_dir: Path | None = None,
+) -> dict:
+    """One run per language group, each with its own concrete language, merged into one result.
+
+    A checker never sees "mixed": its prompts and rule tables always get the
+    language of the files they are actually reading.
+    """
+    runs = [
+        _run_checker(name, module_path, path, language, files, agents, no_cache,
+                     cache_ttl_days, role, cache_dir)
+        for language, files in groups.items()
+    ]
+    return _merge_runs(name, runs)
+
+
+def _merge_runs(name: str, runs: list[dict]) -> dict:
+    """Fold per-language results into one checker result: violations and counters add up."""
+    merged = {
+        "principle": runs[0].get("principle", name) if runs else name,
+        "success": all(r.get("success", False) for r in runs),
+        "violations": [v for r in runs for v in r.get("violations", [])],
+        "files_analyzed": sum(r.get("files_analyzed", 0) for r in runs),
+        "duration_ms": sum(r.get("duration_ms", 0) for r in runs),
+    }
+    errors = [r["error"] for r in runs if r.get("error")]
+    if errors:
+        merged["error"] = "; ".join(errors)
+    for key in ("cache_hits", "cache_total"):
+        if any(key in r for r in runs):
+            merged[key] = sum(r.get(key, 0) for r in runs)
+    return merged
+
+
+def _languages_analyzed(groups_by_checker: dict[str, dict[str, list[Path]]]) -> dict[str, int]:
+    """language -> distinct files at least one checker analyzed, in config order."""
+    files: dict[str, set[Path]] = {}
+    for groups in groups_by_checker.values():
+        for language, group in groups.items():
+            files.setdefault(language, set()).update(group)
+    return {name: len(files[name]) for name in language_config.all_languages() if name in files}
 
 
 def _build_summary(results: list[dict]) -> dict:
@@ -205,7 +275,7 @@ def main(
         if unknown:
             print(f"[WARN] Unknown checkers: {', '.join(unknown)}", file=sys.stderr)
 
-    language = detect_language(path)
+    language = dominant_language(path)
 
     incremental_files: list | None = None
     if args.staged:
@@ -234,9 +304,21 @@ def main(
         else:
             print("[Auto] base branch not found; running full analysis", file=sys.stderr, flush=True)
 
+    # Every checker runs once per language it accepts, so no prompt ever reads "mixed".
+    # A checker that cannot be imported still gets one run, so its error is reported.
+    targets = incremental_files if incremental_files is not None else discover_files(path)
+    groups_by_checker: dict[str, dict[str, list[Path]]] = {}
+    for name, mod_path in selected:
+        kinds = _file_kinds(mod_path)
+        groups_by_checker[name] = group_by_language(targets, kinds) if kinds is not None else {language: targets}
+    languages = _languages_analyzed(groups_by_checker)
+
     if args.stream:
         mode = f"incremental ({len(incremental_files)} files)" if incremental_files is not None else "full"
         print(f"\n{app_name} — {path} ({language}) [{mode}]", file=sys.stderr, flush=True)
+        if languages:
+            listed = ", ".join(f"{name} {count}" for name, count in languages.items())
+            print(f"Languages: {listed}", file=sys.stderr, flush=True)
         if args.agents > 1:
             print(f"Local AI agents: {args.agents}x per file (dedup-merged)", file=sys.stderr, flush=True)
         print(f"Running {len(selected)} checkers...\n", file=sys.stderr, flush=True)
@@ -281,9 +363,8 @@ def main(
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for name, mod_path in selected:
             future = executor.submit(
-                _run_checker, name, mod_path, path, language,
-                incremental_files, args.agents, args.no_cache, args.cache_ttl, args.role,
-                cache_dir,
+                _run_by_language, name, mod_path, path, groups_by_checker[name],
+                args.agents, args.no_cache, args.cache_ttl, args.role, cache_dir,
             )
             future.add_done_callback(lambda f, n=name: on_checker_done(f, n))
 
@@ -339,6 +420,7 @@ def main(
         "success": True,
         "path": str(path),
         "language": language,
+        "languages": languages,
         "analysis_time_ms": total_time,
         "files_analyzed": total_files,
         "total_violations": len(all_violations),

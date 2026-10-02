@@ -44,7 +44,9 @@
     "yaml":       { "extensions": [".yaml", ".yml"], "kind": "data", "comment_style": "hash", "has_inheritance": false,
                     "standards": null, "build": null, "test": null, "format": null },
     "dockerfile": { "extensions": [], "filename_pattern": "^[Dd]ockerfile(\\.\\w+)?$", "kind": "config", "comment_style": "hash", "has_inheritance": false,
-                    "standards": "rules/standards-docker.md", "build": "docker build .", "test": null, "format": null }
+                    "standards": "rules/standards-docker.md", "build": "docker build .", "test": null, "format": null },
+    "prompt":     { "extensions": [".prompt"], "kind": "prompt", "comment_style": null, "has_inheritance": false,
+                    "standards": null, "build": null, "test": null, "format": null }
   },
   "project_indicators": [
     { "language": "go",         "markers": ["go.mod", "go.sum"] },

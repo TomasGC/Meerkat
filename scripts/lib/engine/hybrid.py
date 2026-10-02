@@ -20,7 +20,7 @@ from lib.ai.model_utils import analyze_files_parallel, check_server_available
 from lib.config import language_config
 from lib.engine.cache import get_cached, set_cached
 from lib.engine.dedup import drop_near_duplicates, format_known_findings
-from lib.engine.discovery import _LANG_EXTENSIONS, _TEST_MARKERS, discover_files
+from lib.engine.discovery import _LANG_EXTENSIONS, discover_files, is_test_file
 
 _ALL_EXTENSIONS = set(language_config.extensions())
 
@@ -34,16 +34,17 @@ def resolve_language(file: Path, language: str) -> str:
         return "dockerfile"
     if language != "mixed":
         return language
-    return language_config.language_for_extension(file.suffix) or "unknown"
+    return language_config.language_for_file(file) or "unknown"
 
 
 def select_files(path: Path, language: str, files: list | None) -> list[Path]:
     """Return the files to analyze, honouring an explicit incremental file list."""
     if files is not None:
-        return [f for f in files if f.suffix in _ALL_EXTENSIONS]
+        # By language, not suffix: a Dockerfile has none. Tests are skipped in both
+        # modes, so an incremental run analyzes the same kind of files as a full one.
+        return [f for f in files if language_config.language_for_file(f) is not None and not is_test_file(f)]
     exts = _LANG_EXTENSIONS.get(language) if language != "mixed" else None
-    discovered = discover_files(path, exts)
-    return [f for f in discovered if not any(m in f.name.lower() for m in _TEST_MARKERS)]
+    return [f for f in discover_files(path, exts) if not is_test_file(f)]
 
 
 def scan_patterns(
@@ -95,6 +96,7 @@ def run_hybrid(
     format_ai_violation: Callable[[dict, str], dict] | None = None,
     cache_dir: Path | None = None,
     cache_ttl_days: int = 7,
+    ai_filter: Callable[[Path], bool] | None = None,
 ) -> dict:
     """Run the mechanical pass, then the AI pass informed by its results.
 
@@ -109,6 +111,10 @@ def run_hybrid(
     returns differently-shaped items (e.g. a dynamic principle tag).
 
     `prompt=None` skips the AI pass entirely — for checkers with no AI layer.
+
+    `ai_filter(file) -> bool` narrows the AI pass to the files it accepts, for a
+    prompt that only makes sense on some of them (a test-gap prompt cannot see
+    the tests, so it only runs on files the mechanical pass found untested).
 
     `cache_dir` enables a per-file cache of the raw AI items, keyed by file
     content hash and `(prompt, role, agents)`. Only misses reach the model;
@@ -141,6 +147,8 @@ def run_hybrid(
 
     if prompt is not None:
         source_files = select_files(path, language, files)
+        if ai_filter is not None:
+            source_files = [f for f in source_files if ai_filter(f)]
         if check_server_available(role) and source_files:
             if mechanical_fn is not None:
                 by_file: dict[str, list[dict]] = {}

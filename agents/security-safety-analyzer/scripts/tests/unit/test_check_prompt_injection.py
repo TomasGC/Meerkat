@@ -68,3 +68,26 @@ class TestRunFunction:
         with patch("checkers.check_prompt_injection.check_server_available", return_value=False):
             result = run(tmp_path, "python")
         assert result["violations"] == []
+
+    def test_prompt_group_gets_the_pattern_pass(self, tmp_path):
+        """The orchestrator hands `.prompt` templates over as their own "prompt" group."""
+        f = _make_file(tmp_path, "system.prompt", "Answer the following: {user_input}\n")
+        with patch("checkers.check_prompt_injection.check_server_available", return_value=False):
+            result = run(tmp_path, "prompt", files=[f])
+        assert result["files_analyzed"] == 1
+        assert [v["file"] for v in result["violations"]] == ["system.prompt"]
+
+    def test_prompt_group_never_reaches_the_ai(self, tmp_path):
+        f = _make_file(tmp_path, "system.prompt", "Answer the following: {user_input}\n")
+        with patch("checkers.check_prompt_injection.check_server_available", return_value=True), \
+             patch("checkers.check_prompt_injection.analyze_files_parallel") as ai:
+            run(tmp_path, "prompt", files=[f])
+        ai.assert_not_called()
+
+    def test_code_group_does_not_rescan_prompt_templates(self, tmp_path):
+        """Templates used to be globbed on every run; once per language group would report them N times."""
+        src = _make_file(tmp_path, "agent.py", "x = 1\n")
+        _make_file(tmp_path, "system.prompt", "Answer the following: {user_input}\n")
+        with patch("checkers.check_prompt_injection.check_server_available", return_value=False):
+            result = run(tmp_path, "python", files=[src])
+        assert result["violations"] == []

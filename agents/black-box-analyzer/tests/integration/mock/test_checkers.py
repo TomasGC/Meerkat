@@ -31,7 +31,7 @@ def _make_project(root: Path) -> None:
 
 def test_unit_gap_checker_discovers_uncovered_file(tmp_path):
     _make_project(tmp_path)
-    with patch("checkers.check_unit_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run_unit(tmp_path, "python")
     assert result["success"] is True
     assert result["files_analyzed"] == 2
@@ -40,7 +40,7 @@ def test_unit_gap_checker_discovers_uncovered_file(tmp_path):
 
 def test_integ_mock_gap_checker_detects_gap(tmp_path):
     _make_project(tmp_path)
-    with patch("checkers.check_integ_mock_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run_integ_mock(tmp_path, "python")
     assert result["success"] is True
     assert any("utils" in v["file"] for v in result["violations"])
@@ -48,7 +48,7 @@ def test_integ_mock_gap_checker_detects_gap(tmp_path):
 
 def test_integ_real_gap_checker_detects_gap(tmp_path):
     _make_project(tmp_path)
-    with patch("checkers.check_integ_real_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run_integ_real(tmp_path, "python")
     assert result["success"] is True
     assert any("utils" in v["file"] for v in result["violations"])
@@ -56,7 +56,7 @@ def test_integ_real_gap_checker_detects_gap(tmp_path):
 
 def test_e2e_gap_checker_detects_gap(tmp_path):
     _make_project(tmp_path)
-    with patch("checkers.check_e2e_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run_e2e(tmp_path, "python")
     assert result["success"] is True
     assert any("utils" in v["file"] for v in result["violations"])

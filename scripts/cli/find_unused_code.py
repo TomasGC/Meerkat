@@ -16,7 +16,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript
 from lib.config import language_config
+from lib.engine.discovery import dominant_language
 from lib.utils import run_command
+
+_SUPPORTED_LANGUAGES = ("python", "typescript", "go")
 
 
 @dataclass
@@ -113,34 +116,15 @@ class FindUnusedCodeScript(BaseCLIScript):
         return result
 
     def _detect_language(self, path: Path) -> str:
-        """Auto-detect language from the most common source-file extension.
+        """Language to analyze: the file's own, or the shared code-only vote for a directory.
 
-        Only extensions of `kind == "code"` languages vote: data and markup files
-        (json, md, yaml) must never outnumber the sources they sit beside.
+        Returns "unknown" for any language this script has no analyzer for.
         """
         if path.is_file():
-            ext = path.suffix
+            language = language_config.language_for_file(path)
         else:
-            code_exts = {e for exts in language_config.languages_of_kind("code").values() for e in exts}
-            exts = {}
-            for file in path.rglob("*"):
-                if file.is_file() and file.suffix in code_exts:
-                    ext = file.suffix
-                    exts[ext] = exts.get(ext, 0) + 1
-
-            if not exts:
-                return "unknown"
-
-            ext = max(exts, key=exts.get)
-
-        ext_map = {
-            ".py": "python",
-            ".ts": "typescript",
-            ".tsx": "typescript",
-            ".go": "go"
-        }
-
-        return ext_map.get(ext, "unknown")
+            language = dominant_language(path, threshold=0)
+        return language if language in _SUPPORTED_LANGUAGES else "unknown"
 
     def _find_unused_python(self, path: Path, recursive: bool) -> list[UnusedSymbol]:
         """Find unused Python symbols."""

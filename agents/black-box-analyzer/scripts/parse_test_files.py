@@ -29,7 +29,7 @@ from pathlib import Path
 from common.constants import TEST_FILE_PATTERNS, TEST_FRAMEWORK_PATTERNS
 from common.models import HTTPMethod, Language, TestCase, TestFramework
 from common.utils import (
-    detect_language_from_indicators,
+    detect_project_language,
     extract_line_number_from_pattern,
     format_path_relative,
     read_file_safe,
@@ -114,11 +114,6 @@ def infer_test_type(test_name: str, test_body: str) -> str:
         pass
 
     return "unit"  # safe default
-
-
-def detect_language(project_path: Path) -> Language:
-    """Detect project language from test file patterns."""
-    return detect_language_from_indicators(project_path)
 
 
 def detect_test_framework(content: str) -> TestFramework:
@@ -616,7 +611,7 @@ def parse_tests(project_path: Path, language: Language | None = None) -> list[Te
         List of TestCase objects
     """
     if not language:
-        language = detect_language(project_path)
+        language = detect_project_language(project_path)
 
     if language == Language.GO:
         return parse_go_tests(project_path)

@@ -1,0 +1,3 @@
+{
+  "service.go": "[{\"function\": \"RunTool\", \"line\": 27, \"severity\": \"high\", \"interaction_type\": \"external_service\", \"reason\": \"Shells out to an external command\", \"test_scenario\": \"Stub the command runner and assert the arguments passed\"}]"
+}

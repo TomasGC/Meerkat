@@ -15,7 +15,7 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 import lib.engine.discovery as fu
-from lib.engine.discovery import get_changed_files, get_staged_files, detect_language, read_file_safe
+from lib.engine.discovery import get_changed_files, get_staged_files, dominant_language, read_file_safe
 
 
 @pytest.fixture(autouse=True)
@@ -54,14 +54,14 @@ def test_discover_files_skips_directories(tmp_path, skip_dir):
     assert "visible.py" in names
 
 
-# ── detect_language ─────────────────────────────────────────────────────────────
+# ── dominant_language ─────────────────────────────────────────────────────────────
 
 @pytest.mark.unit
 def test_detect_language_python(tmp_path):
     """Majority .py files → 'python'."""
     for i in range(5):
         (tmp_path / f"mod{i}.py").write_text("pass")
-    assert fu.detect_language(tmp_path) == "python"
+    assert fu.dominant_language(tmp_path) == "python"
 
 
 @pytest.mark.unit
@@ -69,7 +69,7 @@ def test_detect_language_typescript(tmp_path):
     """Majority .ts files → 'typescript'."""
     for i in range(5):
         (tmp_path / f"mod{i}.ts").write_text("export {};")
-    assert fu.detect_language(tmp_path) == "typescript"
+    assert fu.dominant_language(tmp_path) == "typescript"
 
 
 @pytest.mark.unit
@@ -79,7 +79,7 @@ def test_detect_language_mixed(tmp_path):
         (tmp_path / f"py{i}.py").write_text("pass")
     for i in range(3):
         (tmp_path / f"ts{i}.ts").write_text("export {};")
-    result = fu.detect_language(tmp_path)
+    result = fu.dominant_language(tmp_path)
     assert result == "mixed"
 
 
@@ -157,12 +157,12 @@ def test_get_staged_files_returns_staged(tmp_path):
     assert "--cached" in called_cmd
 
 
-# ── detect_language edge cases ──────────────────────────────────────────────────
+# ── dominant_language edge cases ──────────────────────────────────────────────────
 
 @pytest.mark.unit
 def test_detect_language_empty_dir(tmp_path):
     """Empty directory → 'unknown'."""
-    result = detect_language(tmp_path)
+    result = dominant_language(tmp_path)
     assert result == "unknown"
 
 

@@ -1,0 +1,88 @@
+{
+  "agent": "bba",
+  "project": "kotlin_project",
+  "violations": [
+    {
+      "principle": "E2E_GAP",
+      "file": "Service.kt",
+      "line": 0,
+      "severity": "medium",
+      "message": "No E2E test file found for this source file",
+      "suggestion": "Add tests/e2e/test_Service.py (or equivalent)"
+    },
+    {
+      "principle": "INTEG_MOCK_GAP",
+      "file": "Service.kt",
+      "line": 0,
+      "severity": "medium",
+      "message": "No integration/mock test file found for this source file",
+      "suggestion": "Add tests/integration/mock/test_Service.py (or equivalent)"
+    },
+    {
+      "principle": "INTEG_REAL_GAP",
+      "file": "Service.kt",
+      "line": 0,
+      "severity": "medium",
+      "message": "No real integration test file found for this source file",
+      "suggestion": "Add tests/integration/real/test_Service.py (or equivalent)"
+    },
+    {
+      "principle": "UNIT_GAP",
+      "file": "Service.kt",
+      "line": 0,
+      "severity": "medium",
+      "message": "No unit test file found for this source file",
+      "suggestion": "Add tests/unit/test_Service.py (or equivalent)"
+    },
+    {
+      "principle": "E2E_GAP",
+      "file": "Service.kt",
+      "line": 12,
+      "severity": "medium",
+      "message": "Missing E2E test [OrderService.process] (crud_flow): Entry point for processing an order",
+      "suggestion": "Process an order end to end and check its final state"
+    },
+    {
+      "principle": "INTEG_MOCK_GAP",
+      "file": "Service.kt",
+      "line": 16,
+      "severity": "medium",
+      "message": "Missing mock integration test [OrderService.process] (external_service): Delegates the order to doWork",
+      "suggestion": "Mock doWork and assert it receives the order"
+    },
+    {
+      "principle": "UNIT_GAP",
+      "file": "Service.kt",
+      "line": 19,
+      "severity": "low",
+      "message": "Missing unit test [OrderService.fingerprint]: Digest output is part of the public API",
+      "suggestion": "A known input produces the expected digest"
+    },
+    {
+      "principle": "UNIT_GAP",
+      "file": "Service.kt",
+      "line": 22,
+      "severity": "high",
+      "message": "Missing unit test [OrderService.quantity]: Non-numeric input throws after the audit failure is swallowed",
+      "suggestion": "quantity(\"abc\") yields a defined error"
+    }
+  ],
+  "reconciliation": {
+    "E2E_GAP": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "INTEG_MOCK_GAP": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "INTEG_REAL_GAP": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "UNIT_GAP": {
+      "ai_items": 2,
+      "dropped": 0
+    }
+  }
+}

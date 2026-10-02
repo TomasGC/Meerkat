@@ -10,15 +10,20 @@ import sys
 from pathlib import Path
 from typing import Any, Generator
 
-from .constants import EXCLUDED_DIRS, LANGUAGE_INDICATORS
+from .constants import EXCLUDED_DIRS, LANGUAGE_INDICATORS  # also puts ~/.claude/scripts on sys.path
 from .models import Language, Parameter
 
+from lib.engine.discovery import dominant_language
 
-def detect_language_from_indicators(project_path: Path) -> Language:
-    """Type a project from its marker files: first indicator that exists wins.
 
-    Order comes from `LANGUAGE_INDICATORS` (config priority). Entries naming a
-    language BBA has no `Language` member for are skipped — the config is user-editable.
+def detect_project_language(project_path: Path) -> Language:
+    """The language BBA analyzes a project as — the one detector every BBA script uses.
+
+    Marker files first, first match wins in `LANGUAGE_INDICATORS` (config) order:
+    a Go service with a few Python scripts is a Go project. Without any marker,
+    the shared code-only vote names the language most source files are in.
+    Entries naming a language BBA has no `Language` member for are skipped —
+    the config is user-editable.
     """
     known = {member.value for member in Language}
     for language, markers in LANGUAGE_INDICATORS.items():
@@ -30,7 +35,8 @@ def detect_language_from_indicators(project_path: Path) -> Language:
                     return Language(language)
             elif (project_path / marker).exists():
                 return Language(language)
-    return Language.UNKNOWN
+    voted = dominant_language(project_path, threshold=0)
+    return Language(voted) if voted in known else Language.UNKNOWN
 
 
 def walk_files(

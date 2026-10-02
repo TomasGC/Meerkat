@@ -1,3 +1,4 @@
 {
-  "service.py": "[{\"exposure_type\": \"SECRET_IN_LOG\", \"line\": 71, \"severity\": \"high\", \"description\": \"Password printed on every login attempt\", \"fix\": \"Never log the password\"}]"
+  "service.py": "[{\"exposure_type\": \"SECRET_IN_LOG\", \"line\": 71, \"severity\": \"high\", \"description\": \"Password printed on every login attempt\", \"fix\": \"Never log the password\"}]",
+  "deploy.yaml": "[]"
 }

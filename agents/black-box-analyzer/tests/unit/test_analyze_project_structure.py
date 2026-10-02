@@ -5,12 +5,12 @@ from pathlib import Path
 
 # Add scripts directory to path
 
+from common.utils import detect_project_language
 from analyze_project_structure import (
     analyze_project,
     count_endpoints,
     count_test_files,
     detect_frameworks,
-    detect_language,
     detect_test_framework,
     infer_project_type,
 )
@@ -18,22 +18,22 @@ from common.models import Language, ProjectType, TestFramework
 
 def test_detect_language_go(sample_go_project):
     """Test Go language detection."""
-    language = detect_language(sample_go_project)
+    language = detect_project_language(sample_go_project)
     assert language == Language.GO
 
 def test_detect_language_typescript(sample_typescript_project):
     """Test TypeScript language detection."""
-    language = detect_language(sample_typescript_project)
+    language = detect_project_language(sample_typescript_project)
     assert language == Language.TYPESCRIPT
 
 def test_detect_language_csharp(sample_csharp_project):
     """Test C# language detection."""
-    language = detect_language(sample_csharp_project)
+    language = detect_project_language(sample_csharp_project)
     assert language == Language.CSHARP
 
 def test_detect_language_python(sample_python_project):
     """Test Python language detection."""
-    language = detect_language(sample_python_project)
+    language = detect_project_language(sample_python_project)
     assert language == Language.PYTHON
 
 def test_detect_frameworks_go(sample_go_project):
@@ -179,16 +179,16 @@ def test_analyze_project_python(sample_python_project):
     assert project_info.test_framework == TestFramework.PYTEST
 
 def test_detect_language_kotlin(sample_kotlin_project):
-    language = detect_language(sample_kotlin_project)
+    language = detect_project_language(sample_kotlin_project)
     assert language == Language.KOTLIN
 
 def test_detect_language_rust(sample_rust_project):
-    language = detect_language(sample_rust_project)
+    language = detect_project_language(sample_rust_project)
     assert language == Language.RUST
 
 def test_kotlin_not_detected_as_java(sample_kotlin_project):
     """build.gradle.kts must not trigger Java detection."""
-    language = detect_language(sample_kotlin_project)
+    language = detect_project_language(sample_kotlin_project)
     assert language != Language.JAVA
 
 def test_detect_frameworks_kotlin(sample_kotlin_project):
@@ -202,7 +202,7 @@ def test_count_endpoints_kotlin(sample_kotlin_project):
 def test_analyze_project_kotlin(sample_kotlin_project):
     # Use direct detection functions — analyze_project calls find_project_root
     # which may walk up into a system temp dir with other project indicators.
-    language = detect_language(sample_kotlin_project)
+    language = detect_project_language(sample_kotlin_project)
     assert language == Language.KOTLIN
     frameworks = detect_frameworks(sample_kotlin_project, Language.KOTLIN)
     assert "spring" in frameworks

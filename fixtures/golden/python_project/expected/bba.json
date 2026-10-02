@@ -1,0 +1,112 @@
+{
+  "agent": "bba",
+  "project": "python_project",
+  "violations": [
+    {
+      "principle": "E2E_GAP",
+      "file": "service.py",
+      "line": 0,
+      "severity": "medium",
+      "message": "No E2E test file found for this source file",
+      "suggestion": "Add tests/e2e/test_service.py (or equivalent)"
+    },
+    {
+      "principle": "INTEG_MOCK_GAP",
+      "file": "service.py",
+      "line": 0,
+      "severity": "medium",
+      "message": "No integration/mock test file found for this source file",
+      "suggestion": "Add tests/integration/mock/test_service.py (or equivalent)"
+    },
+    {
+      "principle": "INTEG_REAL_GAP",
+      "file": "service.py",
+      "line": 0,
+      "severity": "medium",
+      "message": "No real integration test file found for this source file",
+      "suggestion": "Add tests/integration/real/test_service.py (or equivalent)"
+    },
+    {
+      "principle": "UNIT_GAP",
+      "file": "service.py",
+      "line": 0,
+      "severity": "medium",
+      "message": "No unit test file found for this source file",
+      "suggestion": "Add tests/unit/test_service.py (or equivalent)"
+    },
+    {
+      "principle": "UNIT_GAP",
+      "file": "service.py",
+      "line": 25,
+      "severity": "high",
+      "message": "Missing unit test [kitchen_sink]: Five nested branches reach six distinct return values",
+      "suggestion": "One case per return value, driving a..e through each branch"
+    },
+    {
+      "principle": "E2E_GAP",
+      "file": "service.py",
+      "line": 45,
+      "severity": "high",
+      "message": "Missing E2E test [OrderService.save_order] (crud_flow): Order creation drives payment, inventory and the customer email",
+      "suggestion": "Place an order end to end and check payment, stock and the confirmation email"
+    },
+    {
+      "principle": "INTEG_MOCK_GAP",
+      "file": "service.py",
+      "line": 46,
+      "severity": "high",
+      "message": "Missing mock integration test [OrderService.save_order] (database): Writes the order and then calls four collaborators",
+      "suggestion": "Mock db_write to fail and assert no email, inventory or payment call follows"
+    },
+    {
+      "principle": "INTEG_MOCK_GAP",
+      "file": "service.py",
+      "line": 62,
+      "severity": "medium",
+      "message": "Missing mock integration test [find_order] (database): Builds and runs a query through the cursor",
+      "suggestion": "Mock the cursor and assert the executed query and the returned row"
+    },
+    {
+      "principle": "INTEG_REAL_GAP",
+      "file": "service.py",
+      "line": 62,
+      "severity": "high",
+      "message": "Missing real integration test [find_order] (db_query): Query text depends on the real database dialect",
+      "suggestion": "Run against a seeded test database and fetch a known order"
+    },
+    {
+      "principle": "INTEG_REAL_GAP",
+      "file": "service.py",
+      "line": 76,
+      "severity": "medium",
+      "message": "Missing real integration test [read_report] (file_op): Opens a file without closing it",
+      "suggestion": "Read a temp file and assert the content and that the handle is released"
+    },
+    {
+      "principle": "UNIT_GAP",
+      "file": "service.py",
+      "line": 80,
+      "severity": "high",
+      "message": "Missing unit test [average]: Division by zero is swallowed and the function returns None",
+      "suggestion": "average(10, 0) returns a defined value or raises a clear error"
+    }
+  ],
+  "reconciliation": {
+    "E2E_GAP": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "INTEG_MOCK_GAP": {
+      "ai_items": 2,
+      "dropped": 0
+    },
+    "INTEG_REAL_GAP": {
+      "ai_items": 2,
+      "dropped": 0
+    },
+    "UNIT_GAP": {
+      "ai_items": 3,
+      "dropped": 1
+    }
+  }
+}

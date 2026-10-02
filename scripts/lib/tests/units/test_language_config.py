@@ -413,6 +413,25 @@ class TestDialects:
         assert lc.detect_dialect("klingon", "anything") is None
 
 
+class TestLanguageForFile:
+    """One file -> its language, by extension first, then by filename pattern."""
+
+    def test_by_extension(self):
+        assert lc.language_for_file(Path("src/app.tsx")) == "typescript"
+
+    def test_dockerfile_by_name(self):
+        assert lc.language_for_file(Path("deploy/Dockerfile")) == "dockerfile"
+
+    def test_dockerfile_variant_by_name(self):
+        assert lc.language_for_file(Path("Dockerfile.prod")) == "dockerfile"
+
+    def test_unknown_file(self):
+        assert lc.language_for_file(Path("notes.txt")) is None
+
+    def test_accepts_str(self):
+        assert lc.language_for_file("a.go") == "go"
+
+
 class TestProjectIndicators:
     """Ordered marker-file table used to type a project (BBA), first match wins."""
 

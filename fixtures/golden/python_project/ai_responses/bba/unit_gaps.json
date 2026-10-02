@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"function\": \"kitchen_sink\", \"line\": 25, \"severity\": \"high\", \"reason\": \"Five nested branches reach six distinct return values\", \"test_scenario\": \"One case per return value, driving a..e through each branch\"}, {\"function\": \"average\", \"line\": 80, \"severity\": \"high\", \"reason\": \"Division by zero is swallowed and the function returns None\", \"test_scenario\": \"average(10, 0) returns a defined value or raises a clear error\"}, {\"function\": \"service.py\", \"line\": 0, \"severity\": \"medium\", \"reason\": \"No unit test file exists for this module\", \"test_scenario\": \"Add tests/unit/test_service.py\"}]"
+}

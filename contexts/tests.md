@@ -49,11 +49,12 @@ agents/black-box-analyzer/tests/
 ├── agents/
 │   ├── black-box-analyzer/tests/
 │   │   ├── conftest.py
-│   │   ├── unit/            # 415 tests — checkers/_utils, 4 gap checkers (7 each), models from_dict, cache, parse_test_files, LibraryAnalyzer routing
-│   │   ├── integration/mock/ # 47 tests — library_analyzer, analyze_library_branches, 4 gap checkers (1 each)
+│   │   ├── unit/            # checkers/_utils + run_gap_checker, 4 gap checkers (7 each), detect_project_language, models from_dict, cache, LibraryAnalyzer routing
+│   │   ├── integration/mock/ # library_analyzer, analyze_library_branches, 4 gap checkers, test_golden_projects.py (replayed AI)
+│   │   │                     # unit + mock + e2e = 524
 │   │   ├── integration/real/ # 30 tests — 20 universal detection over fixtures/ (no AI), model_utils, open_report
 │   │   │   └── fixtures/     # 10 minimal projects, one per detected type — see note below
-│   │   └── e2e/             # 36 tests — parallel_analyzer, orchestrate, collect_coverage, diff_analysis, cache lifecycle
+│   │   └── e2e/             # parallel_analyzer, orchestrate (incl. --gaps), collect_coverage, diff_analysis, cache lifecycle
 │   ├── security-safety-analyzer/
 │   │   └── scripts/tests/
 │   │       ├── conftest.py
@@ -79,7 +80,8 @@ agents/black-box-analyzer/tests/
     ├── tests/conftest.py + e2e/ + integration-reals/
     ├── cli/tests/conftest.py + units/ + integration-mocks/ + integration-reals/
     ├── cli/agents/task_monitor/tests/units/    # no conftest — in root testpaths
-    ├── lib/tests/conftest.py + units/      # 198 tests — language_config, model_config, model_utils (incl. failed-call tracking), golden runner
+    ├── lib/tests/conftest.py + units/      # 251 tests — language_config, discovery, orchestrator (per-language runs), dedup,
+    │                                       # hybrid ai_filter, model_config, model_utils (failed-call tracking), golden runner
     └── lib/cli/tests/conftest.py + units/
 
 skills/
@@ -174,12 +176,14 @@ fixture edit is a contract change:
 
 ---
 
-## Golden Fixtures (CCA + SSA)
+## Golden Fixtures (CCA + SSA + BBA gaps)
 
 `~/.claude/fixtures/` is shared test data, owned by no agent:
 
 - `fixtures/projects/<p>/` — `python_project`, `go_project`, `kotlin_project`: **source only**, seeded with
-  clean-code and security issues on purpose. Never imported or run.
+  clean-code and security issues on purpose, and no tests at all (every file is a gap in every BBA tier).
+  Never imported or run. `python_project/deploy.yaml` is a deliberate Kubernetes manifest (#20): only the
+  SSA checkers that accept data files see it, under language `yaml`; CCA and BBA goldens must not change.
 - `fixtures/golden/<p>/expected/<agent>.json` — every issue the agent must find, all fields compared
   (`principle, file, line, severity, message, suggestion`, posix paths), plus per-checker reconciliation counts.
 - `fixtures/golden/<p>/ai_responses/<agent>/<prompt>.json` — recorded model responses, replayed at
@@ -187,7 +191,11 @@ fixture edit is a contract change:
   response or an unused response is an error — a silent `[]` can never pass.
 
 Rules:
-- Metadata stays out of `projects/`: json files there would skew language detection and could be scanned.
+- Metadata stays out of `projects/`: a file there is input, and any checker accepting its kind scans it.
+- Keep an AI response more than 3 lines from a mechanical finding in the same file unless it is meant to be
+  dropped as a duplicate: reconciliation's proximity window is ±3 lines (whole-file line-0 findings excepted).
+- Test-file detection is a substring match on the file name (`test`, `spec`, `fixture`, `mock`, `migration`):
+  a source named `untested.py` or `contest.py` is treated as a test. Pick fixture names accordingly.
 - No `__init__.py`, no `test_*` file, no directory name from `language_config.skip_dirs()` under `fixtures/`.
 - Fake secrets must not match a real provider format (no `sk_live_`, `AKIA`, `ghp_`): push protection.
 - `.gitignore` needs `!/fixtures/projects/`: the unanchored `projects/` rule would ignore it.

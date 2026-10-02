@@ -61,24 +61,42 @@ def discover_files(path: Path, extensions: list[str] | None = None) -> list[Path
     return results
 
 
-def detect_language(path: Path) -> str:
-    """Detect dominant language by counting source file extensions."""
-    files = discover_files(path)
-    counts: dict[str, int] = {lang: 0 for lang in _LANG_EXTENSIONS}
+def is_test_file(path: Path) -> bool:
+    """True if the file name marks it as a test, spec, fixture, mock or migration."""
+    name = path.name.lower()
+    return any(m in name for m in _TEST_MARKERS)
 
+
+def group_by_language(files: list[Path], kinds: tuple[str, ...] = ("code",)) -> dict[str, list[Path]]:
+    """Split files by their own language, keeping only languages of the given kinds.
+
+    Config order, so runs over the groups are deterministic.
+    """
+    wanted = language_config.languages_of_kind(*kinds)
+    by_language: dict[str, list[Path]] = {}
     for f in files:
-        for lang, exts in _LANG_EXTENSIONS.items():
-            if f.suffix in exts:
-                counts[lang] += 1
+        language = language_config.language_for_file(f)
+        if language in wanted:
+            by_language.setdefault(language, []).append(f)
+    return {name: by_language[name] for name in wanted if name in by_language}
 
-    if not any(counts.values()):
+
+def dominant_language(path: Path, threshold: float = 0.6) -> str:
+    """Language most code files under path are written in — the one shared vote.
+
+    Only `kind == "code"` languages vote: yaml, json or markdown must never
+    outnumber the sources they sit beside. Returns "mixed" when the leader holds
+    less than `threshold` of the votes (`threshold=0` always names the leader),
+    "unknown" when there is no code at all. Ties break toward config order.
+    """
+    code = language_config.languages_of_kind("code")
+    counts = {name: len(group) for name, group in group_by_language(discover_files(path)).items()}
+    if not counts:
         return "unknown"
-
-    dominant = max(counts, key=lambda k: counts[k])
-    total = sum(counts.values())
-    if counts[dominant] / total < 0.6:
+    leader = max(code, key=lambda name: counts.get(name, 0))
+    if counts[leader] / sum(counts.values()) < threshold:
         return "mixed"
-    return dominant
+    return leader
 
 
 def get_changed_files(path: Path, since: str = "HEAD") -> list[Path] | None:

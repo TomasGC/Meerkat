@@ -46,6 +46,7 @@ _MAX_CHARS = 8000  # analyze_files_async's default chunk size
 AGENTS: dict[str, tuple[str, str, str, int]] = {
     "cca": ("clean-code-analyzer", "Clean Code Analysis", "principle", 6),
     "ssa": ("security-safety-analyzer", "Security Safety Analysis", "checker", 5),
+    "bba": ("black-box-analyzer", "Black-Box Analyzer — test gaps", "checker", 4),
 }
 
 _IDENTITY_FIELDS = ("file", "line", "principle")
@@ -207,8 +208,10 @@ class Replay:
                 if not result.get("success", False):
                     self.failures.append(f"{principle}: {result.get('error', 'failed')}")
                 if counts["called"]:
-                    self.reconciliation[principle] = {"ai_items": counts["ai_items"],
-                                                      "dropped": counts["dropped"]}
+                    # One checker runs once per language group: the counts add up.
+                    totals = self.reconciliation.setdefault(principle, {"ai_items": 0, "dropped": 0})
+                    totals["ai_items"] += counts["ai_items"]
+                    totals["dropped"] += counts["dropped"]
             return result
         return run_checker
 

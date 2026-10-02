@@ -11,6 +11,8 @@ from common.hybrid import run_hybrid
 
 _PRINCIPLE = "Misconfiguration"
 _PROMPT = "misconfiguration"
+# Misconfiguration lives in manifests and Dockerfiles as much as in code.
+FILE_KINDS = ("code", "data", "config")
 
 _DEBUG_EXPOSED = "Debug output enabled — leaks stack traces and configuration"
 _DEBUG_FIX = "Guard behind an environment check and disable it outside development"

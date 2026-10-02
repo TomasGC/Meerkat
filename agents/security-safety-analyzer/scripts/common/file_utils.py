@@ -16,10 +16,12 @@ from lib.engine.discovery import (  # noqa: F401
     _LANG_EXTENSIONS,
     _SKIP_DIRS,
     _TEST_MARKERS,
-    detect_language,
     discover_files,
+    dominant_language,
     get_branch_files,
     get_changed_files,
     get_staged_files,
+    group_by_language,
+    is_test_file,
     read_file_safe,
 )

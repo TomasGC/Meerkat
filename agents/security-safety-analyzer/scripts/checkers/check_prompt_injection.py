@@ -8,12 +8,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.file_utils import discover_files, _LANG_EXTENSIONS, _TEST_MARKERS
+from common.hybrid import resolve_language, select_files
 from common.model_utils import analyze_files_parallel, check_server_available, PROMPTS_DIR
 from common.dedup import drop_near_duplicates, format_known_findings
 
 _PRINCIPLE = "PromptInjection"
 _PROMPT = "prompt_injection"
+# Source code, plus the `.prompt` templates it formats.
+FILE_KINDS = ("code", "prompt")
 
 # Mechanical: detect user-controlled data interpolated directly into prompt strings
 _PYTHON_PATTERNS = [
@@ -85,27 +87,16 @@ def run(
     start = time.time()
     violations = []
 
-    # Include .prompt files in addition to source files
-    prompt_files = list(path.rglob("*.prompt")) if path.is_dir() else []
-
-    if files is not None:
-        source_files = [f for f in files if f.suffix in {e for exts in _LANG_EXTENSIONS.values() for e in exts}]
-    else:
-        exts = _LANG_EXTENSIONS.get(language) if language != "mixed" else None
-        source_files = discover_files(path, exts)
-        source_files = [f for f in source_files if not any(m in f.name.lower() for m in _TEST_MARKERS)]
-
-    all_files = source_files + [f for f in prompt_files if f not in source_files]
+    source_files = select_files(path, language, files)
 
     per_file: dict[Path, list[dict]] = {}
-    for file in all_files:
-        lang = language if language != "mixed" else next(
-            (l for l, exts in _LANG_EXTENSIONS.items() if file.suffix in exts), "unknown"
-        )
+    for file in source_files:
+        lang = resolve_language(file, language)
         per_file[file] = _mechanical_check(file, path, lang)
         violations.extend(per_file[file])
 
-    if check_server_available(role) and source_files:
+    # Prompt templates get the pattern pass only; the AI prompt is written for source code.
+    if language != "prompt" and check_server_available(role) and source_files:
         extra_slots = {
             f: {"known_findings": format_known_findings(per_file.get(f, []))}
             for f in source_files
@@ -130,6 +121,6 @@ def run(
         "principle": _PRINCIPLE,
         "success": True,
         "violations": violations,
-        "files_analyzed": len(all_files),
+        "files_analyzed": len(source_files),
         "duration_ms": int((time.time() - start) * 1000),
     }

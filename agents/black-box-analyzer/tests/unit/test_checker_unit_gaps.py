@@ -8,7 +8,7 @@ from checkers.check_unit_gaps import run
 
 def test_run_returns_contract_keys(tmp_path):
     (tmp_path / "app.py").write_text("def foo(): pass", encoding="utf-8")
-    with patch("checkers.check_unit_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run(tmp_path, "python")
     assert {"principle", "success", "violations", "files_analyzed", "duration_ms"} <= result.keys()
     assert result["principle"] == "UNIT_GAP"
@@ -23,14 +23,14 @@ def test_run_no_violations_when_unit_test_exists(tmp_path):
     unit_dir = tmp_path / "tests" / "unit"
     unit_dir.mkdir(parents=True)
     (unit_dir / "test_foo.py").write_text("def test_foo(): pass", encoding="utf-8")
-    with patch("checkers.check_unit_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run(tmp_path, "python")
     assert result["violations"] == []
 
 
 def test_run_violation_when_no_test_server_unavailable(tmp_path):
     (tmp_path / "bar.py").write_text("def bar(): pass", encoding="utf-8")
-    with patch("checkers.check_unit_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run(tmp_path, "python")
     assert len(result["violations"]) == 1
     assert result["violations"][0]["principle"] == "UNIT_GAP"
@@ -47,30 +47,32 @@ def test_run_model_results_mapped_to_violations(tmp_path):
         "reason": "non-trivial computation",
         "test_scenario": "test process with zero and negative inputs",
     }]
-    with patch("checkers.check_unit_gaps.check_server_available", return_value=True), \
-         patch("checkers.check_unit_gaps.analyze_files_parallel", return_value=model_output):
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
+         patch("lib.engine.hybrid.analyze_files_parallel", return_value=model_output):
         result = run(tmp_path, "python")
-    assert len(result["violations"]) == 1
-    assert result["violations"][0]["severity"] == "high"
-    assert "process" in result["violations"][0]["message"]
+    # Both layers report: the whole-file gap, and the function the AI singled out
+    mechanical, ai = sorted(result["violations"], key=lambda v: v["line"])
+    assert (mechanical["line"], mechanical["message"]) == (0, "No unit test file found for this source file")
+    assert ai["line"] == 1 and ai["severity"] == "high"
+    assert "process" in ai["message"]
 
 
 def test_run_respects_files_filter(tmp_path):
     (tmp_path / "a.py").write_text("def a(): pass", encoding="utf-8")
     (tmp_path / "b.py").write_text("def b(): pass", encoding="utf-8")
-    with patch("checkers.check_unit_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run(tmp_path, "python", files=[tmp_path / "a.py"])
     assert result["files_analyzed"] == 1
 
 
 def test_run_fallback_violation_has_suggestion(tmp_path):
     (tmp_path / "svc.py").write_text("def svc(): pass", encoding="utf-8")
-    with patch("checkers.check_unit_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run(tmp_path, "python")
     assert result["violations"][0]["suggestion"] != ""
 
 
 def test_run_duration_ms_non_negative(tmp_path):
-    with patch("checkers.check_unit_gaps.check_server_available", return_value=False):
+    with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = run(tmp_path, "python")
     assert result["duration_ms"] >= 0

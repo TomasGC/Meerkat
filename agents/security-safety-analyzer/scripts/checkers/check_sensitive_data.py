@@ -11,6 +11,8 @@ from common.hybrid import run_hybrid
 
 _PRINCIPLE = "SensitiveData"
 _PROMPT = "sensitive_data"
+# Secrets and leaked details turn up in views, manifests and Dockerfiles too.
+FILE_KINDS = ("code", "markup", "data", "config")
 
 # Interpolated mid-pattern, so it carries no inline flag: the owning pattern
 # opens with (?i) instead — Python rejects a global flag away from position 0.
