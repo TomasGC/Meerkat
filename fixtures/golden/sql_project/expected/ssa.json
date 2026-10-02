@@ -1,0 +1,120 @@
+{
+  "agent": "ssa",
+  "project": "sql_project",
+  "violations": [
+    {
+      "principle": "Security",
+      "file": "orders_mssql.sql",
+      "line": 6,
+      "severity": "high",
+      "message": "Dynamic SQL built by concatenating a variable — SQL injection risk",
+      "suggestion": "Use parameterized queries or sanitize/escape all external input"
+    },
+    {
+      "principle": "ErrorHandling",
+      "file": "orders_mssql.sql",
+      "line": 17,
+      "severity": "high",
+      "message": "Empty CATCH block",
+      "suggestion": "Handle or log the exception; never silently swallow errors"
+    },
+    {
+      "principle": "Concurrency",
+      "file": "orders_mssql.sql",
+      "line": 26,
+      "severity": "medium",
+      "message": "NOLOCK reads uncommitted data — dirty, missing or duplicated rows",
+      "suggestion": "Protect shared state with a lock or use an immutable/atomic alternative"
+    },
+    {
+      "principle": "SensitiveData",
+      "file": "orders_mssql.sql",
+      "line": 33,
+      "severity": "high",
+      "message": "Sensitive field written to a log or console — secrets persist in log storage",
+      "suggestion": "Log an identifier or a masked value instead of the secret itself"
+    },
+    {
+      "principle": "Concurrency",
+      "file": "orders_mssql.sql",
+      "line": 34,
+      "severity": "medium",
+      "message": "[NON_ATOMIC_WRITE]: Password hash updated outside a transaction",
+      "suggestion": "Wrap the update in BEGIN TRANSACTION / COMMIT with error handling"
+    },
+    {
+      "principle": "Misconfiguration",
+      "file": "orders_mssql.sql",
+      "line": 38,
+      "severity": "high",
+      "message": "Privilege granted to PUBLIC — every login inherits it",
+      "suggestion": "Grant to a dedicated role instead of PUBLIC"
+    },
+    {
+      "principle": "SensitiveData",
+      "file": "orders_pg.sql",
+      "line": 7,
+      "severity": "medium",
+      "message": "Internal error detail returned to the caller — leaks stack layout and paths",
+      "suggestion": "Log the detail server-side and return a generic error message"
+    },
+    {
+      "principle": "Misconfiguration",
+      "file": "orders_pg.sql",
+      "line": 9,
+      "severity": "high",
+      "message": "[BROAD_PERMISSIONS]: SECURITY DEFINER function without a pinned search_path",
+      "suggestion": "Add SET search_path = pg_catalog, public to the function"
+    },
+    {
+      "principle": "Security",
+      "file": "orders_pg.sql",
+      "line": 14,
+      "severity": "high",
+      "message": "Dynamic SQL built by || concatenation — SQL injection risk",
+      "suggestion": "Use parameterized queries or sanitize/escape all external input"
+    },
+    {
+      "principle": "ErrorHandling",
+      "file": "orders_pg.sql",
+      "line": 23,
+      "severity": "high",
+      "message": "Every exception swallowed with WHEN OTHERS THEN NULL",
+      "suggestion": "Handle or log the exception; never silently swallow errors"
+    },
+    {
+      "principle": "Misconfiguration",
+      "file": "orders_pg.sql",
+      "line": 28,
+      "severity": "high",
+      "message": "GRANT ALL hands out every privilege on the object",
+      "suggestion": "Grant only the privileges the role needs"
+    },
+    {
+      "principle": "SensitiveData",
+      "file": "orders_pg.sql",
+      "line": 30,
+      "severity": "high",
+      "message": "Credential embedded in a connection string inside SQL",
+      "suggestion": "Use a stored credential or user mapping, never a literal password"
+    }
+  ],
+  "reconciliation": {
+    "Concurrency": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "Misconfiguration": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "Security": {
+      "ai_items": 2,
+      "dropped": 2
+    },
+    "SensitiveData": {
+      "ai_items": 1,
+      "dropped": 1
+    }
+  }
+}

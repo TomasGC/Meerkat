@@ -1,0 +1,4 @@
+{
+  "orders_mssql.sql": "[]",
+  "orders_pg.sql": "[{\"misconfig_type\": \"BROAD_PERMISSIONS\", \"line\": 9, \"severity\": \"high\", \"description\": \"SECURITY DEFINER function without a pinned search_path\", \"fix\": \"Add SET search_path = pg_catalog, public to the function\"}]"
+}
