@@ -10,7 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from common.dedup import drop_near_duplicates, format_known_findings
-from common.file_utils import discover_files, _LANG_EXTENSIONS, _TEST_MARKERS
+from common.file_utils import _LANG_EXTENSIONS
+from common.hybrid import resolve_language, select_files
 from common.model_utils import analyze_files_parallel, check_server_available, PROMPTS_DIR
 
 _PRINCIPLE = "CrashBug"
@@ -144,12 +145,7 @@ def run(
     start = time.time()
     violations = []
 
-    if files is not None:
-        source_files = [f for f in files if f.suffix in {e for exts in _LANG_EXTENSIONS.values() for e in exts}]
-    else:
-        exts = _LANG_EXTENSIONS.get(language) if language != "mixed" else None
-        source_files = discover_files(path, exts)
-        source_files = [f for f in source_files if not any(m in f.name.lower() for m in _TEST_MARKERS)]
+    source_files = select_files(path, language, files)
 
     python_files = [f for f in source_files if f.suffix == ".py"]
     non_python_files = [f for f in source_files if f.suffix in _NON_PYTHON_EXTS]
@@ -159,9 +155,7 @@ def run(
 
     per_file: dict[Path, list[dict]] = {}
     for file in non_python_files:
-        lang = language if language != "mixed" else next(
-            (l for l, exts in _LANG_EXTENSIONS.items() if file.suffix in exts), "unknown"
-        )
+        lang = resolve_language(file, language)
         per_file[file] = _pattern_check(file, path, lang)
         violations.extend(per_file[file])
 

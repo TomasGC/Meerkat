@@ -23,7 +23,7 @@ if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
 from lib.engine.cache import clear_cache
-from lib.engine.discovery import detect_language, get_branch_files, get_changed_files, get_staged_files
+from lib.engine.discovery import dominant_language, get_branch_files, get_changed_files, get_staged_files
 
 _SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 
@@ -205,7 +205,7 @@ def main(
         if unknown:
             print(f"[WARN] Unknown checkers: {', '.join(unknown)}", file=sys.stderr)
 
-    language = detect_language(path)
+    language = dominant_language(path)
 
     incremental_files: list | None = None
     if args.staged:

@@ -20,7 +20,7 @@ from lib.ai.model_utils import analyze_files_parallel, check_server_available
 from lib.config import language_config
 from lib.engine.cache import get_cached, set_cached
 from lib.engine.dedup import drop_near_duplicates, format_known_findings
-from lib.engine.discovery import _LANG_EXTENSIONS, _TEST_MARKERS, discover_files
+from lib.engine.discovery import _LANG_EXTENSIONS, discover_files, is_test_file
 
 _ALL_EXTENSIONS = set(language_config.extensions())
 
@@ -34,16 +34,16 @@ def resolve_language(file: Path, language: str) -> str:
         return "dockerfile"
     if language != "mixed":
         return language
-    return language_config.language_for_extension(file.suffix) or "unknown"
+    return language_config.language_for_file(file) or "unknown"
 
 
 def select_files(path: Path, language: str, files: list | None) -> list[Path]:
     """Return the files to analyze, honouring an explicit incremental file list."""
     if files is not None:
-        return [f for f in files if f.suffix in _ALL_EXTENSIONS]
+        # By language, not suffix: a Dockerfile has none.
+        return [f for f in files if language_config.language_for_file(f) is not None]
     exts = _LANG_EXTENSIONS.get(language) if language != "mixed" else None
-    discovered = discover_files(path, exts)
-    return [f for f in discovered if not any(m in f.name.lower() for m in _TEST_MARKERS)]
+    return [f for f in discover_files(path, exts) if not is_test_file(f)]
 
 
 def scan_patterns(

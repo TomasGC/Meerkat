@@ -140,7 +140,7 @@ def normalize_name(name: str, component_type: ComponentType) -> str:
 
 def detect_language(file_path: Path) -> str | None:
     """
-    Detect programming language from file extension.
+    Detect programming language from file extension or name (Dockerfile).
 
     Args:
         file_path: Path to file
@@ -148,7 +148,7 @@ def detect_language(file_path: Path) -> str | None:
     Returns:
         Language name or None if unknown
     """
-    return language_config.language_for_extension(file_path.suffix)
+    return language_config.language_for_file(file_path)
 
 
 def run_command(

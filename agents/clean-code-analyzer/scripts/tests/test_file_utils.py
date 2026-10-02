@@ -15,7 +15,7 @@ if str(_SCRIPTS) not in sys.path:
 
 from lib.engine.discovery import (
     _DISCOVERY_CACHE,
-    detect_language,
+    dominant_language,
     discover_files,
     get_changed_files,
     get_staged_files,
@@ -73,23 +73,23 @@ class TestDiscoverFiles:
         assert all(f.suffix == ".py" for f in py_only)
 
 
-class TestDetectLanguage:
+class TestDominantLanguage:
     def test_python_dominant(self, tmp_path):
         for i in range(5):
             (tmp_path / f"f{i}.py").write_text("x")
         (tmp_path / "one.ts").write_text("x")
-        assert detect_language(tmp_path) == "python"
+        assert dominant_language(tmp_path) == "python"
 
     def test_mixed_when_no_dominant(self, tmp_path):
         for i in range(3):
             (tmp_path / f"a{i}.py").write_text("x")
         for i in range(3):
             (tmp_path / f"b{i}.ts").write_text("x")
-        assert detect_language(tmp_path) == "mixed"
+        assert dominant_language(tmp_path) == "mixed"
 
     def test_unknown_when_no_source(self, tmp_path):
         (tmp_path / "README.md").write_text("hello")
-        assert detect_language(tmp_path) == "unknown"
+        assert dominant_language(tmp_path) == "unknown"
 
 
 class TestGitHelpers:

@@ -118,6 +118,14 @@ def comment_style_extensions(style: str) -> set[str]:
     }
 
 
+def language_for_file(path: Path) -> str | None:
+    """Language of one file: by extension, else by filename pattern (Dockerfile)."""
+    path = Path(path)
+    return language_for_extension(path.suffix) or next(
+        (name for name in all_languages() if matches_filename(name, path.name)), None
+    )
+
+
 def filename_patterns() -> dict[str, re.Pattern]:
     """language -> compiled filename pattern, for languages matched by name not extension."""
     return {
@@ -157,10 +165,7 @@ def standards_for_file(path: Path, content: str | None = None) -> str | None:
 
     A .sql file alone cannot say whether it is T-SQL or PostgreSQL; its content can.
     """
-    path = Path(path)
-    language = language_for_extension(path.suffix)
-    if language is None:
-        language = next((n for n in all_languages() if matches_filename(n, path.name)), None)
+    language = language_for_file(path)
     if language is None:
         return None
     dialect = detect_dialect(language, content) if content is not None else None

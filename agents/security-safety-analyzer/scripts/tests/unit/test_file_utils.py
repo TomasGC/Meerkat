@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from common import file_utils
 from common.file_utils import (
-    detect_language,
+    dominant_language,
     discover_files,
     get_branch_files,
     get_changed_files,
@@ -92,31 +92,31 @@ class TestDiscoverFiles:
         assert discover_files(tmp_path) == []
 
 
-class TestDetectLanguage:
+class TestDominantLanguage:
     def test_single_language_project(self, tmp_path):
         for name in ("a.py", "b.py", "c.py"):
             (tmp_path / name).write_text("x = 1\n")
-        assert detect_language(tmp_path) == "python"
+        assert dominant_language(tmp_path) == "python"
 
     def test_dominant_language_above_threshold(self, tmp_path):
         for name in ("a.py", "b.py", "c.py", "d.py"):
             (tmp_path / name).write_text("x = 1\n")
         (tmp_path / "e.go").write_text("package main\n")
-        assert detect_language(tmp_path) == "python"
+        assert dominant_language(tmp_path) == "python"
 
     def test_even_split_is_mixed(self, tmp_path):
         (tmp_path / "a.py").write_text("x = 1\n")
         (tmp_path / "b.go").write_text("package main\n")
-        assert detect_language(tmp_path) == "mixed"
+        assert dominant_language(tmp_path) == "mixed"
 
     def test_no_source_files_is_unknown(self, tmp_path):
         (tmp_path / "notes.txt").write_text("hello\n")
-        assert detect_language(tmp_path) == "unknown"
+        assert dominant_language(tmp_path) == "unknown"
 
     def test_dockerfile_only_is_unknown(self, tmp_path):
         """dockerfile has no extensions, so it never wins the extension count."""
         (tmp_path / "Dockerfile").write_text("FROM alpine\n")
-        assert detect_language(tmp_path) == "unknown"
+        assert dominant_language(tmp_path) == "unknown"
 
 
 _GIT_HELPERS = [get_changed_files, get_branch_files, get_staged_files]
