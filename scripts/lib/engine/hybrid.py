@@ -40,8 +40,9 @@ def resolve_language(file: Path, language: str) -> str:
 def select_files(path: Path, language: str, files: list | None) -> list[Path]:
     """Return the files to analyze, honouring an explicit incremental file list."""
     if files is not None:
-        # By language, not suffix: a Dockerfile has none.
-        return [f for f in files if language_config.language_for_file(f) is not None]
+        # By language, not suffix: a Dockerfile has none. Tests are skipped in both
+        # modes, so an incremental run analyzes the same kind of files as a full one.
+        return [f for f in files if language_config.language_for_file(f) is not None and not is_test_file(f)]
     exts = _LANG_EXTENSIONS.get(language) if language != "mixed" else None
     return [f for f in discover_files(path, exts) if not is_test_file(f)]
 

@@ -269,8 +269,9 @@ def test_orchestrate_default_mode_falls_back_when_no_base_branch(tmp_path):
 
 @pytest.mark.unit
 def test_orchestrate_default_mode_falls_back_when_branch_files_none(tmp_path):
-    """When get_branch_files returns None, full analysis runs (incremental_files stays None)."""
+    """When get_branch_files returns None, full analysis runs over every discovered file."""
     from orchestrate import main as orch_main
+    (tmp_path / "mod.py").write_text("x = 1\n")
     captured_calls = []
 
     def capture_run_checker(name, mod_path, path, language, files, *args, **kwargs):
@@ -288,13 +289,13 @@ def test_orchestrate_default_mode_falls_back_when_branch_files_none(tmp_path):
                     with patch("sys.stdout", out):
                         orch_main()
 
-    # incremental_files was None → checker received None for files param
-    assert captured_calls and captured_calls[0] is None
+    # Full mode: the orchestrator discovers the files and hands each language its own group
+    assert captured_calls == [[tmp_path / "mod.py"]]
 
 
 @pytest.mark.unit
 def test_orchestrate_staged_empty_list_runs_without_crash(tmp_path):
-    """--staged with get_staged_files returning [] → checker called with [], exits 0."""
+    """--staged with nothing staged → no language group, so no checker run; still valid JSON."""
     from orchestrate import main as orch_main
     captured_calls = []
 
@@ -312,7 +313,8 @@ def test_orchestrate_staged_empty_list_runs_without_crash(tmp_path):
                 with patch("sys.stdout", out):
                     orch_main()
 
-    assert captured_calls and captured_calls[0] == []
+    assert captured_calls == []
+    assert json.loads(out.getvalue())["total_violations"] == 0
 
 
 # ── _print_table ─────────────────────────────────────────────────────────────────
@@ -357,6 +359,7 @@ def test_run_checker_exception_returns_error_dict(tmp_path):
 def test_orchestrate_fast_flag_sets_model_to_fast(tmp_path):
     """--fast passes role="fast" to _run_checker instead of a hardcoded model name."""
     from orchestrate import main as orch_main
+    (tmp_path / "mod.py").write_text("x = 1\n")
     captured_model = []
 
     def capture_checker(name, mod_path, path, language, files, agents, no_cache, cache_ttl, model,
@@ -507,6 +510,7 @@ def test_orchestrate_top_limits_output(tmp_path):
 def test_orchestrate_cache_hits_added_to_output(tmp_path):
     """checker result with cache_hits > 0 → cache key in JSON output."""
     from orchestrate import main as orch_main
+    (tmp_path / "mod.py").write_text("x = 1\n")
     dummy_cached = {**_DUMMY_RESULT, "cache_hits": 5, "cache_total": 10}
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
@@ -576,6 +580,7 @@ def test_run_checker_success_no_files(tmp_path):
 def test_orchestrate_checks_all_runs_all_checkers(tmp_path):
     """Default --checks all → selected contains all CHECKERS entries."""
     from orchestrate import main as orch_main, CHECKERS
+    (tmp_path / "mod.py").write_text("x = 1\n")
     call_count = [0]
 
     def count_checker(*args, **kwargs):
@@ -802,6 +807,7 @@ def test_mechanical_checker_does_not_declare_cache_dir(checker):
 def test_main_passes_agent_cache_dir_to_run_checker(tmp_path):
     """CCA's orchestrate.main() hands its own cache directory to every _run_checker call."""
     import orchestrate
+    (tmp_path / "mod.py").write_text("x = 1\n")
     seen = []
 
     def capture(*args, **kwargs):
