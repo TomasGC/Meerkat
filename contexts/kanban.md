@@ -4,6 +4,15 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-02 - [#31] Merge the model config template under the local file
+- `scripts/lib/config/model_config.py` replaced the template with the local file instead of merging over it, so a role added to `template_models_config.json` later never reached an older `local_models_config.json`, and a malformed local file silently yielded an empty config
+- Ported `_read` / `_merge` / `_load` from `language_config.py`: template as base, local merged over it, recursive on dicts, override wins on scalars and lists
+- 4 new unit tests (later template field, local wins, list/scalar override, malformed local → template); the old test asserting malformed → `{}` now asserts the template
+- `contexts/design-patterns.md` #10 corrected (module-level `_config`, not a class singleton) and #23 extended to both configs
+tag: #config
+Ref: https://github.com/TomasGC/Meerkat/issues/31
+Commit: 67a720c
+
 2026-10-02 - [#34] Track the local AI prompt templates
 - `.gitignore`'s `*local*` rule hid every `prompts/local/` directory: 6 CCA and 7 BBA prompt templates existed only on the machine that wrote them, so on a fresh clone those AI checkers silently found nothing
 - `!**/prompts/local/` re-includes them; the 13 templates are committed; personal files (`*.local.md`, `local_*_config.json`, `settings.local.json`) stay ignored
