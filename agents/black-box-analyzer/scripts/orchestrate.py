@@ -13,6 +13,10 @@ Usage:
   python orchestrate.py --path /project --clear-cache
   python orchestrate.py --path /project --format json
   python orchestrate.py --path /project --output results.json
+
+Test-gap checkers (shared engine CLI — same flags as CCA and SSA):
+  python orchestrate.py --gaps --path /project
+  python orchestrate.py --gaps --path /project --full --checks unit,e2e --format table
 """
 
 import argparse
@@ -23,8 +27,40 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+_SHARED = Path.home() / ".claude" / "scripts"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
-from common.cache import AnalysisCache, clear_model_cache
+from common.cache import AnalysisCache, _cache_home, clear_model_cache
+from lib.engine.cache import clear_cache
+
+# One checker per test tier, run by lib.engine.orchestrator under --gaps
+CHECKERS: dict[str, str] = {
+    "unit": "checkers.check_unit_gaps",
+    "integ_mock": "checkers.check_integ_mock_gaps",
+    "integ_real": "checkers.check_integ_real_gaps",
+    "e2e": "checkers.check_e2e_gaps",
+}
+
+_GAPS_SUBDIR = "gaps"
+
+
+def _gaps_cache_dir() -> Path:
+    """Per-file AI cache of the gap checkers, under the BBA cache root (honours BBA_CACHE_DIR)."""
+    return _cache_home() / _GAPS_SUBDIR
+
+
+def _run_gaps(argv: list[str]) -> None:
+    from lib.engine.orchestrator import main as engine_main
+
+    engine_main(
+        registry=CHECKERS,
+        app_name="Black-Box Analyzer — test gaps",
+        label_singular="checker",
+        cache_dir=_gaps_cache_dir(),
+        max_workers=len(CHECKERS),
+        argv=argv,
+    )
 
 
 def _detect_base_branch(path: Path) -> str | None:
@@ -49,8 +85,15 @@ def _get_branch_files(path: Path, base: str) -> list[Path] | None:
     return [f for f in files if f.exists()] or None
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    if "--gaps" in argv:
+        _run_gaps([a for a in argv if a != "--gaps"])
+        return
+
     parser = argparse.ArgumentParser(description="Black-Box Analyzer")
+    parser.add_argument("--gaps", action="store_true",
+                        help="Run the four test-gap checkers instead (engine CLI: see --gaps --help)")
     parser.add_argument("--path", type=Path, default=Path("."), help="Project path to analyze")
     parser.add_argument("--full", action="store_true",
                         help="Analyze entire repo (default: branch-vs-main incremental)")
@@ -67,10 +110,10 @@ def main() -> None:
     parser.add_argument("--format", choices=["json", "table", "summary"], default="table")
     parser.add_argument("--output", type=Path, default=None,
                         help="Write JSON output to file")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.clear_cache:
-        cleared = clear_model_cache()
+        cleared = clear_model_cache() + clear_cache(_gaps_cache_dir())
         # The analysis cache is separate from the model cache and must go too,
         # otherwise a "cleared" cache still serves stale AnalysisResults
         AnalysisCache().invalidate_all(include_projects=True)

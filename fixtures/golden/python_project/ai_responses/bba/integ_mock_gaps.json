@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"function\": \"OrderService.save_order\", \"line\": 46, \"severity\": \"high\", \"interaction_type\": \"database\", \"reason\": \"Writes the order and then calls four collaborators\", \"test_scenario\": \"Mock db_write to fail and assert no email, inventory or payment call follows\"}, {\"function\": \"find_order\", \"line\": 62, \"severity\": \"medium\", \"interaction_type\": \"database\", \"reason\": \"Builds and runs a query through the cursor\", \"test_scenario\": \"Mock the cursor and assert the executed query and the returned row\"}]"
+}

@@ -1,0 +1,3 @@
+{
+  "service.py": "[{\"function\": \"OrderService.save_order\", \"line\": 45, \"severity\": \"high\", \"flow_type\": \"crud_flow\", \"reason\": \"Order creation drives payment, inventory and the customer email\", \"test_scenario\": \"Place an order end to end and check payment, stock and the confirmation email\"}]"
+}

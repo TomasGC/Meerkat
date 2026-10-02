@@ -1,0 +1,80 @@
+{
+  "agent": "bba",
+  "project": "go_project",
+  "violations": [
+    {
+      "principle": "E2E_GAP",
+      "file": "service.go",
+      "line": 0,
+      "severity": "medium",
+      "message": "No E2E test file found for this source file",
+      "suggestion": "Add tests/e2e/test_service.py (or equivalent)"
+    },
+    {
+      "principle": "INTEG_MOCK_GAP",
+      "file": "service.go",
+      "line": 0,
+      "severity": "medium",
+      "message": "No integration/mock test file found for this source file",
+      "suggestion": "Add tests/integration/mock/test_service.py (or equivalent)"
+    },
+    {
+      "principle": "INTEG_REAL_GAP",
+      "file": "service.go",
+      "line": 0,
+      "severity": "medium",
+      "message": "No real integration test file found for this source file",
+      "suggestion": "Add tests/integration/real/test_service.py (or equivalent)"
+    },
+    {
+      "principle": "UNIT_GAP",
+      "file": "service.go",
+      "line": 0,
+      "severity": "medium",
+      "message": "No unit test file found for this source file",
+      "suggestion": "Add tests/unit/test_service.py (or equivalent)"
+    },
+    {
+      "principle": "UNIT_GAP",
+      "file": "service.go",
+      "line": 11,
+      "severity": "medium",
+      "message": "Missing unit test [ProcessOrder]: Status 3 changes the returned value",
+      "suggestion": "Status 3 returns 142, any other status returns 42"
+    },
+    {
+      "principle": "INTEG_MOCK_GAP",
+      "file": "service.go",
+      "line": 27,
+      "severity": "high",
+      "message": "Missing mock integration test [RunTool] (external_service): Shells out to an external command",
+      "suggestion": "Stub the command runner and assert the arguments passed"
+    },
+    {
+      "principle": "UNIT_GAP",
+      "file": "service.go",
+      "line": 30,
+      "severity": "high",
+      "message": "Missing unit test [AsString]: Unchecked type assertion panics on a non-string",
+      "suggestion": "AsString(42) must not panic"
+    }
+  ],
+  "reconciliation": {
+    "E2E_GAP": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "INTEG_MOCK_GAP": {
+      "ai_items": 1,
+      "dropped": 0
+    },
+    "INTEG_REAL_GAP": {
+      "ai_items": 0,
+      "dropped": 0
+    },
+    "UNIT_GAP": {
+      "ai_items": 2,
+      "dropped": 0
+    }
+  }
+}

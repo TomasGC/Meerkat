@@ -1,0 +1,3 @@
+{
+  "service.go": "[{\"function\": \"ProcessOrder\", \"line\": 11, \"severity\": \"medium\", \"reason\": \"Status 3 changes the returned value\", \"test_scenario\": \"Status 3 returns 142, any other status returns 42\"}, {\"function\": \"AsString\", \"line\": 30, \"severity\": \"high\", \"reason\": \"Unchecked type assertion panics on a non-string\", \"test_scenario\": \"AsString(42) must not panic\"}]"
+}

@@ -46,6 +46,7 @@ _MAX_CHARS = 8000  # analyze_files_async's default chunk size
 AGENTS: dict[str, tuple[str, str, str, int]] = {
     "cca": ("clean-code-analyzer", "Clean Code Analysis", "principle", 6),
     "ssa": ("security-safety-analyzer", "Security Safety Analysis", "checker", 5),
+    "bba": ("black-box-analyzer", "Black-Box Analyzer — test gaps", "checker", 4),
 }
 
 _IDENTITY_FIELDS = ("file", "line", "principle")
