@@ -1,0 +1,4 @@
+{
+  "orders_mssql.sql": "[{\"issue_type\": \"NON_ATOMIC_WRITE\", \"line\": 34, \"severity\": \"medium\", \"description\": \"Password hash updated outside a transaction\", \"fix\": \"Wrap the update in BEGIN TRANSACTION / COMMIT with error handling\"}]",
+  "orders_pg.sql": "[]"
+}

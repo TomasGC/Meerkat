@@ -28,7 +28,8 @@ def test_output_matches_expected(project, tmp_path):
     assert report["reconciliation"] == expected["reconciliation"]
 
 
-@pytest.mark.parametrize("project", golden.project_names())
+# Gap checkers look for tests of code: sql_project has none to look for
+@pytest.mark.parametrize("project", golden.code_project_names())
 def test_every_untested_file_keeps_its_mechanical_finding(project, tmp_path):
     """Both layers on every run: the server being up never removes "no test file" findings."""
     report = golden.run_agent(project, "bba", cache_dir=tmp_path / "cache")

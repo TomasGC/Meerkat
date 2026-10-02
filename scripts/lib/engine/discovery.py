@@ -85,15 +85,21 @@ def dominant_language(path: Path, threshold: float = 0.6) -> str:
     """Language most code files under path are written in — the one shared vote.
 
     Only `kind == "code"` languages vote: yaml, json or markdown must never
-    outnumber the sources they sit beside. Returns "mixed" when the leader holds
-    less than `threshold` of the votes (`threshold=0` always names the leader),
-    "unknown" when there is no code at all. Ties break toward config order.
+    outnumber the sources they sit beside. A repo with no code at all is voted
+    on by its other files instead, so an SQL-only repo reads "sql". Returns
+    "mixed" when the leader holds less than `threshold` of the votes
+    (`threshold=0` always names the leader), "unknown" when no file has a
+    language. Ties break toward config order.
     """
-    code = language_config.languages_of_kind("code")
-    counts = {name: len(group) for name, group in group_by_language(discover_files(path)).items()}
+    files = discover_files(path)
+    kinds = ("code",)
+    counts = {name: len(group) for name, group in group_by_language(files, kinds).items()}
+    if not counts:
+        kinds = tuple({lang.get("kind") for lang in language_config.all_languages().values()} - {None})
+        counts = {name: len(group) for name, group in group_by_language(files, kinds).items()}
     if not counts:
         return "unknown"
-    leader = max(code, key=lambda name: counts.get(name, 0))
+    leader = max(language_config.languages_of_kind(*kinds), key=lambda name: counts.get(name, 0))
     if counts[leader] / sum(counts.values()) < threshold:
         return "mixed"
     return leader

@@ -113,10 +113,10 @@ class TestDominantLanguage:
         (tmp_path / "notes.txt").write_text("hello\n")
         assert dominant_language(tmp_path) == "unknown"
 
-    def test_dockerfile_only_is_unknown(self, tmp_path):
-        """dockerfile has no extensions, so it never wins the extension count."""
+    def test_dockerfile_only_repo_reads_dockerfile(self, tmp_path):
+        """No code at all: the other files vote (#42), and a Dockerfile is matched by name."""
         (tmp_path / "Dockerfile").write_text("FROM alpine\n")
-        assert dominant_language(tmp_path) == "unknown"
+        assert dominant_language(tmp_path) == "dockerfile"
 
 
 _GIT_HELPERS = [get_changed_files, get_branch_files, get_staged_files]

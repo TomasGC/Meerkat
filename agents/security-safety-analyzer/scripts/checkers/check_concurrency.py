@@ -14,6 +14,8 @@ from common.model_utils import analyze_files_parallel, check_server_available, P
 
 _PRINCIPLE = "Concurrency"
 _PROMPT = "concurrency"
+# SQL: dirty reads and unguarded multi-statement writes are concurrency bugs too.
+FILE_KINDS = ("code", "query")
 
 _PATTERNS = {
     "csharp": [
@@ -31,6 +33,12 @@ _PATTERNS = {
     "python": [
         (re.compile(r'\btime\.sleep\s*\('),
          "Sleep used to order threads — race prone; synchronize explicitly", "low"),
+    ],
+    "sql": [
+        (re.compile(r"(?i)\bWITH\s*\(\s*NOLOCK\s*\)"),
+         "NOLOCK reads uncommitted data — dirty, missing or duplicated rows", "medium"),
+        (re.compile(r"(?i)\bSET\s+TRANSACTION\s+ISOLATION\s+LEVEL\s+READ\s+UNCOMMITTED\b"),
+         "READ UNCOMMITTED isolation — dirty reads for the whole session", "medium"),
     ],
 }
 

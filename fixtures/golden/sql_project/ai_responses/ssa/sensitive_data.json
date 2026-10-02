@@ -1,0 +1,4 @@
+{
+  "orders_mssql.sql": "[{\"exposure_type\": \"SECRET_LOGGED\", \"line\": 33, \"severity\": \"high\", \"description\": \"PRINT writes the new password to the session output\", \"fix\": \"Never print the password\"}]",
+  "orders_pg.sql": "[]"
+}

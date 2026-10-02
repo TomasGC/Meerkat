@@ -9,8 +9,12 @@ _SHARED = Path.home() / ".claude" / "scripts"
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
+from lib.config import language_config
 from lib.engine.discovery import _SKIP_DIRS, _ALL_EXTENSIONS, _HASH_COMMENT_EXTS, is_hash_comment_file
 from lib.engine.hybrid import run_hybrid
+
+# SQL is analyzed too (#42): its `--` comments carry the same TODOs and dead code
+FILE_KINDS = ("code", "query")
 
 _TODO_RE = re.compile(r"#\s*(TODO|FIXME|HACK|XXX|BUG|NOCOMMIT)\b", re.IGNORECASE)
 _TODO_RE_SLASH = re.compile(r"//\s*(TODO|FIXME|HACK|XXX|BUG|NOCOMMIT)\b", re.IGNORECASE)
@@ -29,14 +33,32 @@ _WHAT_VERBS_SLASH = re.compile(
     re.IGNORECASE,
 )
 
+# `--` comments (comment_style "dash": SQL)
+_TODO_RE_DASH = re.compile(r"--\s*(TODO|FIXME|HACK|XXX|BUG|NOCOMMIT)\b", re.IGNORECASE)
+_CODE_IN_COMMENT_DASH = re.compile(
+    r"--\s*(?:SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|EXEC|CREATE|ALTER|DROP)\b|--\s*SET\s+@?\w+\s*=",
+    re.IGNORECASE,
+)
+_WHAT_VERBS_DASH = re.compile(
+    r"--\s*(?:increment|decrement|loop|iterate|check|get|set|call|return|create|delete|update|add|remove|print|log)\b",
+    re.IGNORECASE,
+)
+
+
+def _comment_patterns(file: Path) -> tuple[re.Pattern, re.Pattern, re.Pattern]:
+    """(todo, commented-out code, explain-WHAT) for the file's comment style."""
+    if is_hash_comment_file(file):
+        return _TODO_RE, _CODE_IN_COMMENT_PY, _WHAT_VERBS
+    language = language_config.language_for_file(file)
+    if language and language_config.get_language(language).get("comment_style") == "dash":
+        return _TODO_RE_DASH, _CODE_IN_COMMENT_DASH, _WHAT_VERBS_DASH
+    return _TODO_RE_SLASH, _CODE_IN_COMMENT_C, _WHAT_VERBS_SLASH
+
 
 def _check_file(file: Path, root: Path) -> list[dict]:
     violations = []
     rel = str(file.relative_to(root) if file.is_relative_to(root) else file)
-    is_hash_comment = is_hash_comment_file(file)
-    todo_re = _TODO_RE if is_hash_comment else _TODO_RE_SLASH
-    code_re = _CODE_IN_COMMENT_PY if is_hash_comment else _CODE_IN_COMMENT_C
-    what_re = _WHAT_VERBS if is_hash_comment else _WHAT_VERBS_SLASH
+    todo_re, code_re, what_re = _comment_patterns(file)
 
     try:
         lines = file.read_text(encoding="utf-8", errors="replace").splitlines()

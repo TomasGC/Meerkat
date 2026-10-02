@@ -149,12 +149,18 @@ A repo has no single language. The orchestrator groups the target files by each
 file's own language (`language_for_file`) and runs every checker once per group
 it accepts, with that group's language, then merges the runs into one result.
 A checker declares the kinds it accepts with a module-level `FILE_KINDS`
-(default `("code",)`): SSA misconfiguration adds data + config, sensitive_data
-adds markup + data + config, security adds markup, prompt_injection adds the
-`prompt` kind (`.prompt` templates). No prompt or rule table ever receives "mixed".
+(default `("code",)`): SSA misconfiguration adds query + data + config,
+sensitive_data adds markup + query + data + config, security adds markup +
+query, error_handling and concurrency add query, prompt_injection adds the
+`prompt` kind (`.prompt` templates); CCA comments and naming add query (#42).
+No prompt or rule table ever receives "mixed".
+
+A prompt's `{language}` slot names the file's dialect where the config labels
+one (`T-SQL`, `PostgreSQL`, else `SQL`): `model_utils` fills it per file through
+`language_config.prompt_language`, while rule tables keep looking up `sql`.
 
 The repo-level language is only a report label now: `dominant_language`, a
-code-only vote. The report also lists `languages`: files analyzed per language.
+code-only vote (other kinds vote only in a repo with no code at all). The report also lists `languages`: files analyzed per language.
 BBA's pipeline types a whole project with `detect_project_language`: marker
 files first (`project_indicators`), the same vote as fallback.
 

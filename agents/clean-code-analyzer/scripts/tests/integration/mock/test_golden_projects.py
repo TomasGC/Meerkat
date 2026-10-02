@@ -30,7 +30,8 @@ def test_output_matches_expected(project, tmp_path):
     assert report["reconciliation"] == expected["reconciliation"]
 
 
-@pytest.mark.parametrize("project", PROJECTS)
+# Projects without code (sql_project) make no AI call, so there is no cache to serve
+@pytest.mark.parametrize("project", golden.code_project_names())
 def test_second_run_is_served_from_cache(project, tmp_path):
     cache = tmp_path / "cache"
     first = golden.run_agent(project, "cca", cache_dir=cache)

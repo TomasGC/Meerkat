@@ -32,6 +32,13 @@ from lib.engine.orchestrator import (  # noqa: F401 — re-exported for tests/un
 )
 from lib.engine.orchestrator import main as _engine_main
 
+# SQL files (#42): comments and naming analyze them (FILE_KINDS includes "query").
+# The others stay code-only, on purpose:
+#   dry, kiss, yagni — their mechanical scripts read no SQL (Python only; YAGNI also TypeScript and Go),
+#                      so on SQL only the AI layer would run, with prompts written for functions in code
+#   solid, ddd, cqrs, slap — the prompts judge classes, handlers and layers, which SQL does not have
+#   lod — `schema.table.column` is not a call chain: every qualified name would be a false positive
+#   inheritance — SQL has no classes
 CHECKERS: dict[str, str] = {
     "dry": "checkers.check_dry",
     "solid": "checkers.check_solid",

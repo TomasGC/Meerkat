@@ -184,6 +184,9 @@ fixture edit is a contract change:
   clean-code and security issues on purpose, and no tests at all (every file is a gap in every BBA tier).
   Never imported or run. `python_project/deploy.yaml` is a deliberate Kubernetes manifest (#20): only the
   SSA checkers that accept data files see it, under language `yaml`; CCA and BBA goldens must not change.
+- `fixtures/projects/sql_project/` (#42) — one T-SQL and one PostgreSQL file, no code: SSA's five SQL checkers and
+  CCA comments/naming report on it, BBA reports nothing. Tests that need code (cache round-trip, gap tiers)
+  parametrize over `golden.code_project_names()`, not `project_names()`.
 - `fixtures/golden/<p>/expected/<agent>.json` — every issue the agent must find, all fields compared
   (`principle, file, line, severity, message, suggestion`, posix paths), plus per-checker reconciliation counts.
 - `fixtures/golden/<p>/ai_responses/<agent>/<prompt>.json` — recorded model responses, replayed at

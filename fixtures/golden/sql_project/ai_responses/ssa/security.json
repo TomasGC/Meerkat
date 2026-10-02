@@ -1,0 +1,4 @@
+{
+  "orders_mssql.sql": "[{\"vulnerability_type\": \"SQL_INJECTION\", \"line\": 7, \"severity\": \"high\", \"description\": \"EXEC runs a string built from @customer\", \"fix\": \"Use sp_executesql with @customer as a parameter\"}]",
+  "orders_pg.sql": "[{\"vulnerability_type\": \"SQL_INJECTION\", \"line\": 14, \"severity\": \"high\", \"description\": \"p_table is spliced into dynamic SQL\", \"fix\": \"Use format('%I', p_table) and pass values with USING\"}]"
+}

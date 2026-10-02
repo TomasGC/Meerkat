@@ -83,6 +83,18 @@ def project_names() -> list[str]:
     return sorted(p.name for p in projects_root().iterdir() if p.is_dir())
 
 
+def code_project_names() -> list[str]:
+    """Fixture projects holding at least one `kind == "code"` file — sql_project holds none.
+
+    For tests about behaviour only code triggers: the AI checkers that skip SQL,
+    BBA's gap tiers, a cache that only fills once an AI call happened.
+    """
+    from lib.engine.discovery import group_by_language
+
+    return [name for name in project_names()
+            if group_by_language([f for f in project_path(name).rglob("*") if f.is_file()])]
+
+
 def expected_path(project: str | Path, agent: str, golden_dir: Path | None = None) -> Path:
     return golden_path(project, golden_dir) / "expected" / f"{agent}.json"
 

@@ -11,8 +11,8 @@ from common.hybrid import run_hybrid
 
 _PRINCIPLE = "SensitiveData"
 _PROMPT = "sensitive_data"
-# Secrets and leaked details turn up in views, manifests and Dockerfiles too.
-FILE_KINDS = ("code", "markup", "data", "config")
+# Secrets and leaked details turn up in views, SQL, manifests and Dockerfiles too.
+FILE_KINDS = ("code", "markup", "query", "data", "config")
 
 # Interpolated mid-pattern, so it carries no inline flag: the owning pattern
 # opens with (?i) instead — Python rejects a global flag away from position 0.
@@ -24,6 +24,17 @@ _LEAKED_INTERNALS = "Internal error detail returned to the caller — leaks stac
 _LEAKED_INTERNALS_FIX = "Log the detail server-side and return a generic error message"
 
 _RULES = {
+    "sql": [
+        (re.compile(rf"(?i)\b(?:PRINT|RAISERROR|RAISE\s+NOTICE)\b[^\n]*{_SENSITIVE_FIELD}"),
+         _LOGGED_SECRET, "high", _LOGGED_SECRET_FIX),
+        (re.compile(r"(?i)\bSELECT\s+ERROR_(?:MESSAGE|PROCEDURE|LINE)\s*\(\s*\)"),
+         _LEAKED_INTERNALS, "medium", _LEAKED_INTERNALS_FIX),
+        (re.compile(r"(?i)\bRAISE\s+(?:NOTICE|EXCEPTION)\b[^\n]*\bSQLERRM\b"),
+         _LEAKED_INTERNALS, "medium", _LEAKED_INTERNALS_FIX),
+        (re.compile(r"(?i)\b(?:dblink(?:_connect)?|OPENROWSET|OPENDATASOURCE)\s*\([^)]*\b(?:password|pwd)\s*="),
+         "Credential embedded in a connection string inside SQL", "high",
+         "Use a stored credential or user mapping, never a literal password"),
+    ],
     "python": [
         (re.compile(rf'(?i)(?:logger|logging|log)\.\w+\s*\([^)]*{_SENSITIVE_FIELD}'),
          _LOGGED_SECRET, "high", _LOGGED_SECRET_FIX),

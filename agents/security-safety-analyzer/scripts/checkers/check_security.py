@@ -14,8 +14,8 @@ from common.dedup import drop_near_duplicates, format_known_findings
 
 _PRINCIPLE = "Security"
 _PROMPT = "security"
-# Razor views carry their own injection rules.
-FILE_KINDS = ("code", "markup")
+# Razor views carry their own injection rules; SQL files build dynamic SQL.
+FILE_KINDS = ("code", "markup", "query")
 
 # Mechanical patterns: (regex, message, severity)
 _SECRET_PATTERNS = [
@@ -37,6 +37,9 @@ _UNIVERSAL_PATTERNS = [
 # Matching the quantifier alone would flag ordinary arithmetic such as `(a + b) * c`.
 _REGEX_CONTEXT = re.compile(r're\.(?:compile|match|search|sub|findall)|new RegExp|Regexp?\s*[(.]|-match|=~')
 _NESTED_QUANTIFIER = re.compile(r'\([^)]*[+*]\)\s*[+*]')
+
+# A SQL string literal: '' is an escaped quote inside it, not its end.
+_SQL_STRING = r"'(?:[^']|'')*'"
 
 _INJECTION_PATTERNS = {
     "python": [
@@ -110,6 +113,21 @@ _INJECTION_PATTERNS = {
     "powershell": [
         (re.compile(r'Invoke-Expression|(?<![\w-])iex\s'), "Invoke-Expression runs dynamic code — code injection risk", "high"),
         (re.compile(r'ConvertTo-SecureString\s+.*-AsPlainText'), "Plaintext secret converted to SecureString", "high"),
+    ],
+    # T-SQL and PostgreSQL: dynamic SQL is the injection point. Parameterized forms
+    # (sp_executesql with a parameter list, format() with %I/%L, EXECUTE ... USING) do not match.
+    "sql": [
+        (re.compile(rf"(?i)\bEXEC(?:UTE)?\s*\(\s*(?:N?{_SQL_STRING}|@\w+)\s*\+"),
+         "Dynamic SQL executed from a concatenated string — SQL injection risk", "high"),
+        (re.compile(r"(?i)\bSET\s+@\w+\s*=\s*N?'(?:[^']|'')*\b(?:SELECT|INSERT|UPDATE|DELETE|WHERE|FROM)\b"
+                    r"(?:[^']|'')*'\s*\+\s*@"),
+         "Dynamic SQL built by concatenating a variable — SQL injection risk", "high"),
+        (re.compile(rf"(?i)\bsp_executesql\s+N?{_SQL_STRING}\s*\+"),
+         "sp_executesql statement built by concatenation — SQL injection risk; pass values as parameters", "high"),
+        (re.compile(rf"(?i)\bEXECUTE\s+{_SQL_STRING}\s*\|\|"),
+         "Dynamic SQL built by || concatenation — SQL injection risk", "high"),
+        (re.compile(r"(?i)\bEXECUTE\s+format\s*\(\s*'[^']*%s"),
+         "format() with %s splices raw text into SQL — use %I for identifiers, %L or USING for values", "high"),
     ],
     "bash": [
         (re.compile(r'\beval\s+["\']?\$'), "eval on a variable — command injection risk", "high"),

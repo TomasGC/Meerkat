@@ -1,0 +1,31 @@
+{
+  "agent": "cca",
+  "project": "sql_project",
+  "violations": [
+    {
+      "principle": "Naming",
+      "file": "orders_mssql.sql",
+      "line": 15,
+      "severity": "medium",
+      "message": "Magic number: 42",
+      "suggestion": "Extract to a named constant (e.g. MAX_RETRIES = 42)"
+    },
+    {
+      "principle": "Comments",
+      "file": "orders_mssql.sql",
+      "line": 25,
+      "severity": "low",
+      "message": "TODO comment — should be a tracked issue",
+      "suggestion": "Create a GitHub/issue tracker ticket and remove the comment"
+    },
+    {
+      "principle": "Naming",
+      "file": "orders_pg.sql",
+      "line": 21,
+      "severity": "medium",
+      "message": "Magic number: 42",
+      "suggestion": "Extract to a named constant (e.g. MAX_RETRIES = 42)"
+    }
+  ],
+  "reconciliation": {}
+}
