@@ -18,6 +18,7 @@ if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
 from lib.config import language_config
+from common.utils import detect_project_language
 from common.model_utils import analyze_file_with_model, check_server_available, PROMPTS_DIR
 
 # Source file extensions per language — code only: refactoring anti-patterns cannot
@@ -36,17 +37,6 @@ ANTI_PATTERNS = [
     "thread_sleep_or_datetime_now",  # non-deterministic time in production code
     "unhandled_exception_swallow",   # empty catch blocks
 ]
-
-
-def detect_language(src_path: Path) -> str:
-    counts = {}
-    for lang, exts in LANGUAGE_EXTENSIONS.items():
-        count = sum(len(list(src_path.rglob(f"*{ext}"))) for ext in exts)
-        if count > 0:
-            counts[lang] = count
-    if not counts:
-        return "unknown"
-    return max(counts, key=counts.get)
 
 
 def get_source_files(src_path: Path, language: str) -> list[Path]:
@@ -173,7 +163,7 @@ Examples:
 
     language = args.language
     if language == "auto":
-        language = detect_language(args.src_path)
+        language = detect_project_language(args.src_path).value
         if args.verbose:
             print(f"[INFO] Auto-detected language: {language}", file=sys.stderr)
 

@@ -35,20 +35,7 @@ from common.constants import (
     WORKER_PATTERNS,
 )
 from common.models import Language, ProjectInfo, ProjectType, TestFramework
-from common.utils import detect_language_from_indicators, find_project_root, read_file_safe, walk_files
-
-
-def detect_language(project_path: Path) -> Language:
-    """
-    Detect project language from indicator files.
-
-    Args:
-        project_path: Project root directory
-
-    Returns:
-        Detected Language enum
-    """
-    return detect_language_from_indicators(project_path)
+from common.utils import detect_project_language, find_project_root, read_file_safe, walk_files
 
 
 def detect_frameworks(project_path: Path, language: Language) -> list[str]:
@@ -426,7 +413,7 @@ def analyze_project(project_path: Path) -> ProjectInfo:
         project_path = detected_root
 
     # Phase 1: Detect language
-    language = detect_language(project_path)
+    language = detect_project_language(project_path)
     if language == Language.UNKNOWN:
         raise ValueError(f"Could not detect language for project: {project_path}")
 

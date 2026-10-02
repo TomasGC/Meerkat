@@ -23,7 +23,7 @@ from common.constants import (
 )
 from common.models import Endpoint, HTTPMethod, Language, Parameter
 from common.utils import (
-    detect_language_from_indicators,
+    detect_project_language,
     extract_line_number_from_pattern,
     extract_params_from_path,
     format_path_relative,
@@ -31,11 +31,6 @@ from common.utils import (
     walk_files,
     write_json,
 )
-
-
-def detect_language(project_path: Path) -> Language:
-    """Detect project language from indicator files."""
-    return detect_language_from_indicators(project_path)
 
 
 
@@ -306,7 +301,7 @@ def extract_endpoints(project_path: Path, language: Language | None = None) -> l
         List of Endpoint objects
     """
     if not language:
-        language = detect_language(project_path)
+        language = detect_project_language(project_path)
 
     if language == Language.GO:
         return extract_go_endpoints(project_path)

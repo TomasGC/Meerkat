@@ -29,7 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from analyze_project_structure import detect_language
+from common.utils import detect_project_language
 from common.models import Language
 
 TIER_MARKERS = {
@@ -370,7 +370,7 @@ def collect_coverage(
     tiers: tuple[str, ...],
     dry_run: bool,
 ) -> dict[str, Path]:
-    language = detect_language(project_path)
+    language = detect_project_language(project_path)
     print(f"Detected language: {language.value}", file=sys.stderr)
 
     collector = _COLLECTORS.get(language)

@@ -10,7 +10,7 @@ import common.utils as utils_mod
 from common.models import Language
 from common.utils import (
     count_lines_of_code,
-    detect_language_from_indicators,
+    detect_project_language,
     extract_line_number_from_pattern,
     extract_params_from_path,
     find_project_root,
@@ -203,20 +203,20 @@ def test_format_path_relative_outside_root(temp_dir):
     assert "file.py" in result
 
 
-# ── detect_language_from_indicators ──────────────────────────────────────────
+# ── detect_project_language ──────────────────────────────────────────
 
 
 def test_detect_first_indicator_in_order_wins(temp_dir, monkeypatch):
     monkeypatch.setattr(utils_mod, "LANGUAGE_INDICATORS", {"go": ["go.mod"], "python": ["requirements.txt"]})
     (temp_dir / "go.mod").write_text("module x")
     (temp_dir / "requirements.txt").write_text("")
-    assert detect_language_from_indicators(temp_dir) == Language.GO
+    assert detect_project_language(temp_dir) == Language.GO
 
 
 def test_detect_glob_marker(temp_dir, monkeypatch):
     monkeypatch.setattr(utils_mod, "LANGUAGE_INDICATORS", {"csharp": ["*.csproj"]})
     (temp_dir / "App.csproj").write_text("<Project/>")
-    assert detect_language_from_indicators(temp_dir) == Language.CSHARP
+    assert detect_project_language(temp_dir) == Language.CSHARP
 
 
 def test_detect_skips_language_without_enum_member(temp_dir, monkeypatch):
@@ -224,11 +224,36 @@ def test_detect_skips_language_without_enum_member(temp_dir, monkeypatch):
     monkeypatch.setattr(utils_mod, "LANGUAGE_INDICATORS", {"klingon": ["*.kl"], "python": ["setup.py"]})
     (temp_dir / "x.kl").write_text("")
     (temp_dir / "setup.py").write_text("")
-    assert detect_language_from_indicators(temp_dir) == Language.PYTHON
+    assert detect_project_language(temp_dir) == Language.PYTHON
 
 
-def test_detect_no_marker_is_unknown(temp_dir):
-    assert detect_language_from_indicators(temp_dir) == Language.UNKNOWN
+def test_detect_empty_project_is_unknown(temp_dir):
+    assert detect_project_language(temp_dir) == Language.UNKNOWN
+
+
+def test_detect_without_marker_falls_back_to_code_vote(temp_dir):
+    """No manifest: the language most source files are in, before #20 it was UNKNOWN."""
+    for name in ("a.go", "b.go", "c.py"):
+        (temp_dir / name).write_text("x")
+    assert detect_project_language(temp_dir) == Language.GO
+
+
+def test_detect_marker_beats_the_vote(temp_dir):
+    (temp_dir / "go.mod").write_text("module x")
+    for name in ("a.py", "b.py", "c.py"):
+        (temp_dir / name).write_text("x")
+    assert detect_project_language(temp_dir) == Language.GO
+
+
+def test_detect_vote_ignores_config_files(temp_dir):
+    for name in ("a.yaml", "b.yaml", "c.yaml", "main.py"):
+        (temp_dir / name).write_text("x")
+    assert detect_project_language(temp_dir) == Language.PYTHON
+
+
+def test_detect_vote_for_a_language_without_enum_member_is_unknown(temp_dir):
+    (temp_dir / "build.ps1").write_text("x")
+    assert detect_project_language(temp_dir) == Language.UNKNOWN
 
 
 def test_shipped_table_comes_from_config():
