@@ -204,8 +204,20 @@ With the local model mostly offloaded to CPU, two tests can exceed their limits;
 - CCA `e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates` — 300s limit; passes in ~193s
   when the GPU is free. The node id has no `tests/` prefix: CCA's rootdir is `scripts/tests`.
 
-## Worktrees Are Not Faithful
+## Worktrees and Clones Are Not Faithful
 
 Checkers and shims insert `~/.claude/scripts` as the shared-library path, so tests run in a git worktree import
 the **main checkout's** `lib/`, not the worktree's. Compare a worktree run against pristine `main` in a worktree,
 never against the main checkout.
+
+A fresh clone anywhere other than `~/.claude` is worse: `scripts/lib/testing/golden.py` resolves agents under
+`~/.claude/agents/`, so a golden test run from the clone imports the clone's `common` and then the real
+checkout's agent, and stops with "`common` already imported … run one agent per process". To check what a fresh
+clone contains (#34: prompt templates), inspect the files directly instead of running the suites there. A CI
+runner (#2) checks out elsewhere too, so the hardcoded path has to go before CI can run these tests.
+
+## Prompt Templates Are Tracked
+
+`.gitignore`'s `*local*` rule (personal files) would also hide `agents/*/scripts/prompts/local/`, the local-AI
+prompt templates; `!**/prompts/local/` re-includes them (#34). A new prompt file there is tracked like any source
+file — no `git add -f` needed.

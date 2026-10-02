@@ -4,6 +4,16 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-02 - [#34] Track the local AI prompt templates
+- `.gitignore`'s `*local*` rule hid every `prompts/local/` directory: 6 CCA and 7 BBA prompt templates existed only on the machine that wrote them, so on a fresh clone those AI checkers silently found nothing
+- `!**/prompts/local/` re-includes them; the 13 templates are committed; personal files (`*.local.md`, `local_*_config.json`, `settings.local.json`) stay ignored
+- Fresh-clone check: `main` misses all 6 CCA prompts, the fix branch misses none
+- Found along the way: golden tests can't run from a checkout outside `~/.claude` (hardcoded shared-library path), a prerequisite for CI (#2)
+- `settings.json`: BOM dropped, qodo plugin rename followed
+tag: #gitignore
+Ref: https://github.com/TomasGC/Meerkat/issues/34
+Commits: 4d7d7fa, d13843c
+
 2026-10-01 - [#19] Port CCA onto the shared analysis engine
 - All 11 CCA checkers route through `lib.engine.hybrid.run_hybrid` (new `mechanical_fn`, `format_ai_violation`, optional `prompt`), so mechanical and AI findings are reconciled; `orchestrate.py` is a thin shim, `common/cache.py` and `common/file_utils.py` are gone
 - Per-file AI result cache moved into `run_hybrid` (content hash + prompt + role + agents); failed AI calls are never cached; `CCA_CACHE_DIR` overrides the cache dir
