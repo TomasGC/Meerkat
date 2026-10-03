@@ -49,6 +49,9 @@ AGENTS: dict[str, tuple[str, str, str, int]] = {
     "bba": ("black-box-analyzer", "Black-Box Analyzer — test gaps", "checker", 4),
 }
 
+# agent -> module of its model_utils shim, whose CACHE a replay switches off
+_AGENT_MODEL_UTILS: dict[str, str] = {agent: "common.model_utils" for agent in AGENTS}
+
 _IDENTITY_FIELDS = ("file", "line", "principle")
 
 
@@ -269,7 +272,10 @@ class replay:  # noqa: N801 — used as a context manager, reads like a function
         _patch_bindings(stack, "call_model", _model_utils.call_model, s._forbidden_sync_call)
         stack.enter_context(mock.patch.object(_model_utils, "_model_listed", lambda model: True))
         stack.enter_context(mock.patch.dict(_model_utils._AVAILABILITY_CACHE, clear=True))
-        stack.enter_context(mock.patch.object(_model_utils, "_CACHE_AVAILABLE", False))
+        # Each agent hands its own model cache to the AI client; a replay must never read or fill it
+        shim = sys.modules.get(_AGENT_MODEL_UTILS.get(s.agent, ""))
+        if shim is not None and hasattr(shim, "CACHE"):
+            stack.enter_context(mock.patch.object(shim, "CACHE", None))
         stack.enter_context(mock.patch.object(_orchestrator, "_run_checker",
                                               s._wrap_run_checker(_orchestrator._run_checker)))
         _patch_bindings(stack, "drop_near_duplicates", _dedup.drop_near_duplicates,

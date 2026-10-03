@@ -385,3 +385,25 @@ class TestRunHybridCache:
             self._run(tmp_path, [f], cache_dir, role="analyzer")
             self._run(tmp_path, [f], cache_dir, role="fast")
         assert len(calls) == 2
+
+
+def test_shim_hands_ssa_model_cache_to_run_hybrid(tmp_path):
+    """SSA's checkers take no cache_dir: their only AI cache is the one this shim passes (#21)."""
+    from unittest.mock import patch as _patch
+
+    import common.hybrid as shim
+    import common.model_utils as ssa_mu
+
+    with _patch("common.hybrid._run_hybrid", return_value={}) as engine:
+        shim.run_hybrid(tmp_path, "python", "P", None, {})
+    assert engine.call_args.kwargs["model_cache"] is ssa_mu.CACHE
+
+
+def test_model_utils_wrappers_pass_the_ssa_cache(tmp_path):
+    from unittest.mock import patch as _patch
+
+    import common.model_utils as ssa_mu
+
+    with _patch.object(ssa_mu._lib, "analyze_files_parallel", return_value=[]) as lib_call:
+        ssa_mu.analyze_files_parallel([], "python")
+    assert lib_call.call_args.kwargs["cache"] is ssa_mu.CACHE

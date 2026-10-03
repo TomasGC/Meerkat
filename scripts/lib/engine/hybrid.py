@@ -16,7 +16,7 @@ _SHARED = Path.home() / ".claude" / "scripts"
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
-from lib.ai.model_utils import analyze_files_parallel, check_server_available
+from lib.ai.model_utils import ModelCache, analyze_files_parallel, check_server_available
 from lib.config import language_config
 from lib.engine.cache import get_cached, set_cached
 from lib.engine.dedup import drop_near_duplicates, format_known_findings
@@ -97,6 +97,7 @@ def run_hybrid(
     cache_dir: Path | None = None,
     cache_ttl_days: int = 7,
     ai_filter: Callable[[Path], bool] | None = None,
+    model_cache: ModelCache | None = None,
 ) -> dict:
     """Run the mechanical pass, then the AI pass informed by its results.
 
@@ -111,6 +112,9 @@ def run_hybrid(
     returns differently-shaped items (e.g. a dynamic principle tag).
 
     `prompt=None` skips the AI pass entirely — for checkers with no AI layer.
+
+    `model_cache` is handed to the AI client as-is: an agent's own per-file cache
+    of raw model answers, for agents that do not use `cache_dir`.
 
     `ai_filter(file) -> bool` narrows the AI pass to the files it accepts, for a
     prompt that only makes sense on some of them (a test-gap prompt cannot see
@@ -176,14 +180,15 @@ def run_hybrid(
                                                    prompts_dir=prompts_dir, agents=agents,
                                                    no_cache=no_cache,
                                                    extra_slots={f: extra_slots[f] for f in misses},
-                                                   failed=failed)
+                                                   failed=failed, cache=model_cache)
                     # A failed call is not a clean result: leave it uncached so the next run retries it.
                     _write_ai_cache(cache_dir, [f for f in misses if f not in failed], cache_key, fresh)
                     raw_items.extend(fresh)
             else:
                 raw_items = analyze_files_parallel(source_files, language, role, prompt,
                                                    prompts_dir=prompts_dir, agents=agents,
-                                                   no_cache=no_cache, extra_slots=extra_slots)
+                                                   no_cache=no_cache, extra_slots=extra_slots,
+                                                   cache=model_cache)
             ai_violations = []
             for item in raw_items:
                 src = Path(item.get("source_file", ""))

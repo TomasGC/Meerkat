@@ -43,8 +43,7 @@ def _responses(by_file: dict[str, list]):
 
 
 def _run(files, prompts_dir, by_file, failed, agents=1):
-    with patch.object(mu, "call_model_async", side_effect=_responses(by_file)), \
-         patch.object(mu, "_CACHE_AVAILABLE", False):
+    with patch.object(mu, "call_model_async", side_effect=_responses(by_file)):
         return mu.analyze_files_parallel(files, "python", prompt_name="p", prompts_dir=prompts_dir,
                                          agents=agents, no_cache=True, failed=failed)
 

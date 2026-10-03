@@ -544,13 +544,13 @@ def test_analyze_files_async_cache_hit(tmp_path):
     prompts_dir.mkdir()
     (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
 
-    with patch.object(mu, "_CACHE_AVAILABLE", True):
-        with patch.object(mu, "_get_cached", return_value=cached_violations):
-            with patch.object(mu, "_http_generate") as mock_http:
-                results = asyncio.run(
-                    analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                        prompts_dir=prompts_dir, no_cache=False)
-                )
+    cache = MagicMock()
+    cache.get.return_value = cached_violations
+    with patch.object(mu, "_http_generate") as mock_http:
+        results = asyncio.run(
+            analyze_files_async([f], "python", "analyzer", "solid_analysis",
+                                prompts_dir=prompts_dir, no_cache=False, cache=cache)
+        )
 
     mock_http.assert_not_called()
     assert results == cached_violations
@@ -633,15 +633,14 @@ def test_analyze_files_async_writes_cache(tmp_path):
     response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("lib.ai.model_utils._http_generate", return_value=response_json):
-            with patch.object(mu, "_CACHE_AVAILABLE", True):
-                with patch.object(mu, "_get_cached", return_value=None):
-                    with patch.object(mu, "_set_cached") as mock_set:
-                        asyncio.run(
-                            analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                                prompts_dir=prompts_dir, no_cache=False)
-                        )
+            cache = MagicMock()
+            cache.get.return_value = None
+            asyncio.run(
+                analyze_files_async([f], "python", "analyzer", "solid_analysis",
+                                    prompts_dir=prompts_dir, no_cache=False, cache=cache)
+            )
 
-    mock_set.assert_called_once()
+    cache.set.assert_called_once()
 
 
 # ── analyze_file_with_model ─────────────────────────────────────────────────────
@@ -656,11 +655,11 @@ def test_analyze_file_with_model_cache_hit(tmp_path):
     prompts_dir = tmp_path / "prompts"
     prompts_dir.mkdir()
 
-    with patch.object(mu, "_CACHE_AVAILABLE", True):
-        with patch.object(mu, "_get_cached", return_value=cached):
-            with patch.object(mu, "call_model") as mock_call:
-                result = mu.analyze_file_with_model(f, "python", "analyzer", "solid",
-                                                    prompts_dir=prompts_dir)
+    cache = MagicMock()
+    cache.get.return_value = cached
+    with patch.object(mu, "call_model") as mock_call:
+        result = mu.analyze_file_with_model(f, "python", "analyzer", "solid",
+                                            prompts_dir=prompts_dir, cache=cache)
 
     mock_call.assert_not_called()
     assert result == cached
@@ -739,14 +738,13 @@ def test_analyze_file_with_model_writes_cache(tmp_path):
     (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
 
     response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
+    cache = MagicMock()
+    cache.get.return_value = None
     with patch.object(mu, "call_model", return_value=response_json):
-        with patch.object(mu, "_CACHE_AVAILABLE", True):
-            with patch.object(mu, "_get_cached", return_value=None):
-                with patch.object(mu, "_set_cached") as mock_set:
-                    mu.analyze_file_with_model(f, "python", "analyzer", "solid_analysis",
-                                               prompts_dir=prompts_dir, agents=1, no_cache=False)
+        mu.analyze_file_with_model(f, "python", "analyzer", "solid_analysis",
+                                   prompts_dir=prompts_dir, agents=1, no_cache=False, cache=cache)
 
-    mock_set.assert_called_once()
+    cache.set.assert_called_once()
 
 
 # ── CCA shim: get_claude_fallback_prompt ────────────────────────────────────────
