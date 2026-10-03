@@ -79,6 +79,7 @@ Local AI  Scripts  Agents
 │   ├── lib/                         # Shared library — importable by scripts, skills, plugins, agents
 │   │   ├── ai/                      # model_utils — local AI client
 │   │   ├── config/                  # model_config (roles) + language_config (languages, skip dirs, standards)
+│   │   ├── logger.py                # the one logging implementation (ColoredFormatter, setup_logger)
 │   │   ├── engine/                  # shared analysis engine (extracted from SSA, issue #18): finding, cache,
 │   │   │                            # dedup, discovery, hybrid, orchestrator — cache dir/registry/max_workers/labels
 │   │   │                            # are caller-supplied params, no agent name hardcoded; used by SSA, CCA (#19), BBA gaps (#20)
@@ -92,7 +93,7 @@ Local AI  Scripts  Agents
 │
 ├── skills/                          # User-invocable slash commands
 │   └── search-tech/                 # Tech search skill
-│       └── scripts/                 # search_tech/ (cache, logger, models, utils) + search_*.py + tests/ (113 tests)
+│       └── scripts/                 # search_tech/ (cache, metrics, models, utils; logging from lib) + search_*.py + tests/ (113 tests)
 ├── rules/                           # Auto-loaded coding standards (14 languages)
 ├── hooks/                           # Automation hooks
 ├── integrations/                    # Environment profiles
