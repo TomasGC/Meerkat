@@ -291,11 +291,6 @@ class AnalyzeWorkPatternsScript(BaseCLIScript):
                 base_branch=args.base_branch
             )
 
-            self.metrics.track("analyze_work_patterns", {
-                "commitsAnalyzed": result["commitsAnalyzed"],
-                "filesChanged": result["filesChanged"],
-                "patternsDetected": len(result["patternsDetected"])
-            })
 
             return {
                 "success": True,

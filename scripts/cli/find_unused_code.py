@@ -108,10 +108,6 @@ class FindUnusedCodeScript(BaseCLIScript):
             ]
         }
 
-        self.metrics.track("find_unused_code", {
-            "language": language,
-            "total_unused": len(unused)
-        })
 
         return result
 

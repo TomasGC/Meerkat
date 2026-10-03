@@ -105,10 +105,6 @@ class ExtractTicketScript(BaseCLIScript):
             )
 
             if issue_id:
-                self.metrics.track("extract_issue", {
-                    "issue_id": issue_id,
-                    "source": "commit" if args.from_commit else "branch"
-                })
 
                 return {
                     "success": True,

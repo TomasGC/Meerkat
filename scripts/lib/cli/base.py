@@ -4,7 +4,7 @@ Base class for all CLI scripts.
 
 Provides common functionality:
 - Argument parsing with standard arguments (--format)
-- Automatic logging and metrics initialization
+- Automatic logging initialization
 - Error handling and exit codes
 - Output formatting (JSON/text/summary)
 """
@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from lib.formatters import format_json
-from lib.logger import get_defaults
+from lib.logger import setup_logger
 
 
 class BaseCLIScript(ABC):
@@ -44,8 +44,8 @@ class BaseCLIScript(ABC):
     """
 
     def __init__(self):
-        """Initialize logging and metrics."""
-        self.logger, self.metrics = get_defaults(module_name=self.__class__.__module__)
+        """Initialize logging."""
+        self.logger = setup_logger(self.__class__.__module__)
 
     def setup_parser(self, parser: ArgumentParser) -> None:
         """
@@ -193,11 +193,6 @@ class BaseCLIScript(ABC):
             # Output result
             self.output(result, parsed_args.format)
 
-            # Track success metric
-            self.metrics.track(
-                f"{self.__class__.__name__}.success",
-                {"format": parsed_args.format}
-            )
 
             return 0
 
@@ -207,10 +202,6 @@ class BaseCLIScript(ABC):
 
         except Exception as e:
             self.logger.error(f"Error: {e}", exc_info=True)
-            self.metrics.track(
-                f"{self.__class__.__name__}.error",
-                {"error_type": type(e).__name__}
-            )
             return 1
 
 

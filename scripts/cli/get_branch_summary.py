@@ -411,10 +411,6 @@ class GetBranchSummaryScript(BaseCLIScript):
                 has_uncommitted_changes=has_uncommitted
             )
 
-            self.metrics.track("get_branch_summary", {
-                "commits": len(commits),
-                "has_uncommitted": has_uncommitted
-            })
 
             return {
                 "success": True,

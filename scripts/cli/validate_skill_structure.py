@@ -311,14 +311,6 @@ class ValidateSkillStructureScript(BaseCLIScript):
                 strict=args.strict
             )
 
-            self.metrics.track("validate_skill_structure", {
-                "file": str(args.file),
-                "type": result.type,
-                "valid": result.valid,
-                "error_count": result.error_count,
-                "warning_count": result.warning_count,
-                "strict": args.strict
-            })
 
             return {
                 "success": result.valid,

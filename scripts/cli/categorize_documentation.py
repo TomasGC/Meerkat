@@ -169,12 +169,6 @@ class CategorizeDocumentationScript(BaseCLIScript):
             # Categorize documentation
             result = categorize_documentation(args.files)
 
-            self.metrics.track("categorize_documentation", {
-                "total": result["total"],
-                "functional": result["summary"]["functionalCount"],
-                "technical": result["summary"]["technicalCount"],
-                "personal": result["summary"]["personalCount"]
-            })
 
             return {
                 "success": True,

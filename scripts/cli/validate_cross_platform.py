@@ -275,11 +275,6 @@ class ValidateCrossPlatformScript(BaseCLIScript):
             if args.strict and result["warnings"]:
                 result["valid"] = False
 
-            self.metrics.track("validate_cross_platform_single", {
-                "valid": result["valid"],
-                "errors": result["summary"]["errorCount"],
-                "warnings": result["summary"]["warningCount"]
-            })
 
             return result
 
@@ -340,11 +335,6 @@ class ValidateCrossPlatformScript(BaseCLIScript):
             valid_scripts = sum(1 for r in results if r["valid"])
             scripts_with_issues = len(results) - valid_scripts
 
-            self.metrics.track("validate_cross_platform_multiple", {
-                "total_scripts": len(results),
-                "valid_scripts": valid_scripts,
-                "scripts_with_issues": scripts_with_issues
-            })
 
             return {
                 "success": scripts_with_issues == 0,

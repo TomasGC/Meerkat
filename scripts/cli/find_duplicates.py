@@ -134,10 +134,6 @@ class FindDuplicatesScript(BaseCLIScript):
             ]
         }
 
-        self.metrics.track("find_duplicates", {
-            "files": len(files),
-            "duplicates": len(duplicates)
-        })
 
         return result
 

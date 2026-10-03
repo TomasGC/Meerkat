@@ -202,10 +202,6 @@ class FormatCommitMessageScript(BaseCLIScript):
             if args.validate or not (args.issue and args.type):
                 result = validate_commit_message(args.message, args.suggest)
 
-                self.metrics.track("format_commit_message", {
-                    "mode": "validate",
-                    "valid": result.valid
-                })
 
                 return {
                     "success": True,
@@ -224,10 +220,6 @@ class FormatCommitMessageScript(BaseCLIScript):
                 # Validate the formatted message
                 validation = validate_commit_message(formatted)
 
-                self.metrics.track("format_commit_message", {
-                    "mode": "format",
-                    "valid": validation.valid
-                })
 
                 return {
                     "success": True,

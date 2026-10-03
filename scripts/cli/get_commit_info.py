@@ -198,10 +198,6 @@ class GetCommitInfoScript(BaseCLIScript):
                     "error": "No commits found"
                 }
 
-            self.metrics.track("get_commit_info", {
-                "count": len(commits),
-                "include_files": args.include_files
-            })
 
             return {
                 "success": True,

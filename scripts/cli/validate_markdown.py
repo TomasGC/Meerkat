@@ -62,11 +62,6 @@ class ValidateMarkdownScript(BaseCLIScript):
             errors.extend(warnings)
             warnings = []
 
-        # Track metrics
-        self.metrics.track("validate_markdown", {
-            "type": validation_type,
-            "valid": len(errors) == 0
-        })
 
         return {
             "file": str(file_path),

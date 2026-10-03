@@ -143,10 +143,6 @@ class ListFilesByExtensionScript(BaseCLIScript):
             # Find files
             files = find_files_by_extension(root, args.extensions, args.exclude)
 
-            self.metrics.track("list_files_by_extension", {
-                "extensions": len(args.extensions),
-                "files_found": len(files),
-            })
 
             return {
                 "success": True,

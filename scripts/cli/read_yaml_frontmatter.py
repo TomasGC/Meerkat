@@ -139,10 +139,6 @@ class ReadYamlFrontmatterScript(BaseCLIScript):
             if not YAML_AVAILABLE and args.format_yaml:
                 self.logger.warning("PyYAML not installed, using JSON output")
 
-            self.metrics.track("read_yaml_frontmatter", {
-                "file": str(args.file),
-                "has_yaml": YAML_AVAILABLE
-            })
 
             return {
                 "success": True,

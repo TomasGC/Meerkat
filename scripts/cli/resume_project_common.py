@@ -235,10 +235,6 @@ class ResumeProjectScript(BaseCLIScript):
                 project_root=project_root
             )
 
-            self.metrics.track("resume_project_common", {
-                "project_name": args.name,
-                "success": exit_code == 0
-            })
 
             return {
                 "success": exit_code == 0,

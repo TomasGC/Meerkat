@@ -165,11 +165,6 @@ class UpdateSectionInMarkdownScript(BaseCLIScript):
                 create_backup=not args.no_backup
             )
 
-            self.metrics.track("update_section_in_markdown", {
-                "file": result["file"],
-                "section": result["section"],
-                "lines_changed": result["linesChanged"]
-            })
 
             return {
                 "success": True,

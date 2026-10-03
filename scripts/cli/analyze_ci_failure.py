@@ -288,12 +288,6 @@ class AnalyzeCIFailureScript(BaseCLIScript):
             unknown_errors=errors["unknown"],
         )
 
-        self.metrics.track("analyze_ci_failure", {
-            "run_id": run_id,
-            "repo": repo,
-            "total_errors": analysis.total_errors,
-            "priority": analysis.priority_category
-        })
 
         return {
             "success": True,

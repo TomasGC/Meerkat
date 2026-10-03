@@ -206,11 +206,6 @@ class SafeReadContextScript(BaseCLIScript):
                 read_all=args.all
             )
 
-            self.metrics.track("safe_read_context", {
-                "kanban": results["kanban"] is not None,
-                "architecture": results["architecture"] is not None,
-                "rules_count": len(results["rules"])
-            })
 
             return {
                 "success": True,

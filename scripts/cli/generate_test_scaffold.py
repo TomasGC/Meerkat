@@ -315,11 +315,6 @@ class GenerateTestScaffoldScript(BaseCLIScript):
             # Generate next steps
             next_steps = print_next_steps(output_file, language)
 
-            self.metrics.track("generate_test_scaffold", {
-                "file": str(args.file),
-                "language": language,
-                "output": str(output_file)
-            })
 
             return {
                 "success": True,
