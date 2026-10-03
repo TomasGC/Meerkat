@@ -107,10 +107,6 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
         results["analysis_time_ms"] = int((time.time() - start_time) * 1000)
         results["estimated_token_savings"] = self._estimate_token_savings(results)
 
-        self.metrics.track("analyze_code_patterns", {
-            "total_issues": results["total_issues"],
-            "token_savings": results["estimated_token_savings"]
-        })
 
         return results
 

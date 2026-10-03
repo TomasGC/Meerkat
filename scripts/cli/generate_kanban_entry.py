@@ -178,11 +178,6 @@ class GenerateKanbanEntryScript(BaseCLIScript):
             if not descriptions:
                 descriptions = ["No significant patterns detected in commits"]
 
-            self.metrics.track("generate_kanban_entry", {
-                "commits": len(commit_hashes),
-                "bullets": len(descriptions),
-                "style": args.style
-            })
 
             return {
                 "success": True,

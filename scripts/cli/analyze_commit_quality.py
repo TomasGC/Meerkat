@@ -208,11 +208,6 @@ class AnalyzeCommitQualityScript(BaseCLIScript):
             "message": self._get_summary_message(critical, high, medium, low)
         }
 
-        self.metrics.track("analyze_commit_quality", {
-            "total_violations": len(violations),
-            "critical": len(critical),
-            "blocking": result["blocking"]
-        })
 
         return result
 

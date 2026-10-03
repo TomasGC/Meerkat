@@ -51,11 +51,6 @@ class CheckGitRepoScript(BaseCLIScript):
         if result["isRepo"] and args.info:
             result.update(self._get_repo_info(path))
 
-        # Track metrics
-        self.metrics.track("check_git_repo", {
-            "is_repo": result["isRepo"],
-            "include_info": args.info
-        })
 
         return result
 

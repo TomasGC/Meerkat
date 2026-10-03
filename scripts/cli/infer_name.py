@@ -84,11 +84,6 @@ class InferNameScript(BaseCLIScript):
         # Generate suggestions
         suggestions = self._infer_names(args.purpose, args.type, args.count)
 
-        # Track metrics
-        self.metrics.track("infer_name", {
-            "type": args.type,
-            "suggestions_count": len(suggestions)
-        })
 
         return {
             "purpose": args.purpose,

@@ -90,11 +90,6 @@ class ValidateScriptSyntaxScript(BaseCLIScript):
             result.warnings = []
             result.valid = False
 
-        # Track metrics
-        self.metrics.track("validate_script_syntax", {
-            "language": language,
-            "valid": result.valid
-        })
 
         return self._result_to_dict(result)
 

@@ -103,11 +103,6 @@ class CheckTestCoverageScript(BaseCLIScript):
             }
         )
 
-        # Track metrics
-        self.metrics.track("check_test_coverage", {
-            "total_scripts": total_scripts,
-            "coverage_percent": coverage_percent
-        })
 
         return self._result_to_dict(result)
 

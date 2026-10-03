@@ -115,10 +115,6 @@ class CalculateComplexityScript(BaseCLIScript):
             ]
         }
 
-        self.metrics.track("calculate_complexity", {
-            "files": len(files),
-            "high_complexity": result["high_complexity_count"]
-        })
 
         return result
 

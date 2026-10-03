@@ -395,11 +395,6 @@ class RunAllValidationsScript(BaseCLIScript):
                 logger=self.logger
             )
 
-            self.metrics.track("run_all_validations", {
-                "totalValidations": results["summary"]["totalValidations"],
-                "passed": results["summary"]["passed"],
-                "failed": results["summary"]["failed"]
-            })
 
             return {
                 "success": results["summary"]["failed"] == 0,

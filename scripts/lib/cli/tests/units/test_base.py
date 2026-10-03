@@ -60,7 +60,7 @@ class TestBaseCLIScript:
         script = MockScript()
 
         assert script.logger is not None
-        assert script.metrics is not None
+        assert not hasattr(script, "metrics")  # write-only, removed in #22
 
     def test_create_parser_default_args(self):
         """Test parser creation with default arguments."""

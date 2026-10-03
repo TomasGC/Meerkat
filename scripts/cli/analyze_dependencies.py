@@ -323,12 +323,6 @@ class AnalyzeDependenciesScript(BaseCLIScript):
             # Analyze dependencies
             result = analyze_dependencies(file_path, args.top_n)
 
-            self.metrics.track("analyze_dependencies", {
-                "file": result["file"],
-                "language": result["language"],
-                "framework": result["framework"],
-                "dependencyCount": len(result["dependencies"])
-            })
 
             return {
                 "success": True,

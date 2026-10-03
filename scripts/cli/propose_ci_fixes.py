@@ -381,12 +381,6 @@ class ProposeCIFixesScript(BaseCLIScript):
             "claude_tokens_needed": claude_tokens_needed
         }
 
-        self.metrics.track("propose_ci_fixes", {
-            "total_errors": len(errors),
-            "delegated": delegated_count,
-            "escalated": escalated_count,
-            "token_savings": estimated_token_savings
-        })
 
         return result
 

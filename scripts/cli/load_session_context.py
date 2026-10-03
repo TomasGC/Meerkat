@@ -132,10 +132,6 @@ class LoadSessionContextScript(BaseCLIScript):
             # Load session context
             context = load_session_context()
 
-            self.metrics.track("load_session_context", {
-                "issue": context["issue"],
-                "kanbanFound": context["kanbanFound"]
-            })
 
             return {
                 "success": True,

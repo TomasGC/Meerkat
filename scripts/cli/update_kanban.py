@@ -358,11 +358,6 @@ class UpdateKanbanScript(BaseCLIScript):
 
                 action = "created"
 
-            self.metrics.track("update_kanban", {
-                "issue": issue_id,
-                "commits": len(commit_hashes),
-                "action": action
-            })
 
             return {
                 "success": True,

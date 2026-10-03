@@ -244,14 +244,6 @@ class SearchKanbanScript(BaseCLIScript):
                 date_to=args.date_to
             )
 
-            self.metrics.track("search_kanban", {
-                "results": len(results),
-                "criteria": {
-                    "issue": args.issue is not None,
-                    "tag": args.tag is not None,
-                    "date": args.date is not None or args.date_from is not None or args.date_to is not None
-                }
-            })
 
             return {
                 "success": True,

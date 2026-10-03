@@ -4,6 +4,15 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-03 - [#22] Reconcile the MetricsCollector API
+- Resolved by removal, not reconciliation: of the three `MetricsCollector` copies only search-tech's has a reader (its `--verbose` summary); `lib`'s was write-only (39 `track()` calls in `BaseCLIScript` and 35 CLI scripts, never read) and BBA's had no caller at all
+- Deleted `lib`'s collector, every `track()` call, `BaseCLIScript.metrics` and `get_defaults`; deleted BBA's `logger.py` and its 13 tests
+- One logging implementation: search-tech imports `ColoredFormatter` and `setup_logger` from `lib.logger` and keeps only its `MetricsCollector`
+- 595 lines removed; one-invocation run 2531 passed (2544 minus the 13 deleted tests)
+tags: #refactor #logging #yagni
+Ref: https://github.com/TomasGC/Meerkat/issues/22
+Commit: bf5c22d
+
 2026-10-03 - [#21] Eliminate the duplicated common packages
 - One importable package per agent: `cca/`, `ssa/`, `bba/` hold what used to be top-level `common/`, `checkers/` and `orchestrate`; search-tech's `common/` is `search_tech/`; `scripts/orchestrate.py` stays as a CLI wrapper, so every command is unchanged
 - `lib.ai.model_utils` no longer enables its cache by importing whichever `common.cache` came first on sys.path: `analyze_*(cache=...)` takes a `ModelCache`, and the BBA and SSA shims pass their own (SSA's hybrid checkers through `run_hybrid(model_cache=)`); CCA stays uncached, as before

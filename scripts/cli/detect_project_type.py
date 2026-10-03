@@ -175,9 +175,6 @@ class DetectProjectTypeScript(BaseCLIScript):
             # Detect project type
             result = detect_project_type(project_path)
 
-            self.metrics.track("detect_project_type", {
-                "type": result["type"]
-            })
 
             return {
                 "success": True,

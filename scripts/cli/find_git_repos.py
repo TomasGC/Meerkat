@@ -157,10 +157,6 @@ class FindGitReposScript(BaseCLIScript):
             # Find repositories
             repos = find_git_repos(root_path, args.max_depth)
 
-            self.metrics.track("find_git_repos", {
-                "count": len(repos),
-                "max_depth": args.max_depth
-            })
 
             return {
                 "success": True,

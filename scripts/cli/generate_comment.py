@@ -274,11 +274,6 @@ class GenerateCommentScript(BaseCLIScript):
                 ]
                 comment = "\n".join(lines)
 
-            self.metrics.track("generate_comment", {
-                "commits": len(commit_hashes),
-                "files": len(all_files),
-                "style": args.style
-            })
 
             return {
                 "success": True,
