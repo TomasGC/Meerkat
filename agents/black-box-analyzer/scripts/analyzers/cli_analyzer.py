@@ -16,8 +16,8 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.constants import CLI_PATTERNS
-from common.models import (
+from bba.constants import CLI_PATTERNS
+from bba.models import (
     EntryPoint,
     EntryPointType,
     Parameter,
@@ -26,7 +26,7 @@ from common.models import (
     Scenario,
     TestCase,
 )
-from common.utils import (
+from bba.utils import (
     extract_line_number_from_pattern,
     format_path_relative,
     read_file_safe,

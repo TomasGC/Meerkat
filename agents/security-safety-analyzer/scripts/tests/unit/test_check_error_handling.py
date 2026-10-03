@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from checkers.check_error_handling import run
+from ssa.checkers.check_error_handling import run
 
 _PRINCIPLE = "ErrorHandling"
 

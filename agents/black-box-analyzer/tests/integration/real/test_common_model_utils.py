@@ -6,11 +6,11 @@ from unittest.mock import patch
 
 import pytest
 
-from common.model_utils import analyze_file_with_model, call_model, run_prompt, PROMPTS_DIR
+from bba.model_utils import analyze_file_with_model, call_model, run_prompt, PROMPTS_DIR
 
 
 def _requires_local_ai():
-    from common.model_utils import check_server_available
+    from bba.model_utils import check_server_available
     if not check_server_available("fast"):
         pytest.skip("Local AI model not available")
 

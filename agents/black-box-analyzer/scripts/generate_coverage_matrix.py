@@ -13,8 +13,8 @@ import json
 import sys
 from pathlib import Path
 
-from common.models import CoverageGap, HTTPMethod, Scenario, TestCase
-from common.utils import read_json, write_json
+from bba.models import CoverageGap, HTTPMethod, Scenario, TestCase
+from bba.utils import read_json, write_json
 
 
 def scenario_matches_test_library(scenario: Scenario, test: TestCase) -> bool:
@@ -184,7 +184,7 @@ def generate_coverage_matrix(
     tests = []
 
     for test_dict in tests_data.get("tests", []):
-        from common.models import TestFramework
+        from bba.models import TestFramework
 
         test = TestCase(
             name=test_dict["name"],

@@ -17,12 +17,12 @@ import re
 import sys
 from pathlib import Path
 
-from common.constants import (
+from bba.constants import (
     DEFAULT_RESPONSE_CODES,
     ENDPOINT_PATTERNS,
 )
-from common.models import Endpoint, HTTPMethod, Language, Parameter
-from common.utils import (
+from bba.models import Endpoint, HTTPMethod, Language, Parameter
+from bba.utils import (
     detect_project_language,
     extract_line_number_from_pattern,
     extract_params_from_path,

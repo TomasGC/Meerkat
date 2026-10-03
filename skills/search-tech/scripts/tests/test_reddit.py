@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.models import SearchQuery, Source, ResultType
+from search_tech.models import SearchQuery, Source, ResultType
 from search_reddit import search_reddit_subreddit, search_reddit
 
 
@@ -91,7 +91,7 @@ class TestRedditSearch:
     @patch('search_reddit.search_reddit_subreddit')
     def test_search_multiple_subreddits(self, mock_search):
         """Test searching across multiple subreddits."""
-        from common.models import SearchResult
+        from search_tech.models import SearchResult
 
         # Mock results from different subreddits
         mock_search.side_effect = [
@@ -122,7 +122,7 @@ class TestRedditSearch:
 
     def test_reddit_excerpt_extraction(self):
         """Test excerpt extraction from selftext."""
-        from common.models import SearchResult
+        from search_tech.models import SearchResult
 
         # Long selftext should be truncated
         long_text = "a" * 250
@@ -133,7 +133,7 @@ class TestRedditSearch:
 
     def test_reddit_source_attribution(self):
         """Test proper source attribution."""
-        from common.models import SearchResult
+        from search_tech.models import SearchResult
 
         result = SearchResult(
             source=Source.REDDIT,

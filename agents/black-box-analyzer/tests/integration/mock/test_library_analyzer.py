@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from library_analyzer import LibraryAnalyzer
-from common.models import ProjectType
+from bba.models import ProjectType
 
 def test_analyze_graceful_when_script_fails(temp_dir):
     analyzer = LibraryAnalyzer()

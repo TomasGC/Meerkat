@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from orchestrate import _build_summary
+from cca.orchestrate import _build_summary
 from lib.engine.orchestrator import _SEVERITY_ORDER
 
 
@@ -46,7 +46,7 @@ class TestBuildSummary:
 
 
 class TestDeduplication:
-    """Test the deduplication logic inline (same logic as orchestrate.main)."""
+    """Test the deduplication logic inline (same logic as cca.orchestrate.main)."""
 
     def _dedup(self, all_results):
         violations = []

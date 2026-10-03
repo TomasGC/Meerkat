@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.models import SearchQuery, Source, ResultType
+from search_tech.models import SearchQuery, Source, ResultType
 from search_devto import search_devto
 
 
@@ -226,7 +226,7 @@ class TestDevtoSearch:
     @patch('search_devto.requests.get')
     def test_cache_integration(self, mock_get, mock_devto_response):
         """Test cache hit and miss."""
-        from common.cache import SearchCache
+        from search_tech.cache import SearchCache
         import tempfile
 
         mock_response = Mock()

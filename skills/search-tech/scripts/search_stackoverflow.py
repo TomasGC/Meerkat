@@ -15,7 +15,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import time
 
-# Add common to path
+# Put the scripts dir on the path for the search_tech package
 sys.path.insert(0, str(Path(__file__).parent))
 
 try:
@@ -24,9 +24,9 @@ except ImportError:
     print("Error: requests library not found. Install with: pip install requests", file=sys.stderr)
     sys.exit(1)
 
-from common.models import SearchQuery, SearchResult, SearchResponse, Source, ResultType, ValidationError
-from common.logger import setup_logger, MetricsCollector, get_defaults
-from common.cache import SearchCache
+from search_tech.models import SearchQuery, SearchResult, SearchResponse, Source, ResultType, ValidationError
+from search_tech.logger import setup_logger, MetricsCollector, get_defaults
+from search_tech.cache import SearchCache
 
 
 API_BASE = "https://api.stackexchange.com/2.3"

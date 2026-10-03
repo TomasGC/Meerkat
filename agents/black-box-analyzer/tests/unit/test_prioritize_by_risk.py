@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Add scripts directory to path
 
-from common.models import CoverageGap, HTTPMethod, Scenario
+from bba.models import CoverageGap, HTTPMethod, Scenario
 from prioritize_by_risk import (
     assess_business_impact,
     assess_failure_probability,
@@ -254,7 +254,7 @@ def test_prioritize_gaps():
 
 def test_calculate_risk_stats():
     """Test risk statistics calculation."""
-    from common.models import RiskAssessment
+    from bba.models import RiskAssessment
 
     # Create mock assessments
     assessments = [

@@ -3,7 +3,7 @@
 
 import pytest
 
-from common.models import (
+from bba.models import (
     AnalysisResult,
     CoverageGap,
     CoverageMatrix,
@@ -17,8 +17,8 @@ from common.models import (
     Scenario,
 )
 # Aliased: pytest tries to collect module-level names starting with "Test"
-from common.models import TestCase as TestCaseModel
-from common.models import TestFramework as TestFrameworkModel
+from bba.models import TestCase as TestCaseModel
+from bba.models import TestFramework as TestFrameworkModel
 
 # ── builders ──────────────────────────────────────────────────────────────────
 

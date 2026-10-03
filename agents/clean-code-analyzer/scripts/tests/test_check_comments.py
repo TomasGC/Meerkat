@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from checkers.check_comments import _check_file
+from cca.checkers.check_comments import _check_file
 
 
 class TestTodoFixme:
@@ -64,6 +64,6 @@ class TestRunSignature:
     def test_accepts_files_param(self, tmp_path):
         f = tmp_path / "src.py"
         f.write_text("x = 1\n")
-        from checkers.check_comments import run
+        from cca.checkers.check_comments import run
         result = run(tmp_path, "python", files=[f])
         assert result["success"] is True

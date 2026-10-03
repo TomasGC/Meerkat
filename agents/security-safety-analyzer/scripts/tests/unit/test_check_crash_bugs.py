@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from checkers.check_crash_bugs import run, _check_python_file, _pattern_check, _PRINCIPLE
+from ssa.checkers.check_crash_bugs import run, _check_python_file, _pattern_check, _PRINCIPLE
 
 
 def _make_file(tmp_path: Path, name: str, content: str) -> Path:
@@ -112,7 +112,7 @@ class TestPatternCheckShells:
 class TestNonPythonIntegration:
     def test_pattern_violations_reported_without_server(self, tmp_path):
         f = _make_file(tmp_path, "Parser.cs", "var age = int.Parse(input);\n")
-        with patch("checkers.check_crash_bugs.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=False):
             result = run(tmp_path, "csharp", files=[f])
         assert result["violations"]
         assert all(v["principle"] == _PRINCIPLE for v in result["violations"])
@@ -127,8 +127,8 @@ class TestNonPythonIntegration:
             "description": "Parse can throw",
             "fix": "Use TryParse",
         }
-        with patch("checkers.check_crash_bugs.check_server_available", return_value=True), \
-             patch("checkers.check_crash_bugs.analyze_files_parallel", return_value=[fake_item]):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=True), \
+             patch("ssa.checkers.check_crash_bugs.analyze_files_parallel", return_value=[fake_item]):
             result = run(tmp_path, "csharp", files=[f])
         assert not any(v["message"].startswith("[") for v in result["violations"])
 
@@ -143,8 +143,8 @@ class TestNonPythonIntegration:
             "description": "age may be null",
             "fix": "Check for null",
         }
-        with patch("checkers.check_crash_bugs.check_server_available", return_value=True), \
-             patch("checkers.check_crash_bugs.analyze_files_parallel", return_value=[fake_item]):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=True), \
+             patch("ssa.checkers.check_crash_bugs.analyze_files_parallel", return_value=[fake_item]):
             result = run(tmp_path, "csharp", files=[f])
         assert any(v["message"].startswith("[NULL_DEREF]") for v in result["violations"])
 
@@ -156,15 +156,15 @@ class TestNonPythonIntegration:
             captured["extra_slots"] = kwargs.get("extra_slots")
             return []
 
-        with patch("checkers.check_crash_bugs.check_server_available", return_value=True), \
-             patch("checkers.check_crash_bugs.analyze_files_parallel", side_effect=fake_analyze):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=True), \
+             patch("ssa.checkers.check_crash_bugs.analyze_files_parallel", side_effect=fake_analyze):
             run(tmp_path, "csharp", files=[f])
         assert "TryParse" in captured["extra_slots"][f]["known_findings"]
 
 
 class TestRunFunction:
     def test_returns_correct_schema(self, tmp_path):
-        with patch("checkers.check_crash_bugs.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=False):
             result = run(tmp_path, "python")
         assert result["principle"] == _PRINCIPLE
         assert result["success"] is True
@@ -172,12 +172,12 @@ class TestRunFunction:
         assert "files_analyzed" in result
 
     def test_empty_dir_no_violations(self, tmp_path):
-        with patch("checkers.check_crash_bugs.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=False):
             result = run(tmp_path, "python")
         assert result["violations"] == []
 
     def test_files_kwarg_limits_scope(self, tmp_path):
         f = _make_file(tmp_path, "safe.py", "x = 1\n")
-        with patch("checkers.check_crash_bugs.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=False):
             result = run(tmp_path, "python", files=[f])
         assert result["files_analyzed"] <= 1

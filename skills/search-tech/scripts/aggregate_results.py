@@ -12,11 +12,11 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-# Add common to path
+# Put the scripts dir on the path for the search_tech package
 sys.path.insert(0, str(Path(__file__).parent))
 
-from common.models import SearchResult, SearchResponse
-from common.logger import setup_logger, MetricsCollector, get_defaults
+from search_tech.models import SearchResult, SearchResponse
+from search_tech.logger import setup_logger, MetricsCollector, get_defaults
 
 
 def calculate_rank_score(result: SearchResult) -> float:

@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-import orchestrate
+import ssa.orchestrate
 from lib.engine import discovery, orchestrator
 
 
@@ -30,7 +30,7 @@ def _run(root: Path, tmp_path: Path, checks: str) -> dict:
     out = tmp_path / "report.json"
     with patch("lib.ai.model_utils.check_server_available", return_value=False), \
          patch("lib.engine.hybrid.check_server_available", return_value=False):
-        orchestrator.main(registry=orchestrate.CHECKERS, app_name="SSA", label_singular="checker",
+        orchestrator.main(registry=ssa.orchestrate.CHECKERS, app_name="SSA", label_singular="checker",
                           cache_dir=tmp_path / "cache",
                           argv=["--path", str(root), "--full", "--checks", checks, "--no-stream",
                                 "--no-cache", "--output", str(out)])

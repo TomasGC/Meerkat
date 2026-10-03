@@ -103,14 +103,14 @@ def cmd_conventions(args: argparse.Namespace) -> None:
     language: str = args.language
     output_file: Path = args.output_file
 
-    common_file = _BASE_DIR / "common" / ".claude" / "contexts" / "conventions.md"
+    shared_file = _BASE_DIR / "shared" / ".claude" / "contexts" / "conventions.md"
     lang_file = _BASE_DIR / "content" / language / "conventions.md"
     python_file = _BASE_DIR / "content" / "python" / "conventions.md"
 
     parts: list[str] = []
 
-    if common_file.exists():
-        parts.append(common_file.read_text(encoding="utf-8").rstrip())
+    if shared_file.exists():
+        parts.append(shared_file.read_text(encoding="utf-8").rstrip())
 
     if lang_file.exists():
         parts.append(lang_file.read_text(encoding="utf-8").rstrip())
@@ -128,13 +128,13 @@ def cmd_commands(args: argparse.Namespace) -> None:
     language: str = args.language
     output_file: Path = args.output_file
 
-    common_file = _BASE_DIR / "common" / ".claude" / "contexts" / "commands.md"
+    shared_file = _BASE_DIR / "shared" / ".claude" / "contexts" / "commands.md"
     lang_file = _BASE_DIR / "content" / language / "commands.md"
 
     parts: list[str] = []
 
-    if common_file.exists():
-        parts.append(common_file.read_text(encoding="utf-8").rstrip())
+    if shared_file.exists():
+        parts.append(shared_file.read_text(encoding="utf-8").rstrip())
 
     if lang_file.exists():
         parts.append(lang_file.read_text(encoding="utf-8").rstrip())

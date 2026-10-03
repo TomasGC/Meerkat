@@ -18,8 +18,8 @@ if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
 from lib.config import language_config
-from common.utils import detect_project_language
-from common.model_utils import analyze_file_with_model, check_server_available, PROMPTS_DIR
+from bba.utils import detect_project_language
+from bba.model_utils import analyze_file_with_model, check_server_available, PROMPTS_DIR
 
 # Source file extensions per language — code only: refactoring anti-patterns cannot
 # be scanned in yaml or sql, and those must not win detect_language's vote.

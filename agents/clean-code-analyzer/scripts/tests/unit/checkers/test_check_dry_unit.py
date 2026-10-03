@@ -11,8 +11,8 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-import checkers.check_dry as dry_mod
-from checkers.check_dry import run
+import cca.checkers.check_dry as dry_mod
+from cca.checkers.check_dry import run
 
 FIND_DUPLICATES_OUTPUT = json.dumps({
     "success": True,

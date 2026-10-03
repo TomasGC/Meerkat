@@ -11,7 +11,7 @@ from generate_ci_workflow import (
     generate_npm_scripts,
     generate_workflow,
 )
-from common.models import Language, TestFramework
+from bba.models import Language, TestFramework
 
 def test_generate_workflow_python_has_pytest_setup():
     wf = generate_workflow(Language.PYTHON, [], TestFramework.PYTEST)

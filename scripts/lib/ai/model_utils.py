@@ -14,6 +14,7 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Protocol
 
 # the shared library is rooted at scripts/, two levels up from lib/ai/
 sys.path.insert(0, str(Path(__file__).parents[2]))
@@ -39,20 +40,16 @@ LOCAL_AI_HOST, LOCAL_AI_PORT = _parse_local_server()
 # Availability cache — avoids re-probing the server for every checker
 _AVAILABILITY_CACHE: dict[str, bool] = {}
 
-# Optional per-file result cache — resolved at call time based on sys.path
-def _get_cached(file_path, checker, **kwargs): return None  # noqa: E704
-def _set_cached(file_path, checker, results): pass  # noqa: E704
-_CACHE_AVAILABLE = False
+class ModelCache(Protocol):
+    """Per-file result cache an agent hands to the analyze_* functions.
 
-try:
-    from common.cache import get_model_cached as _get_cached, set_model_cached as _set_cached  # type: ignore[no-redef]
-    _CACHE_AVAILABLE = True
-except ImportError:
-    try:
-        from common.cache import get_cached as _get_cached, set_cached as _set_cached  # type: ignore[no-redef]
-        _CACHE_AVAILABLE = True
-    except ImportError:
-        pass
+    Passed explicitly on every call — never discovered from sys.path — so two
+    agents loaded in one process can never read each other's cache.
+    """
+
+    def get(self, file_path: Path, prompt_name: str, max_age_days: int = 7) -> list[dict] | None: ...
+
+    def set(self, file_path: Path, prompt_name: str, results: list[dict]) -> None: ...
 
 
 def _model_listed(model: str) -> bool:
@@ -217,13 +214,14 @@ def analyze_file_with_model(
     agents: int = 1,
     no_cache: bool = False,
     cache_ttl_days: int = 7,
+    cache: ModelCache | None = None,
 ) -> list[dict]:
     """Read source file, call local AI (with optional cache + multi-run), annotate results."""
     if prompts_dir is None:
         raise ValueError("prompts_dir is required")
 
-    if not no_cache and _CACHE_AVAILABLE:
-        cached = _get_cached(file_path, prompt_name, max_age_days=cache_ttl_days)
+    if not no_cache and cache is not None:
+        cached = cache.get(file_path, prompt_name, max_age_days=cache_ttl_days)
         if cached is not None:
             return cached
 
@@ -252,8 +250,8 @@ def analyze_file_with_model(
     else:
         print(f"[WARN] No results from local AI for {file_path.name}", file=sys.stderr)
 
-    if not no_cache and _CACHE_AVAILABLE and results:
-        _set_cached(file_path, prompt_name, results)
+    if not no_cache and cache is not None and results:
+        cache.set(file_path, prompt_name, results)
 
     return results
 
@@ -271,6 +269,7 @@ async def analyze_files_async(
     timeout: int | None = 600,
     extra_slots: dict | None = None,
     failed: set | None = None,
+    cache: ModelCache | None = None,
 ) -> list[dict]:
     """Analyze multiple files concurrently — all HTTP calls in-flight simultaneously.
 
@@ -290,8 +289,8 @@ async def analyze_files_async(
         return []
 
     async def analyze_one(file_path: Path) -> list[dict]:
-        if not no_cache and _CACHE_AVAILABLE:
-            cached = _get_cached(file_path, prompt_name, max_age_days=cache_ttl_days)
+        if not no_cache and cache is not None:
+            cached = cache.get(file_path, prompt_name, max_age_days=cache_ttl_days)
             if cached is not None:
                 return cached
 
@@ -342,8 +341,8 @@ async def analyze_files_async(
             item["source_file"] = str(file_path)
             item["source_file_name"] = file_path.name
 
-        if not no_cache and _CACHE_AVAILABLE and results:
-            _set_cached(file_path, prompt_name, results)
+        if not no_cache and cache is not None and results:
+            cache.set(file_path, prompt_name, results)
         return results
 
     tasks = [analyze_one(Path(fp)) for fp in file_paths]
@@ -372,6 +371,7 @@ def analyze_files_parallel(
     timeout: int | None = 600,
     extra_slots: dict | None = None,
     failed: set | None = None,
+    cache: ModelCache | None = None,
 ) -> list[dict]:
     """Analyze multiple files with local AI — all HTTP calls in-flight simultaneously via asyncio.
 
@@ -381,7 +381,7 @@ def analyze_files_parallel(
         files, language, role, prompt_name, prompts_dir,
         max_chars=max_chars, agents=agents, no_cache=no_cache,
         cache_ttl_days=cache_ttl_days, timeout=timeout, extra_slots=extra_slots,
-        failed=failed,
+        failed=failed, cache=cache,
     ))
 
 

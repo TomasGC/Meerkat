@@ -410,7 +410,7 @@ Before completing search, verify:
 - [ ] **search_stackoverflow.py**: Python script for StackOverflow API
 - [ ] **search_github.py**: Python script for GitHub CLI wrapper
 - [ ] **aggregate_results.py**: Python script for result aggregation
-- [ ] **scripts/common/models.py**: Data models (SearchResult, Source)
+- [ ] **scripts/search_tech/models.py**: Data models (SearchResult, Source)
 - [ ] **scripts/requirements.txt**: Dependencies (requests, dataclasses-json)
 - [ ] **examples/example_basic.sh**: Basic usage example
 - [ ] **examples/example_advanced.sh**: Advanced usage with filters

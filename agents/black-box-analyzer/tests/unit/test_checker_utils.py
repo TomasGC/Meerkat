@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from checkers._utils import (
+from bba.checkers._utils import (
     find_source_files,
     find_tier_test_files,
     has_test_in_tier,
@@ -138,8 +138,8 @@ def test_find_tier_test_files_empty_when_no_dirs(tmp_path):
 
 from unittest.mock import patch
 
-import checkers._utils as utils_mod
-from checkers._utils import run_gap_checker
+import bba.checkers._utils as utils_mod
+from bba.checkers._utils import run_gap_checker
 
 
 def _gap(tmp_path, **kwargs):

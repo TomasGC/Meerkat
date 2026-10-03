@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from common.cache import AnalysisCache
-from common.models import (
+from bba.cache import AnalysisCache
+from bba.models import (
     AnalysisResult,
     CoverageMatrix,
     Endpoint,
@@ -348,7 +348,7 @@ def test_cache_home_honours_env_override(temp_dir, monkeypatch):
     assert cache.cache_dir == temp_dir / "redirected"
 
 def test_model_cache_dir_honours_env_override(temp_dir, monkeypatch):
-    from common.cache import _model_cache_dir
+    from bba.cache import _model_cache_dir
 
     monkeypatch.setenv("BBA_CACHE_DIR", str(temp_dir / "redirected"))
     assert _model_cache_dir() == temp_dir / "redirected" / "models"

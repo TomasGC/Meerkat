@@ -11,7 +11,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from common.model_utils import PROMPTS_DIR
+from ssa.model_utils import PROMPTS_DIR
 
 # Slots supplied by analyze_files_parallel for every call
 _BASE_SLOTS = {"language": "python", "source": "x = 1\n"}

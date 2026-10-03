@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from checkers.check_naming import _check_file
+from cca.checkers.check_naming import _check_file
 
 
 class TestMagicNumbers:
@@ -59,7 +59,7 @@ class TestRunSignature:
     def test_accepts_files_param(self, tmp_path):
         f = tmp_path / "src.py"
         f.write_text("x = 1\n")
-        from checkers.check_naming import run
+        from cca.checkers.check_naming import run
         result = run(tmp_path, "python", files=[f])
         assert result["success"] is True
         assert result["files_analyzed"] == 1
@@ -84,7 +84,7 @@ class TestRunSignature:
 def test_naming_parametrized(tmp_path, code, should_flag):
     f = tmp_path / "module.py"
     f.write_text(code)
-    from checkers.check_naming import _check_file
+    from cca.checkers.check_naming import _check_file
     violations = _check_file(f, tmp_path)
     has_violations = len(violations) > 0
     assert has_violations == should_flag, (

@@ -265,7 +265,7 @@ python ~/.claude/scripts/cli/analyze_commit_quality.py
 **Location**: `~/.claude/scripts/lib/`
 
 ```
-common/
+lib/
 ├── integrations.py     # Profile loading (load_integrations)
 ├── models.py           # Data models (IntegrationConfig, etc.)
 ├── utils.py            # Shared utilities

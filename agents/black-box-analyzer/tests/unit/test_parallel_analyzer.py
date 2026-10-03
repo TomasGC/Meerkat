@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from parallel_analyzer import AnalyzerRouter
-from common.models import ProjectType
+from bba.models import ProjectType
 
 def test_select_analyzers_raises_when_no_match():
     router = AnalyzerRouter()

@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.models import SearchQuery, Source, ResultType
+from search_tech.models import SearchQuery, Source, ResultType
 from search_hashnode import search_hashnode
 
 
@@ -259,7 +259,7 @@ class TestHashnodeSearch:
     @patch('search_hashnode.requests.post')
     def test_cache_integration(self, mock_post, mock_hashnode_response):
         """Test cache hit and miss."""
-        from common.cache import SearchCache
+        from search_tech.cache import SearchCache
         import tempfile
 
         mock_response = Mock()

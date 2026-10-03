@@ -86,7 +86,7 @@ def test_no_cache_flag_bypasses(cache_dir, tmp_path, source_file):
 
     Real checker, real run_hybrid, real on-disk cache — only the model call is faked.
     """
-    from checkers.check_solid import run as run_solid
+    from cca.checkers.check_solid import run as run_solid
 
     analyzed: list[list[Path]] = []
 
@@ -96,7 +96,7 @@ def test_no_cache_flag_bypasses(cache_dir, tmp_path, source_file):
                  "line": 1, "severity": "medium", "violation": "does two things",
                  "suggestion": "split"} for f in files]
 
-    with patch("checkers.check_solid.check_server_available", return_value=True), \
+    with patch("cca.checkers.check_solid.check_server_available", return_value=True), \
          patch("lib.engine.hybrid.check_server_available", return_value=True), \
          patch("lib.engine.hybrid.analyze_files_parallel", side_effect=fake_analyze):
         first = run_solid(tmp_path, "python", files=[source_file], cache_dir=cache_dir)

@@ -13,7 +13,6 @@ from pathlib import Path
 
 import pytest
 
-from .conftest import ollama_skip
 
 _SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 _ORCHESTRATE = _SCRIPTS_DIR / "orchestrate.py"
@@ -79,7 +78,7 @@ def _violation_set(data: dict) -> set[tuple]:
     return {(v["file"], v["line"], v["message"]) for v in data["violations"]}
 
 
-@ollama_skip
+@pytest.mark.live_ai
 @pytest.mark.integration_real
 def test_cache_round_trip_second_run_hits(tmp_path):
     """Run 2 on unchanged content is served entirely from the cache with identical output."""
@@ -98,7 +97,7 @@ def test_cache_round_trip_second_run_hits(tmp_path):
     assert _violation_set(second) == _violation_set(first)
 
 
-@ollama_skip
+@pytest.mark.live_ai
 @pytest.mark.integration_real
 def test_yagni_reconciliation_invariant_on_real_output(tmp_path):
     """Mechanical and AI YAGNI findings share one relative path form and never overlap within 3 lines."""

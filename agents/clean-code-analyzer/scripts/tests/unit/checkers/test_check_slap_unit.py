@@ -16,9 +16,9 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from checkers.check_slap import run
+from cca.checkers.check_slap import run
 
-_CHECK_AVAILABLE = "checkers.check_slap.check_server_available"
+_CHECK_AVAILABLE = "cca.checkers.check_slap.check_server_available"
 _HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"
 _HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
 

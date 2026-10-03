@@ -86,35 +86,33 @@ agents/black-box-analyzer/tests/
 
 skills/
 └── search-tech/scripts/tests/       # 113 tests — cache, logger, models, utils
-                                     # separate invocation: own common/ package
+                                     # package: search_tech/ (was common/)
 ```
 
 ---
 
-## Important: common Namespace Collision
+## One Invocation for Every Suite (#21)
 
-`agents/black-box-analyzer/scripts/common/`, `agents/clean-code-analyzer/scripts/common/`, `agents/security-safety-analyzer/scripts/common/` and `skills/search-tech/scripts/common/` are four independent packages. The shared library is `scripts/lib/` and is deliberately not named `common`.
-Python's import cache will find whichever is on sys.path first.
-
-**Rule**: Always run BBA, CCA, SSA and search-tech tests in **separate pytest invocations**.
+Every suite runs from `~/.claude` in one pytest invocation:
 
 ```bash
-# OK
-pytest agents/black-box-analyzer/tests -m units
-pytest scripts/cli/tests -m units
-cd agents/clean-code-analyzer/scripts && python -m pytest tests/unit/ -q
-cd agents/security-safety-analyzer/scripts && python -m pytest tests/unit/ -q
-cd skills/search-tech/scripts && python -m pytest tests/ -q
-
-# NOT OK (common collision)
-pytest agents/black-box-analyzer/tests scripts/cli/tests -m units
-pytest agents/clean-code-analyzer/scripts/tests agents/black-box-analyzer/tests -m units
-
+cd ~/.claude
+python -m pytest -q -m "not integration_reals" \
+  --ignore=agents/security-safety-analyzer/scripts/tests/integration/mock/test_orchestrate.py \
+  --deselect "agents/clean-code-analyzer/scripts/tests/e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates"
 ```
 
-**Note**: Always run from `agents/clean-code-analyzer/scripts/` as the working directory (to avoid `common` namespace collision).
-
----
+What makes it work, and what keeps it working:
+- **Each agent owns one uniquely named package**: `cca/`, `ssa/`, `bba/` under the agent's `scripts/`, and
+  `search_tech/` for the skill. Nothing importable is called `common`, `checkers` or `orchestrate` at top level.
+  `scripts/orchestrate.py` is a three-line CLI wrapper, never imported by tests.
+- **No `__init__.py` in test trees, nor in the agents' `scripts/` dirs.** With `--import-mode=importlib`, pytest
+  names a test module after its path from the rootdir, so two `tests/unit/test_cache.py` stay distinct. An
+  `__init__.py` makes pytest name it after the package instead (`scripts.tests.conftest`), and two agents collide.
+- Tests import `from .conftest` nowhere: shared test switches are markers (`@pytest.mark.live_ai`) that a
+  conftest turns into skips.
+- The AI client holds no cache state: each agent's `model_utils` shim passes its own `CACHE` on every call, so
+  loading three agents in one process cannot make one read another's cache.
 
 ## conftest.py Pattern
 
@@ -149,7 +147,7 @@ run `parallel_analyzer.py` through `subprocess.run`, which cannot see a patched
 attribute but does inherit the env. Without it, tests write into the real
 `~/.cache/black-box-analyzer`.
 
-`common/cache.py` reads it lazily via `_cache_home()` on every call — capturing it
+`bba/cache.py` reads it lazily via `_cache_home()` on every call — capturing it
 at import time would break subprocess tests that set it after import.
 
 ---
@@ -222,8 +220,8 @@ the **main checkout's** `lib/`, not the worktree's. Compare a worktree run again
 never against the main checkout.
 
 A fresh clone anywhere other than `~/.claude` is worse: `scripts/lib/testing/golden.py` resolves agents under
-`~/.claude/agents/`, so a golden test run from the clone imports the clone's `common` and then the real
-checkout's agent, and stops with "`common` already imported … run one agent per process". To check what a fresh
+`~/.claude/agents/`, so a golden test run from the clone imports the clone's agent package and then the real
+checkout's agent, and stops with "`cca` already imported from …, not from …". To check what a fresh
 clone contains (#34: prompt templates), inspect the files directly instead of running the suites there. A CI
 runner (#2) checks out elsewhere too, so the hardcoded path has to go before CI can run these tests.
 

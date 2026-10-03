@@ -170,8 +170,7 @@ that produced them and are rejected on mismatch. Writes are atomic
 (temp file + rename), and a write failure is swallowed so a cache problem never
 breaks a search.
 
-**Not in root `testpaths`** — its `common/` package would collide with the
-agents'. Run it from its own directory, in its own invocation.
+In root `testpaths` since #21: its package is `search_tech/`, which collides with nothing.
 
 ---
 
@@ -230,26 +229,13 @@ pytest scripts/lib/tests/units/ -v
 pytest scripts/tests/e2e/ -v
 ```
 
-### Run by tier (avoid BBA + scripts together — common namespace collision)
+### Everything, one invocation (#21)
 ```bash
-# BBA only
-pytest agents/black-box-analyzer/tests/unit/ -v
-pytest agents/black-box-analyzer/tests/unit/ agents/black-box-analyzer/tests/integration/mock/ -q
-
-# Scripts only
-pytest scripts/tests scripts/cli/tests scripts/lib/tests -m units
-```
-
-### CI-safe (no local AI required)
-```bash
-pytest agents/black-box-analyzer/tests/unit/ agents/black-box-analyzer/tests/integration/mock/ -q
-pytest scripts/tests scripts/cli/tests scripts/lib/tests -m "units or integration_mocks"
-```
-
-### Full suites (separate invocations)
-```bash
-pytest agents/black-box-analyzer/tests -v
-pytest scripts/tests scripts/cli/tests scripts/lib/tests -v
+cd ~/.claude
+python -m pytest -q -m "not integration_reals" \
+  --ignore=agents/security-safety-analyzer/scripts/tests/integration/mock/test_orchestrate.py \
+  --deselect "agents/clean-code-analyzer/scripts/tests/e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates"
+python -m pytest -q -m integration_reals    # live AI tier
 ```
 
 ---

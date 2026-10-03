@@ -8,8 +8,8 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-import orchestrate
-from checkers import check_comments, check_naming
+import cca.orchestrate
+from cca.checkers import check_comments, check_naming
 
 
 def _messages(module, tmp_path: Path, text: str) -> list[str]:
@@ -66,5 +66,5 @@ def test_accepts_sql(module):
 def test_other_checkers_stay_code_only(name):
     """Each exclusion is explained next to CHECKERS in orchestrate.py."""
     import importlib
-    module = importlib.import_module(orchestrate.CHECKERS[name])
+    module = importlib.import_module(cca.orchestrate.CHECKERS[name])
     assert "query" not in getattr(module, "FILE_KINDS", ("code",))

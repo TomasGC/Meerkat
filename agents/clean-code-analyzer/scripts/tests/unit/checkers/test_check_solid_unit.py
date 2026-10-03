@@ -16,11 +16,11 @@ SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 import sys
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-import checkers.check_solid as solid_mod
-from checkers.check_solid import run
+import cca.checkers.check_solid as solid_mod
+from cca.checkers.check_solid import run
 
 # Patch targets: check_solid's own early guard vs. run_hybrid's internal call sites.
-_CHECK_AVAILABLE = "checkers.check_solid.check_server_available"
+_CHECK_AVAILABLE = "cca.checkers.check_solid.check_server_available"
 _HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"
 _HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
 

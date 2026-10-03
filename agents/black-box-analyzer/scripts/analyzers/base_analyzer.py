@@ -14,7 +14,7 @@ import sys
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.models import (
+from bba.models import (
     AnalysisResult,
     CoverageGap,
     CoverageMatrix,

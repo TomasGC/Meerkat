@@ -34,7 +34,7 @@ def _run(tmp_path, prompts_dir, files: dict[str, str], language: str, extra_slot
         seen[name] = prompt.splitlines()[0]
         return "[]"
 
-    with patch.object(mu, "call_model_async", fake), patch.object(mu, "_CACHE_AVAILABLE", False):
+    with patch.object(mu, "call_model_async", fake):
         mu.analyze_files_parallel(paths, language, "analyzer", "p", prompts_dir=prompts_dir,
                                   extra_slots={tmp_path / k: v for k, v in (extra_slots or {}).items()})
     return seen

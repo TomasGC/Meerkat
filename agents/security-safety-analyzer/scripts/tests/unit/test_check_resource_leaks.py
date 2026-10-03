@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from checkers import check_resource_leaks
+from ssa.checkers import check_resource_leaks
 
 
 def _run(tmp_path: Path, name: str, content: str, language: str) -> list[dict]:

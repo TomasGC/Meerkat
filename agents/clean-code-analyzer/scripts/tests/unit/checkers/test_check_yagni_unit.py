@@ -19,7 +19,7 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from checkers.check_yagni import run
+from cca.checkers.check_yagni import run
 
 _HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"
 _HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
@@ -60,7 +60,7 @@ _UNUSED_TWO_FILES_JSON = _unused_payload(
 
 def _run_with_unused(tmp_path: Path, stdout: str, ai_items: list[dict] | None = None, files=None) -> dict:
     """Run the checker with find_unused_code.py mocked to `stdout`; AI pass on iff ai_items is given."""
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", return_value=MagicMock(returncode=0, stdout=stdout)):
@@ -73,7 +73,7 @@ def _run_with_unused(tmp_path: Path, stdout: str, ai_items: list[dict] | None = 
 def test_subprocess_unused_code_mapped_to_yagni(tmp_path):
     """Subprocess returns unused code JSON → violation with principle: YAGNI."""
     mock_result = MagicMock(returncode=0, stdout=_UNUSED_JSON)
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", return_value=mock_result):
@@ -106,7 +106,7 @@ def test_two_unused_symbols_same_file_stay_two_findings(tmp_path):
 @pytest.mark.unit
 def test_subprocess_failure_empty_violations(tmp_path):
     """subprocess raises OSError → violations empty, success True, no exception raised."""
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", side_effect=OSError("not found")):
@@ -120,7 +120,7 @@ def test_subprocess_failure_empty_violations(tmp_path):
 @pytest.mark.unit
 def test_subprocess_timeout_empty_violations(tmp_path):
     """subprocess.TimeoutExpired → violations empty, success True."""
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("cmd", 60)):
@@ -153,7 +153,7 @@ def test_ollama_speculative_violation_added(tmp_path):
         "suggestion": "Remove if unused",
         "line": 2,
     }
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = False  # skip subprocess
         with patch(_HYBRID_CHECK_AVAILABLE, return_value=True):
             with patch(_HYBRID_ANALYZE_PARALLEL, return_value=[ollama_item]):
@@ -169,7 +169,7 @@ def test_ollama_speculative_violation_added(tmp_path):
 def test_ollama_unavailable_subprocess_results_still_returned(tmp_path):
     """Ollama unavailable → Ollama part skipped, subprocess violations still returned."""
     mock_result = MagicMock(returncode=0, stdout=_UNUSED_JSON)
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", return_value=mock_result):
@@ -189,7 +189,7 @@ def test_files_filter_only_targeted_file(tmp_path):
     targeted.write_text("def targeted_func(): pass\n")
 
     mock_result = MagicMock(returncode=0, stdout=_UNUSED_TWO_FILES_JSON)
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", return_value=mock_result):
@@ -206,7 +206,7 @@ def test_files_filter_only_targeted_file(tmp_path):
 def test_files_none_runs_full_path(tmp_path):
     """files=None → analyzes full path (no file filtering)."""
     mock_result = MagicMock(returncode=0, stdout=_UNUSED_JSON)
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.__str__.return_value = "/fake/find_unused.py"
         with patch("subprocess.run", return_value=mock_result):
@@ -226,7 +226,7 @@ def test_yagni_ollama_discover_files_branch(tmp_path):
     f = tmp_path / "service.py"
     f.write_text("class UserService:\n    def get_user(self): pass\n")
 
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path, \
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path, \
          patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
          patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_ollama:
         mock_path.exists.return_value = False
@@ -242,7 +242,7 @@ def test_yagni_ollama_discover_files_mixed_language(tmp_path):
     f = tmp_path / "service.py"
     f.write_text("class UserService:\n    pass\n")
 
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path, \
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path, \
          patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
          patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]):
         mock_path.exists.return_value = False
@@ -312,7 +312,7 @@ def test_tool_failure_warns_on_stderr_and_still_runs_ai(tmp_path, capsys, return
     (tmp_path / "app.py").write_text("def f():\n    return 1\n")
     ai_item = {"line": 1, "pattern": "speculative-feature", "violation": "v", "suggestion": "s",
                "source_file": str(tmp_path / "app.py")}
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.name = "find_unused_code.py"
         with patch("subprocess.run", return_value=MagicMock(returncode=returncode, stdout=stdout, stderr="")):
@@ -334,7 +334,7 @@ def test_tool_failure_warns_on_stderr_and_still_runs_ai(tmp_path, capsys, return
 def test_tool_exception_warns_on_stderr(tmp_path, capsys, side_effect, run_result, expected):
     """A timeout or malformed tool output is reported on stderr, not swallowed."""
     (tmp_path / "app.py").write_text("def f():\n    return 1\n")
-    with patch("checkers.check_yagni._FIND_UNUSED") as mock_path:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.name = "find_unused_code.py"
         with patch("subprocess.run", side_effect=side_effect, return_value=run_result):

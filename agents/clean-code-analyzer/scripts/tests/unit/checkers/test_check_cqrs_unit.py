@@ -16,10 +16,10 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-import checkers.check_cqrs as cqrs_mod
-from checkers.check_cqrs import run
+import cca.checkers.check_cqrs as cqrs_mod
+from cca.checkers.check_cqrs import run
 
-_CHECK_AVAILABLE = "checkers.check_cqrs.check_server_available"
+_CHECK_AVAILABLE = "cca.checkers.check_cqrs.check_server_available"
 _HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"
 _HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
 

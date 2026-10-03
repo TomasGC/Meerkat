@@ -18,7 +18,7 @@ from analyzers.event_driven.serverless_analyzer import ServerlessAnalyzer
 from analyzers.event_driven.worker_analyzer import WorkerAnalyzer
 from analyzers.event_driven.message_queue_analyzer import MessageQueueAnalyzer
 from analyzers.blockchain.smart_contract_analyzer import SmartContractAnalyzer
-from common.models import ProjectType, EntryPointType
+from bba.models import ProjectType, EntryPointType
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 

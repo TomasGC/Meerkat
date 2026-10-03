@@ -9,7 +9,7 @@ _SCRIPTS = Path(__file__).parent.parent.parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
-from common.model_utils import (  # noqa: E402
+from cca.model_utils import (  # noqa: E402
     LOCAL_AI_HOST,
     LOCAL_AI_PORT,
     check_server_available,

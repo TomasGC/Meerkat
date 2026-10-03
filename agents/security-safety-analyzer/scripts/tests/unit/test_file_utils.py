@@ -8,8 +8,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from common import file_utils
-from common.file_utils import (
+from ssa import file_utils
+from ssa.file_utils import (
     dominant_language,
     discover_files,
     get_branch_files,
@@ -126,50 +126,50 @@ class TestGitHelpers:
     @pytest.mark.parametrize("helper", _GIT_HELPERS)
     def test_returns_none_when_git_fails(self, tmp_path, helper):
         completed = subprocess.CompletedProcess([], 128, "", "fatal")
-        with patch("common.file_utils.subprocess.run", return_value=completed):
+        with patch("ssa.file_utils.subprocess.run", return_value=completed):
             assert helper(tmp_path) is None
 
     @pytest.mark.parametrize("helper", _GIT_HELPERS)
     def test_returns_none_when_git_raises(self, tmp_path, helper):
-        with patch("common.file_utils.subprocess.run", side_effect=OSError("no git")):
+        with patch("ssa.file_utils.subprocess.run", side_effect=OSError("no git")):
             assert helper(tmp_path) is None
 
     @pytest.mark.parametrize("helper", _GIT_HELPERS)
     def test_resolves_names_against_the_repo_root(self, tmp_path, helper):
         (tmp_path / "a.py").write_text("x = 1\n")
         completed = subprocess.CompletedProcess([], 0, "a.py\n", "")
-        with patch("common.file_utils.subprocess.run", return_value=completed):
+        with patch("ssa.file_utils.subprocess.run", return_value=completed):
             assert helper(tmp_path) == [tmp_path / "a.py"]
 
     @pytest.mark.parametrize("helper", _GIT_HELPERS)
     def test_drops_deleted_files(self, tmp_path, helper):
         """A rename or delete leaves a name git reports but that no longer exists."""
         completed = subprocess.CompletedProcess([], 0, "gone.py\n", "")
-        with patch("common.file_utils.subprocess.run", return_value=completed):
+        with patch("ssa.file_utils.subprocess.run", return_value=completed):
             assert helper(tmp_path) == []
 
     @pytest.mark.parametrize("helper", _GIT_HELPERS)
     def test_blank_lines_ignored(self, tmp_path, helper):
         completed = subprocess.CompletedProcess([], 0, "\n  \n", "")
-        with patch("common.file_utils.subprocess.run", return_value=completed):
+        with patch("ssa.file_utils.subprocess.run", return_value=completed):
             assert helper(tmp_path) == []
 
     def test_changed_files_passes_the_ref(self, tmp_path):
         completed = subprocess.CompletedProcess([], 0, "", "")
-        with patch("common.file_utils.subprocess.run", return_value=completed) as run:
+        with patch("ssa.file_utils.subprocess.run", return_value=completed) as run:
             get_changed_files(tmp_path, since="abc123")
         assert "abc123" in run.call_args[0][0]
 
     def test_branch_files_uses_three_dot_range(self, tmp_path):
         """Three dots diff since the merge base, so a moved main is not reported."""
         completed = subprocess.CompletedProcess([], 0, "", "")
-        with patch("common.file_utils.subprocess.run", return_value=completed) as run:
+        with patch("ssa.file_utils.subprocess.run", return_value=completed) as run:
             get_branch_files(tmp_path, base="develop")
         assert "develop...HEAD" in run.call_args[0][0]
 
     def test_staged_files_uses_cached_flag(self, tmp_path):
         completed = subprocess.CompletedProcess([], 0, "", "")
-        with patch("common.file_utils.subprocess.run", return_value=completed) as run:
+        with patch("ssa.file_utils.subprocess.run", return_value=completed) as run:
             get_staged_files(tmp_path)
         assert "--cached" in run.call_args[0][0]
 

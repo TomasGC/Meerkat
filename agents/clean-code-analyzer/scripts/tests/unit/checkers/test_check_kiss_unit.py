@@ -19,8 +19,8 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-import checkers.check_kiss as kiss_mod
-from checkers.check_kiss import run
+import cca.checkers.check_kiss as kiss_mod
+from cca.checkers.check_kiss import run
 
 _HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"
 _HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
@@ -365,7 +365,7 @@ def test_tool_failure_warns_on_stderr_and_still_runs_ai(tmp_path, capsys):
     (tmp_path / "app.py").write_text("def f():\n    return 1\n")
     ai_item = {"line": 1, "pattern": "complex-solution", "violation": "v", "suggestion": "s",
                "source_file": str(tmp_path / "app.py")}
-    with patch("checkers.check_kiss._CALC_COMPLEXITY") as mock_path:
+    with patch("cca.checkers.check_kiss._CALC_COMPLEXITY") as mock_path:
         mock_path.exists.return_value = True
         mock_path.name = "calculate_complexity.py"
         with patch("subprocess.run", return_value=MagicMock(returncode=2, stdout="", stderr="boom")):
@@ -387,7 +387,7 @@ def test_tool_failure_warns_on_stderr_and_still_runs_ai(tmp_path, capsys):
 def test_tool_exception_warns_on_stderr(tmp_path, capsys, side_effect, run_result, expected):
     """A timeout or malformed tool output is reported on stderr, not swallowed."""
     (tmp_path / "app.py").write_text("def f():\n    return 1\n")
-    with patch("checkers.check_kiss._CALC_COMPLEXITY") as mock_path:
+    with patch("cca.checkers.check_kiss._CALC_COMPLEXITY") as mock_path:
         mock_path.exists.return_value = True
         mock_path.name = "calculate_complexity.py"
         with patch("subprocess.run", side_effect=side_effect, return_value=run_result):
