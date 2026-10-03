@@ -15,7 +15,13 @@ from cca.model_utils import (  # noqa: E402
     check_server_available,
 )
 
-ollama_skip = pytest.mark.skipif(
-    not check_server_available(),
-    reason=f"Local AI provider not reachable at {LOCAL_AI_HOST}:{LOCAL_AI_PORT}",
-)
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip every `@pytest.mark.live_ai` test here when the configured server is down."""
+    here = Path(__file__).parent
+    marked = [i for i in items if i.get_closest_marker("live_ai") and Path(str(i.fspath)).is_relative_to(here)]
+    if marked and not check_server_available():
+        skip = pytest.mark.skip(reason=f"Local AI provider not reachable at {LOCAL_AI_HOST}:{LOCAL_AI_PORT}")
+        for item in marked:
+            item.add_marker(skip)

@@ -5,7 +5,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from .conftest import ollama_skip
 
 FIXTURES = Path(__file__).parent.parent.parent / "e2e" / "fixtures"
 
@@ -19,7 +18,7 @@ LANGUAGES = [
 ]
 
 
-@ollama_skip
+@pytest.mark.live_ai
 @pytest.mark.integration_real
 @pytest.mark.parametrize("language,fixture_dir", LANGUAGES)
 def test_solid_detects_violations_in_language(language, fixture_dir, tmp_path):
@@ -35,7 +34,7 @@ def test_solid_detects_violations_in_language(language, fixture_dir, tmp_path):
     assert isinstance(result["violations"], list)
 
 
-@ollama_skip
+@pytest.mark.live_ai
 @pytest.mark.integration_real
 @pytest.mark.parametrize("language,fixture_dir", LANGUAGES)
 def test_cqrs_runs_on_language(language, fixture_dir):
@@ -47,7 +46,7 @@ def test_cqrs_runs_on_language(language, fixture_dir):
     assert isinstance(result.get("violations"), list)
 
 
-@ollama_skip
+@pytest.mark.live_ai
 @pytest.mark.integration_real
 def test_solid_finds_violations_in_typescript(tmp_path):
     """SOLID checker finds GodService violation in TypeScript fixture."""
@@ -61,7 +60,7 @@ def test_solid_finds_violations_in_typescript(tmp_path):
     assert len(result["violations"]) > 0, "Expected SOLID violations in dirty TypeScript"
 
 
-@ollama_skip
+@pytest.mark.live_ai
 @pytest.mark.integration_real
 def test_mechanical_checkers_skip_non_python_gracefully(tmp_path):
     """Naming checker on TypeScript returns success with empty or regex-based results."""

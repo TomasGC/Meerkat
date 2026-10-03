@@ -8,7 +8,6 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from .conftest import ollama_skip
 
 DIRTY_CODE = """
 class GodClass:
@@ -57,7 +56,7 @@ def clean_project(tmp_path):
     return tmp_path
 
 
-@ollama_skip
+@pytest.mark.live_ai
 @pytest.mark.integration_real
 def test_naming_real(dirty_project):
     """Real checker on dirty code → magic number 86400 flagged."""
@@ -70,7 +69,7 @@ def test_naming_real(dirty_project):
     )
 
 
-@ollama_skip
+@pytest.mark.live_ai
 @pytest.mark.integration_real
 def test_clean_code_no_violations_real(clean_project):
     """Clean code → naming checker flags nothing."""
