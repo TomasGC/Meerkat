@@ -149,24 +149,25 @@ python -m pytest tests/e2e/ -q
 agents/security-safety-analyzer/
 ├── AGENT.md                      # This file
 └── scripts/
-    ├── orchestrate.py            # Main CLI entry point
-    ├── checkers/
-    │   ├── check_security.py            # Hybrid: grep + AI
-    │   ├── check_crypto.py              # Hybrid via common/hybrid.py
-    │   ├── check_deserialization.py     # Hybrid via common/hybrid.py
-    │   ├── check_misconfiguration.py    # Hybrid via common/hybrid.py
-    │   ├── check_sensitive_data.py      # Hybrid via common/hybrid.py
-    │   ├── check_resource_leaks.py      # Hybrid via common/hybrid.py
-    │   ├── check_crash_bugs.py          # Hybrid: AST + grep + AI
-    │   ├── check_concurrency.py         # Hybrid: grep + AI
-    │   ├── check_error_handling.py      # Mechanical: AST/grep
-    │   └── check_prompt_injection.py    # Hybrid: grep + AI
-    ├── common/
-    │   ├── hybrid.py            # Shared mechanical-then-AI driver (pattern-table checkers)
-    │   ├── dedup.py             # known_findings rendering + proximity dedup
-    │   ├── model_utils.py       # Shim → scripts/lib/ai/model_utils.py
-    │   ├── cache.py             # SSA-scoped content-hash cache
-    │   └── file_utils.py        # File discovery + language detection
+    ├── orchestrate.py            # CLI entry point (wrapper → ssa/orchestrate.py)
+    ├── ssa/                      # the agent's one importable package
+    │   ├── orchestrate.py        # Checker registry + call into lib.engine.orchestrator
+    │   ├── checkers/
+    │   │   ├── check_security.py            # Hybrid: grep + AI
+    │   │   ├── check_crypto.py              # Hybrid via ssa/hybrid.py
+    │   │   ├── check_deserialization.py     # Hybrid via ssa/hybrid.py
+    │   │   ├── check_misconfiguration.py    # Hybrid via ssa/hybrid.py
+    │   │   ├── check_sensitive_data.py      # Hybrid via ssa/hybrid.py
+    │   │   ├── check_resource_leaks.py      # Hybrid via ssa/hybrid.py
+    │   │   ├── check_crash_bugs.py          # Hybrid: AST + grep + AI
+    │   │   ├── check_concurrency.py         # Hybrid: grep + AI
+    │   │   ├── check_error_handling.py      # Mechanical: AST/grep
+    │   │   └── check_prompt_injection.py    # Hybrid: grep + AI
+    │   ├── hybrid.py             # Shim → lib.engine.hybrid (SSA prompts dir + model cache)
+    │   ├── dedup.py              # Shim → lib.engine.dedup
+    │   ├── model_utils.py        # Shim → lib.ai.model_utils, passes SSA's model cache
+    │   ├── cache.py              # SSA-scoped content-hash cache
+    │   └── file_utils.py         # Shim → lib.engine.discovery
     ├── prompts/
     │   └── local/               # Prompt templates (.prompt files, one per AI checker)
     │       ├── security.prompt

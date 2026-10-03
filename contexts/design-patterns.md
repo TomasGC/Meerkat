@@ -15,12 +15,12 @@
 6. **Branch-vs-Main Incremental** — `git diff base...HEAD --name-only` (three-dot = since merge-base, not since branch creation); avoids false positives when main has moved
 7. **Facade Orchestration** — `orchestrate.py` is a pure coordinator: discovers checkers via `importlib`, inspects `run()` signatures via `inspect.signature`, passes only the params each checker declares
 10. **Module-level Config Cache (model_config.py, language_config.py)** — no class: each module parses its config once into a module-level `_config` dict on first `_load()` (and at import), so all callers share the same parsed JSON with no repeated file I/O. Tests reset it with `module._config = {}`
-11. **Shim / Thin Re-export** — `agents/*/scripts/common/model_utils.py` re-exports from `scripts/lib/ai/model_utils.py`; agents keep a stable local import path, shared logic lives in one place
+11. **Shim / Thin Re-export** — `agents/*/scripts/<pkg>/model_utils.py` re-exports from `scripts/lib/ai/model_utils.py`; agents keep a stable local import path, shared logic lives in one place. Since #21 the shim also binds the agent's own model cache to every `analyze_*` call
 8. **Co-located Test Pyramid** — tests live next to source (`agent/tests/unit/`, `agent/tests/integration/mock/`, etc.); each level has its own `conftest.py` managing `sys.path`
 9. **Prompt Template** — `.prompt` files are Python format-string templates (`{code}`, `{language}`, `{file_path}`); validated structurally by unit tests, semantic correctness by integration/real tests
 12. **Mechanical-then-AI Reconciliation (SSA)** — a checker's deterministic findings are both rendered into the prompt (`{known_findings}` slot) and used as a ±3-line proximity filter over the AI findings; neither layer needs to know what the other detects
 13. **Per-file Prompt Slots** — `analyze_files_parallel(..., extra_slots={path: {...}})` gives each file its own template values, so one prompt template serves N files with N different contexts
-14. **Table-driven Rules** — SSA pattern checkers declare `{language: [(regex, message, severity, suggestion)]}` plus a `"*"` bucket for language-agnostic rules; `common/hybrid.py` is the only executor, so a new checker is a rule table and a prompt
+14. **Table-driven Rules** — SSA pattern checkers declare `{language: [(regex, message, severity, suggestion)]}` plus a `"*"` bucket for language-agnostic rules; `lib.engine.hybrid` is the only executor, so a new checker is a rule table and a prompt
 15. **Env-var Override for Subprocess Test Isolation (BBA)** — `BBA_CACHE_DIR` redirects the cache root and is read lazily on every call, never captured at import. A monkeypatched attribute cannot cross a `subprocess.run` boundary; an inherited env var can, so the same autouse fixture isolates in-process and e2e tests alike
 16. **Deterministic Signal over Timing** — cache behaviour is asserted through counters the run reports (`{"enabled", "hits", "misses"}`), not by comparing wall-clock durations between runs, which is flaky under load
 17. **Atomic Cache Write** — cache entries are written to a `tempfile.mkstemp` file in the same directory then moved into place with `os.replace`; a crash mid-write leaves the previous entry intact instead of a truncated file. The private writer raises, the public `set()` swallows, so a cache failure never breaks its caller
@@ -42,6 +42,8 @@
 34. **A Whole-File Finding Is Not Near Line 1** — line 0 means "about the whole file" ("no unit test file"). Proximity reconciliation treats it as matching only another line-0 finding, so it can never drop an AI finding on lines 1-3. Without the rule, a function defined at the top of an untested file would vanish from the report
 35. **Send the AI Only What It Can Judge** — BBA's gap prompts see the source but not the tests, so asking them about a file that has a test produces confident guesses. `run_hybrid(ai_filter=...)` narrows the AI pass to the files the mechanical layer found untested; the mechanical finding is reported either way, so both layers contribute on every run without an either/or fallback
 36. **Resolve Prompt Vocabulary at the Last Shared Step (#42)** — the dialect a prompt should name is computed once, in `model_utils`, from the file's own content (`language_config.prompt_language`), not in each checker. Rule tables keep the stable key (`sql`), prompts get the precise word (`T-SQL`); a caller's per-file `language` slot still wins. Every checker that already called the shared client got dialect-aware prompts with no change of its own
+38. **One Package per Agent (#21)** — every importable name an agent owns lives under one package named after it (`cca`, `ssa`, `bba`, `search_tech`); entry scripts are wrappers that import it. Five packages named `common`, three `checkers` and three `orchestrate` used to resolve by `sys.path` order, so the suites could not share a process. Rule: a new agent gets its own package, never a generic top-level name
+39. **Dependencies Are Passed, Not Discovered (#21)** — the AI client used to enable its cache by importing `common.cache`, so an agent's cache depended on which `common` came first on `sys.path` (CCA had none, SSA's worked through an adapter by accident). Now `analyze_*(cache=...)` takes a `ModelCache`, and each agent's shim passes its own. An import that silently succeeds or fails depending on the environment is a hidden parameter: make it a real one
 37. **A Safe Twin for Every Pattern Rule** — each SQL rule ships with a negative test written as the parameterized form of the same statement (`sp_executesql @sql, N'@id INT', @id`, `format('%I', …)`, `EXECUTE … USING`). Pattern rules fail by over-matching, and the safe form is the one real code uses most
 32. **Priority Lives in an Ordered List, Not in Per-Item Fields** — when "first match wins" matters, store it as a JSON array (`project_indicators: [{language, markers}]`) rather than a field on each language or an object keyed by name. JSON objects are unordered by spec, a per-language field would inherit the language table's unrelated order (it would have flipped a Go+Python project to Python), and the list can name entries the main table must not contain (`solidity` would have entered every agent's file discovery)
 
@@ -96,12 +98,10 @@ Mechanical checkers (`check_dry`, `check_error_handling`, etc.) have no `role` p
 
 ## Namespace Isolation
 
-Four independent `common/` packages exist (the shared library `scripts/lib/` is deliberately not one of them):
-- `agents/black-box-analyzer/scripts/common/` — BBA-specific utilities
-- `agents/clean-code-analyzer/scripts/common/` — CCA-specific utilities (model_utils shim only since #19; cache and discovery come from `lib.engine`)
-- `agents/security-safety-analyzer/scripts/common/` — SSA-specific utilities (thin shims over lib.engine: hybrid, dedup, cache, file_utils; model_utils shim)
-- `skills/search-tech/scripts/common/` — search-tech utilities (cache, logger, models, utils)
+One importable package per agent (#21), so no two trees share a top-level name:
+- `agents/clean-code-analyzer/scripts/cca/` — `orchestrate`, `checkers/`, `model_utils` shim
+- `agents/security-safety-analyzer/scripts/ssa/` — `orchestrate`, `checkers/`, shims over lib.engine (`hybrid`, `dedup`, `cache`, `file_utils`), `model_utils`
+- `agents/black-box-analyzer/scripts/bba/` — `orchestrate`, `checkers/`, domain modules (`models`, `constants`, `cache`, `utils`, `logger`), `model_utils`; the pipeline's CLI scripts stay beside it
+- `skills/search-tech/scripts/search_tech/` — `SearchCache`, `SearchQuery`/`SearchResult` models, logger, utils (kept apart from `lib`: different code that only shared file names)
 
-**Rule**: never run tests from two different `common/` owners in the same pytest invocation — Python's import cache resolves `common` to whichever is first on `sys.path`. This is why `skills/search-tech` is absent from the root `pytest.ini` `testpaths`: including it would collide with the agents' packages. Its suite is run separately from `skills/search-tech/scripts/`.
-
-`template-base/common/` is a template directory, not a Python package — it holds no `.py` and never enters `sys.path`.
+The shared library is `scripts/lib/`. `template-base/shared/` is a template directory, not a package.

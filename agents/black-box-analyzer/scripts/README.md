@@ -95,7 +95,9 @@ scripts/
 │   └── blockchain/
 │       └── smart_contract_analyzer.py
 │
-├── common/
+├── bba/                       # the agent's one importable package (#21)
+│   ├── orchestrate.py         # Pipeline launcher + --gaps (scripts/orchestrate.py wraps it)
+│   ├── checkers/              # 4 test-tier gap checkers
 │   ├── models.py              # Universal data models
 │   ├── constants.py           # Detection patterns
 │   ├── utils.py               # File operations
@@ -487,15 +489,15 @@ pip install -r requirements.txt
 
 1. Create analyzer in `analyzers/<name>_analyzer.py`
 2. Extend `BaseAnalyzer` abstract class
-3. Add detection patterns to `common/constants.py`
-4. Add project type to `common/models.py`
+3. Add detection patterns to `bba/constants.py`
+4. Add project type to `bba/models.py`
 5. Create test fixture in `tests/fixtures/<type>_project/`
 6. Add E2E test to `tests/test_universal_detection.py`
 7. Update this README
 
 ### Adding New Framework Support
 
-1. Add detection pattern to `common/constants.py`
+1. Add detection pattern to `bba/constants.py`
 2. Add extraction logic to appropriate analyzer
 3. Add test case to fixture
 4. Update documentation

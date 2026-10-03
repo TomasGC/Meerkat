@@ -65,7 +65,7 @@
 │   │   ├── update_kanban.py ✅       # KANBAN updater
 │   │   └── analyze_commit_quality.py ✅ # Security/quality checks
 │   │
-│   ├── common/ ✅                    # Shared utilities
+│   ├── lib/ ✅                       # Shared library
 │   │   ├── __init__.py ✅
 │   │   ├── integrations.py ✅        # Profile loading
 │   │   ├── models.py ✅              # Data models
@@ -385,7 +385,7 @@ Commit: abc123f
 ```
 scripts/
 ├── cli/           # User-facing scripts
-├── common/        # Shared utilities
+├── lib/           # Shared library
 ├── tests/         # Test suite (pytest)
 └── requirements.txt
 ```
@@ -417,7 +417,7 @@ scripts/
 
 ---
 
-### common/ (Shared)
+### lib/ (Shared)
 
 **integrations.py**
 - Profile loading functions

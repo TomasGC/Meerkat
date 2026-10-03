@@ -220,7 +220,7 @@ cd ~/.claude/scripts && python -m pytest tests/ -v
 │
 ├── scripts/                     # Automation
 │   ├── cli/                     # User-facing scripts
-│   ├── common/                  # Shared utilities
+│   ├── lib/                     # Shared library (ai, config, engine, testing)
 │   └── tests/                   # Test suite
 │
 ├── agents/                      # Autonomous workflows

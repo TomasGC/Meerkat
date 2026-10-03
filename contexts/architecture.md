@@ -50,18 +50,18 @@ Local AI  Scripts  Agents
 ├── agents/                          # Autonomous agents
 │   ├── black-box-analyzer/          # Universal test gap analyzer (19+ project types)
 │   │   ├── AGENT.md
-│   │   ├── scripts/                 # orchestrate.py (parallel_analyzer pipeline; --gaps → lib.engine.orchestrator)
-│   │   │                            # + checkers/ (4 tier gap checkers on lib.engine.hybrid) + prompts/local/
+│   │   ├── scripts/                 # orchestrate.py wrapper → bba/ (orchestrate: pipeline + --gaps, checkers/ (4 tier
+│   │   │                            # gap checkers), models, constants, cache, utils) + pipeline CLI scripts + prompts/local/
 │   │   └── tests/                   # unit + integration/mock + e2e (524) / integration/real (incl. 10 detection fixtures)
 │   ├── clean-code-analyzer/         # 11-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, Composition)
 │   │   ├── AGENT.md
-│   │   ├── scripts/                 # orchestrate.py (registry + call into lib.engine.orchestrator) + 11 checkers
-│   │   │                            # (all via lib.engine.hybrid.run_hybrid) + common/model_utils shim + prompts/local/
+│   │   ├── scripts/                 # orchestrate.py wrapper → cca/ (orchestrate: registry + lib.engine.orchestrator,
+│   │   │                            # checkers/ (11, all via lib.engine.hybrid.run_hybrid), model_utils shim) + prompts/local/
 │   │   └── scripts/tests/           # unit + integration/mock (526) / integration/real (live AI) / e2e (15)
 │   ├── security-safety-analyzer/    # 10-checker security and safety analyzer (Security, Crypto, Deserialization, Misconfiguration, SensitiveData, CrashBug, Concurrency, ResourceLeak, ErrorHandling, PromptInjection)
 │   │   ├── AGENT.md
-│   │   └── scripts/                 # orchestrate.py (registry + call into lib.engine.orchestrator) + 10 checkers
-│   │       │                        # + common/ (thin shims over lib.engine: hybrid, dedup, cache, file_utils; model_utils shims lib.ai) + prompts/local/
+│   │   └── scripts/                 # orchestrate.py wrapper → ssa/ (orchestrate, checkers/ (10), thin shims over
+│   │       │                        # lib.engine: hybrid, dedup, cache, file_utils; model_utils shims lib.ai) + prompts/local/
 │   │       └── tests/               # 340 unit / 28 integration/mock / 25 integration/real / 10 e2e
 │   ├── ci-fix-proposer/
 │   ├── code-analyzer/
@@ -92,7 +92,7 @@ Local AI  Scripts  Agents
 │
 ├── skills/                          # User-invocable slash commands
 │   └── search-tech/                 # Tech search skill
-│       └── scripts/                 # common/ (cache, logger, models, utils) + tests/ (113 tests)
+│       └── scripts/                 # search_tech/ (cache, logger, models, utils) + search_*.py + tests/ (113 tests)
 ├── rules/                           # Auto-loaded coding standards (14 languages)
 ├── hooks/                           # Automation hooks
 ├── integrations/                    # Environment profiles

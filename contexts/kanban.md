@@ -4,6 +4,15 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-03 - [#21] Eliminate the duplicated common packages
+- One importable package per agent: `cca/`, `ssa/`, `bba/` hold what used to be top-level `common/`, `checkers/` and `orchestrate`; search-tech's `common/` is `search_tech/`; `scripts/orchestrate.py` stays as a CLI wrapper, so every command is unchanged
+- `lib.ai.model_utils` no longer enables its cache by importing whichever `common.cache` came first on sys.path: `analyze_*(cache=...)` takes a `ModelCache`, and the BBA and SSA shims pass their own (SSA's hybrid checkers through `run_hybrid(model_cache=)`); CCA stays uncached, as before
+- Every suite runs in one pytest invocation from `~/.claude` (2544 CI-safe tests): CCA, SSA and search-tech joined `testpaths`, test-tree `__init__.py` files removed so importlib mode names modules by path, `from .conftest` imports replaced by a `live_ai` marker
+- `template-base/common/` renamed `shared/`; obsolete `refactor_imports.py` removed; golden runs bind to the agent package and regenerate byte-identical from any directory
+tags: #refactor #packages #testing #cache
+Ref: https://github.com/TomasGC/Meerkat/issues/21
+Commits: 1bc5b67, 79857ed, 1c72523
+
 2026-10-03 - [#42] Analyze SQL files with dialect-aware SSA and CCA checkers
 - SSA security, sensitive_data, misconfiguration, error_handling and concurrency accept the `query` kind, with T-SQL and PostgreSQL rules (dynamic SQL by concatenation, printed secrets, `GRANT ALL` / `TO PUBLIC`, `xp_cmdshell`, empty `CATCH`, `WHEN OTHERS THEN NULL`, `NOLOCK`); every rule has a safe-form negative test (`sp_executesql` with parameters, `format(%I/%L)`, `USING`)
 - AI prompts name the detected dialect: `language_config.prompt_language` reads dialect `label`s, `model_utils` fills `{language}` per file (T-SQL / PostgreSQL / SQL), so no checker or prompt changed
