@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.models import SearchQuery, Source, ResultType
+from search_tech.models import SearchQuery, Source, ResultType
 from search_medium import search_medium_tag, search_medium
 
 
@@ -278,7 +278,7 @@ class TestMediumSearch:
     @patch('search_medium.search_medium_tag')
     def test_search_multiple_tags(self, mock_search_tag):
         """Test searching across multiple tags."""
-        from common.models import SearchResult
+        from search_tech.models import SearchResult
 
         # Mock results from different tags
         mock_search_tag.side_effect = [
@@ -310,7 +310,7 @@ class TestMediumSearch:
     @patch('search_medium.requests.get')
     def test_cache_integration(self, mock_get, mock_medium_rss):
         """Test cache hit and miss."""
-        from common.cache import SearchCache
+        from search_tech.cache import SearchCache
         import tempfile
 
         mock_response = Mock()

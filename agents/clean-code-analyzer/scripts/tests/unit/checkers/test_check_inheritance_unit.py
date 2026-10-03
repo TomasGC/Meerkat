@@ -13,7 +13,7 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from checkers.check_inheritance import run
+from cca.checkers.check_inheritance import run
 
 
 @pytest.mark.unit
@@ -104,7 +104,7 @@ def test_inheritance_oserror_skips_file(tmp_path):
 @pytest.mark.unit
 def test_inheritance_circular_guard_no_recursion_error(tmp_path):
     """Circular class hierarchy does not cause infinite recursion."""
-    from checkers.check_inheritance import _inheritance_depth
+    from cca.checkers.check_inheritance import _inheritance_depth
     parents_map = {"A": ["B"], "B": ["A"]}
     depth = _inheritance_depth("A", parents_map, set())
     assert isinstance(depth, int)

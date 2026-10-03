@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Add scripts directory to path
 
-from common.models import HTTPMethod, Language
+from bba.models import HTTPMethod, Language
 from extract_api_endpoints import (
     extract_csharp_endpoints,
     extract_endpoints,

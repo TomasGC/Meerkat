@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Add scripts directory to path
 
-from common.models import HTTPMethod, Scenario, TestCase, TestFramework
+from bba.models import HTTPMethod, Scenario, TestCase, TestFramework
 from generate_coverage_matrix import (
     calculate_coverage_stats,
     find_related_tests,
@@ -158,7 +158,7 @@ def test_find_related_tests():
 
 def test_calculate_coverage_stats():
     """Test coverage statistics calculation."""
-    from common.models import CoverageGap
+    from bba.models import CoverageGap
 
     # Mock coverage gaps
     gaps = [
@@ -206,7 +206,7 @@ def test_calculate_coverage_stats():
 
 def test_calculate_coverage_stats_by_type():
     """Test coverage statistics by scenario type."""
-    from common.models import CoverageGap
+    from bba.models import CoverageGap
 
     gaps = [
         CoverageGap(
@@ -249,7 +249,7 @@ def test_calculate_coverage_stats_by_type():
 
 def test_generate_markdown_table():
     """Test markdown table generation."""
-    from common.models import CoverageGap
+    from bba.models import CoverageGap
 
     gaps = [
         CoverageGap(

@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from checkers.check_lod import _check_file
+from cca.checkers.check_lod import _check_file
 
 
 @pytest.mark.parametrize("code,should_flag", [
@@ -40,7 +40,7 @@ class TestRunSignature:
     def test_accepts_files_param(self, tmp_path):
         f = tmp_path / "src.py"
         f.write_text("x = 1\n")
-        from checkers.check_lod import run
+        from cca.checkers.check_lod import run
         result = run(tmp_path, "python", files=[f])
         assert result["success"] is True
         assert result["files_analyzed"] == 1
@@ -48,6 +48,6 @@ class TestRunSignature:
     def test_empty_file_no_violations(self, tmp_path):
         f = tmp_path / "empty.py"
         f.write_text("")
-        from checkers.check_lod import run
+        from cca.checkers.check_lod import run
         result = run(tmp_path, "python", files=[f])
         assert result["violations"] == []

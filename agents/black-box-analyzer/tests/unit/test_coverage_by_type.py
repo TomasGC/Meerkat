@@ -10,7 +10,7 @@ from coverage_by_type import (
     analyze_by_type,
     generate_markdown,
 )
-from common.models import HTTPMethod, TestFramework
+from bba.models import HTTPMethod, TestFramework
 
 def test_load_scenarios_valid(sample_scenarios_json):
     scenarios = _load_scenarios(sample_scenarios_json)

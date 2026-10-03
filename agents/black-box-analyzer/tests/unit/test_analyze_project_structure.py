@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Add scripts directory to path
 
-from common.utils import detect_project_language
+from bba.utils import detect_project_language
 from analyze_project_structure import (
     analyze_project,
     count_endpoints,
@@ -14,7 +14,7 @@ from analyze_project_structure import (
     detect_test_framework,
     infer_project_type,
 )
-from common.models import Language, ProjectType, TestFramework
+from bba.models import Language, ProjectType, TestFramework
 
 def test_detect_language_go(sample_go_project):
     """Test Go language detection."""
@@ -219,7 +219,7 @@ def test_infer_project_type_rest_api_large():
 
 def test_analyze_project_sets_correct_primary_type_for_graphql(temp_dir):
     """primary_type must be GRAPHQL_API for graphql projects, not REST_API."""
-    from common.models import ProjectType
+    from bba.models import ProjectType
     # Minimal Python project with graphql in requirements
     (temp_dir / "requirements.txt").write_text("graphql-core==3.2.0\n")
     (temp_dir / "main.py").write_text(

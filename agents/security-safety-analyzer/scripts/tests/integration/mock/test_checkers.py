@@ -8,22 +8,22 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 CHECKERS = [
-    ("checkers.check_security", "Security"),
-    ("checkers.check_crash_bugs", "CrashBug"),
-    ("checkers.check_concurrency", "Concurrency"),
-    ("checkers.check_error_handling", "ErrorHandling"),
-    ("checkers.check_prompt_injection", "PromptInjection"),
+    ("ssa.checkers.check_security", "Security"),
+    ("ssa.checkers.check_crash_bugs", "CrashBug"),
+    ("ssa.checkers.check_concurrency", "Concurrency"),
+    ("ssa.checkers.check_error_handling", "ErrorHandling"),
+    ("ssa.checkers.check_prompt_injection", "PromptInjection"),
 ]
 
 
 # Checkers built on common/hybrid.py — the server probe lives in the driver,
 # so they are mocked at a different seam than the checkers listed above.
 HYBRID_CHECKERS = [
-    ("checkers.check_crypto", "Crypto"),
-    ("checkers.check_deserialization", "Deserialization"),
-    ("checkers.check_misconfiguration", "Misconfiguration"),
-    ("checkers.check_resource_leaks", "ResourceLeak"),
-    ("checkers.check_sensitive_data", "SensitiveData"),
+    ("ssa.checkers.check_crypto", "Crypto"),
+    ("ssa.checkers.check_deserialization", "Deserialization"),
+    ("ssa.checkers.check_misconfiguration", "Misconfiguration"),
+    ("ssa.checkers.check_resource_leaks", "ResourceLeak"),
+    ("ssa.checkers.check_sensitive_data", "SensitiveData"),
 ]
 
 
@@ -49,7 +49,7 @@ def _make_project(tmp_path: Path) -> Path:
     return tmp_path
 
 
-_NO_AI = {"checkers.check_error_handling"}  # purely mechanical checkers
+_NO_AI = {"ssa.checkers.check_error_handling"}  # purely mechanical checkers
 
 
 @pytest.mark.parametrize("module_path,principle", CHECKERS)
@@ -81,10 +81,10 @@ def test_checker_returns_valid_schema(tmp_path, module_path, principle):
 
 
 @pytest.mark.parametrize("module_path,principle", [
-    ("checkers.check_security", "Security"),
-    ("checkers.check_crash_bugs", "CrashBug"),
-    ("checkers.check_error_handling", "ErrorHandling"),
-    ("checkers.check_prompt_injection", "PromptInjection"),
+    ("ssa.checkers.check_security", "Security"),
+    ("ssa.checkers.check_crash_bugs", "CrashBug"),
+    ("ssa.checkers.check_error_handling", "ErrorHandling"),
+    ("ssa.checkers.check_prompt_injection", "PromptInjection"),
 ])
 def test_hybrid_checkers_find_violations_mechanically(tmp_path, module_path, principle):
     """Hybrid checkers must detect at least one violation in the seeded project without AI."""

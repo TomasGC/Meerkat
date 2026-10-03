@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from common.logger import MetricsCollector, get_defaults, setup_logger
+from bba.logger import MetricsCollector, get_defaults, setup_logger
 
 # ── MetricsCollector ──────────────────────────────────────────────────────────
 

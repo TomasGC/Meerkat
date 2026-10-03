@@ -9,7 +9,7 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from checkers.check_lod import run
+from cca.checkers.check_lod import run
 
 
 @pytest.mark.unit

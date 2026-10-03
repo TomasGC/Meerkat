@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from common.dedup import _NO_FINDINGS_TEXT, drop_near_duplicates, format_known_findings
+from ssa.dedup import _NO_FINDINGS_TEXT, drop_near_duplicates, format_known_findings
 
 
 def _violation(file: str = "app.py", line: int = 10, message: str = "issue") -> dict:

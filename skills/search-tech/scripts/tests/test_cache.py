@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for common.cache module."""
+"""Tests for search_tech.cache module."""
 
 import pytest
 import json
@@ -11,7 +11,7 @@ from unittest.mock import patch
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.cache import SearchCache
+from search_tech.cache import SearchCache
 
 
 @pytest.fixture
@@ -156,7 +156,7 @@ class TestSearchCache:
 
     def test_default_cache_dir_is_under_home(self):
         """Default cache location must not be a world-writable shared directory."""
-        from common.cache import _DEFAULT_CACHE_DIR
+        from search_tech.cache import _DEFAULT_CACHE_DIR
 
         assert _DEFAULT_CACHE_DIR.is_relative_to(Path.home())
         assert "tmp" not in _DEFAULT_CACHE_DIR.parts
@@ -174,7 +174,7 @@ class TestSearchCache:
 
     def test_set_swallows_write_failure(self, cache):
         """A failed cache write must not propagate to the caller."""
-        with patch("common.cache.tempfile.mkstemp", side_effect=OSError("disk full")):
+        with patch("search_tech.cache.tempfile.mkstemp", side_effect=OSError("disk full")):
             cache.set("query", {}, {"data": "test"})  # must not raise
 
         assert cache.get("query", {}) is None
@@ -188,7 +188,7 @@ class TestSearchCache:
 
     def test_failed_write_leaves_no_temp_files(self, cache, temp_cache_dir):
         """A write that dies mid-flight must clean up after itself."""
-        with patch("common.cache.json.dump", side_effect=OSError("io")):
+        with patch("search_tech.cache.json.dump", side_effect=OSError("io")):
             cache.set("query", {}, {"data": "test"})
 
         assert list(temp_cache_dir.glob("*.tmp")) == []
@@ -197,7 +197,7 @@ class TestSearchCache:
         """A failed rewrite must leave the previous entry intact."""
         cache.set("query", {}, {"data": "original"})
 
-        with patch("common.cache.os.replace", side_effect=OSError("io")):
+        with patch("search_tech.cache.os.replace", side_effect=OSError("io")):
             cache.set("query", {}, {"data": "replacement"})
 
         assert cache.get("query", {}) == {"data": "original"}

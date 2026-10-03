@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from checkers.check_security import run, _SECRET_PATTERNS, _INJECTION_PATTERNS, _mechanical_check, _PRINCIPLE
+from ssa.checkers.check_security import run, _SECRET_PATTERNS, _INJECTION_PATTERNS, _mechanical_check, _PRINCIPLE
 
 
 # --- helpers -----------------------------------------------------------------
@@ -199,7 +199,7 @@ class TestShellAndRazorPatterns:
 
 class TestRunFunction:
     def test_returns_correct_schema(self, tmp_path):
-        with patch("checkers.check_security.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_security.check_server_available", return_value=False):
             result = run(tmp_path, "python")
         assert result["principle"] == _PRINCIPLE
         assert result["success"] is True
@@ -208,14 +208,14 @@ class TestRunFunction:
         assert "duration_ms" in result
 
     def test_empty_dir_no_violations(self, tmp_path):
-        with patch("checkers.check_security.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_security.check_server_available", return_value=False):
             result = run(tmp_path, "python")
         assert result["violations"] == []
 
     def test_files_kwarg_scopes_analysis(self, tmp_path):
         clean = _make_file(tmp_path, "clean.py", 'x = 1\n')
         dirty = _make_file(tmp_path, "dirty.py", 'password = "secret123"\n')
-        with patch("checkers.check_security.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_security.check_server_available", return_value=False):
             result = run(tmp_path, "python", files=[clean])
         assert all(v["file"] != "dirty.py" for v in result["violations"])
 

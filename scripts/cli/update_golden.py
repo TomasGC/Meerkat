@@ -5,9 +5,7 @@ Runs the agent's real pipeline over ~/.claude/fixtures/projects/<project>, with
 every model call served from ~/.claude/fixtures/golden/<project>/ai_responses/<agent>/,
 and writes the result to ~/.claude/fixtures/golden/<project>/expected/<agent>.json.
 
-One agent per invocation: each agent has its own `common` / `checkers` /
-`orchestrate` packages, and only one set can be imported per process. The
-script puts the chosen agent's scripts dir first on sys.path itself, so it can
+The script puts the chosen agent's scripts dir on sys.path itself, so it can
 be launched from any directory, e.g.:
 
     cd ~/.claude/agents/clean-code-analyzer/scripts

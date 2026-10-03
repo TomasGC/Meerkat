@@ -12,7 +12,7 @@ import pytest
 SCRIPTS_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from orchestrate import (
+from cca.orchestrate import (
     _progress_bar, _build_summary, _mini_bar,
     _estimate_token_savings, _detect_base_branch,
 )
@@ -233,7 +233,7 @@ _DUMMY_RESULT = {
 @pytest.mark.unit
 def test_orchestrate_default_mode_uses_branch_files(tmp_path):
     """Default mode (no flags) detects base branch and calls get_branch_files."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache",
@@ -252,7 +252,7 @@ def test_orchestrate_default_mode_uses_branch_files(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_default_mode_falls_back_when_no_base_branch(tmp_path):
     """When _detect_base_branch returns None, get_branch_files is NOT called."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache",
@@ -270,7 +270,7 @@ def test_orchestrate_default_mode_falls_back_when_no_base_branch(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_default_mode_falls_back_when_branch_files_none(tmp_path):
     """When get_branch_files returns None, full analysis runs over every discovered file."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     (tmp_path / "mod.py").write_text("x = 1\n")
     captured_calls = []
 
@@ -296,7 +296,7 @@ def test_orchestrate_default_mode_falls_back_when_branch_files_none(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_staged_empty_list_runs_without_crash(tmp_path):
     """--staged with nothing staged → no language group, so no checker run; still valid JSON."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     captured_calls = []
 
     def capture_run_checker(name, mod_path, path, language, files, *args, **kwargs):
@@ -345,7 +345,7 @@ def test_print_table_with_violations_prints_header_and_row():
 @pytest.mark.unit
 def test_run_checker_exception_returns_error_dict(tmp_path):
     """_run_checker with nonexistent module → returns error dict with success=False."""
-    from orchestrate import _run_checker
+    from cca.orchestrate import _run_checker
     result = _run_checker("TestPrinciple", "nonexistent.checker.module.xyz", tmp_path, "python")
     assert result["success"] is False
     assert result["principle"] == "TestPrinciple"
@@ -358,7 +358,7 @@ def test_run_checker_exception_returns_error_dict(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_fast_flag_sets_model_to_fast(tmp_path):
     """--fast passes role="fast" to _run_checker instead of a hardcoded model name."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     (tmp_path / "mod.py").write_text("x = 1\n")
     captured_model = []
 
@@ -384,7 +384,7 @@ def test_orchestrate_fast_flag_sets_model_to_fast(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_clear_cache_calls_clear_and_exits(tmp_path):
     """--clear-cache clears cache and sys.exit(0)."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path), "--clear-cache",
     ]):
@@ -401,7 +401,7 @@ def test_orchestrate_clear_cache_calls_clear_and_exits(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_unknown_checker_prints_warning(tmp_path):
     """Unknown checker name in --checks → warning printed to stderr."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     err = io.StringIO()
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
@@ -421,7 +421,7 @@ def test_orchestrate_unknown_checker_prints_warning(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_format_table_prints_header(tmp_path):
     """--format table → table header printed (not JSON output)."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     out = io.StringIO()
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
@@ -441,7 +441,7 @@ def test_orchestrate_format_table_prints_header(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_output_file_writes_json(tmp_path):
     """--output writes JSON results to file instead of stdout."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     output_path = tmp_path / "results.json"
     err = io.StringIO()
     with patch.object(sys, "argv", [
@@ -463,7 +463,7 @@ def test_orchestrate_output_file_writes_json(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_agents_2_prints_message(tmp_path):
     """--agents 2 → message about multi-agent mode printed to stderr."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     err = io.StringIO()
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
@@ -483,7 +483,7 @@ def test_orchestrate_agents_2_prints_message(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_top_limits_output(tmp_path):
     """--top 1 limits violations in output to 1."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     dummy_2 = {
         **_DUMMY_RESULT,
         "violations": [
@@ -509,7 +509,7 @@ def test_orchestrate_top_limits_output(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_cache_hits_added_to_output(tmp_path):
     """checker result with cache_hits > 0 → cache key in JSON output."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     (tmp_path / "mod.py").write_text("x = 1\n")
     dummy_cached = {**_DUMMY_RESULT, "cache_hits": 5, "cache_total": 10}
     with patch.object(sys, "argv", [
@@ -531,7 +531,7 @@ def test_orchestrate_cache_hits_added_to_output(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_checker_future_exception_handled(tmp_path):
     """Checker that raises exception → on_checker_done catches it, success=False result."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache", "--full",
@@ -550,11 +550,11 @@ def test_orchestrate_checker_future_exception_handled(tmp_path):
 @pytest.mark.unit
 def test_run_checker_success_with_files_param(tmp_path):
     """_run_checker with real checker module and files param → success=True."""
-    from orchestrate import _run_checker
+    from cca.orchestrate import _run_checker
     f = tmp_path / "mod.py"
     f.write_text("x = 1\n")
     result = _run_checker(
-        "Naming", "checkers.check_naming", tmp_path, "python",
+        "Naming", "cca.checkers.check_naming", tmp_path, "python",
         files=[f], agents=1, no_cache=True, cache_ttl_days=7, role=None,
     )
     assert result["success"] is True
@@ -565,10 +565,10 @@ def test_run_checker_success_with_files_param(tmp_path):
 @pytest.mark.unit
 def test_run_checker_success_no_files(tmp_path):
     """_run_checker with files=None → success=True (full directory scan)."""
-    from orchestrate import _run_checker
+    from cca.orchestrate import _run_checker
     (tmp_path / "mod.py").write_text("x = 1\n")
     result = _run_checker(
-        "Naming", "checkers.check_naming", tmp_path, "python",
+        "Naming", "cca.checkers.check_naming", tmp_path, "python",
         files=None, agents=1, no_cache=True, cache_ttl_days=7, role=None,
     )
     assert result["success"] is True
@@ -579,7 +579,7 @@ def test_run_checker_success_no_files(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_checks_all_runs_all_checkers(tmp_path):
     """Default --checks all → selected contains all CHECKERS entries."""
-    from orchestrate import main as orch_main, CHECKERS
+    from cca.orchestrate import main as orch_main, CHECKERS
     (tmp_path / "mod.py").write_text("x = 1\n")
     call_count = [0]
 
@@ -605,7 +605,7 @@ def test_orchestrate_checks_all_runs_all_checkers(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_path_not_found_exits_1(tmp_path):
     """--path nonexistent → sys.exit(1) in-process."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", "/path_that_does_not_exist_xyz123abc",
     ]):
@@ -619,7 +619,7 @@ def test_orchestrate_path_not_found_exits_1(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_staged_not_git_repo_fallback(tmp_path):
     """--staged when get_staged_files returns None → fallback to full analysis."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     err = io.StringIO()
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
@@ -641,7 +641,7 @@ def test_orchestrate_staged_not_git_repo_fallback(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_since_flag_calls_get_changed_files(tmp_path):
     """--since HEAD~1 → calls get_changed_files with since arg."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     err = io.StringIO()
     f = tmp_path / "mod.py"
     f.write_text("x = 1\n")
@@ -663,7 +663,7 @@ def test_orchestrate_since_flag_calls_get_changed_files(tmp_path):
 @pytest.mark.unit
 def test_orchestrate_since_not_git_repo_fallback(tmp_path):
     """--since when get_changed_files returns None → full analysis fallback message."""
-    from orchestrate import main as orch_main
+    from cca.orchestrate import main as orch_main
     err = io.StringIO()
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
@@ -685,7 +685,7 @@ def test_orchestrate_since_not_git_repo_fallback(tmp_path):
 @pytest.mark.unit
 def test_run_checker_model_kwarg_passed_to_run(tmp_path):
     """_run_checker passes role kwarg when checker run() accepts it."""
-    from orchestrate import _run_checker
+    from cca.orchestrate import _run_checker
     captured = {}
 
     def fake_run(path, language, files=None, agents=1, no_cache=False, role="default"):
@@ -693,12 +693,12 @@ def test_run_checker_model_kwarg_passed_to_run(tmp_path):
         return {"violations": [], "files_analyzed": 0, "success": True}
 
     import types
-    fake_module = types.ModuleType("checkers.check_solid_fake")
+    fake_module = types.ModuleType("cca.checkers.check_solid_fake")
     fake_module.run = fake_run
 
     with patch("lib.engine.orchestrator.importlib.import_module", return_value=fake_module):
         result = _run_checker(
-            "SOLID", "checkers.check_solid_fake", tmp_path, "python",
+            "SOLID", "cca.checkers.check_solid_fake", tmp_path, "python",
             files=None, agents=1, no_cache=True, cache_ttl_days=7, role="analyzer",
         )
 
@@ -709,7 +709,7 @@ def test_run_checker_model_kwarg_passed_to_run(tmp_path):
 @pytest.mark.unit
 def test_run_checker_cache_ttl_days_kwarg_passed_to_run(tmp_path):
     """_run_checker passes cache_ttl_days kwarg when checker run() accepts it (line 101)."""
-    from orchestrate import _run_checker
+    from cca.orchestrate import _run_checker
     captured = {}
 
     def fake_run(path, language, files=None, agents=1, no_cache=False, cache_ttl_days=30):
@@ -717,12 +717,12 @@ def test_run_checker_cache_ttl_days_kwarg_passed_to_run(tmp_path):
         return {"violations": [], "files_analyzed": 0, "success": True}
 
     import types
-    fake_module = types.ModuleType("checkers.check_fake_ttl")
+    fake_module = types.ModuleType("cca.checkers.check_fake_ttl")
     fake_module.run = fake_run
 
     with patch("lib.engine.orchestrator.importlib.import_module", return_value=fake_module):
         result = _run_checker(
-            "Fake", "checkers.check_fake_ttl", tmp_path, "python",
+            "Fake", "cca.checkers.check_fake_ttl", tmp_path, "python",
             files=None, agents=1, no_cache=True, cache_ttl_days=14, role=None,
         )
 
@@ -740,7 +740,7 @@ def _fake_checker_module(name: str, run_fn):
 @pytest.mark.unit
 def test_run_checker_cache_dir_passed_when_declared(tmp_path):
     """_run_checker forwards cache_dir only to a checker whose run() declares it."""
-    from orchestrate import _run_checker
+    from cca.orchestrate import _run_checker
     captured = {}
 
     def fake_run(path, language, files=None, cache_dir=None):
@@ -748,8 +748,8 @@ def test_run_checker_cache_dir_passed_when_declared(tmp_path):
         return {"violations": [], "files_analyzed": 0, "success": True}
 
     with patch("lib.engine.orchestrator.importlib.import_module",
-               return_value=_fake_checker_module("checkers.fake_cached", fake_run)):
-        _run_checker("Fake", "checkers.fake_cached", tmp_path, "python", cache_dir=tmp_path / "c")
+               return_value=_fake_checker_module("cca.checkers.fake_cached", fake_run)):
+        _run_checker("Fake", "cca.checkers.fake_cached", tmp_path, "python", cache_dir=tmp_path / "c")
 
     assert captured["cache_dir"] == tmp_path / "c"
 
@@ -761,14 +761,14 @@ def test_run_checker_cache_dir_not_passed_when_undeclared(tmp_path):
     An unexpected keyword would raise TypeError inside run(), which _run_checker
     turns into success=False — so success=True proves cache_dir was withheld.
     """
-    from orchestrate import _run_checker
+    from cca.orchestrate import _run_checker
 
     def fake_run(path, language, files=None):
         return {"violations": [], "files_analyzed": 0, "success": True}
 
     with patch("lib.engine.orchestrator.importlib.import_module",
-               return_value=_fake_checker_module("checkers.fake_plain", fake_run)):
-        result = _run_checker("Fake", "checkers.fake_plain", tmp_path, "python", cache_dir=tmp_path / "c")
+               return_value=_fake_checker_module("cca.checkers.fake_plain", fake_run)):
+        result = _run_checker("Fake", "cca.checkers.fake_plain", tmp_path, "python", cache_dir=tmp_path / "c")
 
     assert result["success"] is True, result.get("error")
 
@@ -782,7 +782,7 @@ _MECHANICAL_CHECKERS = ["check_dry", "check_naming", "check_comments", "check_lo
 def test_ai_checker_forwards_cache_dir_and_ttl_to_run_hybrid(tmp_path, checker):
     """Every AI-backed CCA checker hands cache_dir and cache_ttl_days to run_hybrid."""
     import importlib
-    mod = importlib.import_module(f"checkers.{checker}")
+    mod = importlib.import_module(f"cca.checkers.{checker}")
     with patch.object(mod, "run_hybrid", return_value=_DUMMY_RESULT) as hybrid:
         if hasattr(mod, "check_server_available"):
             with patch.object(mod, "check_server_available", return_value=True):
@@ -799,14 +799,14 @@ def test_mechanical_checker_does_not_declare_cache_dir(checker):
     """Mechanical-only checkers have no AI pass to cache, so the orchestrator withholds cache_dir."""
     import importlib
     import inspect
-    params = inspect.signature(importlib.import_module(f"checkers.{checker}").run).parameters
+    params = inspect.signature(importlib.import_module(f"cca.checkers.{checker}").run).parameters
     assert "cache_dir" not in params
 
 
 @pytest.mark.unit
 def test_main_passes_agent_cache_dir_to_run_checker(tmp_path):
-    """CCA's orchestrate.main() hands its own cache directory to every _run_checker call."""
-    import orchestrate
+    """CCA's cca.orchestrate.main() hands its own cache directory to every _run_checker call."""
+    import cca.orchestrate
     (tmp_path / "mod.py").write_text("x = 1\n")
     seen = []
 
@@ -818,20 +818,20 @@ def test_main_passes_agent_cache_dir_to_run_checker(tmp_path):
                                     "--checks", "naming", "--full"]):
         with patch("lib.engine.orchestrator._run_checker", side_effect=capture):
             with patch("builtins.print"):
-                orchestrate.main()
+                cca.orchestrate.main()
 
-    assert seen == [orchestrate._CACHE_DIR]
+    assert seen == [cca.orchestrate._CACHE_DIR]
 
 
 @pytest.mark.unit
 def test_main_uses_cca_cache_dir_env_var_when_set(tmp_path, monkeypatch):
     """CCA_CACHE_DIR, read at main() call time, becomes the engine's cache_dir."""
-    import orchestrate
+    import cca.orchestrate
     override = tmp_path / "cca-cache"
     monkeypatch.setenv("CCA_CACHE_DIR", str(override))
 
-    with patch("orchestrate._engine_main") as engine_main:
-        orchestrate.main()
+    with patch("cca.orchestrate._engine_main") as engine_main:
+        cca.orchestrate.main()
 
     assert engine_main.call_args.kwargs["cache_dir"] == override
 
@@ -839,21 +839,21 @@ def test_main_uses_cca_cache_dir_env_var_when_set(tmp_path, monkeypatch):
 @pytest.mark.unit
 def test_main_uses_default_cache_dir_when_env_var_unset(monkeypatch):
     """Without CCA_CACHE_DIR the engine gets the default _CACHE_DIR."""
-    import orchestrate
+    import cca.orchestrate
     monkeypatch.delenv("CCA_CACHE_DIR", raising=False)
 
-    with patch("orchestrate._engine_main") as engine_main:
-        orchestrate.main()
+    with patch("cca.orchestrate._engine_main") as engine_main:
+        cca.orchestrate.main()
 
-    assert engine_main.call_args.kwargs["cache_dir"] == orchestrate._CACHE_DIR
+    assert engine_main.call_args.kwargs["cache_dir"] == cca.orchestrate._CACHE_DIR
 
 
 # ── __main__ guard (line 392) ────────────────────────────────────────────────────
 
 @pytest.mark.unit
 def test_main_entrypoint_callable(tmp_path):
-    """orchestrate.main() is callable directly (covers the __main__ guard path)."""
-    from orchestrate import main as orch_main
+    """cca.orchestrate.main() is callable directly (covers the __main__ guard path)."""
+    from cca.orchestrate import main as orch_main
     with patch.object(sys, "argv", [
         "orchestrate.py", "--path", str(tmp_path),
         "--checks", "naming", "--format", "json", "--no-cache", "--full",

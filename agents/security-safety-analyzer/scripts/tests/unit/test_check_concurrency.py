@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from checkers.check_concurrency import run, _mechanical_check, _PRINCIPLE
+from ssa.checkers.check_concurrency import run, _mechanical_check, _PRINCIPLE
 
 
 def _make_file(tmp_path: Path, name: str, content: str) -> Path:
@@ -80,7 +80,7 @@ class TestMechanicalSharedState:
 class TestReconciliation:
     def test_mechanical_violations_reported_without_server(self, tmp_path):
         f = _make_file(tmp_path, "Cache.cs", "    private static int _hits = 0;\n")
-        with patch("checkers.check_concurrency.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=False):
             result = run(tmp_path, "csharp", files=[f])
         assert result["violations"]
         assert result["success"] is True
@@ -95,8 +95,8 @@ class TestReconciliation:
             "description": "Static counter is not thread safe",
             "fix": "Use Interlocked",
         }
-        with patch("checkers.check_concurrency.check_server_available", return_value=True), \
-             patch("checkers.check_concurrency.analyze_files_parallel", return_value=[fake_item]):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), \
+             patch("ssa.checkers.check_concurrency.analyze_files_parallel", return_value=[fake_item]):
             result = run(tmp_path, "csharp", files=[f])
         assert not any(v["message"].startswith("[") for v in result["violations"])
 
@@ -108,15 +108,15 @@ class TestReconciliation:
             captured["extra_slots"] = kwargs.get("extra_slots")
             return []
 
-        with patch("checkers.check_concurrency.check_server_available", return_value=True), \
-             patch("checkers.check_concurrency.analyze_files_parallel", side_effect=fake_analyze):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), \
+             patch("ssa.checkers.check_concurrency.analyze_files_parallel", side_effect=fake_analyze):
             run(tmp_path, "csharp", files=[f])
         assert "Mutable static field" in captured["extra_slots"][f]["known_findings"]
 
 
 class TestRunFunction:
     def test_returns_correct_schema(self, tmp_path):
-        with patch("checkers.check_concurrency.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=False):
             result = run(tmp_path, "python")
         assert result["principle"] == _PRINCIPLE
         assert result["success"] is True
@@ -126,7 +126,7 @@ class TestRunFunction:
 
     def test_no_server_returns_empty_not_error(self, tmp_path):
         _make_file(tmp_path, "service.py", "x = 1\n")
-        with patch("checkers.check_concurrency.check_server_available", return_value=False):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=False):
             result = run(tmp_path, "python")
         assert result["success"] is True
         assert result["violations"] == []
@@ -142,8 +142,8 @@ class TestRunFunction:
             "description": "Shared counter accessed without lock",
             "fix": "Use sync/atomic or mutex",
         }
-        with patch("checkers.check_concurrency.check_server_available", return_value=True), \
-             patch("checkers.check_concurrency.analyze_files_parallel", return_value=[fake_item]):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), \
+             patch("ssa.checkers.check_concurrency.analyze_files_parallel", return_value=[fake_item]):
             result = run(tmp_path, "go")
         assert len(result["violations"]) == 1
         assert result["violations"][0]["principle"] == _PRINCIPLE
@@ -155,7 +155,7 @@ class TestRunFunction:
         def fake_analyze(files, *args, **kwargs):
             captured["files"] = files
             return []
-        with patch("checkers.check_concurrency.check_server_available", return_value=True), \
-             patch("checkers.check_concurrency.analyze_files_parallel", side_effect=fake_analyze):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), \
+             patch("ssa.checkers.check_concurrency.analyze_files_parallel", side_effect=fake_analyze):
             run(tmp_path, "python", files=[f])
         assert captured.get("files") == [f]

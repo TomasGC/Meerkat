@@ -42,8 +42,8 @@ from analyzers import (
     MessageQueueAnalyzer,
     SmartContractAnalyzer,
 )
-from common.cache import AnalysisCache, clear_model_cache
-from common.models import ProjectType, AnalysisResult
+from bba.cache import AnalysisCache, clear_model_cache
+from bba.models import ProjectType, AnalysisResult
 from library_analyzer import LibraryAnalyzer
 
 # Import project detection
@@ -251,7 +251,7 @@ class AnalyzerRouter:
         Returns:
             Unified AnalysisResult
         """
-        from common.models import CoverageMatrix
+        from bba.models import CoverageMatrix
 
         all_entry_points = []
         all_tests = []

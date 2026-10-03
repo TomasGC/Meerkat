@@ -10,7 +10,7 @@ from library_analyzer import (
     _infer_scenario_type,
     _risk_for_scenario,
 )
-from common.models import HTTPMethod, ProjectType
+from bba.models import HTTPMethod, ProjectType
 
 def test_infer_scenario_type_error_raises_keyword():
     branch = {"condition": "valid arg", "outcome": "raises ValueError on invalid input"}

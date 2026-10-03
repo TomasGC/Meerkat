@@ -752,7 +752,7 @@ def test_analyze_file_with_model_writes_cache(tmp_path):
 def _load_cca_shim():
     """Load CCA's common/model_utils.py by file path to avoid sys.modules cache collisions."""
     import importlib.util
-    shim_path = Path(__file__).parent.parent.parent / "common" / "model_utils.py"
+    shim_path = Path(__file__).parent.parent.parent / "cca" / "model_utils.py"
     spec = importlib.util.spec_from_file_location("cca_common_model_utils", shim_path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

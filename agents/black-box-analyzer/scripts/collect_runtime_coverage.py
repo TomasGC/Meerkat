@@ -29,8 +29,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from common.utils import detect_project_language
-from common.models import Language
+from bba.utils import detect_project_language
+from bba.models import Language
 
 TIER_MARKERS = {
     "unit":     {"pytest": ["-m", "unit"],       "jest": "--testPathPattern=unit"},

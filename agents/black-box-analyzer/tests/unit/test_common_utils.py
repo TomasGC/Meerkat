@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-import common.utils as utils_mod
-from common.models import Language
-from common.utils import (
+import bba.utils as utils_mod
+from bba.models import Language
+from bba.utils import (
     count_lines_of_code,
     detect_project_language,
     extract_line_number_from_pattern,
@@ -257,7 +257,7 @@ def test_detect_vote_for_a_language_without_enum_member_is_unknown(temp_dir):
 
 
 def test_shipped_table_comes_from_config():
-    from common.constants import LANGUAGE_INDICATORS
+    from bba.constants import LANGUAGE_INDICATORS
     from lib.config import language_config
     assert LANGUAGE_INDICATORS == language_config.project_indicators()
     assert list(LANGUAGE_INDICATORS)[-2:] == ["solidity", "sql"]

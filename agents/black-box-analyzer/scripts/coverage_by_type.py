@@ -20,8 +20,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from common.models import CoverageGap, HTTPMethod, Scenario, TestCase, TestFramework
-from common.utils import read_json, write_json
+from bba.models import CoverageGap, HTTPMethod, Scenario, TestCase, TestFramework
+from bba.utils import read_json, write_json
 from generate_coverage_matrix import find_related_tests
 
 TEST_TYPES = ("unit", "int_mock", "int_real", "e2e")

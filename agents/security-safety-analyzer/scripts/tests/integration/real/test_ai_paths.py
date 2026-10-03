@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from common.model_utils import check_server_available
+from ssa.model_utils import check_server_available
 
 pytestmark = pytest.mark.skipif(
     not check_server_available("fast"),
@@ -72,7 +72,7 @@ def go_project(tmp_path):
 
 
 def _run(module_name: str, path: Path, language: str) -> dict:
-    mod = importlib.import_module(f"checkers.{module_name}")
+    mod = importlib.import_module(f"ssa.checkers.{module_name}")
     return mod.run(path, language, no_cache=True)
 
 

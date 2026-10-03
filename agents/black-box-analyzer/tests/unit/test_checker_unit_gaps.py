@@ -3,7 +3,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from checkers.check_unit_gaps import run
+from bba.checkers.check_unit_gaps import run
 
 
 def test_run_returns_contract_keys(tmp_path):

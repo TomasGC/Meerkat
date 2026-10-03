@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from common.model_utils import (
+from bba.model_utils import (
     extract_json_array,
     extract_json_object,
     run_prompt,

@@ -61,7 +61,7 @@ def clean_project(tmp_path):
 @pytest.mark.integration_real
 def test_naming_real(dirty_project):
     """Real checker on dirty code → magic number 86400 flagged."""
-    from checkers.check_naming import run
+    from cca.checkers.check_naming import run
     result = run(dirty_project / "src", "python")
     assert result["success"] is True
     messages = [v.get("message", "") for v in result["violations"]]
@@ -74,7 +74,7 @@ def test_naming_real(dirty_project):
 @pytest.mark.integration_real
 def test_clean_code_no_violations_real(clean_project):
     """Clean code → naming checker flags nothing."""
-    from checkers.check_naming import run
+    from cca.checkers.check_naming import run
 
     naming_result = run(clean_project / "src", "python")
     assert naming_result["success"] is True

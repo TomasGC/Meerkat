@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-import common.cache as cache_mod
+import ssa.cache as cache_mod
 
 
 @pytest.fixture(autouse=True)

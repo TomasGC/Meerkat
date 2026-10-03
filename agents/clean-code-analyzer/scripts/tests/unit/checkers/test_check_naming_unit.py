@@ -13,7 +13,7 @@ if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
 import lib.engine.discovery as fu
-from checkers.check_naming import run as run_naming
+from cca.checkers.check_naming import run as run_naming
 
 
 @pytest.fixture(autouse=True)

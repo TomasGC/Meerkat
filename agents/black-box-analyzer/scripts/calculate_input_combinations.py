@@ -18,9 +18,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from common.constants import DEFAULT_RESPONSE_CODES, EDGE_CASE_VALUES
-from common.models import Endpoint, HTTPMethod, Parameter, Scenario
-from common.utils import read_json, write_json
+from bba.constants import DEFAULT_RESPONSE_CODES, EDGE_CASE_VALUES
+from bba.models import Endpoint, HTTPMethod, Parameter, Scenario
+from bba.utils import read_json, write_json
 
 _SECURITY_KEYWORDS = ["script", "drop", "select", "..", "etc/passwd"]
 

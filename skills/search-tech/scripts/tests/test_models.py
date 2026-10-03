@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for common.models module."""
+"""Tests for search_tech.models module."""
 
 import pytest
 from datetime import datetime
@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.models import (
+from search_tech.models import (
     Source,
     ResultType,
     SearchQuery,

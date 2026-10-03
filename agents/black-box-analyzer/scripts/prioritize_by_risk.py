@@ -38,9 +38,9 @@ import re
 import sys
 from pathlib import Path
 
-from common.constants import RISK_THRESHOLDS
-from common.models import CoverageGap, HTTPMethod, RiskAssessment, Scenario, TestCase
-from common.utils import read_json, write_json
+from bba.constants import RISK_THRESHOLDS
+from bba.models import CoverageGap, HTTPMethod, RiskAssessment, Scenario, TestCase
+from bba.utils import read_json, write_json
 
 
 def _is_library_scenario(scenario: Scenario) -> bool:
@@ -334,7 +334,7 @@ def load_coverage_matrix(matrix_file: Path) -> list[CoverageGap]:
         )
 
         # Reconstruct TestCases
-        from common.models import TestFramework
+        from bba.models import TestFramework
 
         related_tests = []
         for test_dict in gap_dict.get("related_tests", []):

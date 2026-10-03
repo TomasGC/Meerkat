@@ -324,7 +324,7 @@ def test_diff_analysis(sample_go_project, temp_dir):
 
 def test_clear_cache_flag(sample_go_project, temp_dir):
     """Test --clear-cache discards cached results before running."""
-    from common.cache import AnalysisCache
+    from bba.cache import AnalysisCache
 
     # Create some cache
     output_file = temp_dir / "analysis.json"

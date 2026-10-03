@@ -10,9 +10,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from checkers import check_concurrency, check_error_handling, check_misconfiguration, check_security
-from checkers import check_sensitive_data
-from common.hybrid import scan_patterns
+from ssa.checkers import check_concurrency, check_error_handling, check_misconfiguration, check_security
+from ssa.checkers import check_sensitive_data
+from ssa.hybrid import scan_patterns
 
 
 def _sql(tmp_path: Path, text: str) -> Path:

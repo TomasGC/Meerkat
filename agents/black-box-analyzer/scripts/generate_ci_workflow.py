@@ -25,8 +25,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from common.models import Language, TestFramework
-from common.utils import read_json
+from bba.models import Language, TestFramework
+from bba.utils import read_json
 
 # -- Language → GitHub Actions setup step ------------------------------------─
 

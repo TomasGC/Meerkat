@@ -15,7 +15,7 @@ import re
 import sys
 from pathlib import Path
 
-from common.constants import (
+from bba.constants import (
     API_PATH_PREFIXES,
     BLOCKCHAIN_PATTERNS,
     CLI_PATTERNS,
@@ -34,8 +34,8 @@ from common.constants import (
     TEST_FRAMEWORK_PATTERNS,
     WORKER_PATTERNS,
 )
-from common.models import Language, ProjectInfo, ProjectType, TestFramework
-from common.utils import detect_project_language, find_project_root, read_file_safe, walk_files
+from bba.models import Language, ProjectInfo, ProjectType, TestFramework
+from bba.utils import detect_project_language, find_project_root, read_file_safe, walk_files
 
 
 def detect_frameworks(project_path: Path, language: Language) -> list[str]:

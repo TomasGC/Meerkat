@@ -49,8 +49,12 @@ AGENTS: dict[str, tuple[str, str, str, int]] = {
     "bba": ("black-box-analyzer", "Black-Box Analyzer — test gaps", "checker", 4),
 }
 
-# agent -> module of its model_utils shim, whose CACHE a replay switches off
-_AGENT_MODEL_UTILS: dict[str, str] = {agent: "common.model_utils" for agent in AGENTS}
+# agent -> its one importable package (#21): <pkg>.orchestrate, <pkg>.checkers, <pkg>.model_utils
+PACKAGES: dict[str, str] = {"cca": "cca", "ssa": "ssa", "bba": "bba"}
+
+
+def _qualified(agent: str, name: str) -> str:
+    return f"{PACKAGES[agent]}.{name}"
 
 _IDENTITY_FIELDS = ("file", "line", "principle")
 
@@ -273,7 +277,7 @@ class replay:  # noqa: N801 — used as a context manager, reads like a function
         stack.enter_context(mock.patch.object(_model_utils, "_model_listed", lambda model: True))
         stack.enter_context(mock.patch.dict(_model_utils._AVAILABILITY_CACHE, clear=True))
         # Each agent hands its own model cache to the AI client; a replay must never read or fill it
-        shim = sys.modules.get(_AGENT_MODEL_UTILS.get(s.agent, ""))
+        shim = sys.modules.get(_qualified(s.agent, "model_utils"))
         if shim is not None and hasattr(shim, "CACHE"):
             stack.enter_context(mock.patch.object(shim, "CACHE", None))
         stack.enter_context(mock.patch.object(_orchestrator, "_run_checker",
@@ -296,13 +300,17 @@ class replay:  # noqa: N801 — used as a context manager, reads like a function
 
 
 def _bind_agent(agent: str) -> Path:
-    """Put the agent's scripts dir first on sys.path; refuse if another agent's packages are loaded."""
+    """Put the agent's scripts dir on sys.path; refuse if its package was loaded from another checkout.
+
+    Each agent owns a uniquely named package (#21), so agents no longer exclude each
+    other; what is still fatal is the same package name coming from a different tree.
+    """
     scripts = agent_scripts_dir(agent)
-    for name in ("common", "orchestrate", "checkers"):
-        mod = sys.modules.get(name)
-        origin = getattr(mod, "__file__", None) or next(iter(getattr(mod, "__path__", []) or []), None)
-        if mod is not None and origin and not Path(origin).resolve().is_relative_to(scripts.resolve()):
-            raise RuntimeError(f"`{name}` already imported from {origin}; run one agent per process")
+    name = PACKAGES[agent]
+    mod = sys.modules.get(name)
+    origin = getattr(mod, "__file__", None) or next(iter(getattr(mod, "__path__", []) or []), None)
+    if mod is not None and origin and not Path(origin).resolve().is_relative_to(scripts.resolve()):
+        raise RuntimeError(f"`{name}` already imported from {origin}, not from {scripts}")
     if str(scripts) not in sys.path:
         sys.path.insert(0, str(scripts))
     return scripts
@@ -323,7 +331,7 @@ def run_agent(
     Raises ReplayError if any checker reported failure.
     """
     scripts = _bind_agent(agent)
-    orchestrate = importlib.import_module("orchestrate")
+    orchestrate = importlib.import_module(_qualified(agent, "orchestrate"))
     for module_path in orchestrate.CHECKERS.values():
         importlib.import_module(module_path)
     _dir, app_name, label, workers = AGENTS[agent]

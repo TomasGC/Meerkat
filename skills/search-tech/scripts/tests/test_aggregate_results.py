@@ -10,7 +10,7 @@ from datetime import datetime
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.models import SearchResult, Source, ResultType
+from search_tech.models import SearchResult, Source, ResultType
 from aggregate_results import calculate_rank_score, aggregate_results, format_markdown
 
 

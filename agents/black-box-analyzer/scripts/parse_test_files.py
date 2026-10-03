@@ -26,9 +26,9 @@ import re
 import sys
 from pathlib import Path
 
-from common.constants import TEST_FILE_PATTERNS, TEST_FRAMEWORK_PATTERNS
-from common.models import HTTPMethod, Language, TestCase, TestFramework
-from common.utils import (
+from bba.constants import TEST_FILE_PATTERNS, TEST_FRAMEWORK_PATTERNS
+from bba.models import HTTPMethod, Language, TestCase, TestFramework
+from bba.utils import (
     detect_project_language,
     extract_line_number_from_pattern,
     format_path_relative,
@@ -96,7 +96,7 @@ def infer_test_type(test_name: str, test_body: str) -> str:
 
     # Ambiguous — try local AI for a cheap 1-token answer
     try:
-        from common.model_utils import check_server_available, run_prompt, PROMPTS_DIR
+        from bba.model_utils import check_server_available, run_prompt, PROMPTS_DIR
         if check_server_available("fast"):
             response = run_prompt(
                 "infer_test_type",

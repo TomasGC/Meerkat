@@ -15,12 +15,12 @@ from datetime import datetime
 import time
 import shutil
 
-# Add common to path
+# Put the scripts dir on the path for the search_tech package
 sys.path.insert(0, str(Path(__file__).parent))
 
-from common.models import SearchQuery, SearchResult, SearchResponse, Source, ResultType, ValidationError
-from common.logger import setup_logger, MetricsCollector, get_defaults
-from common.cache import SearchCache
+from search_tech.models import SearchQuery, SearchResult, SearchResponse, Source, ResultType, ValidationError
+from search_tech.logger import setup_logger, MetricsCollector, get_defaults
+from search_tech.cache import SearchCache
 
 
 MAX_RESULTS_PER_TYPE = 5

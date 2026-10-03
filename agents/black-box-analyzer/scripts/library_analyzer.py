@@ -13,7 +13,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from common.models import (
+from bba.models import (
     AnalysisResult,
     CoverageGap,
     CoverageMatrix,
@@ -46,7 +46,7 @@ def _run_script(script: str, *args: str) -> dict | list | None:
 def _branch_to_scenario(method: dict, branch: dict, index: int) -> Scenario:
     """Convert a branch extracted by analyze_library_branches into a Scenario."""
     # Reuse Scenario dataclass — repurpose fields for library context
-    from common.models import HTTPMethod
+    from bba.models import HTTPMethod
     return Scenario(
         endpoint=method.get("method", "unknown"),
         method=HTTPMethod.GET,           # sentinel — not HTTP, but field is required
@@ -179,7 +179,7 @@ class LibraryAnalyzer:
         if tests_file.exists():
             try:
                 tests_data = json.loads(tests_file.read_text())
-                from common.models import TestFramework
+                from bba.models import TestFramework
                 for t in tests_data.get("tests", []):
                     try:
                         fw = TestFramework(t.get("framework", "unknown"))

@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from orchestrate import (
+from ssa.orchestrate import (
     CHECKERS,
     _build_summary,
     _detect_base_branch,
@@ -87,9 +87,9 @@ class TestCheckersDict:
             mod = importlib.import_module(module_path)
             assert callable(mod.run), f"{key}: run() missing"
 
-    def test_all_module_paths_start_with_checkers(self):
+    def test_all_module_paths_live_in_the_ssa_package(self):
         for key, module_path in CHECKERS.items():
-            assert module_path.startswith("checkers."), f"{key}: {module_path}"
+            assert module_path.startswith("ssa.checkers."), f"{key}: {module_path}"
 
 
 class TestDeduplication:
@@ -113,14 +113,14 @@ class TestDeduplication:
 
 class TestRunChecker:
     def test_import_error_returns_error_dict(self, tmp_path):
-        result = _run_checker("fake", "checkers.nonexistent_xyz", tmp_path, "python")
+        result = _run_checker("fake", "ssa.checkers.nonexistent_xyz", tmp_path, "python")
         assert result["success"] is False
         assert "error" in result
         assert result["violations"] == []
 
     def _fake_module(self, run_fn):
         import types
-        mod = types.ModuleType("checkers.fake")
+        mod = types.ModuleType("ssa.checkers.fake")
         mod.run = run_fn
         return mod
 
@@ -133,7 +133,7 @@ class TestRunChecker:
 
         with patch("lib.engine.orchestrator.importlib.import_module",
                    return_value=self._fake_module(declares)):
-            _run_checker("fake", "checkers.fake", tmp_path, "python", cache_dir=tmp_path / "c")
+            _run_checker("fake", "ssa.checkers.fake", tmp_path, "python", cache_dir=tmp_path / "c")
         assert captured["cache_dir"] == tmp_path / "c"
 
     def test_cache_dir_withheld_from_checker_that_does_not_declare_it(self, tmp_path):
@@ -142,7 +142,7 @@ class TestRunChecker:
 
         with patch("lib.engine.orchestrator.importlib.import_module",
                    return_value=self._fake_module(plain)):
-            result = _run_checker("fake", "checkers.fake", tmp_path, "python", cache_dir=tmp_path / "c")
+            result = _run_checker("fake", "ssa.checkers.fake", tmp_path, "python", cache_dir=tmp_path / "c")
         assert result["success"] is True, result.get("error")
 
     def test_no_ssa_checker_declares_cache_dir(self):

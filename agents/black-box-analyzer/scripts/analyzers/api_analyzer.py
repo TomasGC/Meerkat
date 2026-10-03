@@ -14,11 +14,11 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.constants import (
+from bba.constants import (
     DEFAULT_RESPONSE_CODES,
     ENDPOINT_PATTERNS,
 )
-from common.models import (
+from bba.models import (
     Endpoint,
     EntryPoint,
     EntryPointType,
@@ -29,7 +29,7 @@ from common.models import (
     Scenario,
     TestCase,
 )
-from common.utils import (
+from bba.utils import (
     extract_line_number_from_pattern,
     extract_params_from_path,
     format_path_relative,

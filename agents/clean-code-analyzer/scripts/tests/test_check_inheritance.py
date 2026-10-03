@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from checkers.check_inheritance import _check_python
+from cca.checkers.check_inheritance import _check_python
 
 
 @pytest.mark.parametrize("code,should_flag", [
@@ -51,7 +51,7 @@ class TestRunSignature:
     def test_accepts_files_param(self, tmp_path):
         f = tmp_path / "src.py"
         f.write_text("class Foo: pass\n")
-        from checkers.check_inheritance import run
+        from cca.checkers.check_inheritance import run
         result = run(tmp_path, "python", files=[f])
         assert result["success"] is True
         assert result["files_analyzed"] == 1
@@ -59,6 +59,6 @@ class TestRunSignature:
     def test_empty_file_no_violations(self, tmp_path):
         f = tmp_path / "empty.py"
         f.write_text("")
-        from checkers.check_inheritance import run
+        from cca.checkers.check_inheritance import run
         result = run(tmp_path, "python", files=[f])
         assert result["violations"] == []

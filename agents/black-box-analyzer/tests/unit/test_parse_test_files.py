@@ -12,7 +12,7 @@ from parse_test_files import (
     parse_tests,
     parse_typescript_tests,
 )
-from common.models import Language, TestFramework
+from bba.models import Language, TestFramework
 
 def test_classify_by_regex_e2e_cypress():
     assert _classify_by_regex("import cypress from 'cypress'") == "e2e"

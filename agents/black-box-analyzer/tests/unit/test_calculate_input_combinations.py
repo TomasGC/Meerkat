@@ -12,7 +12,7 @@ from calculate_input_combinations import (
     generate_happy_path_value,
     generate_scenarios_for_endpoint,
 )
-from common.models import Endpoint, HTTPMethod, Parameter
+from bba.models import Endpoint, HTTPMethod, Parameter
 
 # ── _is_security_string ───────────────────────────────────────────────────────
 

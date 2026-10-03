@@ -437,10 +437,10 @@ Report completion
 mkdir -p .claude/contexts .claude/rules .claude/agents .claude/skills
 
 # Copy static common files
-cp ~/.claude/template-base/common/.claude/contexts/kanban.md .claude/contexts/kanban.md
-cp ~/.claude/template-base/common/.claude/contexts/tests.md .claude/contexts/tests.md
-cp ~/.claude/template-base/common/CLAUDE.local.md .claude/CLAUDE.local.md
-cp ~/.claude/template-base/common/settings.local.json .claude/settings.local.json
+cp ~/.claude/template-base/shared/.claude/contexts/kanban.md .claude/contexts/kanban.md
+cp ~/.claude/template-base/shared/.claude/contexts/tests.md .claude/contexts/tests.md
+cp ~/.claude/template-base/shared/CLAUDE.local.md .claude/CLAUDE.local.md
+cp ~/.claude/template-base/shared/settings.local.json .claude/settings.local.json
 
 # Generate commands (header + language-specific)
 python ~/.claude/template-base/inject.py commands \
@@ -967,7 +967,7 @@ What would you like to do?
 ⚠️ Template system not found: ~/.claude/template-base/
 
 Required structure:
-- ~/.claude/template-base/common/
+- ~/.claude/template-base/shared/
 - ~/.claude/template-base/templates/
 - ~/.claude/template-base/content/
 - ~/.claude/template-base/inject.py

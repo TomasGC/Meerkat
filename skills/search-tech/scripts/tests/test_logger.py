@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for common.logger module."""
+"""Tests for search_tech.logger module."""
 
 import pytest
 import logging
@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.logger import setup_logger, MetricsCollector
+from search_tech.logger import setup_logger, MetricsCollector
 
 
 class TestSetupLogger:
