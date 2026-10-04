@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 scripts_dir = Path(__file__).parent.parent.parent / "scripts"
-sys.path.insert(0, str(scripts_dir))
 
 
 def test_main_json_output(sample_scenarios_json, sample_tests_json, temp_dir):

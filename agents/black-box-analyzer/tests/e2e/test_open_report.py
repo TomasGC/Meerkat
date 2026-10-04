@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 scripts_dir = Path(__file__).parent.parent.parent / "scripts"
-sys.path.insert(0, str(scripts_dir))
 
 
 def test_main_skip_collect_no_files_returns_one(temp_dir):

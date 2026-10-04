@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 scripts_dir = Path(__file__).parent.parent.parent / "scripts"
-sys.path.insert(0, str(scripts_dir))
 
 
 def _make_analysis(coverage: float, untested: int, critical: int = 0, high: int = 0,

@@ -1,25 +1,16 @@
 from pathlib import Path
 import pytest
 
-# Two directory naming conventions coexist: agents use unit/ + integration/mock/,
-# scripts use units/ + integration-mocks/. Both map to the same tier markers.
-_TIER_DIRS = {
-    "unit": "units",
-    "units": "units",
-    "integration-mocks": "integration_mocks",
-    "integration-reals": "integration_reals",
-    "e2e": "e2e",
-}
+# Every component keeps its tests in <component>/tests/<tier>/ (#46); the tier
+# directory name is the marker name.
+_TIERS = ("unit", "integration_mock", "integration_real", "e2e")
 
 
 def pytest_collection_modifyitems(items):
-    """Auto-mark tests by their subdirectory tier."""
+    """Mark each test with the tier directory right under its tests/ directory."""
     for item in items:
-        parts = set(Path(str(item.fspath)).parts)
-        for directory, marker in _TIER_DIRS.items():
-            if directory in parts:
-                item.add_marker(getattr(pytest.mark, marker))
-        if "integration" in parts and "mock" in parts:
-            item.add_marker(pytest.mark.integration_mocks)
-        if "integration" in parts and "real" in parts:
-            item.add_marker(pytest.mark.integration_reals)
+        parts = Path(str(item.fspath)).parts
+        for i, part in enumerate(parts[:-1]):
+            if part == "tests" and parts[i + 1] in _TIERS:
+                item.add_marker(getattr(pytest.mark, parts[i + 1]))
+                break
