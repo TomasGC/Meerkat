@@ -133,22 +133,21 @@ AI-sourced violations carry a `[TYPE]: description` message prefix; mechanical o
 ## Tests
 
 ```bash
-cd ~/.claude/agents/security-safety-analyzer/scripts
+cd ~/.claude/agents/security-safety-analyzer
 python -m pytest tests/unit/ -q
-python -m pytest tests/integration/mock/ -q
-python -m pytest tests/unit/ tests/integration/mock/ -q      # CI-safe, no local AI needed
-python -m pytest tests/integration/real/ -q                  # prompt rendering + live AI paths
+python -m pytest tests/integration_mock/ -q --ignore=tests/integration_mock/test_orchestrate.py   # test_orchestrate.py calls the live AI
+python -m pytest tests/integration_real/ -q                  # prompt rendering + live AI paths
 python -m pytest tests/e2e/ -q
 ```
 
-`tests/integration/real/test_prompt_templates.py` renders every prompt with the slots its caller supplies and needs no server; it exists because a template referencing an unsupplied slot silently yields zero AI findings.
+`tests/integration_real/test_prompt_templates.py` renders every prompt with the slots its caller supplies and needs no server; it exists because a template referencing an unsupplied slot silently yields zero AI findings.
 
 ## Directory Structure
 
 ```
 agents/security-safety-analyzer/
 ├── AGENT.md                      # This file
-└── scripts/
+├── scripts/
     ├── orchestrate.py            # CLI entry point (wrapper → ssa/orchestrate.py)
     ├── ssa/                      # the agent's one importable package
     │   ├── orchestrate.py        # Checker registry + call into lib.engine.orchestrator
@@ -168,21 +167,21 @@ agents/security-safety-analyzer/
     │   ├── model_utils.py        # Shim → lib.ai.model_utils, passes SSA's model cache
     │   ├── cache.py              # SSA-scoped content-hash cache
     │   └── file_utils.py         # Shim → lib.engine.discovery
-    ├── prompts/
-    │   └── local/               # Prompt templates (.prompt files, one per AI checker)
-    │       ├── security.prompt
-    │       ├── crypto.prompt
-    │       ├── deserialization.prompt
-    │       ├── misconfiguration.prompt
-    │       ├── sensitive_data.prompt
-    │       ├── resource_leaks.prompt
-    │       ├── crash_bugs.prompt
-    │       ├── concurrency.prompt
-    │       └── prompt_injection.prompt
-    └── tests/
-        ├── conftest.py
-        ├── unit/                # Pure in-process, no I/O
-        ├── integration/mock/     # Real filesystem + mocked AI
-        ├── integration/real/     # Prompt rendering + live local AI server
-        └── e2e/                  # subprocess against real orchestrate.py
+    └── prompts/
+        └── local/               # Prompt templates (.prompt files, one per AI checker)
+            ├── security.prompt
+            ├── crypto.prompt
+            ├── deserialization.prompt
+            ├── misconfiguration.prompt
+            ├── sensitive_data.prompt
+            ├── resource_leaks.prompt
+            ├── crash_bugs.prompt
+            ├── concurrency.prompt
+            └── prompt_injection.prompt
+└── tests/
+    ├── conftest.py
+    ├── unit/                    # In-process, AI mocked
+    ├── integration_mock/        # Real filesystem + mocked AI
+    ├── integration_real/        # Prompt rendering + live local AI server
+    └── e2e/                     # subprocess against real orchestrate.py
 ```

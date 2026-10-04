@@ -821,7 +821,7 @@ A: Start with `CLAUDE.local.md` and `settings.local.json` for personal preferenc
 A: Create `integrations/<name>.local.json` and run `python scripts/cli/switch-profile.py <name>`. See [integrations.md](integrations.md).
 
 **Q: Where are tests for scripts?**  
-A: `scripts/tests/test_*.py`. Run with `cd ~/.claude/scripts && python -m pytest tests/ -v`.
+A: Next to their component: `scripts/lib/tests/` and `scripts/cli/tests/`, each split into `unit/`, `integration_mock/`, `integration_real/`, `e2e/`. Run with `cd ~/.claude && python -m pytest scripts/cli/tests -v`.
 
 **Q: How do I add a new coding standard?**  
 A: Create `rules/standards-<name>.md`. It will be auto-loaded by Claude Code.

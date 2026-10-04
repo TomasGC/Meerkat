@@ -37,12 +37,12 @@ crash_bugs, concurrency, resource_leaks, error_handling, prompt_injection
 ### SSA tests
 
 ```bash
-cd ~/.claude/agents/security-safety-analyzer/scripts
+cd ~/.claude/agents/security-safety-analyzer
 python -m pytest tests/unit/ -q
-python -m pytest tests/integration/mock/ -q
+python -m pytest tests/integration_mock/ -q
 python -m pytest tests/e2e/ -q
-python -m pytest tests/unit/ tests/integration/mock/ tests/e2e/ -q --ignore=tests/integration/mock/test_orchestrate.py   # CI-safe (test_orchestrate.py calls live AI)
-python -m pytest tests/integration/real/ -q                          # prompt rendering + live AI
+python -m pytest tests/ -q -m "not integration_real" --ignore=tests/integration_mock/test_orchestrate.py   # CI-safe (test_orchestrate.py calls live AI)
+python -m pytest tests/integration_real/ -q                          # prompt rendering + live AI
 ```
 
 ---
@@ -79,10 +79,10 @@ directory (read when `main()` runs, so subprocess tests can set it).
 ### CCA tests
 
 ```bash
-cd ~/.claude/agents/clean-code-analyzer/scripts
-python -m pytest tests/unit/ tests/integration/mock/ -q          # CI-safe, incl. golden tests (replayed AI)
-python -m pytest tests/e2e/ -q --deselect e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates
-python -m pytest tests/integration/real/ -q                      # live AI
+cd ~/.claude/agents/clean-code-analyzer
+python -m pytest tests/unit/ tests/integration_mock/ -q          # CI-safe, incl. golden tests (replayed AI)
+python -m pytest tests/e2e/ -q -k "not test_agents_n_completes_without_duplicates"
+python -m pytest tests/integration_real/ -q                      # live AI
 ```
 
 ---
@@ -91,9 +91,9 @@ python -m pytest tests/integration/real/ -q                      # live AI
 
 ```bash
 # Golden tests (no live AI — recorded responses are replayed)
-cd ~/.claude/agents/clean-code-analyzer/scripts && python -m pytest tests/integration/mock/test_golden_projects.py tests/e2e/test_golden_cli.py -q
-cd ~/.claude/agents/security-safety-analyzer/scripts && python -m pytest tests/integration/mock/test_golden_projects.py -q
-cd ~/.claude/agents/black-box-analyzer && python -m pytest tests/integration/mock/test_golden_projects.py -q
+cd ~/.claude/agents/clean-code-analyzer && python -m pytest tests/integration_mock/test_golden_projects.py tests/e2e/test_golden_cli.py -q
+cd ~/.claude/agents/security-safety-analyzer && python -m pytest tests/integration_mock/test_golden_projects.py -q
+cd ~/.claude/agents/black-box-analyzer && python -m pytest tests/integration_mock/test_golden_projects.py -q
 
 # Regenerate expected files after an intended behavior change, then hand-check every changed record
 python ~/.claude/scripts/cli/update_golden.py --agent cca [--project python_project]
@@ -150,9 +150,9 @@ AI cache: `<BBA cache root>/gaps` (honours `BBA_CACHE_DIR`); the pipeline's `--c
 ```bash
 cd ~/.claude/agents/black-box-analyzer
 python -m pytest tests/unit/ -q
-python -m pytest tests/integration/mock/ -q
+python -m pytest tests/integration_mock/ -q
 python -m pytest tests/e2e/ -q
-python -m pytest tests/unit/ tests/integration/mock/ -q  # CI-safe (no local AI required)
+python -m pytest tests/unit/ tests/integration_mock/ -q  # CI-safe (no local AI required)
 ```
 
 ---
@@ -160,7 +160,7 @@ python -m pytest tests/unit/ tests/integration/mock/ -q  # CI-safe (no local AI 
 ## search-tech Skill
 
 ```bash
-cd ~/.claude/skills/search-tech/scripts
+cd ~/.claude/skills/search-tech
 python -m pytest tests/ -q
 ```
 
@@ -216,26 +216,26 @@ Delete `local_languages_config.json` to reset.
 
 ## Tests
 
-### Run by tier (from ~/.claude/)
-```bash
-pytest agents/black-box-analyzer/tests/unit/ -v
-pytest agents/black-box-analyzer/tests/integration/mock/ -v
-pytest agents/black-box-analyzer/tests/integration/real/ -v
-pytest agents/black-box-analyzer/tests/e2e/ -v
+Every component keeps its tests in `<component>/tests/{unit,integration_mock,integration_real,e2e}` (#46);
+the tier directory is the marker.
 
-pytest scripts/cli/tests/units/ -v
-pytest scripts/cli/tests/integration-mocks/ -v
-pytest scripts/lib/tests/units/ -v
-pytest scripts/tests/e2e/ -v
+### Run by tier or component (from ~/.claude/)
+```bash
+python -m pytest -q -m unit                 # one tier, every component
+python -m pytest -q -m integration_mock
+python -m pytest -q -m e2e
+python -m pytest agents/black-box-analyzer/tests -q    # one component, every tier
+python -m pytest scripts/cli/tests/unit/ -q            # one component, one tier
+python -m pytest tests -q                               # cross-component suites
 ```
 
 ### Everything, one invocation (#21)
 ```bash
 cd ~/.claude
-python -m pytest -q -m "not integration_reals" \
-  --ignore=agents/security-safety-analyzer/scripts/tests/integration/mock/test_orchestrate.py \
-  --deselect "agents/clean-code-analyzer/scripts/tests/e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates"
-python -m pytest -q -m integration_reals    # live AI tier
+python -m pytest -q -m "not integration_real" \
+  --ignore=agents/security-safety-analyzer/tests/integration_mock/test_orchestrate.py \
+  --deselect "agents/clean-code-analyzer/tests/e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates"
+python -m pytest -q -m integration_real     # live AI tier
 ```
 
 ---

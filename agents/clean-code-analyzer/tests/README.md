@@ -1,21 +1,20 @@
 # Test Suite
 
-## Run tiers
+Layout and tier rules: `contexts/tests.md`. Run from `agents/clean-code-analyzer/`:
 
-    # Unit only (fast, no deps)
-    pytest scripts/tests/unit/ -m unit
+    # Unit (in-process, AI mocked)
+    python -m pytest tests/unit/
 
-    # Integration with mocks
-    pytest scripts/tests/integration/mock/ -m integration_mock
+    # Integration with mocks, incl. golden tests (replayed AI)
+    python -m pytest tests/integration_mock/
 
-    # Integration real (needs Ollama running)
-    pytest scripts/tests/integration/real/ -m integration_real
+    # Integration real (needs the configured local AI server)
+    python -m pytest tests/integration_real/
 
-    # E2E (needs Docker)
-    pytest scripts/tests/e2e/ -m e2e
+    # E2E (subprocess against orchestrate.py)
+    python -m pytest tests/e2e/
 
-    # All except Docker/real Ollama
-    pytest scripts/tests/ -m "not e2e and not integration_real"
+    # Everything except the live-AI tier
+    python -m pytest tests/ -m "not integration_real"
 
-    # Everything
-    pytest scripts/tests/
+Sample projects for the e2e tier are in `tests/fixtures/e2e/`.

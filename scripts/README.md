@@ -578,39 +578,16 @@ Test in current repository:
 
 ## 🧪 Testing
 
-All utility scripts are tested with **Pester** (PowerShell testing framework).
+Tests live next to each component, split by tier: `scripts/lib/tests/` and `scripts/cli/tests/`, each with
+`unit/`, `integration_mock/`, `integration_real/`, `e2e/`.
 
-### Running Tests
-
-```powershell
-cd scripts/tests
-
-# Run all tests
-./run-all-tests.ps1
-
-# Run specific test file
-./run-all-tests.ps1 -TestFile "get-branch-summary.Tests.ps1"
-
-# Detailed output
-./run-all-tests.ps1 -Detailed
+```bash
+cd ~/.claude
+python -m pytest scripts/lib/tests scripts/cli/tests -q    # every script test
+python -m pytest scripts/cli/tests/unit/ -q                # one tier
 ```
 
-### Test Coverage
-
-- ✅ 54 tests across 6 script files
-- ✅ 100% passing (unit + integration + edge cases)
-- ✅ Test fixtures in `tests/fixtures/`
-- ✅ Auto-installs Pester if missing
-
-**Tested scripts**:
-- `read-yaml-frontmatter.ps1`
-- `categorize-documentation.ps1`
-- `analyze-dependencies.ps1`
-- `list-files-by-extension.ps1`
-- `find-git-repos.ps1`
-- `update-section-in-markdown.ps1`
-
-See `scripts/tests/README.md` for full test documentation.
+See `contexts/tests.md` for the layout rule and the one-invocation run of every suite.
 
 ---
 

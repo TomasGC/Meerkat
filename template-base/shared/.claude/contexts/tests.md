@@ -8,44 +8,48 @@
 
 | Tier | Directory | Marker | What |
 |------|-----------|--------|------|
-| Unit | `tests/units/` | `units` | Pure in-process, no I/O, all mocked |
-| Integration-mocks | `tests/integration-mocks/` | `integration_mocks` | Mocked subprocess/external tools |
-| Integration-reals | `tests/integration-reals/` | `integration_reals` | Live services or real filesystem |
+| Unit | `tests/unit/` | `unit` | In-process, external calls mocked |
+| Integration-mock | `tests/integration_mock/` | `integration_mock` | Real filesystem, mocked subprocess/external tools |
+| Integration-real | `tests/integration_real/` | `integration_real` | Live services or real external tools |
 | E2E | `tests/e2e/` | `e2e` | Full process execution |
 
-Markers applied automatically by `conftest.py` based on directory name.
+The directory name is the marker name; the root `conftest.py` applies it. Test data lives in
+`tests/fixtures/` (one subdirectory per tier that uses it, when useful), never inside a tier directory.
 
 ---
 
 ## Co-location Rule
 
-Tests live **next to their source**, not in a central mirror tree:
+Each component keeps its tests next to its source, in one `tests/` tree:
 
 ```
-src/
+src/feature_a/
 ├── feature_a.py
 └── tests/
     ├── conftest.py
-    ├── units/test_feature_a.py
-    ├── integration-mocks/test_feature_a_mock.py
-    └── e2e/test_feature_a_e2e.py
+    ├── unit/test_feature_a.py
+    ├── integration_mock/test_feature_a.py
+    ├── integration_real/
+    ├── e2e/test_feature_a.py
+    └── fixtures/
 ```
 
 ---
 
 ## pytest.ini
 
+One file, at the repository root:
+
 ```ini
 [pytest]
 testpaths =
-    src/tests
     src/feature_a/tests
     src/feature_b/tests
 
 markers =
-    units: pure in-process tests (no I/O, all mocked)
-    integration_mocks: mocked subprocess/tools
-    integration_reals: real services or real filesystem
+    unit: in-process tests, external calls mocked
+    integration_mock: mocked subprocess/tools
+    integration_real: real services or real external tools
     e2e: full process execution
 ```
 
@@ -53,21 +57,20 @@ markers =
 
 ## Root conftest.py
 
-Auto-marks tests by directory name — no boilerplate in test files:
+Marks each test with the tier directory right under its `tests/` — no tier marks in test files:
 
 ```python
 from pathlib import Path
 import pytest
 
+_TIERS = ("unit", "integration_mock", "integration_real", "e2e")
+
+
 def pytest_collection_modifyitems(items):
     for item in items:
-        parts = set(Path(str(item.fspath)).parts)
-        if "units" in parts:
-            item.add_marker(pytest.mark.units)
-        if "integration-mocks" in parts:
-            item.add_marker(pytest.mark.integration_mocks)
-        if "integration-reals" in parts:
-            item.add_marker(pytest.mark.integration_reals)
-        if "e2e" in parts:
-            item.add_marker(pytest.mark.e2e)
+        parts = Path(str(item.fspath)).parts
+        for i, part in enumerate(parts[:-1]):
+            if part == "tests" and parts[i + 1] in _TIERS:
+                item.add_marker(getattr(pytest.mark, parts[i + 1]))
+                break
 ```

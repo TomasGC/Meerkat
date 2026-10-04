@@ -181,22 +181,22 @@ python ~/.claude/scripts/cli/analyze_commit_quality.py --files "src/**/*.py"
 
 ## Testing Scripts
 
-**Location**: `~/.claude/scripts/tests/`
+**Location**: `~/.claude/scripts/lib/tests/` and `~/.claude/scripts/cli/tests/`, each split into `unit/`, `integration_mock/`, `integration_real/`, `e2e/`
 
 **Framework**: pytest
 
 ```bash
-# Run all tests
-cd ~/.claude/scripts && python -m pytest tests/ -v
+# Run all script tests
+cd ~/.claude && python -m pytest scripts/lib/tests scripts/cli/tests -v
 
 # Quick validation (before commit)
-cd ~/.claude/scripts && python -m pytest tests/ -v --maxfail=1
+cd ~/.claude && python -m pytest scripts/lib/tests scripts/cli/tests -m unit --maxfail=1
 
 # With coverage
-cd ~/.claude/scripts && python -m pytest tests/ -v --cov=. --cov-report=term-missing
+cd ~/.claude && python -m pytest scripts/lib/tests scripts/cli/tests --cov=scripts --cov-report=term-missing
 
 # Specific test
-cd ~/.claude/scripts && python -m pytest tests/test_integrations.py -v
+cd ~/.claude && python -m pytest scripts/lib/tests/unit/test_integrations.py -v
 ```
 
 **See**: `contexts/commands.md` for full test commands

@@ -313,6 +313,6 @@ After running examples:
 ## Additional Resources
 
 - **Main README**: `../scripts/README.md`
-- **Test Fixtures**: `../tests/fixtures/`
-- **E2E Tests**: `../tests/test_universal_detection.py`
+- **Test Fixtures**: `../tests/fixtures/integration_real/`
+- **Detection Tests**: `../tests/integration_real/test_universal_detection.py`
 - **Agent Documentation**: `../AGENT.md`
