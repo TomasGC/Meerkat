@@ -1,7 +1,7 @@
-"""Integration tests for orchestrate.py — full pipeline via subprocess.
+"""orchestrate.py end to end against the live local AI server — full pipeline via subprocess.
 
-No timeout: process exit is the completion signal. With a local AI server up
-these run for minutes, since the AI checkers analyze every fixture file.
+The security checker's AI pass analyzes every fixture file, so a run takes minutes; with the model
+offloaded to CPU, over ten. It lived in the mock tier until #36, where it hung the CI-safe run.
 """
 import json
 import subprocess
@@ -10,7 +10,16 @@ from pathlib import Path
 
 import pytest
 
+from ssa.model_utils import check_server_available
+
+pytestmark = [
+    pytest.mark.live_ai,
+    pytest.mark.skipif(not check_server_available(), reason="local AI server not reachable"),
+]
+
 SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts"
+# A slow model fails the test instead of hanging the session.
+_TIMEOUT_S = 1800
 
 DIRTY_PYTHON = """\
 import os
@@ -40,15 +49,13 @@ class UserService:
 
 
 def _run_orchestrate(src: Path, checks: str, fmt: str) -> subprocess.CompletedProcess:
-    """Run orchestrate.py to completion. Process exit is the event; no timeout."""
-    proc = subprocess.Popen(
+    """Run orchestrate.py to completion, at most _TIMEOUT_S seconds."""
+    return subprocess.run(
         [sys.executable, str(SCRIPTS_DIR / "orchestrate.py"),
          "--path", str(src), "--checks", checks,
          "--format", fmt, "--no-cache", "--full"],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        capture_output=True, text=True, timeout=_TIMEOUT_S,
     )
-    stdout, stderr = proc.communicate()
-    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 
 
 @pytest.fixture

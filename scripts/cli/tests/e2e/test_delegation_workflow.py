@@ -59,6 +59,7 @@ class TestDelegationWorkflow:
         finally:
             server.shutdown()
 
+    @pytest.mark.live_ai
     def test_ollama_review_workflow(self):
         try:
             subprocess.run(["ollama", "ps"], capture_output=True, check=True,

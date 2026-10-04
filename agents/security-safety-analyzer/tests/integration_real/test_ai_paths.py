@@ -12,10 +12,10 @@ import pytest
 
 from ssa.model_utils import check_server_available
 
-pytestmark = pytest.mark.skipif(
-    not check_server_available("fast"),
-    reason="local AI server not reachable",
-)
+pytestmark = [
+    pytest.mark.live_ai,
+    pytest.mark.skipif(not check_server_available("fast"), reason="local AI server not reachable"),
+]
 
 VULNERABLE_PYTHON = """\
 import subprocess

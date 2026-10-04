@@ -6,6 +6,9 @@ import pytest
 import time
 
 
+pytestmark = pytest.mark.live_ai
+
+
 def _warm(model: str) -> None:
     """Load a model into memory so the test that follows times inference, not disk I/O.
 
