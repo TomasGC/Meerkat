@@ -10,7 +10,6 @@ import pytest
 
 # Add scripts directory to path
 scripts_dir = Path(__file__).parent.parent.parent / "scripts"
-sys.path.insert(0, str(scripts_dir))
 
 
 def test_full_go_project_analysis(sample_go_project, temp_dir):

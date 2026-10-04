@@ -1,0 +1,114 @@
+"""Unit tests for checkers/check_solid.py — mocks local AI calls.
+
+check_solid.run() keeps its own check_server_available guard (hard-fails when
+the AI server is down — no mechanical fallback), then delegates to
+lib.engine.hybrid.run_hybrid(). The guard is patched on the checker module;
+the AI pass itself (run_hybrid's own availability gate + analyze_files_parallel)
+is patched on lib.engine.hybrid, since that's where the real call sites live.
+"""
+
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+
+import cca.checkers.check_solid as solid_mod
+from cca.checkers.check_solid import run
+
+# Patch targets: check_solid's own early guard vs. run_hybrid's internal call sites.
+_CHECK_AVAILABLE = "cca.checkers.check_solid.check_server_available"
+_HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"
+_HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
+
+
+def test_solid_returns_violations_when_server_available(tmp_path):
+    """SOLID checker maps local AI items to SOLID:X violations."""
+    (tmp_path / "app.py").write_text(
+        "class GodClass:\n"
+        "    def a(self): pass\n"
+        "    def b(self): pass\n"
+    )
+    mock_items = [
+        {
+            "source_file": str(tmp_path / "app.py"),
+            "principle": "S",
+            "line": 1,
+            "severity": "high",
+            "violation": "Too many responsibilities",
+            "suggestion": "Split class",
+        }
+    ]
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=mock_items):
+        result = run(tmp_path, "python")
+
+    assert result["success"] is True
+    assert len(result["violations"]) == 1
+    assert result["violations"][0]["principle"].startswith("SOLID:")
+
+
+def test_solid_empty_violations_when_no_issues(tmp_path):
+    """Empty AI response → 0 violations, success=True."""
+    (tmp_path / "app.py").write_text("class Service: pass\n")
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]):
+        result = run(tmp_path, "python")
+
+    assert result["success"] is True
+    assert result["violations"] == []
+
+
+def test_solid_failure_when_server_unavailable(tmp_path):
+    """server not available → success=False, violations=[] (checker's own guard, run_hybrid never called)."""
+    with patch(_CHECK_AVAILABLE, return_value=False):
+        result = run(tmp_path, "python")
+
+    assert result["success"] is False
+    assert result["violations"] == []
+    assert "error" in result
+
+
+def test_solid_return_schema(tmp_path):
+    """Return dict has all required keys."""
+    with patch(_CHECK_AVAILABLE, return_value=False):
+        result = run(tmp_path, "python")
+
+    assert result["principle"] == "SOLID"
+    assert "success" in result
+    assert "violations" in result
+    assert "files_analyzed" in result
+    assert "duration_ms" in result
+
+
+# ── files param + model override ────────────────────────────────────────────────
+
+def test_solid_files_param_skips_discovery(tmp_path):
+    """When files param provided, only those files are analyzed (no discovery)."""
+    explicit = tmp_path / "explicit.py"
+    explicit.write_text("class X: pass\n")
+    other = tmp_path / "other.py"
+    other.write_text("class Y: pass\n")
+
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+        run(tmp_path, "python", files=[explicit])
+
+    called_files = mock_analyze.call_args[0][0]
+    assert explicit in called_files
+    assert other not in called_files
+
+
+def test_solid_role_override_propagated(tmp_path):
+    """role param is passed to analyze_files_parallel."""
+    (tmp_path / "app.py").write_text("class X: pass\n")
+    with patch(_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
+         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+        run(tmp_path, "python", role="deep")
+
+    called_role = mock_analyze.call_args[0][2]  # positional: files, language, role, prompt
+    assert called_role == "deep"

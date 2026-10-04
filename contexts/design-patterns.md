@@ -1,7 +1,7 @@
 # Design Patterns - Meerkat
 
 **Purpose**: Design patterns applied across the Meerkat codebase
-**Last Updated**: 2026-09-09
+**Last Updated**: 2026-10-04
 
 ---
 
@@ -16,8 +16,8 @@
 7. **Facade Orchestration** — `orchestrate.py` is a pure coordinator: discovers checkers via `importlib`, inspects `run()` signatures via `inspect.signature`, passes only the params each checker declares
 10. **Module-level Config Cache (model_config.py, language_config.py)** — no class: each module parses its config once into a module-level `_config` dict on first `_load()` (and at import), so all callers share the same parsed JSON with no repeated file I/O. Tests reset it with `module._config = {}`
 11. **Shim / Thin Re-export** — `agents/*/scripts/<pkg>/model_utils.py` re-exports from `scripts/lib/ai/model_utils.py`; agents keep a stable local import path, shared logic lives in one place. Since #21 the shim also binds the agent's own model cache to every `analyze_*` call
-8. **Co-located Test Pyramid** — tests live next to source (`agent/tests/unit/`, `agent/tests/integration/mock/`, etc.); each level has its own `conftest.py` managing `sys.path`
-9. **Prompt Template** — `.prompt` files are Python format-string templates (`{code}`, `{language}`, `{file_path}`); validated structurally by unit tests, semantic correctness by integration/real tests
+8. **Co-located Test Pyramid** — every component keeps its tests in `<component>/tests/{unit,integration_mock,integration_real,e2e}` with data in `tests/fixtures/` (#46); one `conftest.py` per tests tree manages `sys.path`, test files never do
+9. **Prompt Template** — `.prompt` files are Python format-string templates (`{code}`, `{language}`, `{file_path}`); validated structurally by unit tests, semantic correctness by integration_real tests
 12. **Mechanical-then-AI Reconciliation (SSA)** — a checker's deterministic findings are both rendered into the prompt (`{known_findings}` slot) and used as a ±3-line proximity filter over the AI findings; neither layer needs to know what the other detects
 13. **Per-file Prompt Slots** — `analyze_files_parallel(..., extra_slots={path: {...}})` gives each file its own template values, so one prompt template serves N files with N different contexts
 14. **Table-driven Rules** — SSA pattern checkers declare `{language: [(regex, message, severity, suggestion)]}` plus a `"*"` bucket for language-agnostic rules; `lib.engine.hybrid` is the only executor, so a new checker is a rule table and a prompt
@@ -46,6 +46,7 @@
 39. **Dependencies Are Passed, Not Discovered (#21)** — the AI client used to enable its cache by importing `common.cache`, so an agent's cache depended on which `common` came first on `sys.path` (CCA had none, SSA's worked through an adapter by accident). Now `analyze_*(cache=...)` takes a `ModelCache`, and each agent's shim passes its own. An import that silently succeeds or fails depending on the environment is a hidden parameter: make it a real one
 40. **No Reader, No Metric (#22)** — three `MetricsCollector` copies were kept in sync on paper, but only search-tech's counters were ever shown (`--verbose` summary). The CLI scripts' `track()` calls (39 of them) and BBA's collector were written and discarded at exit. Removing them settled the "reconcile the API" question: the unification problem disappears with the dead code. Before reconciling two implementations, check that both have a consumer
 37. **A Safe Twin for Every Pattern Rule** — each SQL rule ships with a negative test written as the parameterized form of the same statement (`sp_executesql @sql, N'@id INT', @id`, `format('%I', …)`, `EXECUTE … USING`). Pattern rules fail by over-matching, and the safe form is the one real code uses most
+41. **The Directory Is the Tier (#46)** — a test's tier is the directory right under its `tests/`, and the marker carries the same name, applied by one root-conftest rule. Before, two directory conventions mapped onto marker names matching neither, and 186 tests sat in no tier directory: a marker-selected CI job (`-m unit`) would have skipped them without a word. With no other way to get a tier, the four tier runs are disjoint and add up to the full collection, which is the check that proves it
 32. **Priority Lives in an Ordered List, Not in Per-Item Fields** — when "first match wins" matters, store it as a JSON array (`project_indicators: [{language, markers}]`) rather than a field on each language or an object keyed by name. JSON objects are unordered by spec, a per-language field would inherit the language table's unrelated order (it would have flipped a Go+Python project to Python), and the list can name entries the main table must not contain (`solidity` would have entered every agent's file discovery)
 
 ---

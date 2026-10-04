@@ -4,7 +4,7 @@
 
 **Direction**: support for other assistants (Codex, others) is planned. Keep the assistant-agnostic core (`scripts/lib/`) separate from the Claude Code host layer (`CLAUDE.md`, skills, hooks, `AGENT.md`, `settings.json`); name the role ("the coding assistant"), not the product, in docs and new designs.
 
-**Last Updated**: 2026-10-02
+**Last Updated**: 2026-10-04
 
 ---
 
@@ -13,7 +13,7 @@
 1. **Strategic Delegation**: Mechanical tasks → Local tools (0 Claude tokens)
 2. **Hybrid Approach**: Data gathering (scripts) + Strategic analysis (orchestrator)
 3. **Multi-Environment**: Profile-based config for different VCS/CI providers
-4. **Co-located Tests**: 4-tier test pyramid next to source (units/integration-mocks/integration-reals/e2e)
+4. **Co-located Tests**: one layout for every component, `<component>/tests/{unit,integration_mock,integration_real,e2e,fixtures}` (#46)
 
 ---
 
@@ -52,17 +52,17 @@ Local AI  Scripts  Agents
 │   │   ├── AGENT.md
 │   │   ├── scripts/                 # orchestrate.py wrapper → bba/ (orchestrate: pipeline + --gaps, checkers/ (4 tier
 │   │   │                            # gap checkers), models, constants, cache, utils) + pipeline CLI scripts + prompts/local/
-│   │   └── tests/                   # unit + integration/mock + e2e (524) / integration/real (incl. 10 detection fixtures)
+│   │   └── tests/                   # unit / integration_mock / integration_real / e2e + fixtures/integration_real (10 detection projects)
 │   ├── clean-code-analyzer/         # 11-principle code quality analyzer (SOLID, DRY, KISS, YAGNI, CQRS, DDD, SLAP, LoD, Comments, Naming, Composition)
 │   │   ├── AGENT.md
 │   │   ├── scripts/                 # orchestrate.py wrapper → cca/ (orchestrate: registry + lib.engine.orchestrator,
 │   │   │                            # checkers/ (11, all via lib.engine.hybrid.run_hybrid), model_utils shim) + prompts/local/
-│   │   └── scripts/tests/           # unit + integration/mock (526) / integration/real (live AI) / e2e (15)
+│   │   └── tests/                   # unit / integration_mock / integration_real (live AI) / e2e + fixtures/e2e
 │   ├── security-safety-analyzer/    # 10-checker security and safety analyzer (Security, Crypto, Deserialization, Misconfiguration, SensitiveData, CrashBug, Concurrency, ResourceLeak, ErrorHandling, PromptInjection)
 │   │   ├── AGENT.md
-│   │   └── scripts/                 # orchestrate.py wrapper → ssa/ (orchestrate, checkers/ (10), thin shims over
-│   │       │                        # lib.engine: hybrid, dedup, cache, file_utils; model_utils shims lib.ai) + prompts/local/
-│   │       └── tests/               # 340 unit / 28 integration/mock / 25 integration/real / 10 e2e
+│   │   ├── scripts/                 # orchestrate.py wrapper → ssa/ (orchestrate, checkers/ (10), thin shims over
+│   │   │                            # lib.engine: hybrid, dedup, cache, file_utils; model_utils shims lib.ai) + prompts/local/
+│   │   └── tests/                   # unit / integration_mock / integration_real / e2e
 │   ├── ci-fix-proposer/
 │   ├── code-analyzer/
 │   ├── model-router/
@@ -72,9 +72,9 @@ Local AI  Scripts  Agents
 │   └── git-helper/
 │
 ├── scripts/                         # Python 3.12+ automation
-│   ├── cli/                         # 37 CLI scripts + co-located tests
-│   │   ├── tests/                   # units/ + integration-mocks/ + integration-reals/
-│   │   ├── agents/task_monitor/     # + tests/units/
+│   ├── cli/                         # 37 CLI scripts
+│   │   ├── tests/                   # unit / integration_mock / integration_real / e2e (incl. task_monitor)
+│   │   ├── agents/task_monitor/
 │   │   └── utils/switch_profile.py
 │   ├── lib/                         # Shared library — importable by scripts, skills, plugins, agents
 │   │   ├── ai/                      # model_utils — local AI client
@@ -84,8 +84,8 @@ Local AI  Scripts  Agents
 │   │   │                            # dedup, discovery, hybrid, orchestrator — cache dir/registry/max_workers/labels
 │   │   │                            # are caller-supplied params, no agent name hardcoded; used by SSA, CCA (#19), BBA gaps (#20)
 │   │   ├── testing/                 # golden.py — golden fixture runner: replay recorded AI responses, compare expected
-│   │   └── cli/                     # BaseCLIScript + tests/
-│   └── tests/                       # Scripts-level tests (e2e, integration-reals)
+│   │   ├── cli/                     # BaseCLIScript
+│   │   └── tests/                   # unit (incl. lib/cli)
 │
 ├── fixtures/                        # Shared test data, usable by every agent and skill
 │   ├── projects/                    # python_project, go_project, kotlin_project — source only, seeded issues
@@ -93,12 +93,14 @@ Local AI  Scripts  Agents
 │
 ├── skills/                          # User-invocable slash commands
 │   └── search-tech/                 # Tech search skill
-│       └── scripts/                 # search_tech/ (cache, metrics, models, utils; logging from lib) + search_*.py + tests/ (113 tests)
+│       ├── scripts/                 # search_tech/ (cache, metrics, models, utils; logging from lib) + search_*.py
+│       └── tests/                   # unit (113)
 ├── rules/                           # Auto-loaded coding standards (14 languages)
 ├── hooks/                           # Automation hooks
 ├── integrations/                    # Environment profiles
 ├── configs/                         # template_ + local_ config pairs: models, languages, delegation
-└── docs/                            # User documentation
+├── docs/                            # User documentation
+└── tests/                           # cross-component suites: unit / integration_real / e2e
 ```
 
 ---

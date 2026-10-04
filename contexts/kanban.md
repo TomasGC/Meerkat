@@ -4,6 +4,17 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-04 - [#46] One test layout for every component
+- Every agent, skill, `scripts/lib` and `scripts/cli` keeps its tests in `tests/{unit,integration_mock,integration_real,e2e}` with data in `tests/fixtures/`; tests spanning several components moved to a root `tests/`; one `pytest.ini`
+- Markers renamed to the directory names (`unit`, `integration_mock`, `integration_real`), applied by one root-conftest rule; 304 explicit tier marks removed
+- 186 tests sat in no tier (CCA's root-level files, search-tech's flat suite): a marker-selected CI job would have skipped them; now the four tier runs are disjoint and add up to all 2629
+- Only conftests touch `sys.path`: 58 redundant per-file inserts removed, one had put `scripts/lib` on the path and let `lib/cli` shadow `scripts/cli`
+- Removed: BBA's second fixture set (read by no test), Pester-era test READMEs; `template-base/` generates the same layout
+- Tests: CI-safe run 2531 passed (unchanged), every component green alone, node ids map 1:1 (one rename: `test_base_cli.py`)
+tags: #testing #refactor #consistency
+Ref: https://github.com/TomasGC/Meerkat/issues/46
+Commits: 27a0112, 26a29dd
+
 2026-10-03 - [#22] Reconcile the MetricsCollector API
 - Resolved by removal, not reconciliation: of the three `MetricsCollector` copies only search-tech's has a reader (its `--verbose` summary); `lib`'s was write-only (39 `track()` calls in `BaseCLIScript` and 35 CLI scripts, never read) and BBA's had no caller at all
 - Deleted `lib`'s collector, every `track()` call, `BaseCLIScript.metrics` and `get_defaults`; deleted BBA's `logger.py` and its 13 tests

@@ -431,22 +431,22 @@ pytest tests/ -v --cov=scripts --cov-report=term-missing
 
 ```bash
 # CLI project
-python parallel_analyzer.py tests/fixtures/cli_project --verbose
+python parallel_analyzer.py ../tests/fixtures/integration_real/cli_project --verbose
 
 # Android project
-python parallel_analyzer.py tests/fixtures/android_project --verbose
+python parallel_analyzer.py ../tests/fixtures/integration_real/android_project --verbose
 
 # Frontend project
-python parallel_analyzer.py tests/fixtures/frontend_project --verbose
+python parallel_analyzer.py ../tests/fixtures/integration_real/frontend_project --verbose
 
 # LLM agent project
-python parallel_analyzer.py tests/fixtures/llm_agent_project --verbose
+python parallel_analyzer.py ../tests/fixtures/integration_real/llm_agent_project --verbose
 
 # Smart contract project
-python parallel_analyzer.py tests/fixtures/smart_contract_project --verbose
+python parallel_analyzer.py ../tests/fixtures/integration_real/smart_contract_project --verbose
 
 # Hybrid project
-python parallel_analyzer.py tests/fixtures/hybrid_project --verbose
+python parallel_analyzer.py ../tests/fixtures/integration_real/hybrid_project --verbose
 ```
 
 ## Performance
@@ -491,8 +491,8 @@ pip install -r requirements.txt
 2. Extend `BaseAnalyzer` abstract class
 3. Add detection patterns to `bba/constants.py`
 4. Add project type to `bba/models.py`
-5. Create test fixture in `tests/fixtures/<type>_project/`
-6. Add E2E test to `tests/test_universal_detection.py`
+5. Create test fixture in `tests/fixtures/integration_real/<type>_project/`
+6. Add a detection test to `tests/integration_real/test_universal_detection.py`
 7. Update this README
 
 ### Adding New Framework Support

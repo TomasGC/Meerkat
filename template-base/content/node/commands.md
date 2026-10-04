@@ -21,7 +21,6 @@ npx tsc --noEmit
 
 #### Scripts Test
 ```bash
-# Run from ~/.claude — separate invocations (namespace isolation)
-pytest ~/.claude/agents/black-box-analyzer/tests -m units
-pytest ~/.claude/scripts/tests ~/.claude/scripts/cli/tests -m units
+# Every Meerkat suite, one invocation, unit tier
+cd ~/.claude && python -m pytest -q -m unit
 ```

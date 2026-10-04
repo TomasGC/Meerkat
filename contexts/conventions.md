@@ -49,6 +49,23 @@ docs: document BBA analysis result cache
 
 ---
 
+## Test Layout
+
+One layout for every component (#46): agents, skills, plugins, `scripts/lib`, `scripts/cli`.
+
+```
+<component>/tests/{unit,integration_mock,integration_real,e2e,fixtures}/
+```
+
+- Tier directory name = marker name (`unit`, `integration_mock`, `integration_real`, `e2e`), applied by the
+  root `conftest.py`; no explicit tier marks in test files
+- Test data in `tests/fixtures/` (subdir per tier when useful), never inside a tier directory
+- Tests spanning several components: root `tests/<tier>/`
+- One `pytest.ini`, at the repo root; only conftests touch `sys.path`
+- Details: `contexts/tests.md`
+
+---
+
 ## Agent Conventions
 
 ### Model Configuration
@@ -61,7 +78,6 @@ docs: document BBA analysis result cache
 ### CCA (Clean Code Analyzer)
 - Default role: `analyzer` (semantic checkers: SOLID, KISS, YAGNI, CQRS, DDD, SLAP)
 - Fast mode: `--fast` passes `role="fast"` to checkers
-- Tests run from `~/.claude` together with every other suite (one invocation since #21), or alone from `agents/clean-code-analyzer/scripts/`
+- Tests run from `~/.claude` together with every other suite (one invocation since #21), or alone with `python -m pytest agents/clean-code-analyzer/tests`
 - Prompts in `scripts/prompts/local/` (6 templates) and `scripts/prompts/claude/` (6 fallback templates)
-- Test naming: `tests/unit/` (singular), `tests/integration/mock/`, `tests/integration/real/` — differs from the global `units/`/`integration-mocks/` convention
 
