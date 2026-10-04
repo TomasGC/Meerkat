@@ -7,14 +7,9 @@ mechanical findings, the AI pass, and proximity deduplication between the two.
 """
 
 import re
-import sys
 import time
 from pathlib import Path
 from typing import Callable
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.ai.model_utils import ModelCache, analyze_files_parallel, check_server_available
 from lib.config import language_config

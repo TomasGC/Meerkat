@@ -6,16 +6,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # the agent scripts dir
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
-
+from lib import paths
 from lib.engine.hybrid import run_hybrid
 from cca.model_utils import PROMPTS_DIR
 
 _PROMPT = "kiss_overengineering"
-_CALC_COMPLEXITY = Path.home() / ".claude/scripts/cli/calculate_complexity.py"
+_CALC_COMPLEXITY = paths.SCRIPTS / "cli" / "calculate_complexity.py"
 
 
 def _mechanical(path: Path, files: list | None) -> tuple[list[dict], int]:

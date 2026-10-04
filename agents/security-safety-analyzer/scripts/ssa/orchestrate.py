@@ -14,13 +14,7 @@ Usage:
   python orchestrate.py --path /project --clear-cache            # delete all cached results
 """
 
-import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # the agent scripts dir
-_GLOBAL_SCRIPTS = Path.home() / ".claude" / "scripts"
-if str(_GLOBAL_SCRIPTS) not in sys.path:
-    sys.path.append(str(_GLOBAL_SCRIPTS))
 
 from lib.engine.orchestrator import (  # noqa: F401 — re-exported for tests/unit/test_orchestrate.py
     _build_summary,
@@ -30,6 +24,7 @@ from lib.engine.orchestrator import (  # noqa: F401 — re-exported for tests/un
     _progress_bar,
     _run_checker,
 )
+from lib import paths
 from lib.engine.orchestrator import main as _engine_main
 
 CHECKERS: dict[str, str] = {
@@ -45,7 +40,7 @@ CHECKERS: dict[str, str] = {
     "prompt_injection": "ssa.checkers.check_prompt_injection",
 }
 
-_CACHE_DIR = Path.home() / ".claude" / "agents" / "security-safety-analyzer" / ".cache"
+_CACHE_DIR = paths.user_root() / "agents" / "security-safety-analyzer" / ".cache"
 
 
 def main() -> None:

@@ -2,12 +2,7 @@
 """File discovery, language detection, and git incremental utilities."""
 
 import subprocess
-import sys
 from pathlib import Path
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.config import language_config
 

@@ -13,7 +13,7 @@ import json
 import sys
 from pathlib import Path
 
-_SHARED = Path.home() / ".claude" / "scripts"
+_SHARED = Path(__file__).resolve().parents[3] / "scripts"  # this checkout's shared library
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 

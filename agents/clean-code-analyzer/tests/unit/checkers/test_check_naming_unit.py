@@ -1,14 +1,8 @@
 """Unit tests for checkers/check_naming.py — pure regex/grep, no Ollama."""
 
-from pathlib import Path
-import sys
 from unittest.mock import patch
 
 import pytest
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 import lib.engine.discovery as fu
 from cca.checkers.check_naming import run as run_naming

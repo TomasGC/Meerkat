@@ -3,12 +3,7 @@
 
 import ast
 import re
-import sys
 from pathlib import Path
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.engine.discovery import _SKIP_DIRS, _CLASS_LANG_EXTS
 from lib.engine.hybrid import run_hybrid

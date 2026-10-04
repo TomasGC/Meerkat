@@ -35,15 +35,10 @@ def get_validation_script_path(script_name: str) -> Optional[Path]:
     """
     script_dir = Path(__file__).parent
 
-    # Try current directory first
+    # Validation scripts sit beside this one, in this checkout
     local_path = script_dir / script_name
     if local_path.exists():
         return local_path
-
-    # Try ~/.claude/scripts/cli
-    global_path = Path.home() / ".claude" / "scripts" / "cli" / script_name
-    if global_path.exists():
-        return global_path
 
     return None
 

@@ -19,7 +19,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
 
-_SCRIPTS_DIR = Path.home() / ".claude" / "scripts"
+_SCRIPTS_DIR = Path(__file__).resolve().parents[3]  # this checkout's scripts/
 sys.path.insert(0, str(_SCRIPTS_DIR))
 from lib.config.model_config import get_model as _get_model
 _DEFAULT_MODEL = _get_model("fast")

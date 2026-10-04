@@ -3,14 +3,15 @@
 
 import json
 import pytest
-from pathlib import Path
+
+from lib import paths
 
 
 class TestDelegationRouter:
 
     @pytest.fixture
     def delegation_rules(self):
-        rules_file = Path.home() / ".claude" / "configs" / "delegation-rules.json"
+        rules_file = paths.CONFIGS / "delegation-rules.json"
         if not rules_file.exists():
             pytest.skip("Delegation rules not found")
         with open(rules_file) as f:

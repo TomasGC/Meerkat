@@ -8,9 +8,10 @@ import json
 import shutil
 from pathlib import Path
 
-_CLAUDE_DIR = Path.home() / ".claude"
-_CONFIG_PATH = _CLAUDE_DIR / "configs" / "local_models_config.json"
-_TEMPLATE_PATH = _CLAUDE_DIR / "configs" / "template_models_config.json"
+from .. import paths  # relative: reached from lib/__init__ (see lib/integrations.py)
+
+_CONFIG_PATH = paths.user_configs() / "local_models_config.json"
+_TEMPLATE_PATH = paths.CONFIGS / "template_models_config.json"
 
 # Singleton — loaded once at import time
 _config: dict = {}

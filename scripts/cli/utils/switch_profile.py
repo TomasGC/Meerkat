@@ -11,6 +11,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from lib import paths
 from lib.cli.base import BaseCLIScript
 from lib.integrations import list_profiles, load_integrations, switch_profile
 
@@ -34,7 +35,7 @@ class SwitchProfileScript(BaseCLIScript):
 
     def execute(self, args) -> dict[str, Any]:
         """Execute profile switch."""
-        integrations_dir = Path.home() / ".claude" / "integrations"
+        integrations_dir = paths.user_root() / "integrations"
 
         if not integrations_dir.exists():
             return {

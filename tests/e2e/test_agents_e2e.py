@@ -10,11 +10,12 @@ These tests validate agent → scripts delegation and autonomous execution.
 
 import json
 import subprocess
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 import sys
 
 import pytest
+
+from lib import paths
 
 
 pytestmark = pytest.mark.e2e_agents
@@ -70,7 +71,7 @@ func setupRoutes(router *gin.Engine) {
 }
 """)
 
-    extractor = Path.home() / ".claude/agents/black-box-analyzer/scripts/extract_api_endpoints.py"
+    extractor = paths.AGENTS / "black-box-analyzer" / "scripts" / "extract_api_endpoints.py"
     result = subprocess.run(
         [sys.executable, str(extractor), str(tmp_path), "--language", "go"],
         capture_output=True,

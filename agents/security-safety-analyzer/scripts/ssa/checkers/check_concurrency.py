@@ -2,11 +2,8 @@
 """Concurrency checker — pattern-based thread-safety scan plus AI race detection."""
 
 import re
-import sys
 import time
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # the agent scripts dir
 
 from ssa.dedup import drop_near_duplicates, format_known_findings
 from ssa.hybrid import resolve_language, select_files

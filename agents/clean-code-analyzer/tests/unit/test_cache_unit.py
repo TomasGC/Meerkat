@@ -8,12 +8,6 @@ from unittest.mock import patch
 
 import pytest
 
-import sys
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
-
 import lib.engine.cache as cache_mod
 
 

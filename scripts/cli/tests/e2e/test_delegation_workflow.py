@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import time
 
+from lib import paths
+
 
 class TestDelegationWorkflow:
 
@@ -22,7 +24,7 @@ class TestDelegationWorkflow:
     def test_format_code_workflow(self, temp_project):
         test_file = temp_project / "src" / "main.py"
         result = subprocess.run(
-            ["python", str(Path.home() / ".claude" / "scripts" / "cli" / "format_code.py"),
+            ["python", str(paths.SCRIPTS / "cli" / "format_code.py"),
              "--file", str(test_file), "--language", "python"],
             capture_output=True, text=True, timeout=10,
             encoding="utf-8", errors="replace"
@@ -47,7 +49,7 @@ class TestDelegationWorkflow:
 
         try:
             result = subprocess.run(
-                ["python", str(Path.home() / ".claude" / "scripts" / "delegators" / "profile_endpoint.py"),
+                ["python", str(paths.SCRIPTS / "delegators" / "profile_endpoint.py"),
                  "--url", "http://localhost:8889/health", "--duration", "2", "--requests-per-second", "5"],
                 capture_output=True, text=True, timeout=10,
                 encoding="utf-8", errors="replace"
@@ -80,7 +82,7 @@ class TestDelegationWorkflow:
                                 "delegation_enabled": True}) + "\n")
 
         result = subprocess.run(
-            ["python", str(Path.home() / ".claude" / "scripts" / "cli" / "delegation_stats.py")],
+            ["python", str(paths.SCRIPTS / "cli" / "delegation_stats.py")],
             capture_output=True, text=True, timeout=10,
             encoding="utf-8", errors="replace"
         )

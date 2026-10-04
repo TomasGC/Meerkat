@@ -3,17 +3,10 @@
 import http.client
 import json
 import subprocess
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-
-# Import the shared module (the shim re-exports it; patch targets are in the shared module)
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.append(str(_SHARED))
 
 import lib.ai.model_utils as mu
 from lib.ai.model_utils import (

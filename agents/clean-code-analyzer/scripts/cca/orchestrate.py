@@ -14,13 +14,7 @@ Usage:
 """
 
 import os
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # the agent scripts dir
-_GLOBAL_SCRIPTS = Path.home() / ".claude" / "scripts"
-if str(_GLOBAL_SCRIPTS) not in sys.path:
-    sys.path.append(str(_GLOBAL_SCRIPTS))
 
 from lib.engine.orchestrator import (  # noqa: F401 — re-exported for tests/unit/test_orchestrate_unit.py
     _build_summary,
@@ -30,6 +24,7 @@ from lib.engine.orchestrator import (  # noqa: F401 — re-exported for tests/un
     _progress_bar,
     _run_checker,
 )
+from lib import paths
 from lib.engine.orchestrator import main as _engine_main
 
 # SQL files (#42): comments and naming analyze them (FILE_KINDS includes "query").
@@ -53,7 +48,7 @@ CHECKERS: dict[str, str] = {
     "inheritance": "cca.checkers.check_inheritance",
 }
 
-_CACHE_DIR = Path.home() / ".claude" / "agents" / "clean-code-analyzer" / ".cache"
+_CACHE_DIR = paths.user_root() / "agents" / "clean-code-analyzer" / ".cache"
 _CACHE_ENV_VAR = "CCA_CACHE_DIR"
 
 

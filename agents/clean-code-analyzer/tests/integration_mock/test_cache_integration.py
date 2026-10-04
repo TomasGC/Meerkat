@@ -4,14 +4,8 @@ import os
 import time
 from pathlib import Path
 from unittest.mock import patch
-import sys
 
 import pytest
-
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 import lib.engine.cache as cache_mod
 

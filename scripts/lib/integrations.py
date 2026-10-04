@@ -10,6 +10,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+# Relative: lib/__init__ imports this module, sometimes under another package name (pytest's importlib
+# mode loads it as scripts.lib before any conftest has put scripts/ on sys.path).
+from . import paths
+
 
 @dataclass
 class IntegrationConfig:
@@ -27,8 +31,8 @@ class IntegrationConfig:
 
 
 def _get_integrations_dir() -> Path:
-    """Get integrations directory."""
-    return Path.home() / ".claude" / "integrations"
+    """Get integrations directory: the user's profiles, under MEERKAT_HOME or this checkout."""
+    return paths.user_root() / "integrations"
 
 
 def _get_active_profile() -> str:

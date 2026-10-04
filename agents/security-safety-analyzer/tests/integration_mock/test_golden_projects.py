@@ -5,14 +5,8 @@ replaced. Regenerate with scripts/cli/update_golden.py --agent ssa.
 SSA's orchestrator passes no cache_dir to its checkers, so there is no cache round-trip test.
 """
 
-import sys
-from pathlib import Path
 
 import pytest
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.testing import golden  # noqa: E402
 

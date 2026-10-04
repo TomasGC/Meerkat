@@ -8,10 +8,6 @@ from pathlib import Path
 
 import pytest
 
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
-
 from lib.testing import golden  # noqa: E402
 
 _ORCHESTRATE = Path(__file__).resolve().parents[2] / "scripts" / "orchestrate.py"

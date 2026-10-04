@@ -2,6 +2,7 @@
 
 import json
 import subprocess
+import os
 import sys
 from pathlib import Path
 
@@ -266,17 +267,18 @@ def test_top_n_limits_output(dirty_project):
     assert len(data["violations"]) <= 1
 
 
-def test_clear_cache_flag_exits_zero():
+def test_clear_cache_flag_exits_zero(tmp_path):
     """--clear-cache exits 0 and reports cleared entries."""
-    # Pre-populate a fake cache entry so there's something to clear
-    cache_dir = Path.home() / ".claude" / "agents" / "clean-code-analyzer" / ".cache"
-    cache_dir.mkdir(parents=True, exist_ok=True)
+    # Pre-populate a fake cache entry so there's something to clear, in a cache the run is pointed at
+    cache_dir = tmp_path / "cca-cache"
+    cache_dir.mkdir()
     fake_entry = cache_dir / "_test_fake_entry.json"
     fake_entry.write_text("[]")
 
     result = subprocess.run(
         [sys.executable, str(SCRIPTS_DIR / "orchestrate.py"), "--clear-cache"],
         capture_output=True, text=True, timeout=10,
+        env={**os.environ, "CCA_CACHE_DIR": str(cache_dir)},
     )
     assert result.returncode == 0
     assert not fake_entry.exists(), "Fake cache entry was not deleted"
