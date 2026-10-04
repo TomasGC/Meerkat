@@ -350,7 +350,8 @@ def run_agent(
 
 
 def _posix_rel(file: str, root: Path | None) -> str:
-    p = Path(file)
+    # A Windows-style separator is a separator on every OS: on POSIX, Path(r"pkg\a.py") is one file name.
+    p = Path(file.replace("\\", "/"))
     if root is not None and p.is_absolute():
         try:
             p = p.resolve().relative_to(Path(root).resolve())
