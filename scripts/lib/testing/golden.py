@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Golden fixture projects — run an agent end to end with recorded AI responses.
 
-Layout, rooted at ~/.claude/fixtures/:
+Layout, rooted at fixtures/ of this checkout (lib.paths.FIXTURES):
 
     projects/<project>/<source files>               scanned by the agents — sources only
     golden/<project>/expected/<agent>.json          {"agent", "project", "violations", "reconciliation"}
@@ -31,15 +31,11 @@ from contextlib import ExitStack
 from pathlib import Path
 from unittest import mock
 
-_SCRIPTS = Path(__file__).resolve().parents[2]
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
+import lib.ai.model_utils as _model_utils
+import lib.engine.dedup as _dedup
+import lib.engine.orchestrator as _orchestrator
+from lib import paths
 
-import lib.ai.model_utils as _model_utils  # noqa: E402
-import lib.engine.dedup as _dedup  # noqa: E402
-import lib.engine.orchestrator as _orchestrator  # noqa: E402
-
-_CLAUDE_ROOT = _SCRIPTS.parent
 _MAX_CHARS = 8000  # analyze_files_async's default chunk size
 
 # agent -> (agent directory, app name, label, max workers) — mirrors each agent's orchestrate.main()
@@ -64,11 +60,11 @@ class ReplayError(AssertionError):
 
 
 def projects_root() -> Path:
-    return _CLAUDE_ROOT / "fixtures" / "projects"
+    return paths.FIXTURES / "projects"
 
 
 def golden_root() -> Path:
-    return _CLAUDE_ROOT / "fixtures" / "golden"
+    return paths.FIXTURES / "golden"
 
 
 def project_path(name: str | Path) -> Path:
@@ -83,7 +79,7 @@ def golden_path(project: str | Path, golden_dir: Path | None = None) -> Path:
 def agent_scripts_dir(agent: str) -> Path:
     if agent not in AGENTS:
         raise ValueError(f"unknown agent {agent!r}; expected one of {sorted(AGENTS)}")
-    return _CLAUDE_ROOT / "agents" / AGENTS[agent][0] / "scripts"
+    return paths.AGENTS / AGENTS[agent][0] / "scripts"
 
 
 def project_names() -> list[str]:
@@ -354,7 +350,8 @@ def run_agent(
 
 
 def _posix_rel(file: str, root: Path | None) -> str:
-    p = Path(file)
+    # A Windows-style separator is a separator on every OS: on POSIX, Path(r"pkg\a.py") is one file name.
+    p = Path(file.replace("\\", "/"))
     if root is not None and p.is_absolute():
         try:
             p = p.resolve().relative_to(Path(root).resolve())

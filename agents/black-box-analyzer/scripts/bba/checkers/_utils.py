@@ -7,15 +7,8 @@ tests, so it cannot judge a file that has some — it names the functions that
 most need one. Both layers report on every run; the engine reconciles them.
 """
 
-import sys
 from pathlib import Path
 from typing import Callable
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # the agent scripts dir
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from bba.model_utils import PROMPTS_DIR
 from lib.config import language_config

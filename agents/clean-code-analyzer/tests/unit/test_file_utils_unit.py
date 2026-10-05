@@ -2,15 +2,8 @@
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import sys
 
 import pytest
-
-
-# Add scripts to path for lib imports
-_SCRIPTS = Path.home() / ".claude" / "scripts"
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
 
 import lib.engine.discovery as fu
 from lib.engine.discovery import get_changed_files, get_staged_files, dominant_language, read_file_safe

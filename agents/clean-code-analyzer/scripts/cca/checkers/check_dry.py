@@ -6,12 +6,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
+from lib import paths
 from lib.engine.hybrid import run_hybrid
 
-_FIND_DUPLICATES = Path.home() / ".claude/scripts/cli/find_duplicates.py"
+_FIND_DUPLICATES = paths.SCRIPTS / "cli" / "find_duplicates.py"
 
 
 def _mechanical(path: Path, files: list | None) -> tuple[list[dict], int] | dict:

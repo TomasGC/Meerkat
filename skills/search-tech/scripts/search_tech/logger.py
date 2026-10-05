@@ -7,12 +7,6 @@ one implementation (#22). `MetricsCollector` stays here: its counters are the
 search summary printed by every search script with `--verbose`.
 """
 
-import sys
-from pathlib import Path
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.logger import ColoredFormatter, setup_logger  # noqa: E402,F401 — re-exported
 

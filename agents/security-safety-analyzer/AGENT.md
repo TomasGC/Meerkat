@@ -135,8 +135,8 @@ AI-sourced violations carry a `[TYPE]: description` message prefix; mechanical o
 ```bash
 cd ~/.claude/agents/security-safety-analyzer
 python -m pytest tests/unit/ -q
-python -m pytest tests/integration_mock/ -q --ignore=tests/integration_mock/test_orchestrate.py   # test_orchestrate.py calls the live AI
-python -m pytest tests/integration_real/ -q                  # prompt rendering + live AI paths
+python -m pytest tests/integration_mock/ -q
+python -m pytest tests/integration_real/ -q                  # prompt rendering + live AI paths (live_ai: needs the server)
 python -m pytest tests/e2e/ -q
 ```
 

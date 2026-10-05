@@ -2,12 +2,7 @@
 """Comments checker — TODO/FIXME, commented-out code, explain-WHAT comments."""
 
 import re
-import sys
 from pathlib import Path
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.config import language_config
 from lib.engine.discovery import _SKIP_DIRS, _ALL_EXTENSIONS, _HASH_COMMENT_EXTS, is_hash_comment_file

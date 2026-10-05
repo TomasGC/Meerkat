@@ -2,12 +2,7 @@
 """Law of Demeter checker — grep/AST for deep method/property chains."""
 
 import re
-import sys
 from pathlib import Path
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.engine.discovery import _SKIP_DIRS, _ALL_EXTENSIONS
 from lib.engine.hybrid import run_hybrid

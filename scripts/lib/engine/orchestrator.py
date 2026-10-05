@@ -18,10 +18,6 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
-
 from lib.config import language_config
 from lib.engine.cache import clear_cache
 from lib.engine.discovery import (

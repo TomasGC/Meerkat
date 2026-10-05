@@ -2,10 +2,7 @@
 """Security misconfiguration checker (OWASP A05) — permissive defaults and debug settings."""
 
 import re
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # the agent scripts dir
 
 from ssa.hybrid import run_hybrid
 

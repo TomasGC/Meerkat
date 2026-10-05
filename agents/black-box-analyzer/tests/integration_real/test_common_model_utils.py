@@ -15,6 +15,7 @@ def _requires_local_ai():
         pytest.skip("Local AI model not available")
 
 
+@pytest.mark.live_ai
 def test_real_call_model_returns_text():
     _requires_local_ai()
     result = call_model("Reply with the single word: pong", role="fast", timeout=60)
@@ -22,6 +23,7 @@ def test_real_call_model_returns_text():
     assert len(result) > 0
 
 
+@pytest.mark.live_ai
 def test_real_run_prompt_formats_and_returns(tmp_path):
     _requires_local_ai()
     prompt_file = tmp_path / "trivial.prompt"
@@ -31,6 +33,7 @@ def test_real_run_prompt_formats_and_returns(tmp_path):
     assert len(result.strip()) > 0
 
 
+@pytest.mark.live_ai
 def test_real_run_prompt_missing_file_returns_none(capsys):
     _requires_local_ai()
     result = run_prompt("definitely_does_not_exist_prompt", PROMPTS_DIR, role="fast", timeout=10)
@@ -38,6 +41,7 @@ def test_real_run_prompt_missing_file_returns_none(capsys):
     assert "not found" in capsys.readouterr().err
 
 
+@pytest.mark.live_ai
 def test_real_analyze_file_with_model_returns_list(tmp_path):
     _requires_local_ai()
     src = tmp_path / "sample.py"
@@ -50,6 +54,7 @@ def test_real_analyze_file_with_model_returns_list(tmp_path):
     assert isinstance(result, list)
 
 
+@pytest.mark.live_ai
 def test_real_infer_test_type_via_local_ai():
     _requires_local_ai()
     from parse_test_files import infer_test_type

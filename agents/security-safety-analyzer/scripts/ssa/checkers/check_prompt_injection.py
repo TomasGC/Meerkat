@@ -2,11 +2,8 @@
 """Prompt injection checker — grep for unsanitized user data in LLM calls + AI deep scan."""
 
 import re
-import sys
 import time
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # the agent scripts dir
 
 from ssa.hybrid import resolve_language, select_files
 from ssa.model_utils import analyze_files_parallel, check_server_available, PROMPTS_DIR

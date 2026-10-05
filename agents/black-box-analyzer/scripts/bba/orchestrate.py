@@ -26,11 +26,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # the agent scripts dir
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
-
 from bba.cache import AnalysisCache, _cache_home, clear_model_cache
 from lib.engine.cache import clear_cache
 

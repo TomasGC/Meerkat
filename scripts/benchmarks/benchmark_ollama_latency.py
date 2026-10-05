@@ -280,7 +280,7 @@ def main():
         "--output",
         type=Path,
         help="Output JSON file",
-        default=Path.home() / ".claude" / "scripts" / "benchmarks" / "benchmark_results.json",
+        default=Path(__file__).resolve().parent / "benchmark_results.json",
     )
     parser.add_argument(
         "--skip-cold",

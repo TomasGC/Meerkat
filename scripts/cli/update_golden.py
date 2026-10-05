@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Regenerate golden expected files for the fixture projects under replay.
 
-Runs the agent's real pipeline over ~/.claude/fixtures/projects/<project>, with
-every model call served from ~/.claude/fixtures/golden/<project>/ai_responses/<agent>/,
-and writes the result to ~/.claude/fixtures/golden/<project>/expected/<agent>.json.
+Runs the agent's real pipeline over fixtures/projects/<project> of this checkout, with
+every model call served from fixtures/golden/<project>/ai_responses/<agent>/,
+and writes the result to fixtures/golden/<project>/expected/<agent>.json.
 
 The script puts the chosen agent's scripts dir on sys.path itself, so it can
 be launched from any directory, e.g.:

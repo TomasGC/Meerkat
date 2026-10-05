@@ -1,16 +1,8 @@
 """Tests for file_utils — discovery, language detection, git incremental helpers."""
 
-import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-
-# Add scripts to path for lib imports
-_SCRIPTS = Path.home() / ".claude" / "scripts"
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
 
 from lib.engine.discovery import (
     _DISCOVERY_CACHE,

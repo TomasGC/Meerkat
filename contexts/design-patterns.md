@@ -1,7 +1,7 @@
 # Design Patterns - Meerkat
 
 **Purpose**: Design patterns applied across the Meerkat codebase
-**Last Updated**: 2026-10-04
+**Last Updated**: 2026-10-05
 
 ---
 
@@ -47,6 +47,8 @@
 40. **No Reader, No Metric (#22)** — three `MetricsCollector` copies were kept in sync on paper, but only search-tech's counters were ever shown (`--verbose` summary). The CLI scripts' `track()` calls (39 of them) and BBA's collector were written and discarded at exit. Removing them settled the "reconcile the API" question: the unification problem disappears with the dead code. Before reconciling two implementations, check that both have a consumer
 37. **A Safe Twin for Every Pattern Rule** — each SQL rule ships with a negative test written as the parameterized form of the same statement (`sp_executesql @sql, N'@id INT', @id`, `format('%I', …)`, `EXECUTE … USING`). Pattern rules fail by over-matching, and the safe form is the one real code uses most
 41. **The Directory Is the Tier (#46)** — a test's tier is the directory right under its `tests/`, and the marker carries the same name, applied by one root-conftest rule. Before, two directory conventions mapped onto marker names matching neither, and 186 tests sat in no tier directory: a marker-selected CI job (`-m unit`) would have skipped them without a word. With no other way to get a tier, the four tier runs are disjoint and add up to the full collection, which is the check that proves it
+42. **Code Follows the Checkout, User Data Follows MEERKAT_HOME (#2)** — `lib.paths.CHECKOUT` is derived from `__file__`, so code, config templates and fixtures always come from the checkout that is running; only the user's own files (local configs, integration profiles, caches) follow `MEERKAT_HOME`. An override for code would recreate the bug it replaces: a clone importing another tree's library. The sys.path bootstrap lives once per agent package, in `__init__`, because every module of the package is imported through it
+43. **Prove a Marker by Removing What It Guards (#2)** — `live_ai` is only trustworthy if `-m "not live_ai"` really never needs the model. The check is to make the model unreachable (`MEERKAT_HOME` with `local.base_url` on a dead port) and run every tier: an unmarked AI caller then fails instead of quietly passing against the developer's server
 32. **Priority Lives in an Ordered List, Not in Per-Item Fields** — when "first match wins" matters, store it as a JSON array (`project_indicators: [{language, markers}]`) rather than a field on each language or an object keyed by name. JSON objects are unordered by spec, a per-language field would inherit the language table's unrelated order (it would have flipped a Go+Python project to Python), and the list can name entries the main table must not contain (`solidity` would have entered every agent's file discovery)
 
 ---

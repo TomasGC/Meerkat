@@ -3,12 +3,7 @@
 
 import ast
 import re
-import sys
 from pathlib import Path
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.engine.discovery import _SKIP_DIRS, _ALL_EXTENSIONS, _TEST_MARKERS
 from lib.engine.hybrid import run_hybrid
@@ -37,7 +32,6 @@ _BOOL_EXEMPT_NAMES = frozenset({"run", "execute", "start", "stop", "init", "setu
 
 _ALLOWED_SHORT = {"id", "db", "ok", "err", "ctx", "req", "res", "ip", "os", "io",
                   "fn", "cb", "dt", "ts", "pk", "fk", "ui", "ux", "vm", "fs"}
-
 
 
 def _is_test_file(path: Path) -> bool:

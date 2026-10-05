@@ -86,7 +86,7 @@ def step_reportgenerator(
 ) -> bool:
     """Run ReportGenerator to produce HTML report."""
     rg = shutil.which("reportgenerator")
-    if not rg:
+    if not rg and shutil.which("dotnet"):
         # Try dotnet tool
         result = subprocess.run(
             ["dotnet", "tool", "list", "--global"],

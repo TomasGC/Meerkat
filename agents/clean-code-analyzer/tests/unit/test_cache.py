@@ -1,15 +1,8 @@
 """Tests for the per-file result cache."""
 
 import json
-import sys
-from pathlib import Path
 
 import pytest
-
-
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.engine.cache import clear_cache, get_cached, set_cached
 

@@ -7,6 +7,7 @@ from textwrap import dedent
 import pytest
 
 from cli.read_yaml_frontmatter import extract_frontmatter, parse_yaml_simple
+from lib import paths
 from lib.utils import write_file_safe
 
 def test_extract_frontmatter_valid(tmp_path):
@@ -130,7 +131,7 @@ def test_parse_yaml_simple_empty_value():
 def test_extract_frontmatter_real_skill_file():
     """Test extraction with real skill file (if available)."""
     # Look for a real skill file
-    skill_dirs = Path.home() / ".claude" / "skills"
+    skill_dirs = paths.CHECKOUT / "skills"
 
     if not skill_dirs.exists():
         pytest.skip("No skills directory found")

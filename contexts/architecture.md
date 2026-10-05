@@ -4,7 +4,7 @@
 
 **Direction**: support for other assistants (Codex, others) is planned. Keep the assistant-agnostic core (`scripts/lib/`) separate from the Claude Code host layer (`CLAUDE.md`, skills, hooks, `AGENT.md`, `settings.json`); name the role ("the coding assistant"), not the product, in docs and new designs.
 
-**Last Updated**: 2026-10-04
+**Last Updated**: 2026-10-05
 
 ---
 
@@ -77,6 +77,7 @@ Local AI  Scripts  Agents
 │   │   ├── agents/task_monitor/
 │   │   └── utils/switch_profile.py
 │   ├── lib/                         # Shared library — importable by scripts, skills, plugins, agents
+│   │   ├── paths.py                 # CHECKOUT (code, templates, fixtures) + user_root() (MEERKAT_HOME or CHECKOUT)
 │   │   ├── ai/                      # model_utils — local AI client
 │   │   ├── config/                  # model_config (roles) + language_config (languages, skip dirs, standards)
 │   │   ├── logger.py                # the one logging implementation (ColoredFormatter, setup_logger)

@@ -1,8 +1,6 @@
 """Thread safety stress tests for orchestrate.py concurrent callbacks."""
 import threading
 import pytest
-import sys
-from pathlib import Path
 
 
 def make_fake_result(principle: str, n_violations: int) -> dict:
@@ -96,11 +94,7 @@ def test_concurrent_deduplication_stable():
 def test_cache_concurrent_writes_no_corruption(tmp_path):
     """Multiple threads writing different cache entries don't corrupt each other."""
     import threading
-    from pathlib import Path
 
-    _SHARED = Path.home() / ".claude" / "scripts"
-    if str(_SHARED) not in sys.path:
-        sys.path.insert(0, str(_SHARED))
     from lib.engine.cache import set_cached, get_cached
 
     cache_dir = tmp_path / ".cache"

@@ -41,7 +41,7 @@ cd ~/.claude/agents/security-safety-analyzer
 python -m pytest tests/unit/ -q
 python -m pytest tests/integration_mock/ -q
 python -m pytest tests/e2e/ -q
-python -m pytest tests/ -q -m "not integration_real" --ignore=tests/integration_mock/test_orchestrate.py   # CI-safe (test_orchestrate.py calls live AI)
+python -m pytest tests/ -q -m "not live_ai"                       # CI-safe
 python -m pytest tests/integration_real/ -q                          # prompt rendering + live AI
 ```
 
@@ -177,7 +177,8 @@ In root `testpaths` since #21: its package is `search_tech/`, which collides wit
 ## Language Configuration
 
 `configs/template_languages_config.json` — committed default, 21 languages.
-`configs/local_languages_config.json` — auto-copied on first import, gitignored, user-editable.
+`configs/local_languages_config.json` — auto-copied on first import, gitignored, user-editable. Like every user file
+(local configs, `integrations/`, agent caches) it lives under `MEERKAT_HOME` when set, else in the checkout (#2).
 
 ```python
 from lib.config import language_config
@@ -231,11 +232,9 @@ python -m pytest tests -q                               # cross-component suites
 
 ### Everything, one invocation (#21)
 ```bash
-cd ~/.claude
-python -m pytest -q -m "not integration_real" \
-  --ignore=agents/security-safety-analyzer/tests/integration_mock/test_orchestrate.py \
-  --deselect "agents/clean-code-analyzer/tests/e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates"
-python -m pytest -q -m integration_real     # live AI tier
+cd ~/.claude        # or any clone: nothing reads ~/.claude (#2)
+python -m pytest -q -m "not live_ai"
+python -m pytest -q -m live_ai             # live AI tests, whatever their tier
 ```
 
 ---

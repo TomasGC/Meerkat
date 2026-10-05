@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 """SLAP checker — local AI detects mixed abstraction levels."""
 
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # the agent scripts dir
-_SHARED = Path.home() / ".claude" / "scripts"
-if str(_SHARED) not in sys.path:
-    sys.path.insert(0, str(_SHARED))
 
 from lib.engine.hybrid import run_hybrid
 from cca.model_utils import check_server_available, PROMPTS_DIR
