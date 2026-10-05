@@ -65,8 +65,8 @@
 │   └── security-safety-analyzer/tests/
 │       ├── conftest.py             # sys.path → ../scripts
 │       ├── unit/                   # 415 — 10 checkers, SQL rules, hybrid driver, dedup, cache, file_utils, orchestrate
-│       ├── integration_mock/       # 36 — real filesystem, AI mocked at two seams; test_golden_projects.py
-│       ├── integration_real/       # 25 — prompt slot rendering (no server) + live AI per checker
+│       ├── integration_mock/       # 32 — real filesystem, AI mocked at two seams; test_golden_projects.py
+│       ├── integration_real/       # 29 — prompt slot rendering (no server) + live AI per checker, test_orchestrate_live.py
 │       └── e2e/                    # 10 — orchestrate.py CLI, output shaping flags
 │
 ├── skills/search-tech/tests/
@@ -96,16 +96,14 @@
 
 ## One Invocation for Every Suite (#21)
 
-Every suite runs from `~/.claude` in one pytest invocation:
+Every suite runs from the checkout root in one pytest invocation, any checkout (#2):
 
 ```bash
-cd ~/.claude
-python -m pytest -q -m "not integration_real" \
-  --ignore=agents/security-safety-analyzer/tests/integration_mock/test_orchestrate.py \
-  --deselect "agents/clean-code-analyzer/tests/e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates"
+python -m pytest -q -m "not live_ai"
 ```
 
-One tier at a time: `python -m pytest -q -m unit` (or `integration_mock`, `integration_real`, `e2e`).
+One tier at a time: `python -m pytest -q -m "unit and not live_ai"` (or `integration_mock`, `integration_real`, `e2e`): what CI runs.
+The live-AI tier: `python -m pytest -q -m live_ai`.
 One component: `python -m pytest <component>/tests`, from any directory inside the repo (the root
 `pytest.ini` is found upward).
 
@@ -120,6 +118,10 @@ What makes it work, and what keeps it working:
   the moment it moves; worse, `scripts/lib` on the path makes `lib/cli` shadow `scripts/cli` for every test after it.
 - Tests import `from .conftest` nowhere: shared test switches are markers (`@pytest.mark.live_ai`) that a
   conftest turns into skips.
+- **Every test that reaches the model server or the Ollama CLI carries `live_ai`**, whatever its tier, so
+  `-m "not live_ai"` never calls the model. Proof (#2): every tier passes with `local.base_url` pointed at an
+  unreachable port through `MEERKAT_HOME`. A new AI-calling test without the marker breaks CI on a runner
+  with no server, which is the point.
 - The AI client holds no cache state: each agent's `model_utils` shim passes its own `CACHE` on every call, so
   loading three agents in one process cannot make one read another's cache.
 
@@ -129,6 +131,7 @@ Each `<component>/tests/conftest.py` puts the component's source root on `sys.pa
 
 ```python
 # agents/<NAME>/tests/conftest.py, skills/<NAME>/tests/conftest.py
+sys.path.insert(0, str(Path(__file__).parents[3] / "scripts"))  # this checkout's shared library
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 # scripts/lib/tests/conftest.py, scripts/cli/tests/conftest.py
@@ -209,25 +212,34 @@ Rules:
 
 ---
 
-## Known Environmental Exclusions
+## Slow Live-AI Tests
 
-With the local model mostly offloaded to CPU, two tests can exceed their limits; exclude them, don't "fix" them:
-- SSA `tests/integration_mock/test_orchestrate.py` — runs a full orchestrate.py against the live AI with no timeout
-  (`--ignore` it). Despite the tier name it is not mocked (#36).
+With the local model mostly offloaded to CPU, two `live_ai` tests run long; both are bounded, so a slow model fails
+them instead of hanging the session:
+- SSA `tests/integration_real/test_orchestrate_live.py` — full orchestrate.py runs, 30 minutes each. It sat in the
+  mock tier with no timeout until #36.
 - CCA `tests/e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates` — 300s limit; passes in
   ~193s when the GPU is free.
 
-## Worktrees and Clones Are Not Faithful
+## Clones and Worktrees Are Faithful (#2)
 
-Checkers and shims insert `~/.claude/scripts` as the shared-library path, so tests run in a git worktree import
-the **main checkout's** `lib/`, not the worktree's. Compare a worktree run against pristine `main` in a worktree,
-never against the main checkout.
+Nothing locates the repository through `~/.claude` any more. `scripts/lib/paths.py` resolves it from its own file:
+- `CHECKOUT` — code, config templates, fixtures: always the checkout the code was imported from.
+- `user_root()` — the user's data: `configs/local_*_config.json`, `integrations/`, the CCA and SSA caches. It is
+  `CHECKOUT` unless `MEERKAT_HOME` points elsewhere, read on every call.
 
-A fresh clone anywhere other than `~/.claude` is worse: `scripts/lib/testing/golden.py` resolves agents under
-`~/.claude/agents/`, so a golden test run from the clone imports the clone's agent package and then the real
-checkout's agent, and stops with "`cca` already imported from …, not from …". To check what a fresh
-clone contains (#34: prompt templates), inspect the files directly instead of running the suites there. A CI
-runner (#2) checks out elsewhere too, so the hardcoded path has to go before CI can run these tests.
+Each agent package (`cca`, `ssa`, `bba`, `search_tech`) puts this checkout's `scripts/` on `sys.path` once, in its
+`__init__`, derived from `__file__`; entry scripts that import `lib` before any package do the same in one line.
+So a worktree, a clone or a CI runner tests its own code, and `test_paths.py` fails if any module of the repo's
+own packages (`lib`, `cli`, `cca`, `ssa`, `bba`, `search_tech`) is loaded from outside the checkout.
+
+Proof (#2): a clone in `C:\dev\tmp`, with `HOME` and `USERPROFILE` pointed at an empty directory (on Windows
+`Path.home()` reads `USERPROFILE`), passes the CI-safe run; local configs are created in the clone and the
+`~/.claude` worktree is untouched. A `python:3.12` container passes the four tiers from a fresh clone.
+
+Still host paths, on purpose: `~/.claude/logs/delegation-stats.jsonl` (written by the `hooks.json` hook) and
+`~/.cache/*` (search-tech, BBA). Inside `lib/`, modules reached from `lib/__init__` import `paths` relatively:
+pytest's importlib mode loads `scripts/lib` as `scripts.lib` before any conftest has put `scripts/` on the path.
 
 ## Prompt Templates Are Tracked
 
