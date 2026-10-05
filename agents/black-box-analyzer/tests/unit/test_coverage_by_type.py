@@ -233,3 +233,76 @@ def test_generate_markdown_progress_bar(sample_scenarios_json, sample_tests_json
     result = analyze_by_type(scenarios, tests)
     md = generate_markdown(result)
     assert "█" in md or "░" in md
+
+
+def _scenario_dicts(n: int) -> list[dict]:
+    return [
+        {
+            "endpoint": f"/r{i}",
+            "method": "GET",
+            "input_combination": {},
+            "expected_output": 200,
+            "scenario_type": "happy_path",
+            "description": f"scenario {i}",
+        }
+        for i in range(n)
+    ]
+
+
+def test_load_tests_invalid_tested_method_becomes_none(temp_dir):
+    data = {
+        "tests": [{"name": "t", "file_path": "t.py", "line_number": 1, "framework": "pytest", "tested_method": "FETCH"}]
+    }
+    f = temp_dir / "t.json"
+    f.write_text(json.dumps(data))
+    assert _load_tests(f)[0].tested_method is None
+
+
+def test_generate_markdown_lists_blind_spots_and_truncates_long_tables(temp_dir):
+    sf = temp_dir / "s.json"
+    sf.write_text(json.dumps({"scenarios": _scenario_dicts(105)}))
+    result = analyze_by_type(_load_scenarios(sf), [])
+    md = generate_markdown(result)
+    assert "### Uncovered scenarios (105)" in md
+    assert "*55 more rows omitted*" in md
+    assert "## Absolute Blind Spots (105)" in md
+    assert "| `GET /r0` | happy_path | scenario 0 |" in md
+    assert "*5 more rows omitted*" in md
+
+
+# ── main ──────────────────────────────────────────────────────────────────────
+
+
+def _run_main(monkeypatch, *argv):
+    import coverage_by_type
+
+    monkeypatch.setattr("sys.argv", ["coverage_by_type.py", *map(str, argv)])
+    return coverage_by_type.main()
+
+
+def test_main_writes_json_and_markdown(sample_scenarios_json, sample_tests_json, temp_dir, monkeypatch, capsys):
+    out = temp_dir / "breakdown.json"
+    md = temp_dir / "breakdown.md"
+    assert _run_main(monkeypatch, sample_scenarios_json, sample_tests_json, "-o", out, "-m", md) == 0
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["combined"]["total_scenarios"] == 5
+    assert data["combined"]["total_tests"] == 4
+    assert md.read_text(encoding="utf-8").startswith("# Coverage by Test Type")
+    assert "Markdown written to" in capsys.readouterr().err
+
+
+def test_main_library_mode_prints_json(sample_scenarios_json, sample_tests_json, monkeypatch, capsys):
+    assert _run_main(monkeypatch, sample_scenarios_json, sample_tests_json, "--mode", "library") == 0
+    assert set(json.loads(capsys.readouterr().out)) >= {"unit", "int_mock", "int_real", "e2e", "combined"}
+
+
+def test_main_missing_file_returns_one(temp_dir, sample_tests_json, monkeypatch, capsys):
+    assert _run_main(monkeypatch, temp_dir / "nope.json", sample_tests_json) == 1
+    assert "[ERROR] File not found" in capsys.readouterr().err
+
+
+def test_main_invalid_input_returns_one(temp_dir, sample_tests_json, monkeypatch, capsys):
+    bad = temp_dir / "bad.json"
+    bad.write_text(json.dumps({"scenarios": [{"endpoint": "/x"}]}))
+    assert _run_main(monkeypatch, bad, sample_tests_json) == 1
+    assert "[ERROR] Invalid input" in capsys.readouterr().err

@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 """Tests for generate_comment.py"""
 
+import argparse
+from unittest.mock import patch
+
+import pytest
 from cli.generate_comment import (
+    GenerateCommentScript,
     categorize_file,
     generate_implementation_details,
     generate_summary,
+    get_base_branch,
+    get_commit_files,
+    get_commit_message,
+    get_commits_in_range,
+    get_current_branch,
 )
 
 
@@ -206,3 +216,145 @@ def test_generate_implementation_details_empty():
     details = generate_implementation_details(categories)
 
     assert details == []
+
+
+# ── git helpers and script (run_command mocked) ──────────────────────────────
+
+C1 = "1111111aaaa"
+C2 = "2222222bbbb"
+
+_REPO = {
+    ("git", "branch", "--show-current"): (0, "feature/x\n", ""),
+    ("git", "rev-parse", "--verify", "main"): (1, "", ""),
+    ("git", "rev-parse", "--verify", "master"): (0, "abc\n", ""),
+    ("git", "merge-base", "master", "feature/x"): (0, "base123\n", ""),
+    ("git", "rev-list", "base123..feature/x"): (0, f"{C1}\n{C2}\n", ""),
+    ("git", "diff-tree", "--no-commit-id", "--name-only", "-r", C1): (0, "src/app.py\ntests/test_app.py\n", ""),
+    ("git", "diff-tree", "--no-commit-id", "--name-only", "-r", C2): (0, "README.md\n", ""),
+    ("git", "log", "-1", "--format=%s", C1): (0, "feat: add app\n", ""),
+    ("git", "log", "-1", "--format=%s", C2): (0, "docs: readme\n", ""),
+}
+
+
+def _git(responses=None):
+    table = dict(_REPO if responses is None else responses)
+    return lambda cmd, **_kw: table.get(tuple(cmd), (1, "", "fail"))
+
+
+def _execute(**kwargs):
+    args = argparse.Namespace(**{"commits": "", "auto": False, "base_branch": "", "style": "detailed", **kwargs})
+    with patch("cli.generate_comment.run_command", side_effect=_git()):
+        return GenerateCommentScript().execute(args)
+
+
+def test_get_current_branch_outside_repo_raises():
+    with patch("cli.generate_comment.run_command", return_value=(128, "", "")):
+        with pytest.raises(RuntimeError, match="Not a git repository"):
+            get_current_branch()
+
+
+def test_get_base_branch_picks_first_existing():
+    with patch("cli.generate_comment.run_command", side_effect=_git()):
+        assert get_base_branch() == "master"
+
+
+def test_get_base_branch_defaults_to_main():
+    with patch("cli.generate_comment.run_command", return_value=(1, "", "")):
+        assert get_base_branch() == "main"
+
+
+def test_get_commits_in_range_lists_commits_since_merge_base():
+    with patch("cli.generate_comment.run_command", side_effect=_git()):
+        assert get_commits_in_range("master", "feature/x") == [C1, C2]
+
+
+def test_get_commits_in_range_without_merge_base_raises():
+    with patch("cli.generate_comment.run_command", side_effect=_git({})):
+        with pytest.raises(RuntimeError, match="merge base with main"):
+            get_commits_in_range("main", "feature/x")
+
+
+def test_get_commits_in_range_rev_list_failure_raises():
+    responses = {("git", "merge-base", "main", "f"): (0, "b\n", "")}
+    with patch("cli.generate_comment.run_command", side_effect=_git(responses)):
+        with pytest.raises(RuntimeError, match="Failed to get commits"):
+            get_commits_in_range("main", "f")
+
+
+def test_commit_files_and_message_empty_on_git_failure():
+    with patch("cli.generate_comment.run_command", return_value=(1, "", "")):
+        assert get_commit_files("x") == []
+        assert get_commit_message("x") == ""
+
+
+def test_execute_requires_auto_or_commits():
+    assert _execute() == {"success": False, "error": "Either --auto or --commits must be specified"}
+
+
+def test_execute_auto_detailed_comment():
+    result = _execute(auto=True)
+
+    assert result["success"] is True
+    assert (result["commits"], result["files"]) == (2, 3)
+    assert result["categories"] == {"code": 1, "testing": 1, "documentation": 1}
+    comment = result["comment"]
+    assert comment.startswith("Work Summary: comprehensive test suite, documentation, code implementation")
+    assert "Statistics: 3 files modified across 2 commits" in comment
+    assert "- 1111111: feat: add app" in comment
+    assert "- 2222222: docs: readme" in comment
+
+
+def test_execute_explicit_commits_summary_style():
+    result = _execute(commits=f"{C1}, {C2}", style="summary")
+    assert result["comment"] == (
+        "Work completed: comprehensive test suite, documentation, code implementation\n\n"
+        "Files modified: 3 across 2 commits"
+    )
+
+
+def test_execute_technical_style_lists_details_only():
+    result = _execute(commits=C2, style="technical")
+    assert result["comment"] == "Implementation Details:\n- Documentation: 1 files"
+
+
+def test_execute_with_no_commits_on_branch():
+    responses = dict(_REPO)
+    responses[("git", "rev-list", "base123..feature/x")] = (0, "", "")
+    args = argparse.Namespace(commits="", auto=True, base_branch="master", style="detailed")
+    with patch("cli.generate_comment.run_command", side_effect=_git(responses)):
+        assert GenerateCommentScript().execute(args) == {"success": True, "comment": "No commits to analyze."}
+
+
+def test_execute_git_error_is_reported():
+    args = argparse.Namespace(commits="", auto=True, base_branch="", style="detailed")
+    with patch("cli.generate_comment.run_command", return_value=(128, "", "")):
+        result = GenerateCommentScript().execute(args)
+    assert result == {"success": False, "error": "Not a git repository"}
+
+
+def test_run_text_and_summary_formats(capsys):
+    with patch("cli.generate_comment.run_command", side_effect=_git()):
+        GenerateCommentScript().run(["--commits", C2, "--style", "technical", "--format", "text"])
+        GenerateCommentScript().run(["--commits", C2, "--format", "summary"])
+    out = capsys.readouterr().out.splitlines()
+    assert out == [
+        "Implementation Details:",
+        "- Documentation: 1 files",
+        "Generated comment for 1 commits, 1 files",
+    ]
+
+
+def test_error_result_formats():
+    script = GenerateCommentScript()
+    assert script.format_text({"success": False, "error": "x"}) == "Error: x"
+    assert script.format_summary({"success": False, "error": "x"}) == "[ERROR] x"
+
+
+def test_generate_summary_names_every_category():
+    categories = dict.fromkeys(
+        ["standards", "skills", "agents", "infrastructure", "configuration"],
+        1,
+    )
+    assert generate_summary(categories) == (
+        "coding standards, custom skills, agents, infrastructure changes, configuration updates"
+    )

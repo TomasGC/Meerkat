@@ -295,69 +295,6 @@ def get_profile_detection_info() -> dict[str, str]:
     }
 
 
-def get_issue_url(repo: str, issue_id: str) -> str:
-    """
-    Build issue URL for active profile.
-
-    Args:
-        repo: Repository path (e.g., "owner/repo")
-        issue_id: Issue ID (e.g., "#123", "PROJ-456")
-
-    Returns:
-        Full issue URL.
-
-    Example:
-        >>> get_issue_url("owner/repo", "#123")
-        "https://github.com/owner/repo/issues/123"
-    """
-    config = load_integrations()
-
-    # Remove # prefix if present
-    issue_id_clean = issue_id.lstrip("#")
-
-    if config.issues_provider == "github":
-        return f"{config.vcs_url}/{repo}/issues/{issue_id_clean}"
-    elif config.issues_provider == "gitlab":
-        return f"{config.vcs_url}/{repo}/-/issues/{issue_id_clean}"
-    elif config.issues_provider == "azure-devops":
-        # Azure DevOps: org/project/_workitems/edit/123
-        return f"{config.vcs_url}/{repo}/_workitems/edit/{issue_id_clean}"
-    else:
-        # Generic fallback
-        return f"{config.issues_url or config.vcs_url}/{repo}/issues/{issue_id_clean}"
-
-
-def get_pr_url(repo: str, pr_id: str) -> str:
-    """
-    Build pull/merge request URL for active profile.
-
-    Args:
-        repo: Repository path (e.g., "owner/repo")
-        pr_id: PR/MR ID (e.g., "123")
-
-    Returns:
-        Full PR/MR URL.
-
-    Example:
-        >>> get_pr_url("owner/repo", "123")
-        "https://github.com/owner/repo/pull/123"
-    """
-    config = load_integrations()
-
-    # Remove # prefix if present
-    pr_id_clean = pr_id.lstrip("#")
-
-    if config.vcs_provider == "github":
-        return f"{config.vcs_url}/{repo}/pull/{pr_id_clean}"
-    elif config.vcs_provider == "gitlab":
-        return f"{config.vcs_url}/{repo}/-/merge_requests/{pr_id_clean}"
-    elif config.vcs_provider == "azure-devops":
-        return f"{config.vcs_url}/{repo}/_git/pullrequest/{pr_id_clean}"
-    else:
-        # Generic fallback
-        return f"{config.vcs_url}/{repo}/pull/{pr_id_clean}"
-
-
 def switch_profile(profile_name: str):
     """
     Switch active profile by writing to .active file.

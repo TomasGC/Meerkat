@@ -301,3 +301,34 @@ def test_shipped_table_comes_from_config():
 
     assert LANGUAGE_INDICATORS == language_config.project_indicators()
     assert list(LANGUAGE_INDICATORS)[-2:] == ["solidity", "sql"]
+
+
+# ── walk_files / find_project_root edge cases ─────────────────────────────────
+
+
+def test_walk_files_missing_root_raises(temp_dir):
+    with pytest.raises(FileNotFoundError):
+        list(walk_files(temp_dir / "absent", ["*.py"]))
+
+
+def test_walk_files_file_root_raises(temp_dir):
+    f = temp_dir / "a.py"
+    f.write_text("x")
+    with pytest.raises(NotADirectoryError):
+        list(walk_files(f, ["*.py"]))
+
+
+def test_walk_files_nonrecursive_yields_top_level_files_only(temp_dir):
+    (temp_dir / "top.py").write_text("x")
+    (temp_dir / "dir.py").mkdir()
+    sub = temp_dir / "sub"
+    sub.mkdir()
+    (sub / "deep.py").write_text("y")
+    assert [f.name for f in walk_files(temp_dir, ["*.py"], recursive=False)] == ["top.py"]
+
+
+def test_find_project_root_stops_at_filesystem_root(monkeypatch, temp_dir):
+    # A filesystem with no marker and no .git anywhere: the climb ends at the root.
+    monkeypatch.setattr(Path, "exists", lambda self: False)
+    monkeypatch.setattr(Path, "glob", lambda self, pattern: iter(()))
+    assert find_project_root(Path(temp_dir.anchor)) is None

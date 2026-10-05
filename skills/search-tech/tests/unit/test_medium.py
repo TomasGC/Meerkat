@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Tests for search_medium module."""
 
+import json
+import sys
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+import search_medium as module
 from search_medium import search_medium, search_medium_tag
-from search_tech.models import ResultType, SearchQuery, Source
+from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source
 
 
 @pytest.fixture
@@ -351,3 +354,48 @@ def test_item_with_empty_elements_does_not_drop_the_feed(mock_get):
     assert [r.url for r in results] == ["https://medium.com/a/1", "https://medium.com/a/2"]
     assert results[0].excerpt == ""
     assert results[0].repository == "@unknown"
+
+
+# ── main() (search function mocked) ──────────────────────────────────────────
+
+
+def _main_response(success=True):
+    query = SearchQuery(keywords=["async"])
+    if not success:
+        return SearchResponse(success=False, query=query, error="Medium down")
+    result = SearchResult(
+        source=Source.MEDIUM, result_type=ResultType.QUESTION, title="T", url="https://x/1", score=1, excerpt="e"
+    )
+    return SearchResponse(success=True, query=query, results=[result])
+
+
+def _run_main(argv, tmp_path, response):
+    out = tmp_path / "out" / "medium.json"
+    with patch.object(sys, "argv", ["search_medium.py", *argv, "--output", str(out), "--no-cache"]), patch.object(
+        module, "search_medium", return_value=response
+    ) as search:
+        module.main()
+    return search, json.loads(out.read_text(encoding="utf-8"))
+
+
+def test_main_writes_results_and_passes_parsed_query(tmp_path):
+    search, data = _run_main(["async errors", "--tags", "python, go", "--verbose"], tmp_path, _main_response())
+    call = search.call_args
+    assert call.args[0].keywords == ["async", "errors"]
+    assert call.args[1] == ["python", "go"]
+    assert call.kwargs["cache"] is None
+    assert data["success"] is True
+    assert [r["title"] for r in data["results"]] == ["T"]
+
+
+def test_main_exits_nonzero_when_search_fails(tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(["async"], tmp_path, _main_response(success=False))
+    assert exc.value.code == 1
+    assert json.loads((tmp_path / "out" / "medium.json").read_text(encoding="utf-8"))["error"] == "Medium down"
+
+
+def test_main_rejects_invalid_query(tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(["   "], tmp_path, _main_response())
+    assert exc.value.code == 1

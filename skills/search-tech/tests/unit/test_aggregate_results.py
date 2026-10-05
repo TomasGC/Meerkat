@@ -2,10 +2,14 @@
 """Tests for aggregate_results module."""
 
 import json
+import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
+import aggregate_results as aggregate_module
+import pytest
 from aggregate_results import aggregate_results, calculate_rank_score, format_markdown
 from search_tech.models import ResultType, SearchResult, Source
 
@@ -445,3 +449,84 @@ class TestMarkdownFormatting:
         assert "⭐" in markdown  # StackOverflow
         assert "🔴" in markdown  # Reddit
         assert "📰" in markdown  # Dev.to
+
+
+# ── main() and remaining branches ────────────────────────────────────────────
+
+
+def _result(**kwargs):
+    fields = dict(
+        source=Source.GITHUB_ISSUE, result_type=ResultType.ISSUE, title="T", url="https://x/1", score=3, excerpt="e"
+    )
+    fields.update(kwargs)
+    return SearchResult(**fields)
+
+
+def _write(path, results, success=True):
+    path.write_text(json.dumps({"success": success, "results": [r.to_dict() for r in results]}), encoding="utf-8")
+    return str(path)
+
+
+def _main(argv):
+    with patch.object(sys, "argv", ["aggregate_results.py", *argv]):
+        aggregate_module.main()
+
+
+def test_unreadable_result_record_counts_as_failed_file(tmp_path):
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"success": True, "results": [{"title": "missing fields"}]}), encoding="utf-8")
+    assert aggregate_results([str(bad)]) == []
+
+
+def test_format_markdown_closed_issue_with_repository():
+    markdown = format_markdown([_result(status="closed", repository="o/r", tags=list("abcdef"))], "q")
+    assert "| Github Issue | Closed" in markdown
+    assert "Repository: o/r" in markdown
+    assert "Tags: a, b, c, d, e" in markdown
+
+
+def test_main_writes_json_and_markdown(tmp_path):
+    so = _write(tmp_path / "so.json", [_result(source=Source.STACKOVERFLOW, result_type=ResultType.QUESTION)])
+    gh = _write(tmp_path / "gh.json", [_result(score=9), _result(score=1)])
+    out, md = tmp_path / "out" / "agg.json", tmp_path / "out" / "agg.md"
+
+    _main([so, gh, "--output", str(out), "--markdown", str(md), "--query", "leak", "--max-results", "2", "--verbose"])
+
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["success"] is True
+    assert data["total_results"] == 2
+    assert [r["score"] for r in data["results"]] == [9, 3]
+    assert data["sources"] == {"github_issue": 1, "stackoverflow": 1}
+    assert md.read_text(encoding="utf-8").startswith('## 🔍 Technical Search Results for "leak"')
+
+
+def test_main_without_results_writes_failure_and_exits(tmp_path):
+    failed = _write(tmp_path / "f.json", [], success=False)
+    out = tmp_path / "agg.json"
+
+    with pytest.raises(SystemExit) as exc:
+        _main([failed, str(tmp_path / "missing.json"), "--output", str(out)])
+
+    assert exc.value.code == 1
+    assert json.loads(out.read_text(encoding="utf-8")) == {
+        "success": False,
+        "error": "No results found in any input file",
+        "total_results": 0,
+        "results": [],
+        "sources": {},
+    }
+
+
+def test_main_exits_when_json_output_cannot_be_written(tmp_path):
+    source = _write(tmp_path / "gh.json", [_result()])
+    with pytest.raises(SystemExit) as exc:
+        _main([source, "--output", str(tmp_path)])  # a directory, not a file
+    assert exc.value.code == 1
+
+
+def test_main_exits_when_markdown_cannot_be_written(tmp_path):
+    source = _write(tmp_path / "gh.json", [_result()])
+    with pytest.raises(SystemExit) as exc:
+        _main([source, "--output", str(tmp_path / "a.json"), "--markdown", str(tmp_path)])
+    assert exc.value.code == 1
+    assert json.loads((tmp_path / "a.json").read_text(encoding="utf-8"))["success"] is True

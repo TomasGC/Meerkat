@@ -76,15 +76,3 @@ class BaseCLIScript(ABC):
     def success(self, message: str) -> None:
         """Print success message."""
         print(message)
-
-
-def main_template(script_class: type) -> None:
-    """
-    Template for script entry points.
-
-    Usage:
-        if __name__ == "__main__":
-            main_template(MyScriptClass)
-    """
-    script = script_class()
-    sys.exit(script.run())

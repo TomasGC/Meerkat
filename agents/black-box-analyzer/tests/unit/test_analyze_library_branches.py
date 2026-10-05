@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Tests for analyze_library_branches.py — unit tests (_merge_runs)"""
+"""Tests for analyze_library_branches.py — unit tests (local AI mocked at analyze_file_with_model)"""
 
-from analyze_library_branches import _merge_runs
+import json
+import sys
+from unittest.mock import patch
+
+import analyze_library_branches as alb
+from analyze_library_branches import _merge_runs, analyze_file_typed, analyze_library, get_source_files
 
 
 def test_merge_runs_empty_runs_returns_empty():
@@ -95,3 +100,144 @@ def test_merge_runs_asymmetric_runs_one_empty():
     assert len(result) == 1
     assert result[0]["method"] == "Foo"
     assert len(result[0]["branches"]) == 1
+
+
+# ── get_source_files ──────────────────────────────────────────────────────────
+
+
+def _library(tmp_path):
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "core.py").write_text("def run(): pass")
+    (tmp_path / "pkg" / "util.py").write_text("def helper(): pass")
+    (tmp_path / "pkg" / "core_test.py").write_text("def test_run(): pass")
+    (tmp_path / "spec").mkdir()
+    (tmp_path / "spec" / "fixtures.py").write_text("x = 1")
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "bundle.py").write_text("x = 1")
+    return tmp_path
+
+
+def test_get_source_files_returns_sorted_non_test_sources(tmp_path):
+    root = _library(tmp_path)
+    assert get_source_files(root, "python") == [root / "pkg" / "core.py", root / "pkg" / "util.py"]
+
+
+# ── analyze_file_typed ────────────────────────────────────────────────────────
+
+
+def _typed_model(_file, _language, _role, prompt_name, **_kwargs):
+    """One method per typed prompt; 'shared' is returned by every agent."""
+    return [
+        {
+            "method": "run",
+            "signature": f"sig-{prompt_name}",
+            "branches": [{"condition": "shared"}, {"condition": f"only {prompt_name}"}],
+        }
+    ]
+
+
+def test_analyze_file_typed_tags_and_merges_per_test_type(tmp_path):
+    with patch.object(alb, "analyze_file_with_model", side_effect=_typed_model) as model:
+        methods = analyze_file_typed(tmp_path / "core.py", "python", "analyzer")
+
+    assert {c.args[3] for c in model.call_args_list} == {
+        "analyze_branches_unit",
+        "analyze_branches_int_mock",
+        "analyze_branches_int_real",
+    }
+    assert len(methods) == 1
+    branches = methods[0]["branches"]
+    # "shared" survives once per tier: the dedup key includes the test type hint
+    assert sorted(b["test_type_hint"] for b in branches if b["condition"] == "shared") == [
+        "INT_MOCK",
+        "INT_REAL",
+        "UNIT",
+    ]
+    assert len(branches) == 6
+
+
+def test_analyze_file_typed_includes_e2e_on_request(tmp_path):
+    with patch.object(alb, "analyze_file_with_model", side_effect=_typed_model) as model:
+        methods = analyze_file_typed(tmp_path / "core.py", "python", "analyzer", include_e2e=True)
+
+    assert model.call_count == 4
+    assert "E2E" in {b["test_type_hint"] for b in methods[0]["branches"]}
+
+
+# ── analyze_library ───────────────────────────────────────────────────────────
+
+
+def test_analyze_library_no_sources_warns_and_returns_empty(tmp_path, capsys):
+    assert analyze_library(tmp_path, "python", "analyzer", verbose=False) == []
+    assert "No python source files found" in capsys.readouterr().err
+
+
+def test_analyze_library_aggregates_every_file(tmp_path, capsys):
+    root = _library(tmp_path)
+    found = {"core.py": [{"method": "run"}], "util.py": []}
+    with patch.object(alb, "analyze_file_with_model", side_effect=lambda f, *a, **k: found[f.name]):
+        methods = analyze_library(root, "python", "analyzer", verbose=True)
+
+    assert methods == [{"method": "run"}]
+    err = capsys.readouterr().err
+    assert "Source files: 2" in err
+    assert "1 public method(s) found" in err
+
+
+def test_analyze_library_typed_agents_route_through_typed_analysis(tmp_path, capsys):
+    root = _library(tmp_path)
+    with patch.object(alb, "analyze_file_typed", return_value=[{"method": "m"}]) as typed:
+        methods = analyze_library(root, "python", "analyzer", verbose=True, typed_agents=True, include_e2e=True)
+
+    assert methods == [{"method": "m"}, {"method": "m"}]
+    assert typed.call_args.kwargs["include_e2e"] is True
+    assert "Typed agents: ['unit', 'int_mock', 'int_real', 'e2e']" in capsys.readouterr().err
+
+
+# ── main ──────────────────────────────────────────────────────────────────────
+
+
+def _main(monkeypatch, *argv, server=True, methods=None):
+    monkeypatch.setattr(sys, "argv", ["analyze_library_branches.py", *argv])
+    payload = methods if methods is not None else [{"method": "run", "branches": [{"condition": "a"}]}]
+    with patch.object(alb, "check_server_available", return_value=server), patch.object(
+        alb, "analyze_file_with_model", side_effect=lambda *a, **k: [dict(m) for m in payload]
+    ):
+        return alb.main()
+
+
+def test_main_missing_path_exits_one(monkeypatch, tmp_path, capsys):
+    assert _main(monkeypatch, str(tmp_path / "missing")) == 1
+    assert "does not exist" in capsys.readouterr().err
+
+
+def test_main_server_unavailable_exits_one(monkeypatch, tmp_path, capsys):
+    assert _main(monkeypatch, str(tmp_path), server=False) == 1
+    assert "not available" in capsys.readouterr().err
+
+
+def test_main_prints_method_and_branch_counts(monkeypatch, tmp_path, capsys):
+    assert _main(monkeypatch, str(_library(tmp_path)), "--language", "python") == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["method_count"] == 2
+    assert report["branch_count"] == 2
+
+
+def test_main_auto_language_writes_output_file(monkeypatch, tmp_path, capsys):
+    root = _library(tmp_path)
+    out = tmp_path / "methods.json"
+    assert _main(monkeypatch, str(root), "--output", str(out), "--verbose") == 0
+
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["language"] == "python"
+    err = capsys.readouterr().err
+    assert "Auto-detected language: python" in err
+    assert "Total: 2 methods, 2 branches" in err
+
+
+def test_main_agents_merge_identical_runs(monkeypatch, tmp_path, capsys):
+    assert _main(monkeypatch, str(_library(tmp_path)), "--language", "python", "--agents", "2", "--verbose") == 0
+    out = capsys.readouterr()
+    # Both files report the same method name, so the runs collapse to one method
+    assert json.loads(out.out)["method_count"] == 1
+    assert "Merged 2 runs: 1 unique methods" in out.err

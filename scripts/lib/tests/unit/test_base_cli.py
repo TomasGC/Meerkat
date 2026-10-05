@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for common/cli/base.py"""
 
+import pytest
+from lib import base_cli as legacy
 from lib.cli.base import BaseCLIScript, create_cli_script
 
 
@@ -278,3 +280,43 @@ class TestIntegration:
 
         assert exit_code == 0
         assert script.execute_called is True
+
+
+# ── lib/base_cli.py: the argparse-only base used by format_code, lint_code, delegation_stats ──
+
+
+class _LegacyScript(legacy.BaseCLIScript):
+    """Echo the --name argument; raise when asked to."""
+
+    def add_arguments(self):
+        self.parser.add_argument("--name", default="world")
+        self.parser.add_argument("--fail", action="store_true")
+
+    def execute(self):
+        if self.args.fail:
+            raise ValueError("boom")
+        self.success(f"hello {self.args.name}")
+
+
+class TestLegacyBaseCLIScript:
+    def test_run_parses_args_and_executes(self, capsys):
+        assert _LegacyScript().run(["--name", "ada"]) == 0
+        assert capsys.readouterr().out == "hello ada\n"
+
+    def test_run_returns_argparse_exit_code(self, capsys):
+        assert _LegacyScript().run(["--unknown"]) == 2
+        assert "unrecognized arguments" in capsys.readouterr().err
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="bug (#51): run() calls self.error(), whose sys.exit escapes the except block instead of returning 1",
+    )
+    def test_run_returns_one_when_execute_raises(self, capsys):
+        assert _LegacyScript().run(["--fail"]) == 1
+        assert "boom" in capsys.readouterr().err
+
+    def test_error_exits_with_given_code(self, capsys):
+        with pytest.raises(SystemExit) as exc:
+            _LegacyScript().error("bad", exit_code=4)
+        assert exc.value.code == 4
+        assert capsys.readouterr().err == "Error: bad\n"

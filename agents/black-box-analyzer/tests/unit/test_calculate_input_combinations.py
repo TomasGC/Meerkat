@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for calculate_input_combinations.py"""
 
+import json
+
 from bba.models import Endpoint, HTTPMethod, Parameter
 from calculate_input_combinations import (
     _is_security_string,
@@ -272,3 +274,71 @@ def test_calculate_combinations_breakdown(sample_endpoints_json):
     assert edge_case_count > 0
     assert error_count > 0
     assert security_count > 0
+
+
+def _endpoint(method, params, path="/items/{item_id}"):
+    return Endpoint(
+        path=path,
+        method=method,
+        params=params,
+        response_codes=[200],
+        file_path="api.py",
+        line_number=1,
+    )
+
+
+def test_integer_edge_values_expect_success():
+    endpoint = _endpoint(HTTPMethod.GET, [Parameter(name="page", param_type="query", data_type="integer")])
+    edge = [s for s in generate_scenarios_for_endpoint(endpoint) if s.scenario_type == "edge_case"]
+    assert edge
+    assert all(s.expected_output == 200 for s in edge)
+
+
+def test_put_targets_id_like_path_params_for_not_found():
+    params = [
+        Parameter(name="item_id", param_type="path", data_type="string"),
+        Parameter(name="name", param_type="body", data_type="string"),
+    ]
+    scenarios = generate_scenarios_for_endpoint(_endpoint(HTTPMethod.PUT, params))
+    not_found = [s for s in scenarios if s.expected_output == 404]
+    assert len(not_found) == 1
+    assert not_found[0].description == "PUT non-existent resource"
+    assert not_found[0].input_combination == {"item_id": "non-existent-id", "name": "test"}
+
+
+def test_patch_without_id_param_falls_back_to_id_key():
+    params = [Parameter(name="name", param_type="body", data_type="string")]
+    scenarios = generate_scenarios_for_endpoint(_endpoint(HTTPMethod.PATCH, params, path="/profile"))
+    not_found = [s for s in scenarios if s.expected_output == 404]
+    assert not_found[0].input_combination == {"name": "test", "id": "non-existent-id"}
+
+
+# ── main ──────────────────────────────────────────────────────────────────────
+
+
+def _run_main(monkeypatch, *argv):
+    import calculate_input_combinations
+
+    monkeypatch.setattr("sys.argv", ["calculate_input_combinations.py", *map(str, argv)])
+    return calculate_input_combinations.main()
+
+
+def test_main_writes_scenarios_with_breakdown(sample_endpoints_json, temp_dir, monkeypatch):
+    out = temp_dir / "scenarios.json"
+    assert _run_main(monkeypatch, sample_endpoints_json, "--output", out) == 0
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["scenario_count"] == len(data["scenarios"]) > 0
+    assert sum(data["breakdown"].values()) == data["scenario_count"]
+
+
+def test_main_verbose_prints_counts_per_endpoint(sample_endpoints_json, monkeypatch, capsys):
+    assert _run_main(monkeypatch, sample_endpoints_json, "-v") == 0
+    captured = capsys.readouterr()
+    assert "Scenario counts per endpoint:" in captured.err
+    assert "GET /users/:id:" in captured.err
+    assert f"Total: {json.loads(captured.out)['scenario_count']} scenarios" in captured.err
+
+
+def test_main_missing_file_returns_one(temp_dir, monkeypatch, capsys):
+    assert _run_main(monkeypatch, temp_dir / "none.json") == 1
+    assert "Error:" in capsys.readouterr().err

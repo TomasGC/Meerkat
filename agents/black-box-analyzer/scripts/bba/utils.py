@@ -268,16 +268,6 @@ def merge_dicts_deep(dict1: dict, dict2: dict) -> dict:
     return result
 
 
-def ensure_dir(dir_path: Path) -> None:
-    """
-    Ensure directory exists, create if needed.
-
-    Args:
-        dir_path: Directory path
-    """
-    dir_path.mkdir(parents=True, exist_ok=True)
-
-
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize filename by removing invalid characters.

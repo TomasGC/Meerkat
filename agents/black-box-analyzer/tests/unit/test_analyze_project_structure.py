@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Tests for analyze_project_structure.py"""
 
+import json
+
+import pytest
 from analyze_project_structure import (
     analyze_project,
     count_endpoints,
     count_test_files,
     detect_frameworks,
+    detect_project_types,
     detect_test_framework,
     infer_project_type,
 )
@@ -264,3 +268,80 @@ def test_analyze_project_sets_correct_primary_type_for_graphql(temp_dir):
     # but if endpoints detected, primary_type must not default REST_API blindly
     if project_info.endpoint_count > 0 and "graphql" in project_info.frameworks:
         assert project_info.primary_type == ProjectType.GRAPHQL_API
+
+
+def test_detect_frameworks_ignores_empty_manifest(temp_dir):
+    (temp_dir / "requirements.txt").write_text("")
+    (temp_dir / "pyproject.toml").write_text('[project]\ndependencies = ["fastapi"]\n')
+    assert detect_frameworks(temp_dir, Language.PYTHON) == ["fastapi"]
+
+
+def test_detect_test_framework_skips_empty_test_file(temp_dir):
+    (temp_dir / "test_empty.py").write_text("")
+    (temp_dir / "test_real.py").write_text("def test_ok():\n    assert True\n")
+    assert detect_test_framework(temp_dir, Language.PYTHON) == TestFramework.PYTEST
+
+
+def test_detect_project_types_graphql_and_grpc_from_frameworks(temp_dir):
+    (temp_dir / "main.py").write_text("x = 1\n")
+    assert detect_project_types(temp_dir, ["GraphQL"], 2) == [ProjectType.GRAPHQL_API]
+    assert detect_project_types(temp_dir, ["grpc"], 2) == [ProjectType.GRPC_API]
+
+
+def test_analyze_project_rejects_a_file(temp_dir):
+    f = temp_dir / "main.py"
+    f.write_text("x = 1\n")
+    with pytest.raises(NotADirectoryError):
+        analyze_project(f)
+
+
+def test_analyze_project_unknown_language_raises(temp_dir):
+    (temp_dir / ".git").mkdir()
+    (temp_dir / "notes.txt").write_text("nothing to see\n")
+    with pytest.raises(ValueError, match="Could not detect language"):
+        analyze_project(temp_dir)
+
+
+# ── main ──────────────────────────────────────────────────────────────────────
+
+
+def _run_main(monkeypatch, *argv):
+    import analyze_project_structure
+
+    monkeypatch.setattr("sys.argv", ["analyze_project_structure.py", *map(str, argv)])
+    return analyze_project_structure.main()
+
+
+def test_main_json_to_stdout(sample_go_project, monkeypatch, capsys):
+    assert _run_main(monkeypatch, sample_go_project) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["language"] == "go"
+    assert data["endpoint_count"] == 4
+    assert "gin" in data["frameworks"]
+
+
+def test_main_json_to_file(sample_python_project, temp_dir, monkeypatch):
+    out = temp_dir / "project_info.json"
+    assert _run_main(monkeypatch, sample_python_project, "--output", out) == 0
+    assert json.loads(out.read_text(encoding="utf-8"))["language"] == "python"
+
+
+def test_main_summary_format(sample_go_project, monkeypatch, capsys):
+    assert _run_main(monkeypatch, sample_go_project, "--output-format", "summary") == 0
+    out = capsys.readouterr().out
+    assert "Language: go" in out
+    assert "Frameworks: gin" in out
+    assert "Endpoints: 4" in out
+    assert "Test Framework: testing" in out
+
+
+def test_main_summary_without_frameworks_says_none(temp_dir, monkeypatch, capsys):
+    (temp_dir / ".git").mkdir()
+    (temp_dir / "lib.py").write_text("def add(a, b):\n    return a + b\n")
+    assert _run_main(monkeypatch, temp_dir, "--output-format", "summary") == 0
+    assert "Frameworks: None" in capsys.readouterr().out
+
+
+def test_main_error_returns_one(temp_dir, monkeypatch, capsys):
+    assert _run_main(monkeypatch, temp_dir / "missing") == 1
+    assert "Error: Not a directory" in capsys.readouterr().err

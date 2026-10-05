@@ -12,7 +12,9 @@ from bba.models import (
     EntryPoint,
     EntryPointType,
     HTTPMethod,
+    Language,
     Parameter,
+    ProjectInfo,
     ProjectType,
     RiskAssessment,
     Scenario,
@@ -276,3 +278,33 @@ def test_analysis_result_with_non_http_scenarios_serializes_and_restores():
     result.scenarios.append(_cli_scenario())
     restored = AnalysisResult.from_dict(result.to_dict())
     assert restored.scenarios[-1] == _cli_scenario()
+
+
+# ── ProjectInfo / RiskAssessment.calculate_risk_level ─────────────────────────
+
+
+def test_project_info_to_dict_serializes_enums():
+    info = ProjectInfo(
+        language=Language.GO,
+        frameworks=["gin"],
+        endpoint_count=4,
+        test_file_count=1,
+        root_path="/srv/api",
+        test_framework=TestFrameworkModel.GO_TESTING,
+        project_types=[ProjectType.REST_API],
+        primary_type=ProjectType.REST_API,
+    )
+    data = info.to_dict()
+    assert data["language"] == "go"
+    assert data["test_framework"] == "testing"
+    assert data["frameworks"] == ["gin"]
+    assert data["endpoint_count"] == 4
+    assert data["root_path"] == "/srv/api"
+
+
+@pytest.mark.parametrize(
+    "score, level",
+    [(125, "CRITICAL"), (60, "CRITICAL"), (59, "HIGH"), (40, "HIGH"), (39, "MEDIUM"), (20, "MEDIUM"), (19, "LOW")],
+)
+def test_calculate_risk_level_thresholds(score, level):
+    assert RiskAssessment.calculate_risk_level(score) == level
