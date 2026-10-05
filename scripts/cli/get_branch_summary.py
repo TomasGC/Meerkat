@@ -30,10 +30,7 @@ def get_default_base_branch() -> str:
     if returncode == 0 and stdout.strip():
         remote = stdout.strip().split("\n")[0]
 
-        returncode, stdout, stderr = run_command(
-            ["git", "symbolic-ref", f"refs/remotes/{remote}/HEAD"],
-            timeout=5
-        )
+        returncode, stdout, stderr = run_command(["git", "symbolic-ref", f"refs/remotes/{remote}/HEAD"], timeout=5)
 
         if returncode == 0 and stdout.strip():
             # Extract branch name from refs/remotes/origin/main
@@ -57,10 +54,7 @@ def get_default_base_branch() -> str:
 
 def get_current_branch() -> str:
     """Get current git branch name."""
-    returncode, stdout, stderr = run_command(
-        ["git", "branch", "--show-current"],
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "branch", "--show-current"], timeout=5)
 
     if returncode != 0:
         raise RuntimeError("Not in a git repository or detached HEAD")
@@ -76,18 +70,12 @@ def get_branch_commits(base_branch: str, current_branch: str) -> list[BranchComm
     """Get commits on current branch not in base branch."""
     # Try with base_branch first, then with origin/base_branch
     range_spec = f"{base_branch}..{current_branch}"
-    returncode, stdout, stderr = run_command(
-        ["git", "log", "--format=%H", range_spec],
-        timeout=10
-    )
+    returncode, stdout, stderr = run_command(["git", "log", "--format=%H", range_spec], timeout=10)
 
     if returncode != 0:
         # Try with origin/ prefix
         range_spec = f"origin/{base_branch}..{current_branch}"
-        returncode, stdout, stderr = run_command(
-            ["git", "log", "--format=%H", range_spec],
-            timeout=10
-        )
+        returncode, stdout, stderr = run_command(["git", "log", "--format=%H", range_spec], timeout=10)
 
         if returncode != 0:
             return []
@@ -97,10 +85,7 @@ def get_branch_commits(base_branch: str, current_branch: str) -> list[BranchComm
     commits = []
     for hash in commit_hashes:
         # Get commit metadata
-        returncode, stdout, stderr = run_command(
-            ["git", "log", "-1", "--format=%s%n%an%n%ai", hash],
-            timeout=5
-        )
+        returncode, stdout, stderr = run_command(["git", "log", "-1", "--format=%s%n%an%n%ai", hash], timeout=5)
 
         if returncode != 0:
             continue
@@ -126,7 +111,7 @@ def get_branch_commits(base_branch: str, current_branch: str) -> list[BranchComm
             additions=additions,
             deletions=deletions,
             files_changed=len(files),
-            files=files
+            files=files,
         )
 
         commits.append(commit)
@@ -136,10 +121,7 @@ def get_branch_commits(base_branch: str, current_branch: str) -> list[BranchComm
 
 def get_commit_file_stats(commit_hash: str) -> tuple[list[FileChange], int, int]:
     """Get file statistics for a commit."""
-    returncode, stdout, stderr = run_command(
-        ["git", "show", "--numstat", "--format=", commit_hash],
-        timeout=10
-    )
+    returncode, stdout, stderr = run_command(["git", "show", "--numstat", "--format=", commit_hash], timeout=10)
 
     if returncode != 0:
         return [], 0, 0
@@ -164,11 +146,7 @@ def get_commit_file_stats(commit_hash: str) -> tuple[list[FileChange], int, int]
         additions = 0 if added == "-" else int(added)
         deletions = 0 if deleted == "-" else int(deleted)
 
-        files.append(FileChange(
-            path=file_path,
-            additions=additions,
-            deletions=deletions
-        ))
+        files.append(FileChange(path=file_path, additions=additions, deletions=deletions))
 
         total_additions += additions
         total_deletions += deletions
@@ -181,10 +159,7 @@ def get_uncommitted_changes() -> UncommittedChanges:
     changes = UncommittedChanges()
 
     # Staged files
-    returncode, stdout, stderr = run_command(
-        ["git", "diff", "--cached", "--name-status"],
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "diff", "--cached", "--name-status"], timeout=5)
 
     if returncode == 0:
         for line in stdout.strip().split("\n"):
@@ -194,18 +169,10 @@ def get_uncommitted_changes() -> UncommittedChanges:
             parts = line.split("\t", 1)
             if len(parts) == 2:
                 status, path = parts
-                changes.staged.append(FileChange(
-                    path=path,
-                    status=status,
-                    additions=0,
-                    deletions=0
-                ))
+                changes.staged.append(FileChange(path=path, status=status, additions=0, deletions=0))
 
     # Unstaged files
-    returncode, stdout, stderr = run_command(
-        ["git", "diff", "--name-status"],
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "diff", "--name-status"], timeout=5)
 
     if returncode == 0:
         for line in stdout.strip().split("\n"):
@@ -215,28 +182,15 @@ def get_uncommitted_changes() -> UncommittedChanges:
             parts = line.split("\t", 1)
             if len(parts) == 2:
                 status, path = parts
-                changes.unstaged.append(FileChange(
-                    path=path,
-                    status=status,
-                    additions=0,
-                    deletions=0
-                ))
+                changes.unstaged.append(FileChange(path=path, status=status, additions=0, deletions=0))
 
     # Untracked files
-    returncode, stdout, stderr = run_command(
-        ["git", "ls-files", "--others", "--exclude-standard"],
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "ls-files", "--others", "--exclude-standard"], timeout=5)
 
     if returncode == 0:
         for line in stdout.strip().split("\n"):
             if line.strip():
-                changes.untracked.append(FileChange(
-                    path=line.strip(),
-                    status="?",
-                    additions=0,
-                    deletions=0
-                ))
+                changes.untracked.append(FileChange(path=line.strip(), status="?", additions=0, deletions=0))
 
     return changes
 
@@ -253,7 +207,7 @@ def format_text_summary(summary: BranchSummary) -> str:
         f"Commits: {summary.commits_count}",
         f"Files changed: {summary.unique_files_changed} unique files",
         f"Lines: +{summary.total_additions} -{summary.total_deletions}",
-        ""
+        "",
     ]
 
     if summary.commits:
@@ -304,7 +258,7 @@ def format_markdown_summary(summary: BranchSummary) -> str:
         f"- Commits: {summary.commits_count}",
         f"- Files changed: {summary.unique_files_changed}",
         f"- Lines: +{summary.total_additions} -{summary.total_deletions}",
-        ""
+        "",
     ]
 
     if summary.commits:
@@ -351,20 +305,11 @@ class GetBranchSummaryScript(BaseCLIScript):
     def setup_parser(self, parser):
         """Add script-specific arguments."""
         parser.add_argument(
-            "--base-branch",
-            "-b",
-            default="",
-            help="Base branch to compare against (auto-detects if not specified)"
+            "--base-branch", "-b", default="", help="Base branch to compare against (auto-detects if not specified)"
         )
+        parser.add_argument("--no-uncommitted", action="store_true", help="Exclude uncommitted changes from analysis")
         parser.add_argument(
-            "--no-uncommitted",
-            action="store_true",
-            help="Exclude uncommitted changes from analysis"
-        )
-        parser.add_argument(
-            "--format-markdown",
-            action="store_true",
-            help="Output as markdown (alternative to --format)"
+            "--format-markdown", action="store_true", help="Output as markdown (alternative to --format)"
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -392,11 +337,7 @@ class GetBranchSummaryScript(BaseCLIScript):
             # Get uncommitted changes
             uncommitted = UncommittedChanges() if args.no_uncommitted else get_uncommitted_changes()
 
-            has_uncommitted = (
-                len(uncommitted.staged) +
-                len(uncommitted.unstaged) +
-                len(uncommitted.untracked)
-            ) > 0
+            has_uncommitted = (len(uncommitted.staged) + len(uncommitted.unstaged) + len(uncommitted.untracked)) > 0
 
             # Build summary
             summary = BranchSummary(
@@ -408,22 +349,18 @@ class GetBranchSummaryScript(BaseCLIScript):
                 total_deletions=total_deletions,
                 unique_files_changed=len(all_files),
                 uncommitted=uncommitted,
-                has_uncommitted_changes=has_uncommitted
+                has_uncommitted_changes=has_uncommitted,
             )
-
 
             return {
                 "success": True,
                 "summary": summary,
-                "format_markdown": args.format_markdown if hasattr(args, 'format_markdown') else False
+                "format_markdown": args.format_markdown if hasattr(args, "format_markdown") else False,
             }
 
         except Exception as e:
             self.logger.error(f"Failed to get branch summary: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -449,4 +386,5 @@ class GetBranchSummaryScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(GetBranchSummaryScript)

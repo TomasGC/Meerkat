@@ -12,8 +12,7 @@ _PRINCIPLE = "E2E_GAP"
 
 def _ai_message(item: dict) -> str:
     return (
-        f"Missing E2E test [{item.get('function', '?')}] "
-        f"({item.get('flow_type', '?')}): {item.get('reason', '')}"
+        f"Missing E2E test [{item.get('function', '?')}] " f"({item.get('flow_type', '?')}): {item.get('reason', '')}"
     )
 
 
@@ -29,8 +28,17 @@ def run(
     **kwargs,
 ) -> dict:
     return run_gap_checker(
-        path, language, tier=_TIER, principle=_PRINCIPLE, prompt=_PROMPT,
-        missing_message="No E2E test file found for this source file", ai_message=_ai_message,
-        files=files, agents=agents, no_cache=no_cache, role=role,
-        cache_dir=cache_dir, cache_ttl_days=cache_ttl_days,
+        path,
+        language,
+        tier=_TIER,
+        principle=_PRINCIPLE,
+        prompt=_PROMPT,
+        missing_message="No E2E test file found for this source file",
+        ai_message=_ai_message,
+        files=files,
+        agents=agents,
+        no_cache=no_cache,
+        role=role,
+        cache_dir=cache_dir,
+        cache_ttl_days=cache_ttl_days,
     )

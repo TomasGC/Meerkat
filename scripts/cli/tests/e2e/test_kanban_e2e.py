@@ -10,11 +10,10 @@ real usage.
 
 import json
 import subprocess
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
-
 
 pytestmark = pytest.mark.e2e_scripts
 
@@ -52,9 +51,12 @@ def kanban_file(tmp_path: Path) -> Path:
 # E2E: search on empty kanban
 # ---------------------------------------------------------------------------
 
+
 def test_search_empty_kanban(kanban_file, capsys):
-    from cli.search_kanban import SearchKanbanScript
     from unittest.mock import patch
+
+    from cli.search_kanban import SearchKanbanScript
+
     script = SearchKanbanScript()
     exit_code = script.run(["--issue", "#1", "--path", str(kanban_file), "--format", "json"])
     assert exit_code == 0
@@ -67,20 +69,28 @@ def test_search_empty_kanban(kanban_file, capsys):
 # E2E: full KANBAN lifecycle
 # ---------------------------------------------------------------------------
 
+
 def test_kanban_full_lifecycle(kanban_file, capsys):
-    from cli.update_kanban import UpdateKanbanScript
-    from cli.search_kanban import SearchKanbanScript
     from unittest.mock import patch
+
+    from cli.search_kanban import SearchKanbanScript
+    from cli.update_kanban import UpdateKanbanScript
 
     # Step 1: Create entry for issue #1
     update_script = UpdateKanbanScript()
     with patch("cli.update_kanban.find_kanban_file", return_value=kanban_file):
-        exit_code = update_script.run([
-            "--issue", "#1",
-            "--commits", "abc1234",
-            "--description", "Implemented initial authentication flow",
-            "--format", "json"
-        ])
+        exit_code = update_script.run(
+            [
+                "--issue",
+                "#1",
+                "--commits",
+                "abc1234",
+                "--description",
+                "Implemented initial authentication flow",
+                "--format",
+                "json",
+            ]
+        )
     assert exit_code == 0
 
     # Step 2: Verify entry was created
@@ -95,12 +105,18 @@ def test_kanban_full_lifecycle(kanban_file, capsys):
     # Step 3: Update same issue with additional commit
     capsys.readouterr()
     with patch("cli.update_kanban.find_kanban_file", return_value=kanban_file):
-        exit_code = update_script.run([
-            "--issue", "#1",
-            "--commits", "def5678",
-            "--description", "Added token refresh endpoint",
-            "--format", "json"
-        ])
+        exit_code = update_script.run(
+            [
+                "--issue",
+                "#1",
+                "--commits",
+                "def5678",
+                "--description",
+                "Added token refresh endpoint",
+                "--format",
+                "json",
+            ]
+        )
     assert exit_code == 0
     captured = capsys.readouterr()
     result = json.loads(captured.out)
@@ -115,10 +131,12 @@ def test_kanban_full_lifecycle(kanban_file, capsys):
 # E2E: multiple issues
 # ---------------------------------------------------------------------------
 
+
 def test_kanban_multiple_issues(kanban_file, capsys):
-    from cli.update_kanban import UpdateKanbanScript
-    from cli.search_kanban import SearchKanbanScript
     from unittest.mock import patch
+
+    from cli.search_kanban import SearchKanbanScript
+    from cli.update_kanban import UpdateKanbanScript
 
     update_script = UpdateKanbanScript()
     search_script = SearchKanbanScript()
@@ -147,10 +165,12 @@ def test_kanban_multiple_issues(kanban_file, capsys):
 # E2E: output format variations
 # ---------------------------------------------------------------------------
 
+
 def test_kanban_search_text_format(kanban_file, capsys):
-    from cli.update_kanban import UpdateKanbanScript
-    from cli.search_kanban import SearchKanbanScript
     from unittest.mock import patch
+
+    from cli.search_kanban import SearchKanbanScript
+    from cli.update_kanban import UpdateKanbanScript
 
     update_script = UpdateKanbanScript()
     with patch("cli.update_kanban.find_kanban_file", return_value=kanban_file):
@@ -165,8 +185,10 @@ def test_kanban_search_text_format(kanban_file, capsys):
 
 
 def test_kanban_search_summary_format(kanban_file, capsys):
-    from cli.search_kanban import SearchKanbanScript
     from unittest.mock import patch
+
+    from cli.search_kanban import SearchKanbanScript
+
     search_script = SearchKanbanScript()
     exit_code = search_script.run(["--issue", "#99", "--path", str(kanban_file), "--format", "summary"])
     assert exit_code == 0

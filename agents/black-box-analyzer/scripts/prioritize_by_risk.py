@@ -147,10 +147,7 @@ def assess_technical_risk(scenario: Scenario) -> tuple[int, str]:
             return 4, "Null handling - potential NullPointerException"
 
         # Boundary values
-        if any(
-            keyword in scenario.description.lower()
-            for keyword in ["max", "min", "boundary", "limit"]
-        ):
+        if any(keyword in scenario.description.lower() for keyword in ["max", "min", "boundary", "limit"]):
             return 3, "Boundary value handling"
 
         return 2, "General edge case"
@@ -208,10 +205,7 @@ def assess_failure_probability(scenario: Scenario) -> tuple[int, str]:
         if "none" in str(scenario.input_combination).lower():
             return 4, "Null handling frequently causes production issues"
 
-        if any(
-            keyword in scenario.description.lower()
-            for keyword in ["empty", "max", "boundary"]
-        ):
+        if any(keyword in scenario.description.lower() for keyword in ["empty", "max", "boundary"]):
             return 3, "Edge cases moderately likely to fail"
 
         return 2, "Edge cases generally handled"
@@ -383,15 +377,9 @@ def calculate_risk_stats(risk_assessments: list[RiskAssessment]) -> dict:
     }
 
     # Average scores
-    avg_business_impact = (
-        sum(a.business_impact for a in risk_assessments) / total if total > 0 else 0
-    )
-    avg_technical_risk = (
-        sum(a.technical_risk for a in risk_assessments) / total if total > 0 else 0
-    )
-    avg_failure_probability = (
-        sum(a.failure_probability for a in risk_assessments) / total if total > 0 else 0
-    )
+    avg_business_impact = sum(a.business_impact for a in risk_assessments) / total if total > 0 else 0
+    avg_technical_risk = sum(a.technical_risk for a in risk_assessments) / total if total > 0 else 0
+    avg_failure_probability = sum(a.failure_probability for a in risk_assessments) / total if total > 0 else 0
     avg_risk_score = sum(a.risk_score for a in risk_assessments) / total if total > 0 else 0
 
     return {
@@ -460,9 +448,7 @@ Examples:
         level_order = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
         min_level_index = level_order.index(args.min_level)
 
-        filtered_assessments = [
-            a for a in risk_assessments if level_order.index(a.risk_level) >= min_level_index
-        ]
+        filtered_assessments = [a for a in risk_assessments if level_order.index(a.risk_level) >= min_level_index]
 
         # Calculate stats
         stats = calculate_risk_stats(filtered_assessments)

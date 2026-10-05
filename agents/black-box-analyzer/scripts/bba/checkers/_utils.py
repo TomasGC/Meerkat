@@ -21,9 +21,9 @@ def find_source_files(path: Path, language: str, files: list | None = None) -> l
     exts = set(language_config.extensions(language))
     pool = discover_files(path) if files is None else files
     return [
-        f for f in pool
-        if (f.suffix in exts if exts else language_config.language_for_file(f) is not None)
-        and not is_test_file(f)
+        f
+        for f in pool
+        if (f.suffix in exts if exts else language_config.language_for_file(f) is not None) and not is_test_file(f)
     ]
 
 
@@ -35,7 +35,7 @@ def find_tier_test_files(path: Path, tier_parts: list[str]) -> list[Path]:
         if not f.is_file():
             continue
         parts = list(f.parts)
-        if any(parts[i:i + n] == tier_parts for i in range(len(parts) - n + 1)):
+        if any(parts[i : i + n] == tier_parts for i in range(len(parts) - n + 1)):
             result.append(f)
     return result
 
@@ -69,14 +69,16 @@ def run_gap_checker(
             if has_test_in_tier(f, tier_tests):
                 continue
             untested.add(f)
-            violations.append({
-                "principle": principle,
-                "file": str(f.relative_to(root) if f.is_relative_to(root) else f),
-                "line": 0,
-                "severity": "medium",
-                "message": missing_message,
-                "suggestion": f"Add tests/{'/'.join(tier)}/test_{f.stem}.py (or equivalent)",
-            })
+            violations.append(
+                {
+                    "principle": principle,
+                    "file": str(f.relative_to(root) if f.is_relative_to(root) else f),
+                    "line": 0,
+                    "severity": "medium",
+                    "message": missing_message,
+                    "suggestion": f"Add tests/{'/'.join(tier)}/test_{f.stem}.py (or equivalent)",
+                }
+            )
         return violations, len(sources)
 
     def format_ai(item: dict, rel: str) -> dict:
@@ -90,9 +92,15 @@ def run_gap_checker(
         }
 
     return run_hybrid(
-        path, language, principle, prompt, {},
-        prompts_dir=PROMPTS_DIR, files=files,
-        mechanical_fn=mechanical, format_ai_violation=format_ai,
+        path,
+        language,
+        principle,
+        prompt,
+        {},
+        prompts_dir=PROMPTS_DIR,
+        files=files,
+        mechanical_fn=mechanical,
+        format_ai_violation=format_ai,
         ai_filter=lambda f: f in untested,
         **engine_kwargs,
     )

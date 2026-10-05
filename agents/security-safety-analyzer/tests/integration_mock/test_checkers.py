@@ -1,9 +1,9 @@
 """Integration/mock tests — real filesystem, AI mocked to False."""
+
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
 
 CHECKERS = [
     ("ssa.checkers.check_security", "Security"),
@@ -40,10 +40,7 @@ def _make_project(tmp_path: Path) -> Path:
         "    prompt = f'User said: {user_input}'\n"
         "    return prompt\n"
     )
-    (src / "utils.py").write_text(
-        "def helper(x):\n"
-        "    return x\n"
-    )
+    (src / "utils.py").write_text("def helper(x):\n" "    return x\n")
     return tmp_path
 
 
@@ -54,6 +51,7 @@ _NO_AI = {"ssa.checkers.check_error_handling"}  # purely mechanical checkers
 def test_checker_returns_valid_schema(tmp_path, module_path, principle):
     project = _make_project(tmp_path)
     import importlib
+
     mod = importlib.import_module(module_path)
 
     mock_target = f"{module_path}.check_server_available"
@@ -78,16 +76,20 @@ def test_checker_returns_valid_schema(tmp_path, module_path, principle):
         assert "message" in v
 
 
-@pytest.mark.parametrize("module_path,principle", [
-    ("ssa.checkers.check_security", "Security"),
-    ("ssa.checkers.check_crash_bugs", "CrashBug"),
-    ("ssa.checkers.check_error_handling", "ErrorHandling"),
-    ("ssa.checkers.check_prompt_injection", "PromptInjection"),
-])
+@pytest.mark.parametrize(
+    "module_path,principle",
+    [
+        ("ssa.checkers.check_security", "Security"),
+        ("ssa.checkers.check_crash_bugs", "CrashBug"),
+        ("ssa.checkers.check_error_handling", "ErrorHandling"),
+        ("ssa.checkers.check_prompt_injection", "PromptInjection"),
+    ],
+)
 def test_hybrid_checkers_find_violations_mechanically(tmp_path, module_path, principle):
     """Hybrid checkers must detect at least one violation in the seeded project without AI."""
     project = _make_project(tmp_path)
     import importlib
+
     mod = importlib.import_module(module_path)
 
     mock_target = f"{module_path}.check_server_available"
@@ -97,9 +99,9 @@ def test_hybrid_checkers_find_violations_mechanically(tmp_path, module_path, pri
         with patch(mock_target, return_value=False):
             result = mod.run(project, "python")
 
-    assert len(result["violations"]) >= 1, (
-        f"{principle} checker found no violations in seeded project (mechanical path)"
-    )
+    assert (
+        len(result["violations"]) >= 1
+    ), f"{principle} checker found no violations in seeded project (mechanical path)"
 
 
 def _make_hybrid_project(tmp_path: Path) -> Path:
@@ -107,24 +109,11 @@ def _make_hybrid_project(tmp_path: Path) -> Path:
     src = tmp_path / "src"
     src.mkdir()
     (src / "crypto_use.py").write_text(
-        "import hashlib\n"
-        "def fingerprint(data):\n"
-        "    return hashlib.md5(data).hexdigest()\n"
+        "import hashlib\n" "def fingerprint(data):\n" "    return hashlib.md5(data).hexdigest()\n"
     )
-    (src / "loader.py").write_text(
-        "import pickle\n"
-        "def load(payload):\n"
-        "    return pickle.loads(payload)\n"
-    )
-    (src / "settings.py").write_text(
-        "DEBUG = True\n"
-        "ALLOWED_HOSTS = ['*']\n"
-    )
-    (src / "io_helpers.py").write_text(
-        "def read(path):\n"
-        "    handle = open(path)\n"
-        "    return handle.read()\n"
-    )
+    (src / "loader.py").write_text("import pickle\n" "def load(payload):\n" "    return pickle.loads(payload)\n")
+    (src / "settings.py").write_text("DEBUG = True\n" "ALLOWED_HOSTS = ['*']\n")
+    (src / "io_helpers.py").write_text("def read(path):\n" "    handle = open(path)\n" "    return handle.read()\n")
     (src / "audit.py").write_text(
         "import logging\n"
         "logger = logging.getLogger(__name__)\n"
@@ -138,6 +127,7 @@ def _make_hybrid_project(tmp_path: Path) -> Path:
 def test_hybrid_driver_checker_returns_valid_schema(tmp_path, module_path, principle):
     project = _make_hybrid_project(tmp_path)
     import importlib
+
     mod = importlib.import_module(module_path)
 
     with patch("lib.engine.hybrid.check_server_available", return_value=False):
@@ -159,14 +149,15 @@ def test_hybrid_driver_checker_returns_valid_schema(tmp_path, module_path, princ
 def test_hybrid_driver_checker_finds_violations_mechanically(tmp_path, module_path, principle):
     project = _make_hybrid_project(tmp_path)
     import importlib
+
     mod = importlib.import_module(module_path)
 
     with patch("lib.engine.hybrid.check_server_available", return_value=False):
         result = mod.run(project, "python")
 
-    assert len(result["violations"]) >= 1, (
-        f"{principle} checker found no violations in seeded project (mechanical path)"
-    )
+    assert (
+        len(result["violations"]) >= 1
+    ), f"{principle} checker found no violations in seeded project (mechanical path)"
 
 
 @pytest.mark.parametrize("module_path,principle", HYBRID_CHECKERS)
@@ -174,6 +165,7 @@ def test_hybrid_driver_checker_passes_known_findings_to_ai(tmp_path, module_path
     """Mechanical results must reach the prompt so the AI layer does not repeat them."""
     project = _make_hybrid_project(tmp_path)
     import importlib
+
     mod = importlib.import_module(module_path)
 
     captured = {}
@@ -182,8 +174,9 @@ def test_hybrid_driver_checker_passes_known_findings_to_ai(tmp_path, module_path
         captured["extra_slots"] = kwargs.get("extra_slots")
         return []
 
-    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
-         patch("lib.engine.hybrid.analyze_files_parallel", side_effect=fake_analyze):
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), patch(
+        "lib.engine.hybrid.analyze_files_parallel", side_effect=fake_analyze
+    ):
         mod.run(project, "python")
 
     slots = captured["extra_slots"]

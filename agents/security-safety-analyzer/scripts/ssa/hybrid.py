@@ -3,8 +3,9 @@
 
 from pathlib import Path
 
-from lib.engine.hybrid import resolve_language, scan_patterns, select_files  # noqa: F401
+from lib.engine.hybrid import resolve_language  # noqa: F401
 from lib.engine.hybrid import run_hybrid as _run_hybrid
+from lib.engine.hybrid import scan_patterns, select_files  # noqa: F401
 
 _AGENT_DIR = Path(__file__).parent.parent
 _PROMPTS_DIR = _AGENT_DIR / "prompts" / "local"

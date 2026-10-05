@@ -4,7 +4,6 @@
 from pathlib import Path
 
 import pytest
-
 from lib.engine import discovery
 from lib.engine.discovery import dominant_language, group_by_language, is_test_file
 
@@ -24,8 +23,18 @@ def _touch(root: Path, *names: str) -> None:
 
 
 class TestIsTestFile:
-    @pytest.mark.parametrize("name", ["test_app.py", "app_test.go", "app.spec.ts", "mock_db.py",
-                                      "fixture_data.py", "0001_migration.py", "AppTests.cs"])
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "test_app.py",
+            "app_test.go",
+            "app.spec.ts",
+            "mock_db.py",
+            "fixture_data.py",
+            "0001_migration.py",
+            "AppTests.cs",
+        ],
+    )
     def test_marked(self, name):
         assert is_test_file(Path("src") / name) is True
 

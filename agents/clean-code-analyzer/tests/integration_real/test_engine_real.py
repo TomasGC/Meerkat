@@ -13,13 +13,12 @@ from pathlib import Path
 
 import pytest
 
-
 _SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts"
 _ORCHESTRATE = _SCRIPTS_DIR / "orchestrate.py"
 _TIMEOUT_S = 900
 _NEAR_LINES = 3
 
-_MIXED_ABSTRACTION = '''\
+_MIXED_ABSTRACTION = """\
 class ReportJob:
     def run(self, path):
         rows = self.load(path)
@@ -34,7 +33,7 @@ class ReportJob:
 
     def publish(self, rows, total):
         return None
-'''
+"""
 
 _UNUSED_FUNCTION = '''\
 """Order service."""
@@ -55,8 +54,7 @@ if __name__ == "__main__":
 
 def _run_orchestrate(project: Path, cache_dir: Path, *args: str) -> dict:
     result = subprocess.run(
-        [sys.executable, str(_ORCHESTRATE), "--path", str(project), "--full",
-         "--format", "json", *args],
+        [sys.executable, str(_ORCHESTRATE), "--path", str(project), "--full", "--format", "json", *args],
         capture_output=True,
         text=True,
         timeout=_TIMEOUT_S,

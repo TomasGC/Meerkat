@@ -4,12 +4,11 @@ These exercise the path that mocked tests cannot: real prompt rendering, real
 response parsing, and the mechanical/AI reconciliation. Skipped when no local
 AI server is reachable.
 """
+
 import importlib
 from pathlib import Path
 
 import pytest
-
-
 from ssa.model_utils import check_server_available
 
 pytestmark = [
@@ -89,14 +88,10 @@ def test_security_does_not_duplicate_mechanical_findings(python_project):
     for violation in result["violations"]:
         by_line.setdefault(violation["line"], []).append(violation["message"])
 
-    mechanical_lines = [
-        line for line, msgs in by_line.items()
-        if any(not m.startswith("[") for m in msgs)
-    ]
+    mechanical_lines = [line for line, msgs in by_line.items() if any(not m.startswith("[") for m in msgs)]
     for line in mechanical_lines:
         near_ai = [
-            other for other, msgs in by_line.items()
-            if abs(other - line) <= 3 and any(m.startswith("[") for m in msgs)
+            other for other, msgs in by_line.items() if abs(other - line) <= 3 and any(m.startswith("[") for m in msgs)
         ]
         assert not near_ai, f"AI finding at {near_ai} duplicates mechanical finding at line {line}"
 
@@ -124,8 +119,7 @@ def test_crash_bugs_ai_path_on_non_python(go_project):
 
 def test_no_checker_reports_failure(python_project):
     """Every AI-capable checker completes without setting an error."""
-    for module_name in ("check_security", "check_prompt_injection",
-                        "check_crash_bugs", "check_concurrency"):
+    for module_name in ("check_security", "check_prompt_injection", "check_crash_bugs", "check_concurrency"):
         result = _run(module_name, python_project, "python")
         assert result["success"], f"{module_name}: {result.get('error')}"
         assert "error" not in result

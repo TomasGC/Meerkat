@@ -6,12 +6,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from bba.model_utils import (
+    PROMPTS_DIR,
     extract_json_array,
     extract_json_object,
     run_prompt,
-    PROMPTS_DIR,
 )
 
 

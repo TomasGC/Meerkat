@@ -1,17 +1,18 @@
 """Multi-language integration tests using real Ollama."""
-import pytest
+
 from pathlib import Path
 
+import pytest
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "e2e"
 
 LANGUAGES = [
     ("typescript", FIXTURES / "dirty_typescript"),
     ("javascript", FIXTURES / "dirty_javascript"),
-    ("csharp",     FIXTURES / "dirty_csharp"),
-    ("go",         FIXTURES / "dirty_go"),
+    ("csharp", FIXTURES / "dirty_csharp"),
+    ("go", FIXTURES / "dirty_go"),
     ("powershell", FIXTURES / "dirty_powershell"),
-    ("bash",       FIXTURES / "dirty_bash"),
+    ("bash", FIXTURES / "dirty_bash"),
 ]
 
 
@@ -22,10 +23,11 @@ def test_solid_detects_violations_in_language(language, fixture_dir, tmp_path):
     if not fixture_dir.exists():
         pytest.skip(f"Fixture dir missing: {fixture_dir}")
     from cca.checkers.check_solid import run
+
     result = run(fixture_dir, language)
-    assert result["success"] is True or result.get("violations") is not None, (
-        f"SOLID checker failed entirely for {language}: {result.get('error')}"
-    )
+    assert (
+        result["success"] is True or result.get("violations") is not None
+    ), f"SOLID checker failed entirely for {language}: {result.get('error')}"
     # Ollama may or may not find violations — just verify it ran without crashing
     assert isinstance(result["violations"], list)
 
@@ -37,6 +39,7 @@ def test_cqrs_runs_on_language(language, fixture_dir):
     if not fixture_dir.exists():
         pytest.skip(f"Fixture dir missing: {fixture_dir}")
     from cca.checkers.check_cqrs import run
+
     result = run(fixture_dir, language)
     assert isinstance(result.get("violations"), list)
 
@@ -48,6 +51,7 @@ def test_solid_finds_violations_in_typescript(tmp_path):
     if not fixture.exists():
         pytest.skip("TypeScript fixture missing")
     from cca.checkers.check_solid import run
+
     result = run(fixture, "typescript")
     assert result["success"] is True
     # GodService clearly violates SRP — Ollama should detect it
@@ -61,6 +65,7 @@ def test_mechanical_checkers_skip_non_python_gracefully(tmp_path):
     if not fixture.exists():
         pytest.skip("TypeScript fixture missing")
     from cca.checkers.check_naming import run
+
     result = run(fixture, "typescript")
     # Should not crash — may return 0 violations (AST only works on Python)
     assert result.get("success") is not None

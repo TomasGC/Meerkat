@@ -19,8 +19,8 @@ from .formatters import (
 from .integrations import (
     IntegrationConfig,
     get_docs_provider,
-    get_issues_provider,
     get_issue_format,
+    get_issues_provider,
     get_vcs_provider,
     list_profiles,
     load_integrations,
@@ -44,8 +44,8 @@ from .models import (
 )
 from .utils import (
     detect_language,
-    extract_params_from_path,
     extract_issue_from_branch,
+    extract_params_from_path,
     format_percentage,
     normalize_name,
     parse_git_remote_url,

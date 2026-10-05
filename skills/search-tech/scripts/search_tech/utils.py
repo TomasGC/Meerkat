@@ -5,9 +5,9 @@ Utility functions for search scripts.
 Common helpers to reduce code duplication.
 """
 
-from functools import wraps
 import time
-from typing import Callable, Any
+from functools import wraps
+from typing import Any, Callable
 
 
 def retry_on_timeout(max_retries: int = 3, delay: float = 2.0):
@@ -27,6 +27,7 @@ def retry_on_timeout(max_retries: int = 3, delay: float = 2.0):
             response = requests.get(url, timeout=10)
             return response.json()
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs) -> Any:
@@ -41,5 +42,7 @@ def retry_on_timeout(max_retries: int = 3, delay: float = 2.0):
                     else:
                         # Last attempt failed, re-raise
                         raise
+
         return wrapper
+
     return decorator

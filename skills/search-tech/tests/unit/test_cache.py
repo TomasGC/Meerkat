@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Tests for search_tech.cache module."""
 
-import pytest
 import json
 import time
-from pathlib import Path
 from datetime import datetime, timedelta
+from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from search_tech.cache import SearchCache
 
 
@@ -127,9 +127,9 @@ class TestSearchCache:
         # Backdate one entry past the TTL instead of sleeping: the test then
         # proves clear_expired() is selective, which sleeping cannot show.
         stale_path = cache._get_cache_path(cache._get_cache_key("stale", {}))
-        entry = json.loads(stale_path.read_text(encoding='utf-8'))
-        entry['cached_at'] = (datetime.now() - timedelta(seconds=7200)).isoformat()
-        stale_path.write_text(json.dumps(entry), encoding='utf-8')
+        entry = json.loads(stale_path.read_text(encoding="utf-8"))
+        entry["cached_at"] = (datetime.now() - timedelta(seconds=7200)).isoformat()
+        stale_path.write_text(json.dumps(entry), encoding="utf-8")
 
         cache.clear_expired()
 
@@ -204,9 +204,9 @@ class TestSearchCache:
         cache.set("real query", {}, {"data": "secret"})
 
         cache_path = cache._get_cache_path(cache._get_cache_key("real query", {}))
-        entry = json.loads(cache_path.read_text(encoding='utf-8'))
-        entry['query'] = "attacker planted"
-        cache_path.write_text(json.dumps(entry), encoding='utf-8')
+        entry = json.loads(cache_path.read_text(encoding="utf-8"))
+        entry["query"] = "attacker planted"
+        cache_path.write_text(json.dumps(entry), encoding="utf-8")
 
         assert cache.get("real query", {}) is None
         assert not cache_path.exists()
@@ -216,9 +216,9 @@ class TestSearchCache:
         cache.set("q", {"tag": "python"}, {"data": "py"})
 
         cache_path = cache._get_cache_path(cache._get_cache_key("q", {"tag": "python"}))
-        entry = json.loads(cache_path.read_text(encoding='utf-8'))
-        entry['filters'] = {"tag": "javascript"}
-        cache_path.write_text(json.dumps(entry), encoding='utf-8')
+        entry = json.loads(cache_path.read_text(encoding="utf-8"))
+        entry["filters"] = {"tag": "javascript"}
+        cache_path.write_text(json.dumps(entry), encoding="utf-8")
 
         assert cache.get("q", {"tag": "python"}) is None
 
@@ -227,9 +227,9 @@ class TestSearchCache:
         cache.set("q", {}, {"data": "x"})
 
         cache_path = cache._get_cache_path(cache._get_cache_key("q", {}))
-        entry = json.loads(cache_path.read_text(encoding='utf-8'))
-        del entry['data']
-        cache_path.write_text(json.dumps(entry), encoding='utf-8')
+        entry = json.loads(cache_path.read_text(encoding="utf-8"))
+        del entry["data"]
+        cache_path.write_text(json.dumps(entry), encoding="utf-8")
 
         assert cache.get("q", {}) is None
         assert not cache_path.exists()
@@ -237,7 +237,7 @@ class TestSearchCache:
     def test_non_dict_entry_is_discarded(self, cache):
         """Valid JSON that is not an object must not crash get()."""
         cache_path = cache._get_cache_path(cache._get_cache_key("q", {}))
-        cache_path.write_text('["not", "a", "dict"]', encoding='utf-8')
+        cache_path.write_text('["not", "a", "dict"]', encoding="utf-8")
 
         assert cache.get("q", {}) is None
         assert not cache_path.exists()
@@ -247,9 +247,9 @@ class TestSearchCache:
         cache.set("q", {}, {"data": "x"})
 
         cache_path = cache._get_cache_path(cache._get_cache_key("q", {}))
-        entry = json.loads(cache_path.read_text(encoding='utf-8'))
-        entry['cached_at'] = "not-a-timestamp"
-        cache_path.write_text(json.dumps(entry), encoding='utf-8')
+        entry = json.loads(cache_path.read_text(encoding="utf-8"))
+        entry["cached_at"] = "not-a-timestamp"
+        cache_path.write_text(json.dumps(entry), encoding="utf-8")
 
         assert cache.get("q", {}) is None
 

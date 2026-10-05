@@ -56,16 +56,22 @@ def generate_descriptions(categories: dict[str, int], style: str = "professional
         elif style == "detailed":
             descriptions.append(f"Created {count} cross-platform automation scripts for workflow optimization")
         else:  # professional
-            descriptions.append(f"Developed {count} cross-platform utility scripts for automation and workflow optimization")
+            descriptions.append(
+                f"Developed {count} cross-platform utility scripts for automation and workflow optimization"
+            )
 
     # Standards
     if categories.get("standards", 0) > 0:
         if style == "concise":
             descriptions.append("Coding standards defined")
         elif style == "detailed":
-            descriptions.append("Documented comprehensive coding standards for 15+ technologies including best practices")
+            descriptions.append(
+                "Documented comprehensive coding standards for 15+ technologies including best practices"
+            )
         else:  # professional
-            descriptions.append("Defined coding standards across 15+ technologies (C#, Go, TypeScript, JavaScript, Vue.js, Docker, Kubernetes)")
+            descriptions.append(
+                "Defined coding standards across 15+ technologies (C#, Go, TypeScript, JavaScript, Vue.js, Docker, Kubernetes)"
+            )
 
     # Documentation
     if categories.get("documentation", 0) > 0:
@@ -73,16 +79,22 @@ def generate_descriptions(categories: dict[str, int], style: str = "professional
         if style == "concise":
             descriptions.append(f"Documentation ({count} files)")
         elif style == "detailed":
-            descriptions.append(f"Created extensive documentation covering API docs, setup guides, and best practices with {count} files")
+            descriptions.append(
+                f"Created extensive documentation covering API docs, setup guides, and best practices with {count} files"
+            )
         else:  # professional
-            descriptions.append(f"Comprehensive documentation including API docs, setup guides, and best practices ({count} files)")
+            descriptions.append(
+                f"Comprehensive documentation including API docs, setup guides, and best practices ({count} files)"
+            )
 
     # Configuration
     if categories.get("configuration", 0) > 0:
         if style == "concise":
             descriptions.append("Environment configuration")
         else:
-            descriptions.append("Configured development environment with Git integration and cross-platform compatibility")
+            descriptions.append(
+                "Configured development environment with Git integration and cross-platform compatibility"
+            )
 
     # Code (fallback)
     if categories.get("code", 0) > 0 and len(descriptions) == 0:
@@ -102,37 +114,20 @@ class GenerateKanbanEntryScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--commits", "-c", default="", help="Comma-separated commit hashes to analyze")
+        parser.add_argument("--auto", "-a", action="store_true", help="Auto-detect commits from current branch vs base")
         parser.add_argument(
-            "--commits",
-            "-c",
-            default="",
-            help="Comma-separated commit hashes to analyze"
+            "--base-branch", "-b", default="", help="Base branch for auto-detection (default: auto-detect)"
         )
         parser.add_argument(
-            "--auto",
-            "-a",
-            action="store_true",
-            help="Auto-detect commits from current branch vs base"
-        )
-        parser.add_argument(
-            "--base-branch",
-            "-b",
-            default="",
-            help="Base branch for auto-detection (default: auto-detect)"
-        )
-        parser.add_argument(
-            "--max-bullets",
-            "-m",
-            type=int,
-            default=7,
-            help="Maximum number of bullet points (default: 7)"
+            "--max-bullets", "-m", type=int, default=7, help="Maximum number of bullet points (default: 7)"
         )
         parser.add_argument(
             "--style",
             "-s",
             choices=["professional", "detailed", "concise"],
             default="professional",
-            help="Description style (default: professional)"
+            help="Description style (default: professional)",
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -146,16 +141,10 @@ class GenerateKanbanEntryScript(BaseCLIScript):
             elif args.commits:
                 commit_hashes = [c.strip() for c in args.commits.split(",")]
             else:
-                return {
-                    "success": False,
-                    "error": "Either --auto or --commits must be specified"
-                }
+                return {"success": False, "error": "Either --auto or --commits must be specified"}
 
             if not commit_hashes:
-                return {
-                    "success": True,
-                    "descriptions": ["No significant patterns detected in commits"]
-                }
+                return {"success": True, "descriptions": ["No significant patterns detected in commits"]}
 
             # Analyze commits
             all_files = []
@@ -173,25 +162,21 @@ class GenerateKanbanEntryScript(BaseCLIScript):
             descriptions = generate_descriptions(dict(categories), args.style)
 
             # Limit to max bullets
-            descriptions = descriptions[:args.max_bullets]
+            descriptions = descriptions[: args.max_bullets]
 
             if not descriptions:
                 descriptions = ["No significant patterns detected in commits"]
-
 
             return {
                 "success": True,
                 "descriptions": descriptions,
                 "commits": len(commit_hashes),
-                "files": len(all_files)
+                "files": len(all_files),
             }
 
         except Exception as e:
             self.logger.error(f"Failed to generate KANBAN entry: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -210,4 +195,5 @@ class GenerateKanbanEntryScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(GenerateKanbanEntryScript)

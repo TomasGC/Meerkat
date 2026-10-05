@@ -22,7 +22,7 @@ def scenario_matches_test_library(scenario: Scenario, test: TestCase) -> bool:
     Library-mode matching: compare method name + branch condition keywords
     against test name, rather than HTTP path + method.
     """
-    method_name = scenario.endpoint.lower()       # repurposed as method name
+    method_name = scenario.endpoint.lower()  # repurposed as method name
     branch_condition = scenario.input_combination.get("condition", "").lower()
     test_name_lower = test.name.lower()
 
@@ -77,10 +77,7 @@ def scenario_matches_test(scenario: Scenario, test: TestCase) -> bool:
 
     # Happy path keywords
     if scenario.scenario_type == "happy_path":
-        if any(
-            keyword in test_name_lower
-            for keyword in ["success", "valid", "should_work", "returns_ok", "200"]
-        ):
+        if any(keyword in test_name_lower for keyword in ["success", "valid", "should_work", "returns_ok", "200"]):
             return True
 
     # Error case keywords
@@ -123,10 +120,7 @@ def scenario_matches_test(scenario: Scenario, test: TestCase) -> bool:
 
     # Edge case keywords
     elif scenario.scenario_type == "edge_case":
-        if any(
-            keyword in test_name_lower
-            for keyword in ["edge", "boundary", "limit", "empty", "null", "max", "min"]
-        ):
+        if any(keyword in test_name_lower for keyword in ["edge", "boundary", "limit", "empty", "null", "max", "min"]):
             return True
 
     # Fallback: if endpoint and method match, assume some coverage
@@ -136,9 +130,7 @@ def scenario_matches_test(scenario: Scenario, test: TestCase) -> bool:
     return False
 
 
-def find_related_tests(
-    scenario: Scenario, all_tests: list[TestCase], mode: str = "api"
-) -> list[TestCase]:
+def find_related_tests(scenario: Scenario, all_tests: list[TestCase], mode: str = "api") -> list[TestCase]:
     """
     Find all tests related to a scenario.
 
@@ -151,9 +143,7 @@ def find_related_tests(
     return [test for test in all_tests if matcher(scenario, test)]
 
 
-def generate_coverage_matrix(
-    scenarios_file: Path, tests_file: Path, mode: str = "api"
-) -> list[CoverageGap]:
+def generate_coverage_matrix(scenarios_file: Path, tests_file: Path, mode: str = "api") -> list[CoverageGap]:
     """
     Generate coverage matrix from scenarios and tests.
 
@@ -251,9 +241,7 @@ def calculate_coverage_stats(coverage_gaps: list[CoverageGap]) -> dict:
 
     # Calculate endpoint coverage percentages
     for stats in endpoint_stats.values():
-        stats["coverage_percent"] = (
-            (stats["tested"] / stats["total"] * 100) if stats["total"] > 0 else 0
-        )
+        stats["coverage_percent"] = (stats["tested"] / stats["total"] * 100) if stats["total"] > 0 else 0
 
     # Group by scenario type
     type_stats = {}
@@ -274,17 +262,15 @@ def calculate_coverage_stats(coverage_gaps: list[CoverageGap]) -> dict:
 
     # Calculate type coverage percentages
     for stats in type_stats.values():
-        stats["coverage_percent"] = (
-            (stats["tested"] / stats["total"] * 100) if stats["total"] > 0 else 0
-        )
+        stats["coverage_percent"] = (stats["tested"] / stats["total"] * 100) if stats["total"] > 0 else 0
 
     return {
         "total_scenarios": total_scenarios,
         "tested_scenarios": tested_scenarios,
         "untested_scenarios": untested_scenarios,
         "coverage_percent": round(coverage_percent, 2),
-        "by_entry_point": endpoint_stats,   # canonical key (works for API + library)
-        "by_endpoint": endpoint_stats,      # legacy alias — kept for backward compat
+        "by_entry_point": endpoint_stats,  # canonical key (works for API + library)
+        "by_endpoint": endpoint_stats,  # legacy alias — kept for backward compat
         "by_type": type_stats,
     }
 

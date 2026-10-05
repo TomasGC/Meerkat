@@ -3,6 +3,7 @@
 
 import pytest
 
+# Aliased: pytest tries to collect module-level names starting with "Test"
 from bba.models import (
     AnalysisResult,
     CoverageGap,
@@ -16,11 +17,11 @@ from bba.models import (
     RiskAssessment,
     Scenario,
 )
-# Aliased: pytest tries to collect module-level names starting with "Test"
 from bba.models import TestCase as TestCaseModel
 from bba.models import TestFramework as TestFrameworkModel
 
 # ── builders ──────────────────────────────────────────────────────────────────
+
 
 def _parameter() -> Parameter:
     return Parameter(
@@ -31,6 +32,7 @@ def _parameter() -> Parameter:
         default_value="none",
         constraints={"min": 1},
     )
+
 
 def _test_case() -> TestCaseModel:
     return TestCaseModel(
@@ -45,6 +47,7 @@ def _test_case() -> TestCaseModel:
         test_type="unit",
     )
 
+
 def _scenario() -> Scenario:
     return Scenario(
         endpoint="/users/:id",
@@ -55,8 +58,10 @@ def _scenario() -> Scenario:
         description="missing id",
     )
 
+
 def _gap() -> CoverageGap:
     return CoverageGap(scenario=_scenario(), is_tested=True, related_tests=[_test_case()])
+
 
 def _risk() -> RiskAssessment:
     return RiskAssessment(
@@ -69,6 +74,7 @@ def _risk() -> RiskAssessment:
         reasoning="deletes data",
     )
 
+
 def _matrix() -> CoverageMatrix:
     return CoverageMatrix(
         total_scenarios=10,
@@ -78,6 +84,7 @@ def _matrix() -> CoverageMatrix:
         gaps=[_gap()],
         by_endpoint={"GET /users": {"total": 2}},
     )
+
 
 def _result() -> AnalysisResult:
     return AnalysisResult(
@@ -100,11 +107,14 @@ def _result() -> AnalysisResult:
         metadata={"analyzer": "APIAnalyzer"},
     )
 
+
 # ── Parameter ─────────────────────────────────────────────────────────────────
+
 
 def test_parameter_roundtrip():
     restored = Parameter.from_dict(_parameter().to_dict())
     assert restored == _parameter()
+
 
 def test_parameter_from_dict_applies_defaults():
     restored = Parameter.from_dict({"name": "q", "param_type": "query", "data_type": "string"})
@@ -112,7 +122,9 @@ def test_parameter_from_dict_applies_defaults():
     assert restored.default_value is None
     assert restored.constraints == {}
 
+
 # ── EntryPoint ────────────────────────────────────────────────────────────────
+
 
 def test_entry_point_roundtrip_restores_enum():
     original = _result().entry_points[0]
@@ -121,7 +133,9 @@ def test_entry_point_roundtrip_restores_enum():
     assert isinstance(restored.type, EntryPointType)
     assert isinstance(restored.params[0], Parameter)
 
+
 # ── Endpoint ──────────────────────────────────────────────────────────────────
+
 
 def test_endpoint_roundtrip_restores_enum():
     original = Endpoint(
@@ -138,7 +152,9 @@ def test_endpoint_roundtrip_restores_enum():
     assert restored == original
     assert isinstance(restored.method, HTTPMethod)
 
+
 # ── TestCase ──────────────────────────────────────────────────────────────────
+
 
 def test_test_case_roundtrip_restores_enums():
     restored = TestCaseModel.from_dict(_test_case().to_dict())
@@ -146,17 +162,21 @@ def test_test_case_roundtrip_restores_enums():
     assert isinstance(restored.framework, TestFrameworkModel)
     assert isinstance(restored.tested_method, HTTPMethod)
 
+
 def test_test_case_from_dict_keeps_none_method():
     payload = _test_case().to_dict()
     payload["tested_method"] = None
     assert TestCaseModel.from_dict(payload).tested_method is None
 
+
 # ── Scenario / CoverageGap ────────────────────────────────────────────────────
+
 
 def test_scenario_roundtrip():
     restored = Scenario.from_dict(_scenario().to_dict())
     assert restored == _scenario()
     assert isinstance(restored.method, HTTPMethod)
+
 
 def test_coverage_gap_roundtrip_nests_objects():
     restored = CoverageGap.from_dict(_gap().to_dict())
@@ -164,14 +184,18 @@ def test_coverage_gap_roundtrip_nests_objects():
     assert isinstance(restored.scenario, Scenario)
     assert isinstance(restored.related_tests[0], TestCaseModel)
 
+
 # ── RiskAssessment ────────────────────────────────────────────────────────────
+
 
 def test_risk_assessment_roundtrip():
     restored = RiskAssessment.from_dict(_risk().to_dict())
     assert restored == _risk()
     assert isinstance(restored.gap, CoverageGap)
 
+
 # ── CoverageMatrix ────────────────────────────────────────────────────────────
+
 
 def test_coverage_matrix_roundtrip_rounds_percent():
     restored = CoverageMatrix.from_dict(_matrix().to_dict())
@@ -181,12 +205,15 @@ def test_coverage_matrix_roundtrip_rounds_percent():
     assert restored.by_endpoint == {"GET /users": {"total": 2}}
     assert isinstance(restored.gaps[0], CoverageGap)
 
+
 # ── AnalysisResult ────────────────────────────────────────────────────────────
+
 
 def test_analysis_result_roundtrip_is_stable():
     payload = _result().to_dict()
     # Second serialization must match the first: nothing is lost on rebuild
     assert AnalysisResult.from_dict(payload).to_dict() == payload
+
 
 def test_analysis_result_roundtrip_restores_types():
     restored = AnalysisResult.from_dict(_result().to_dict())
@@ -197,6 +224,7 @@ def test_analysis_result_roundtrip_restores_types():
     assert isinstance(restored.coverage_matrix, CoverageMatrix)
     assert isinstance(restored.risk_assessment[0], RiskAssessment)
     assert restored.metadata == {"analyzer": "APIAnalyzer"}
+
 
 def test_analysis_result_from_dict_tolerates_missing_lists():
     minimal = {

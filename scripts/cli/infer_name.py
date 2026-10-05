@@ -6,10 +6,10 @@ Analyzes purpose keywords and proposes naming options with reasoning.
 """
 
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript, create_cli_script
@@ -47,7 +47,19 @@ NOUN_MAPPINGS = {
     "structure": ["structure", "layout", "organization", "architecture"],
     "pattern": ["patterns", "pattern", "templates", "conventions"],
     "project": ["project", "repository", "repo", "workspace"],
-    "issue": ["issues", "issue", "tickets", "ticket", "tasks", "task", "us", "user-stories", "user-story", "user stories", "user story"],
+    "issue": [
+        "issues",
+        "issue",
+        "tickets",
+        "ticket",
+        "tasks",
+        "task",
+        "us",
+        "user-stories",
+        "user-story",
+        "user stories",
+        "user story",
+    ],
     "branch": ["branches", "branch", "refs", "heads"],
     "pull request": ["pull-request", "pr", "merge-request", "mr"],
 }
@@ -58,37 +70,25 @@ class InferNameScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--purpose",
-            "-p",
-            required=True,
-            help="Purpose description (e.g., 'Analyze git commits')"
-        )
+        parser.add_argument("--purpose", "-p", required=True, help="Purpose description (e.g., 'Analyze git commits')")
         parser.add_argument(
             "--type",
             "-t",
             choices=["skill", "script", "agent"],
             default="script",
-            help="Component type (default: script)"
+            help="Component type (default: script)",
         )
-        parser.add_argument(
-            "--count",
-            "-c",
-            type=int,
-            default=3,
-            help="Number of suggestions (default: 3)"
-        )
+        parser.add_argument("--count", "-c", type=int, default=3, help="Number of suggestions (default: 3)")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute name inference."""
         # Generate suggestions
         suggestions = self._infer_names(args.purpose, args.type, args.count)
 
-
         return {
             "purpose": args.purpose,
             "type": args.type,
-            "suggestions": [self._suggestion_to_dict(s) for s in suggestions]
+            "suggestions": [self._suggestion_to_dict(s) for s in suggestions],
         }
 
     def _infer_names(self, purpose: str, component_type: str, count: int) -> list[NameSuggestion]:
@@ -162,7 +162,7 @@ class InferNameScript(BaseCLIScript):
                     break
 
         if not detected:
-            words = re.findall(r'\b[a-z]+\b', purpose_lower)
+            words = re.findall(r"\b[a-z]+\b", purpose_lower)
             detected = [w for w in words if len(w) > 3 and w not in VERB_MAPPINGS][:2]
 
         return detected[:3]
@@ -173,18 +173,14 @@ class InferNameScript(BaseCLIScript):
             "name": suggestion.name,
             "reasoning": suggestion.reasoning,
             "pattern": suggestion.pattern,
-            "confidence": suggestion.confidence
+            "confidence": suggestion.confidence,
         }
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
-        lines = [
-            f"Name Suggestions for: {result['purpose']}",
-            f"Type: {result['type']}",
-            ""
-        ]
+        lines = [f"Name Suggestions for: {result['purpose']}", f"Type: {result['type']}", ""]
 
-        for i, suggestion in enumerate(result['suggestions'], 1):
+        for i, suggestion in enumerate(result["suggestions"], 1):
             lines.append(f"{i}. {suggestion['name']}")
             lines.append(f"   Pattern: {suggestion['pattern']}")
             lines.append(f"   Reasoning: {suggestion['reasoning']}")
@@ -195,7 +191,7 @@ class InferNameScript(BaseCLIScript):
 
     def format_summary(self, result: dict) -> str:
         """Format as brief summary."""
-        top = result['suggestions'][0] if result['suggestions'] else {"name": "N/A"}
+        top = result["suggestions"][0] if result["suggestions"] else {"name": "N/A"}
         return f"Suggested: {top['name']} ({len(result['suggestions'])} options)"
 
 

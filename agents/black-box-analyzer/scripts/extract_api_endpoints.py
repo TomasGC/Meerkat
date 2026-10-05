@@ -33,7 +33,6 @@ from bba.utils import (
 )
 
 
-
 def extract_go_endpoints(project_path: Path) -> list[Endpoint]:
     """Extract endpoints from Go code (gin, echo, fiber, chi, mux)."""
     endpoints = []

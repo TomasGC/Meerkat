@@ -3,6 +3,7 @@
 Uses error_handling only: it is purely mechanical, so these run without a
 local AI server and stay deterministic.
 """
+
 import json
 import subprocess
 import sys
@@ -37,10 +38,21 @@ def src(tmp_path):
 
 def _run(src_dir: Path, *extra: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(SCRIPTS_DIR / "orchestrate.py"),
-         "--path", str(src_dir), "--checks", "error_handling",
-         "--format", "json", "--no-cache", "--full", *extra],
-        capture_output=True, text=True,
+        [
+            sys.executable,
+            str(SCRIPTS_DIR / "orchestrate.py"),
+            "--path",
+            str(src_dir),
+            "--checks",
+            "error_handling",
+            "--format",
+            "json",
+            "--no-cache",
+            "--full",
+            *extra,
+        ],
+        capture_output=True,
+        text=True,
     )
 
 

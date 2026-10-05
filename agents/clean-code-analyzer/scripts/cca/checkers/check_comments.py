@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from lib.config import language_config
-from lib.engine.discovery import _SKIP_DIRS, _ALL_EXTENSIONS, _HASH_COMMENT_EXTS, is_hash_comment_file
+from lib.engine.discovery import _ALL_EXTENSIONS, _HASH_COMMENT_EXTS, _SKIP_DIRS, is_hash_comment_file
 from lib.engine.hybrid import run_hybrid
 
 # SQL is analyzed too (#42): its `--` comments carry the same TODOs and dead code
@@ -69,41 +69,47 @@ def _check_file(file: Path, root: Path) -> list[dict]:
         if todo_re.search(stripped):
             m = todo_re.search(stripped)
             tag = m.group(1).upper() if m else "TODO"
-            violations.append({
-                "principle": "Comments",
-                "file": rel,
-                "line": i,
-                "severity": "low",
-                "message": f"{tag} comment — should be a tracked issue",
-                "suggestion": "Create a GitHub/issue tracker ticket and remove the comment",
-            })
+            violations.append(
+                {
+                    "principle": "Comments",
+                    "file": rel,
+                    "line": i,
+                    "severity": "low",
+                    "message": f"{tag} comment — should be a tracked issue",
+                    "suggestion": "Create a GitHub/issue tracker ticket and remove the comment",
+                }
+            )
 
         # Commented-out code detection
         if code_re.search(stripped):
             consecutive_code_comments += 1
             if consecutive_code_comments >= 2:
-                violations.append({
-                    "principle": "Comments",
-                    "file": rel,
-                    "line": i - 1,
-                    "severity": "medium",
-                    "message": "Commented-out code block detected",
-                    "suggestion": "Remove dead code; use version control to recover if needed",
-                })
+                violations.append(
+                    {
+                        "principle": "Comments",
+                        "file": rel,
+                        "line": i - 1,
+                        "severity": "medium",
+                        "message": "Commented-out code block detected",
+                        "suggestion": "Remove dead code; use version control to recover if needed",
+                    }
+                )
                 consecutive_code_comments = 0  # reset to avoid duplicate on next line
         else:
             consecutive_code_comments = 0
 
         # Explain-WHAT comment heuristic
         if what_re.search(stripped):
-            violations.append({
-                "principle": "Comments",
-                "file": rel,
-                "line": i,
-                "severity": "low",
-                "message": "Comment explains WHAT the code does (obvious from code)",
-                "suggestion": "Remove or replace with a WHY comment explaining the reason/constraint",
-            })
+            violations.append(
+                {
+                    "principle": "Comments",
+                    "file": rel,
+                    "line": i,
+                    "severity": "low",
+                    "message": "Comment explains WHAT the code does (obvious from code)",
+                    "suggestion": "Remove or replace with a WHY comment explaining the reason/constraint",
+                }
+            )
 
     return violations
 
@@ -116,10 +122,7 @@ def _mechanical(path: Path, files: list | None) -> tuple[list[dict], int]:
     else:
         source_files = []
         for ext in _ALL_EXTENSIONS:
-            source_files.extend(
-                p for p in path.rglob(f"*{ext}")
-                if not any(part in _SKIP_DIRS for part in p.parts)
-            )
+            source_files.extend(p for p in path.rglob(f"*{ext}") if not any(part in _SKIP_DIRS for part in p.parts))
     violations = []
     for file in source_files:
         violations.extend(_check_file(file, path))

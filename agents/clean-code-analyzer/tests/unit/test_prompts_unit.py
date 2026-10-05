@@ -45,11 +45,7 @@ def _read(prompt_dir: Path, name: str) -> str:
 
 def _placeholders(template: str) -> set[str]:
     """Return all named placeholder keys from a format-string template."""
-    return {
-        field_name
-        for _, field_name, _, _ in string.Formatter().parse(template)
-        if field_name is not None
-    }
+    return {field_name for _, field_name, _, _ in string.Formatter().parse(template) if field_name is not None}
 
 
 # ── existence ─────────────────────────────────────────────────────────────────
@@ -111,18 +107,18 @@ def test_ollama_prompt_mentions_required_field(name, field):
 def test_ollama_prompt_contains_principle_keywords(name):
     content = _read(PROMPTS_OLLAMA, name)
     keywords = _PRINCIPLE_KEYWORDS[name]
-    assert any(kw in content for kw in keywords), (
-        f"ollama/{name}.prompt missing principle keywords (expected one of {keywords})"
-    )
+    assert any(
+        kw in content for kw in keywords
+    ), f"ollama/{name}.prompt missing principle keywords (expected one of {keywords})"
 
 
 @pytest.mark.parametrize("name", PRINCIPLES)
 def test_claude_prompt_contains_principle_keywords(name):
     content = _read(PROMPTS_CLAUDE, name)
     keywords = _PRINCIPLE_KEYWORDS[name]
-    assert any(kw in content for kw in keywords), (
-        f"claude/{name}.prompt missing principle keywords (expected one of {keywords})"
-    )
+    assert any(
+        kw in content for kw in keywords
+    ), f"claude/{name}.prompt missing principle keywords (expected one of {keywords})"
 
 
 # ── valid format-string (no KeyError on standard kwargs) ─────────────────────
@@ -176,8 +172,7 @@ def test_ollama_claude_placeholder_parity(name):
     ollama_keys = _placeholders(_read(PROMPTS_OLLAMA, name))
     claude_keys = _placeholders(_read(PROMPTS_CLAUDE, name))
     assert ollama_keys == claude_keys, (
-        f"{name}.prompt placeholder mismatch — "
-        f"ollama={ollama_keys}, claude={claude_keys}"
+        f"{name}.prompt placeholder mismatch — " f"ollama={ollama_keys}, claude={claude_keys}"
     )
 
 
@@ -187,14 +182,10 @@ def test_ollama_claude_placeholder_parity(name):
 @pytest.mark.parametrize("name", PRINCIPLES)
 def test_ollama_prompt_max_length(name):
     content = _read(PROMPTS_OLLAMA, name)
-    assert len(content) <= 4000, (
-        f"ollama/{name}.prompt is {len(content)} chars — exceeds 4000 char limit"
-    )
+    assert len(content) <= 4000, f"ollama/{name}.prompt is {len(content)} chars — exceeds 4000 char limit"
 
 
 @pytest.mark.parametrize("name", PRINCIPLES)
 def test_claude_prompt_max_length(name):
     content = _read(PROMPTS_CLAUDE, name)
-    assert len(content) <= 4000, (
-        f"claude/{name}.prompt is {len(content)} chars — exceeds 4000 char limit"
-    )
+    assert len(content) <= 4000, f"claude/{name}.prompt is {len(content)} chars — exceeds 4000 char limit"

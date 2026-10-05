@@ -29,14 +29,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from bba.utils import detect_project_language
 from bba.models import Language
+from bba.utils import detect_project_language
 
 TIER_MARKERS = {
-    "unit":     {"pytest": ["-m", "unit"],       "jest": "--testPathPattern=unit"},
-    "int_mock": {"pytest": ["-m", "int_mock"],   "jest": "--testPathPattern=integration"},
-    "int_real": {"pytest": ["-m", "int_real"],   "jest": "--testPathPattern=int_real"},
-    "e2e":      {"pytest": ["-m", "e2e"],        "jest": "--testPathPattern=e2e"},
+    "unit": {"pytest": ["-m", "unit"], "jest": "--testPathPattern=unit"},
+    "int_mock": {"pytest": ["-m", "int_mock"], "jest": "--testPathPattern=integration"},
+    "int_real": {"pytest": ["-m", "int_real"], "jest": "--testPathPattern=int_real"},
+    "e2e": {"pytest": ["-m", "e2e"], "jest": "--testPathPattern=e2e"},
 }
 
 ALL_TIERS = ("unit", "int_mock", "int_real", "e2e")
@@ -70,11 +70,15 @@ def collect_python(
         lcov_file = output_dir / f"coverage_{tier}.lcov"
         marker = TIER_MARKERS[tier]["pytest"]
         cmd = [
-            sys.executable, "-m", "pytest",
+            sys.executable,
+            "-m",
+            "pytest",
             *marker,
             f"--cov={project_path}",
-            "--cov-report", f"lcov:{lcov_file}",
-            "--cov-report", "term-missing:skip-covered",
+            "--cov-report",
+            f"lcov:{lcov_file}",
+            "--cov-report",
+            "term-missing:skip-covered",
             "-q",
         ]
         rc = _run(cmd, project_path, dry_run)
@@ -98,7 +102,11 @@ def collect_js(
         print("[WARN] jest not found — skipping JS/TS coverage", file=sys.stderr)
         return {}
 
-    jest_cmd = str(jest_bin_win) if jest_bin_win.exists() and not jest_bin.exists() else (str(jest_bin) if jest_bin.exists() else "jest")
+    jest_cmd = (
+        str(jest_bin_win)
+        if jest_bin_win.exists() and not jest_bin.exists()
+        else (str(jest_bin) if jest_bin.exists() else "jest")
+    )
     outputs = {}
 
     for tier in tiers:
@@ -108,7 +116,8 @@ def collect_js(
             jest_cmd,
             pattern,
             "--coverage",
-            "--coverageReporters", "lcov",
+            "--coverageReporters",
+            "lcov",
             f"--coverageDirectory={output_dir / tier}",
             "--passWithNoTests",
         ]
@@ -144,7 +153,8 @@ def collect_go(
         # Build tags map tiers to Go tags (convention: //go:build unit)
         tag = tier.replace("_", "")  # int_mock → intmock
         cmd = [
-            "go", "test",
+            "go",
+            "test",
             f"-tags={tag}",
             f"-coverprofile={cov_file}",
             "-covermode=atomic",
@@ -222,16 +232,17 @@ def collect_dotnet(
     outputs = {}
     # Tier → test filter category (MSTest/xUnit [Trait("Category", "...")])
     tier_filter = {
-        "unit":     "Category=Unit",
+        "unit": "Category=Unit",
         "int_mock": "Category=Integration",
         "int_real": "Category=IntegrationReal",
-        "e2e":      "Category=E2E",
+        "e2e": "Category=E2E",
     }
     for tier in tiers:
         lcov_file = output_dir / f"coverage_{tier}.lcov"
         filt = tier_filter.get(tier, f"Category={tier}")
         cmd = [
-            "dotnet", "test",
+            "dotnet",
+            "test",
             f"--filter={filt}",
             f"--collect:XPlat Code Coverage",
             f"--results-directory={output_dir / tier}",
@@ -324,18 +335,20 @@ def collect_rust(
     # test_unit = []
     # test_int_mock = []
     tier_features = {
-        "unit":     "test_unit",
+        "unit": "test_unit",
         "int_mock": "test_int_mock",
         "int_real": "test_int_real",
-        "e2e":      "test_e2e",
+        "e2e": "test_e2e",
     }
     for tier in tiers:
         lcov_file = output_dir / f"coverage_{tier}.lcov"
         feature = tier_features.get(tier, f"test_{tier}")
         cmd = [
-            "cargo", "tarpaulin",
+            "cargo",
+            "tarpaulin",
             f"--features={feature}",
-            "--out", "Lcov",
+            "--out",
+            "Lcov",
             f"--output-dir={output_dir}",
         ]
         rc = _run(cmd, project_path, dry_run)
@@ -353,14 +366,14 @@ def collect_rust(
 
 
 _COLLECTORS = {
-    Language.PYTHON:     collect_python,
+    Language.PYTHON: collect_python,
     Language.TYPESCRIPT: collect_js,
     Language.JAVASCRIPT: collect_js,
-    Language.GO:         collect_go,
-    Language.CSHARP:     collect_dotnet,
-    Language.JAVA:       collect_java,
-    Language.KOTLIN:     collect_java,
-    Language.RUST:       collect_rust,
+    Language.GO: collect_go,
+    Language.CSHARP: collect_dotnet,
+    Language.JAVA: collect_java,
+    Language.KOTLIN: collect_java,
+    Language.RUST: collect_rust,
 }
 
 
@@ -434,9 +447,7 @@ Examples:
         args.dry_run,
     )
 
-    manifest = {
-        tier: str(path) for tier, path in outputs.items()
-    }
+    manifest = {tier: str(path) for tier, path in outputs.items()}
 
     print(json.dumps(manifest, indent=2))
 

@@ -138,9 +138,7 @@ def analyze_by_type(
         "total_scenarios": len(scenarios),
         "total_tests": len(tests),
         "absolute_blind_spots": len(absolute_gaps),
-        "absolute_blind_spot_percent": round(
-            len(absolute_gaps) / len(scenarios) * 100, 2
-        ) if scenarios else 0.0,
+        "absolute_blind_spot_percent": round(len(absolute_gaps) / len(scenarios) * 100, 2) if scenarios else 0.0,
         "blind_spots": absolute_gaps,
         "by_scenario_type": _breakdown_by_scenario_type(scenarios, tests, mode),
     }
@@ -165,9 +163,7 @@ def _breakdown_by_scenario_type(
             by_type[stype]["covered"] += 1
 
     for stype, stats in by_type.items():
-        stats["coverage_percent"] = (
-            round(stats["covered"] / stats["total"] * 100, 2) if stats["total"] else 0.0
-        )
+        stats["coverage_percent"] = round(stats["covered"] / stats["total"] * 100, 2) if stats["total"] else 0.0
     return by_type
 
 
@@ -189,9 +185,7 @@ def generate_markdown(result: dict) -> str:
         "|---|---|---|---|",
     ]
     for stype, stats in combined["by_scenario_type"].items():
-        lines.append(
-            f"| {stype} | {stats['total']} | {stats['covered']} | {stats['coverage_percent']}% |"
-        )
+        lines.append(f"| {stype} | {stats['total']} | {stats['covered']} | {stats['coverage_percent']}% |")
 
     lines += ["", "---", ""]
 
@@ -203,8 +197,7 @@ def generate_markdown(result: dict) -> str:
         lines += [
             f"## {tier.upper().replace('_', ' ')} tests",
             "",
-            f"Tests in this tier: **{tier_data['test_count']}** | "
-            f"Coverage: **{pct}%** `{bar}`",
+            f"Tests in this tier: **{tier_data['test_count']}** | " f"Coverage: **{pct}%** `{bar}`",
             f"Scenarios covered: {tier_data['tested_scenarios']} / {tier_data['total_scenarios']}",
             "",
         ]

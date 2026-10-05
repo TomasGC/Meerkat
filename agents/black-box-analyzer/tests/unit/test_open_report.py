@@ -6,12 +6,15 @@ from pathlib import Path
 
 from open_report import print_summary, step_merge
 
+
 def test_step_merge_no_files_returns_false(temp_dir):
     ok = step_merge([], temp_dir / "out.lcov")
     assert ok is False
 
+
 def test_print_summary_no_file_is_noop(temp_dir):
     print_summary(temp_dir, [], temp_dir / "combined.lcov")
+
 
 def test_print_summary_with_valid_file(temp_dir, capsys):
     data = {
@@ -28,6 +31,7 @@ def test_print_summary_with_valid_file(temp_dir, capsys):
     captured = capsys.readouterr()
     assert "78.5" in captured.err
     assert "65.0" in captured.err
+
 
 def test_print_summary_counts_classes_across_assemblies(temp_dir, capsys):
     data = {
@@ -47,9 +51,11 @@ def test_print_summary_counts_classes_across_assemblies(temp_dir, capsys):
     captured = capsys.readouterr()
     assert "5" in captured.err
 
+
 def test_print_summary_handles_corrupt_json(temp_dir):
     (temp_dir / "Summary.json").write_text("not-json")
     print_summary(temp_dir, [], temp_dir / "combined.lcov")
+
 
 def test_print_summary_missing_assemblies_key(temp_dir, capsys):
     data = {

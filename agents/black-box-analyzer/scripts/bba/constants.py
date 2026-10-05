@@ -96,48 +96,24 @@ TEST_FILE_PATTERNS = {
 # API endpoint detection patterns
 ENDPOINT_PATTERNS = {
     # Go
-    "go_gin": re.compile(
-        r'router\.(GET|POST|PUT|PATCH|DELETE|OPTIONS)\s*\(\s*["\']([^"\']+)["\']'
-    ),
-    "go_echo": re.compile(
-        r'e\.(GET|POST|PUT|PATCH|DELETE)\s*\(\s*["\']([^"\']+)["\']'
-    ),
-    "go_fiber": re.compile(
-        r'app\.(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']'
-    ),
-    "go_chi": re.compile(
-        r'r\.(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']'
-    ),
+    "go_gin": re.compile(r'router\.(GET|POST|PUT|PATCH|DELETE|OPTIONS)\s*\(\s*["\']([^"\']+)["\']'),
+    "go_echo": re.compile(r'e\.(GET|POST|PUT|PATCH|DELETE)\s*\(\s*["\']([^"\']+)["\']'),
+    "go_fiber": re.compile(r'app\.(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']'),
+    "go_chi": re.compile(r'r\.(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']'),
     "go_mux": re.compile(
         r'router\.HandleFunc\s*\(\s*["\']([^"\']+)["\']\s*,.*\)\.Methods\s*\(\s*["\']([A-Z]+)["\']\s*\)'
     ),
     # TypeScript/JavaScript
-    "ts_express": re.compile(
-        r'app\.(get|post|put|patch|delete)\s*\(\s*["\']([^"\']+)["\']'
-    ),
-    "ts_nestjs": re.compile(
-        r'@(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']*)["\']\s*\)'
-    ),
-    "ts_fastify": re.compile(
-        r'fastify\.(get|post|put|patch|delete)\s*\(\s*["\']([^"\']+)["\']'
-    ),
+    "ts_express": re.compile(r'app\.(get|post|put|patch|delete)\s*\(\s*["\']([^"\']+)["\']'),
+    "ts_nestjs": re.compile(r'@(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']*)["\']\s*\)'),
+    "ts_fastify": re.compile(r'fastify\.(get|post|put|patch|delete)\s*\(\s*["\']([^"\']+)["\']'),
     # Python
-    "py_fastapi": re.compile(
-        r'@app\.(get|post|put|patch|delete)\s*\(\s*["\']([^"\']+)["\']'
-    ),
-    "py_flask": re.compile(
-        r'@app\.route\s*\(\s*["\']([^"\']+)["\']\s*,\s*methods\s*=\s*\[["\']([A-Z]+)["\']\]'
-    ),
-    "py_django": re.compile(
-        r'path\s*\(\s*["\']([^"\']+)["\']\s*,'
-    ),
+    "py_fastapi": re.compile(r'@app\.(get|post|put|patch|delete)\s*\(\s*["\']([^"\']+)["\']'),
+    "py_flask": re.compile(r'@app\.route\s*\(\s*["\']([^"\']+)["\']\s*,\s*methods\s*=\s*\[["\']([A-Z]+)["\']\]'),
+    "py_django": re.compile(r'path\s*\(\s*["\']([^"\']+)["\']\s*,'),
     # C#
-    "cs_aspnet_attribute": re.compile(
-        r'\[Http(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']*)["\']\s*\)\]'
-    ),
-    "cs_aspnet_minimal": re.compile(
-        r'app\.Map(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']'
-    ),
+    "cs_aspnet_attribute": re.compile(r'\[Http(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']*)["\']\s*\)\]'),
+    "cs_aspnet_minimal": re.compile(r'app\.Map(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']'),
     # Java
     "java_spring": re.compile(
         r'@(GetMapping|PostMapping|PutMapping|PatchMapping|DeleteMapping)\s*\(\s*["\']([^"\']*)["\']\s*\)'
@@ -149,9 +125,9 @@ TEST_FRAMEWORK_PATTERNS = {
     # Go
     "go_testing": re.compile(r"func\s+Test\w+\s*\(t\s+\*testing\.T\)"),
     # TypeScript/JavaScript
-    "jest": re.compile(r'(describe|it|test)\s*\('),
-    "vitest": re.compile(r'(describe|it|test)\s*\('),
-    "mocha": re.compile(r'(describe|it)\s*\('),
+    "jest": re.compile(r"(describe|it|test)\s*\("),
+    "vitest": re.compile(r"(describe|it|test)\s*\("),
+    "mocha": re.compile(r"(describe|it)\s*\("),
     # Python
     "pytest": re.compile(r"def\s+test_\w+"),
     "unittest": re.compile(r"class\s+\w+\(unittest\.TestCase\)"),

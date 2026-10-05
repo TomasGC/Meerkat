@@ -2,7 +2,6 @@
 """Integration tests for agents — reads real AGENT.md files on disk"""
 
 import pytest
-
 from lib import paths
 
 

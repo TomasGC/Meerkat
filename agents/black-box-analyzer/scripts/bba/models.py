@@ -171,11 +171,11 @@ class EntryPointType(Enum):
     SQL_TRIGGER = "sql_trigger"
 
     # Event-Driven Entry Points
-    LAMBDA_HANDLER = "lambda_handler"              # AWS Lambda
-    FUNCTION_HANDLER = "function_handler"          # Azure Functions, Cloud Functions
-    BACKGROUND_JOB = "background_job"              # Celery, Sidekiq, Bull
-    MESSAGE_CONSUMER = "message_consumer"          # Kafka, RabbitMQ, SQS
-    EVENT_SUBSCRIBER = "event_subscriber"          # Event bus subscribers
+    LAMBDA_HANDLER = "lambda_handler"  # AWS Lambda
+    FUNCTION_HANDLER = "function_handler"  # Azure Functions, Cloud Functions
+    BACKGROUND_JOB = "background_job"  # Celery, Sidekiq, Bull
+    MESSAGE_CONSUMER = "message_consumer"  # Kafka, RabbitMQ, SQS
+    EVENT_SUBSCRIBER = "event_subscriber"  # Event bus subscribers
 
     # Blockchain Entry Points
     SMART_CONTRACT_FUNCTION = "smart_contract_function"

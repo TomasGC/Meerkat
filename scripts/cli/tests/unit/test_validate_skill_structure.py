@@ -5,12 +5,9 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-
-from cli.validate_skill_structure import (
-    StructureValidationResult,
-    detect_type,
-    validate_structure)
+from cli.validate_skill_structure import StructureValidationResult, detect_type, validate_structure
 from lib.utils import write_file_safe
+
 
 def test_detect_type_skill():
     """Test type detection for skill file."""
@@ -18,17 +15,20 @@ def test_detect_type_skill():
     component_type = detect_type(file_path)
     assert component_type == "skill"
 
+
 def test_detect_type_agent():
     """Test type detection for agent file."""
     file_path = Path("~/.claude/agents/my-agent.md")
     component_type = detect_type(file_path)
     assert component_type == "agent"
 
+
 def test_detect_type_default():
     """Test type detection defaults to skill."""
     file_path = Path("unknown.md")
     component_type = detect_type(file_path)
     assert component_type == "skill"
+
 
 def test_validate_skill_valid(tmp_path):
     """Test validation with valid skill structure."""
@@ -76,6 +76,7 @@ def test_validate_skill_valid(tmp_path):
     assert result.type == "skill"
     assert result.error_count == 0
 
+
 def test_validate_skill_missing_frontmatter(tmp_path):
     """Test validation with missing YAML frontmatter."""
     skill = tmp_path / "SKILL.md"
@@ -86,6 +87,7 @@ def test_validate_skill_missing_frontmatter(tmp_path):
 
     assert result.valid is False
     assert any("frontmatter" in e.lower() for e in result.errors)
+
 
 def test_validate_skill_missing_name(tmp_path):
     """Test validation with missing name field."""
@@ -104,6 +106,7 @@ def test_validate_skill_missing_name(tmp_path):
     assert result.valid is False
     assert any("name" in e.lower() for e in result.errors)
 
+
 def test_validate_skill_invalid_name_format(tmp_path):
     """Test validation with invalid name format."""
     skill = tmp_path / "SKILL.md"
@@ -121,6 +124,7 @@ def test_validate_skill_invalid_name_format(tmp_path):
 
     assert result.valid is False
     assert any("lowercase-with-dashes" in e for e in result.errors)
+
 
 def test_validate_skill_missing_sections(tmp_path):
     """Test validation with missing required sections."""
@@ -143,6 +147,7 @@ def test_validate_skill_missing_sections(tmp_path):
     assert result.valid is False
     assert any("missing required sections" in e.lower() for e in result.errors)
 
+
 def test_validate_skill_placeholders(tmp_path):
     """Test validation detects placeholders."""
     skill = tmp_path / "SKILL.md"
@@ -163,6 +168,7 @@ def test_validate_skill_placeholders(tmp_path):
     assert result.valid is False
     assert any("todo" in e.lower() or "placeholder" in e.lower() for e in result.errors)
 
+
 def test_validate_skill_non_english(tmp_path):
     """Test validation detects non-English content."""
     skill = tmp_path / "SKILL.md"
@@ -182,6 +188,7 @@ def test_validate_skill_non_english(tmp_path):
 
     assert result.valid is False
     assert any("non-english" in e.lower() or "french" in e.lower() for e in result.errors)
+
 
 def test_validate_skill_generic_persona(tmp_path):
     """Test validation warns about generic persona."""
@@ -218,6 +225,7 @@ def test_validate_skill_generic_persona(tmp_path):
     result = validate_structure(skill, component_type="skill")
 
     assert any("generic" in w.lower() for w in result.warnings)
+
 
 def test_validate_skill_strict_mode(tmp_path):
     """Test strict mode treats warnings as errors."""
@@ -259,6 +267,7 @@ def test_validate_skill_strict_mode(tmp_path):
     result_strict = validate_structure(skill, component_type="skill", strict=True)
     assert result_strict.valid is False
 
+
 def test_validate_agent_valid(tmp_path):
     """Test validation with valid agent structure."""
     agent = tmp_path / "agent.md"
@@ -286,6 +295,7 @@ def test_validate_agent_valid(tmp_path):
 
     assert result.valid is True
     assert result.type == "agent"
+
 
 def test_validate_nonexistent_file():
     """Test validation with nonexistent file."""

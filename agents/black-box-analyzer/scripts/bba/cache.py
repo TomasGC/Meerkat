@@ -146,9 +146,7 @@ class AnalysisCache:
         """Cache file holding one analyzer's AnalysisResult."""
         return self.cache_dir / f"result_{re.sub(r'[^A-Za-z0-9_.-]', '_', analyzer)}.json"
 
-    def get_cached_result(
-        self, project_path: Path, language: str, analyzer: str
-    ) -> AnalysisResult | None:
+    def get_cached_result(self, project_path: Path, language: str, analyzer: str) -> AnalysisResult | None:
         """
         Get one analyzer's cached result, or None if the cache is stale.
 
@@ -190,9 +188,7 @@ class AnalysisCache:
             # Schema drift between versions - treat as a miss rather than crash
             return None
 
-    def save_result(
-        self, project_path: Path, language: str, analyzer: str, result: AnalysisResult
-    ) -> None:
+    def save_result(self, project_path: Path, language: str, analyzer: str, result: AnalysisResult) -> None:
         """
         Save one analyzer's result, recording the hashes that validate it.
 
@@ -207,17 +203,13 @@ class AnalysisCache:
             "language": language,
             "analyzer": analyzer,
             "cached_at": cached_at,
-            "source_file_hashes": self._hash_directory(
-                project_path, self._source_patterns(language)
-            ),
+            "source_file_hashes": self._hash_directory(project_path, self._source_patterns(language)),
             "test_file_hashes": self._hash_directory(project_path, self._test_patterns(language)),
             "result": result.to_dict(),
         }
 
         try:
-            self._result_cache_path(analyzer).write_text(
-                json.dumps(payload, indent=2), encoding="utf-8"
-            )
+            self._result_cache_path(analyzer).write_text(json.dumps(payload, indent=2), encoding="utf-8")
         except OSError:
             # Cache writes are best-effort; a failure must not fail the analysis
             return
@@ -227,9 +219,7 @@ class AnalysisCache:
         metadata.setdefault("results_cached_at", {})[analyzer] = cached_at
         self._save_metadata(metadata)
 
-    def get_cached_endpoints(
-        self, project_path: Path, language: str
-    ) -> list[Endpoint] | None:
+    def get_cached_endpoints(self, project_path: Path, language: str) -> list[Endpoint] | None:
         """
         Get cached endpoints if source files unchanged.
 
@@ -270,9 +260,7 @@ class AnalysisCache:
         except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
             return None
 
-    def save_endpoints(
-        self, project_path: Path, language: str, endpoints: list[Endpoint]
-    ):
+    def save_endpoints(self, project_path: Path, language: str, endpoints: list[Endpoint]):
         """
         Save endpoints to cache.
 

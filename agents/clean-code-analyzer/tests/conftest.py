@@ -1,6 +1,7 @@
-import pytest
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import pytest
 
 # Add the agent's scripts dir to path
 SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"

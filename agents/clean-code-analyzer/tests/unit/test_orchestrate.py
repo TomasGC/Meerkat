@@ -3,8 +3,6 @@
 from pathlib import Path
 
 import pytest
-
-
 from cca.orchestrate import _build_summary
 from lib.engine.orchestrator import _SEVERITY_ORDER
 

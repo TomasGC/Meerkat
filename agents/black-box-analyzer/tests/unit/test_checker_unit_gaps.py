@@ -38,17 +38,20 @@ def test_run_violation_when_no_test_server_unavailable(tmp_path):
 
 def test_run_model_results_mapped_to_violations(tmp_path):
     (tmp_path / "svc.py").write_text("def process(x): return x * 2", encoding="utf-8")
-    model_output = [{
-        "source_file": str(tmp_path / "svc.py"),
-        "source_file_name": "svc.py",
-        "function": "process",
-        "line": 1,
-        "severity": "high",
-        "reason": "non-trivial computation",
-        "test_scenario": "test process with zero and negative inputs",
-    }]
-    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
-         patch("lib.engine.hybrid.analyze_files_parallel", return_value=model_output):
+    model_output = [
+        {
+            "source_file": str(tmp_path / "svc.py"),
+            "source_file_name": "svc.py",
+            "function": "process",
+            "line": 1,
+            "severity": "high",
+            "reason": "non-trivial computation",
+            "test_scenario": "test process with zero and negative inputs",
+        }
+    ]
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), patch(
+        "lib.engine.hybrid.analyze_files_parallel", return_value=model_output
+    ):
         result = run(tmp_path, "python")
     # Both layers report: the whole-file gap, and the function the AI singled out
     mechanical, ai = sorted(result["violations"], key=lambda v: v["line"])

@@ -4,9 +4,7 @@ Every mechanical pass runs for real; only lib.ai.model_utils.call_model_async is
 replaced. Regenerate with scripts/cli/update_golden.py --agent bba.
 """
 
-
 import pytest
-
 from lib.testing import golden  # noqa: E402
 
 

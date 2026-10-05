@@ -25,7 +25,5 @@ def local_ai_service():
     rather than a test change.
     """
     if not check_server_available():
-        pytest.skip(
-            f"Local AI provider not reachable at {LOCAL_AI_HOST}:{LOCAL_AI_PORT}"
-        )
+        pytest.skip(f"Local AI provider not reachable at {LOCAL_AI_HOST}:{LOCAL_AI_PORT}")
     yield

@@ -4,11 +4,9 @@
 from pathlib import Path
 
 import pytest
-
-from cli.get_commit_info import (
-    get_commit_files,
-    get_commit_info)
+from cli.get_commit_info import get_commit_files, get_commit_info
 from lib.models import GitCommitInfo
+
 
 def test_get_commit_info_head():
     """Test getting HEAD commit."""
@@ -20,6 +18,7 @@ def test_get_commit_info_head():
     assert commits[0].date
     assert commits[0].message
 
+
 def test_get_commit_info_multiple():
     """Test getting multiple commits."""
     commits = get_commit_info("HEAD", count=3, include_files=False)
@@ -29,6 +28,7 @@ def test_get_commit_info_multiple():
         assert commit.hash
         assert commit.author
         assert commit.message
+
 
 def test_get_commit_info_with_files():
     """Test getting commit with file changes."""
@@ -40,10 +40,12 @@ def test_get_commit_info_with_files():
     assert isinstance(commits[0].insertions, int)
     assert isinstance(commits[0].deletions, int)
 
+
 def test_get_commit_info_invalid_hash():
     """Test with invalid commit hash."""
     with pytest.raises(RuntimeError, match="Git log failed"):
         get_commit_info("nonexistent123456", count=1)
+
 
 def test_get_commit_files_head():
     """Test getting files changed in HEAD commit."""
@@ -58,6 +60,7 @@ def test_get_commit_files_head():
     assert isinstance(deletions, int)
     assert insertions >= 0
     assert deletions >= 0
+
 
 def test_get_commit_files_invalid_hash():
     """Test getting files with invalid hash."""

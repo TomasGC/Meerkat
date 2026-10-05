@@ -28,26 +28,25 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
+# Import project detection
+from analyze_project_structure import analyze_project as detect_project_structure
 from analyzers import (
     APIAnalyzer,
     CLIAnalyzer,
-    MobileAnalyzer,
     DesktopAnalyzer,
     FrontendAnalyzer,
     FullstackAnalyzer,
     LLMAnalyzer,
-    SQLAnalyzer,
-    ServerlessAnalyzer,
-    WorkerAnalyzer,
     MessageQueueAnalyzer,
+    MobileAnalyzer,
+    ServerlessAnalyzer,
     SmartContractAnalyzer,
+    SQLAnalyzer,
+    WorkerAnalyzer,
 )
 from bba.cache import AnalysisCache, clear_model_cache
-from bba.models import ProjectType, AnalysisResult
+from bba.models import AnalysisResult, ProjectType
 from library_analyzer import LibraryAnalyzer
-
-# Import project detection
-from analyze_project_structure import analyze_project as detect_project_structure
 
 try:
     from tqdm import tqdm
@@ -77,7 +76,7 @@ class AnalyzerRouter:
     def __init__(self):
         """Initialize all analyzers."""
         self.analyzers = [
-            LibraryAnalyzer(),   # must be first — catches 0-endpoint projects before API
+            LibraryAnalyzer(),  # must be first — catches 0-endpoint projects before API
             APIAnalyzer(),
             CLIAnalyzer(),
             MobileAnalyzer(),
@@ -108,9 +107,7 @@ class AnalyzerRouter:
                 selected.append(analyzer)
 
         if not selected:
-            raise ValueError(
-                f"No analyzer found for types: {project_info.project_types}"
-            )
+            raise ValueError(f"No analyzer found for types: {project_info.project_types}")
 
         return selected
 
@@ -168,11 +165,7 @@ class AnalyzerRouter:
         cache_hits = 0
 
         for analyzer in analyzers:
-            cached = (
-                cache.get_cached_result(project_path, language, analyzer.__class__.__name__)
-                if cache
-                else None
-            )
+            cached = cache.get_cached_result(project_path, language, analyzer.__class__.__name__) if cache else None
             if cached is None:
                 pending.append(analyzer)
                 continue
@@ -203,12 +196,12 @@ class AnalyzerRouter:
                             results[result.project_type] = result
 
                             if cache:
-                                cache.save_result(
-                                    project_path, language, analyzer.__class__.__name__, result
-                                )
+                                cache.save_result(project_path, language, analyzer.__class__.__name__, result)
 
                             if verbose:
-                                print(f"  ✅ {analyzer.__class__.__name__}: {len(result.entry_points)} entry points, {len(result.scenarios)} scenarios")
+                                print(
+                                    f"  ✅ {analyzer.__class__.__name__}: {len(result.entry_points)} entry points, {len(result.scenarios)} scenarios"
+                                )
 
                         except Exception as e:
                             if verbose:
@@ -505,9 +498,7 @@ Supported project types (19):
 
         # Save project_info.json alongside output (required by generate_ci_workflow.py)
         project_info_path = (
-            args.output.parent / "project_info.json"
-            if args.output
-            else args.project_path / "project_info.json"
+            args.output.parent / "project_info.json" if args.output else args.project_path / "project_info.json"
         )
         project_info_path.write_text(
             json.dumps(report.get("project_info", {}), indent=2, ensure_ascii=False),
@@ -522,9 +513,15 @@ Supported project types (19):
         print(f"  Visual HTML report (local):", file=sys.stderr)
         print(f"    python {scripts_dir}/open_report.py {project_path_str}", file=sys.stderr)
         print(f"  Generate CI workflow (.github/workflows/coverage.yml):", file=sys.stderr)
-        print(f"    python {scripts_dir}/generate_ci_workflow.py {project_info_str} --output .github/workflows/coverage.yml", file=sys.stderr)
+        print(
+            f"    python {scripts_dir}/generate_ci_workflow.py {project_info_str} --output .github/workflows/coverage.yml",
+            file=sys.stderr,
+        )
         print(f"  Coverage breakdown by test type:", file=sys.stderr)
-        print(f"    python {scripts_dir}/coverage_by_type.py scenarios.json tests.json --markdown breakdown.md", file=sys.stderr)
+        print(
+            f"    python {scripts_dir}/coverage_by_type.py scenarios.json tests.json --markdown breakdown.md",
+            file=sys.stderr,
+        )
         print("────────────────────────────────────────────────────────", file=sys.stderr)
 
         return 0 if report.get("success", False) else 1

@@ -36,10 +36,7 @@ def extract_issue_from_text(text: str) -> Optional[str]:
 
 def get_current_branch() -> str:
     """Get current git branch name."""
-    returncode, stdout, stderr = run_command(
-        ["git", "branch", "--show-current"],
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "branch", "--show-current"], timeout=5)
 
     if returncode != 0:
         raise RuntimeError("Not a git repository")
@@ -49,10 +46,7 @@ def get_current_branch() -> str:
 
 def get_last_commit_message() -> str:
     """Get last commit message."""
-    returncode, stdout, stderr = run_command(
-        ["git", "log", "-1", "--pretty=%B"],
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "log", "-1", "--pretty=%B"], timeout=5)
 
     if returncode != 0:
         raise RuntimeError("Not a git repository or no commits")
@@ -83,47 +77,25 @@ class ExtractTicketScript(BaseCLIScript):
     def setup_parser(self, parser):
         """Add script-specific arguments."""
         group = parser.add_mutually_exclusive_group()
-        group.add_argument(
-            "--branch",
-            "-b",
-            help="Git branch name to extract from (optional)"
-        )
-        group.add_argument(
-            "--from-commit",
-            "-c",
-            action="store_true",
-            help="Extract from commit message instead"
-        )
+        group.add_argument("--branch", "-b", help="Git branch name to extract from (optional)")
+        group.add_argument("--from-commit", "-c", action="store_true", help="Extract from commit message instead")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute issue extraction."""
         try:
             # Extract issue ID
-            issue_id = extract_issue(
-                branch=args.branch,
-                from_commit=args.from_commit
-            )
+            issue_id = extract_issue(branch=args.branch, from_commit=args.from_commit)
 
             if issue_id:
 
-                return {
-                    "success": True,
-                    "issue_id": issue_id,
-                    "source": "commit" if args.from_commit else "branch"
-                }
+                return {"success": True, "issue_id": issue_id, "source": "commit" if args.from_commit else "branch"}
             else:
                 self.logger.debug("No issue ID found")
-                return {
-                    "success": False,
-                    "issue_id": None
-                }
+                return {"success": False, "issue_id": None}
 
         except Exception as e:
             self.logger.error(f"Failed to extract issue: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -143,9 +115,10 @@ class ExtractTicketScript(BaseCLIScript):
             else:
                 return "No issue ID found"
 
-        return result['issue_id']
+        return result["issue_id"]
 
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(ExtractTicketScript)

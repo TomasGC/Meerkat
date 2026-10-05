@@ -8,9 +8,8 @@ a failure as a clean result. call_model_async is replaced per test; no server ne
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 import lib.ai.model_utils as mu
+import pytest
 
 _ITEM = '[{"line": 3, "description": "d"}]'
 
@@ -31,6 +30,7 @@ def _file(tmp_path: Path, name: str) -> Path:
 
 def _responses(by_file: dict[str, list]):
     """call_model_async stand-in: pops the next response queued for the file named in the prompt."""
+
     async def fake(prompt, role="analyzer", timeout=None):
         for name, queue in by_file.items():
             if name in prompt:
@@ -39,13 +39,15 @@ def _responses(by_file: dict[str, list]):
                     raise resp
                 return resp
         raise AssertionError(f"no response queued for prompt {prompt!r}")
+
     return fake
 
 
 def _run(files, prompts_dir, by_file, failed, agents=1):
     with patch.object(mu, "call_model_async", side_effect=_responses(by_file)):
-        return mu.analyze_files_parallel(files, "python", prompt_name="p", prompts_dir=prompts_dir,
-                                         agents=agents, no_cache=True, failed=failed)
+        return mu.analyze_files_parallel(
+            files, "python", prompt_name="p", prompts_dir=prompts_dir, agents=agents, no_cache=True, failed=failed
+        )
 
 
 def _named(tmp_path: Path, name: str) -> Path:
@@ -80,8 +82,7 @@ def test_exception_marks_only_that_file_failed(tmp_path, prompts_dir):
     bad = _named(tmp_path, "bad.py")
     good = _named(tmp_path, "good.py")
     failed: set = set()
-    items = _run([bad, good], prompts_dir,
-                 {"bad.py": [RuntimeError("boom")], "good.py": [_ITEM]}, failed)
+    items = _run([bad, good], prompts_dir, {"bad.py": [RuntimeError("boom")], "good.py": [_ITEM]}, failed)
     assert failed == {bad}
     assert [i["source_file"] for i in items] == [str(good)]
 
@@ -101,11 +102,14 @@ def test_agents_all_responses_failed_marks_file_failed(tmp_path, prompts_dir):
     assert failed == {f}
 
 
-@pytest.mark.parametrize("responses,expected_sources", [
-    ({"a.py": [_ITEM], "b.py": [None]}, ["a.py"]),
-    ({"a.py": ["[]"], "b.py": ["garbage"]}, []),
-    ({"a.py": [_ITEM], "b.py": [RuntimeError("boom")]}, ["a.py"]),
-])
+@pytest.mark.parametrize(
+    "responses,expected_sources",
+    [
+        ({"a.py": [_ITEM], "b.py": [None]}, ["a.py"]),
+        ({"a.py": ["[]"], "b.py": ["garbage"]}, []),
+        ({"a.py": [_ITEM], "b.py": [RuntimeError("boom")]}, ["a.py"]),
+    ],
+)
 def test_failed_none_returns_same_items_as_with_failed_set(tmp_path, prompts_dir, responses, expected_sources):
     """failed=None (every existing caller) yields the pre-change items, identical to a tracked run."""
     a = _named(tmp_path, "a.py")

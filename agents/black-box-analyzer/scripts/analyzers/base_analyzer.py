@@ -4,12 +4,11 @@
 All analyzers (API, CLI, Mobile, Desktop, Frontend, LLM, SQL) inherit from this base.
 """
 
+import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-
-import sys
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -105,9 +104,7 @@ class BaseAnalyzer(ABC):
         """
         pass
 
-    def generate_coverage_matrix(
-        self, scenarios: list[Scenario], tests: list[TestCase]
-    ) -> CoverageMatrix:
+    def generate_coverage_matrix(self, scenarios: list[Scenario], tests: list[TestCase]) -> CoverageMatrix:
         """Generate coverage matrix (scenario × test).
 
         Default implementation uses keyword matching.
@@ -131,15 +128,9 @@ class BaseAnalyzer(ABC):
             if is_tested:
                 tested_count += 1
 
-            gaps.append(
-                CoverageGap(
-                    scenario=scenario, is_tested=is_tested, related_tests=related_tests
-                )
-            )
+            gaps.append(CoverageGap(scenario=scenario, is_tested=is_tested, related_tests=related_tests))
 
-        coverage_percent = (
-            (tested_count / len(scenarios) * 100) if scenarios else 0.0
-        )
+        coverage_percent = (tested_count / len(scenarios) * 100) if scenarios else 0.0
 
         return CoverageMatrix(
             total_scenarios=len(scenarios),
@@ -149,9 +140,7 @@ class BaseAnalyzer(ABC):
             gaps=gaps,
         )
 
-    def _find_related_tests(
-        self, scenario: Scenario, tests: list[TestCase]
-    ) -> list[TestCase]:
+    def _find_related_tests(self, scenario: Scenario, tests: list[TestCase]) -> list[TestCase]:
         """Find tests related to a scenario (keyword matching).
 
         Args:
@@ -246,9 +235,7 @@ class BaseAnalyzer(ABC):
                         failure_probability=failure_probability,
                         risk_score=risk_score,
                         risk_level=risk_level,
-                        reasoning=self._generate_risk_reasoning(
-                            gap.scenario, risk_level
-                        ),
+                        reasoning=self._generate_risk_reasoning(gap.scenario, risk_level),
                     )
                 )
 
@@ -321,14 +308,9 @@ class BaseAnalyzer(ABC):
         Returns:
             Reasoning string
         """
-        return (
-            f"{risk_level} risk: {scenario.scenario_type} scenario "
-            f"for '{scenario.endpoint}' is not tested"
-        )
+        return f"{risk_level} risk: {scenario.scenario_type} scenario " f"for '{scenario.endpoint}' is not tested"
 
-    def analyze(
-        self, project_path: Path, project_info: ProjectInfo
-    ) -> AnalysisResult:
+    def analyze(self, project_path: Path, project_info: ProjectInfo) -> AnalysisResult:
         """Run full analysis pipeline.
 
         This method orchestrates the entire workflow:

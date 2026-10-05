@@ -43,8 +43,10 @@ def main(argv: list[str] | None = None) -> int:
         target = golden.expected_path(project, args.agent)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        print(f"[OK] {target}: {len(record['violations'])} violations, "
-              f"reconciliation {record['reconciliation']}", file=sys.stderr)
+        print(
+            f"[OK] {target}: {len(record['violations'])} violations, " f"reconciliation {record['reconciliation']}",
+            file=sys.stderr,
+        )
     return 0
 
 

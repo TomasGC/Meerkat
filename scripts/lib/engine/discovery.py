@@ -104,7 +104,10 @@ def get_changed_files(path: Path, since: str = "HEAD") -> list[Path] | None:
     try:
         result = subprocess.run(
             ["git", "diff", "--name-only", since],
-            capture_output=True, text=True, cwd=str(path), timeout=10,
+            capture_output=True,
+            text=True,
+            cwd=str(path),
+            timeout=10,
         )
         if result.returncode != 0:
             return None
@@ -118,7 +121,10 @@ def get_branch_files(path: Path, base: str = "main") -> list[Path] | None:
     try:
         result = subprocess.run(
             ["git", "diff", "--name-only", f"{base}...HEAD"],
-            capture_output=True, text=True, cwd=str(path), timeout=10,
+            capture_output=True,
+            text=True,
+            cwd=str(path),
+            timeout=10,
         )
         if result.returncode != 0:
             return None
@@ -132,7 +138,10 @@ def get_staged_files(path: Path) -> list[Path] | None:
     try:
         result = subprocess.run(
             ["git", "diff", "--cached", "--name-only"],
-            capture_output=True, text=True, cwd=str(path), timeout=10,
+            capture_output=True,
+            text=True,
+            cwd=str(path),
+            timeout=10,
         )
         if result.returncode != 0:
             return None

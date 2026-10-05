@@ -19,6 +19,7 @@ from lib.cli.base import BaseCLIScript
 @dataclass
 class ComplexityMetric:
     """Code complexity metric."""
+
     file: str
     function: str
     line: int
@@ -34,18 +35,10 @@ class CalculateComplexityScript(BaseCLIScript):
     def setup_parser(self, parser):
         """Add script-specific arguments."""
         parser.add_argument(
-            "--path",
-            "-p",
-            type=Path,
-            default=Path.cwd(),
-            help="Path to analyze (default: current directory)"
+            "--path", "-p", type=Path, default=Path.cwd(), help="Path to analyze (default: current directory)"
         )
         parser.add_argument(
-            "--threshold",
-            "-t",
-            type=int,
-            default=10,
-            help="Cyclomatic complexity threshold (default: 10)"
+            "--threshold", "-t", type=int, default=10, help="Cyclomatic complexity threshold (default: 10)"
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -53,10 +46,7 @@ class CalculateComplexityScript(BaseCLIScript):
         path = args.path.resolve()
 
         if not path.exists():
-            return {
-                "success": False,
-                "error": f"Path not found: {path}"
-            }
+            return {"success": False, "error": f"Path not found: {path}"}
 
         self.logger.info(f"Calculating complexity for {path}")
 
@@ -83,15 +73,17 @@ class CalculateComplexityScript(BaseCLIScript):
 
                         # Only include if exceeds threshold
                         if cyclomatic >= args.threshold or nesting >= 4 or lines >= 50:
-                            metrics.append(ComplexityMetric(
-                                file=str(file.relative_to(path.parent if path.is_file() else path)),
-                                function=node.name,
-                                line=node.lineno,
-                                cyclomatic=cyclomatic,
-                                nesting_depth=nesting,
-                                lines=lines,
-                                severity=self._calculate_severity(cyclomatic, nesting, lines)
-                            ))
+                            metrics.append(
+                                ComplexityMetric(
+                                    file=str(file.relative_to(path.parent if path.is_file() else path)),
+                                    function=node.name,
+                                    line=node.lineno,
+                                    cyclomatic=cyclomatic,
+                                    nesting_depth=nesting,
+                                    lines=lines,
+                                    severity=self._calculate_severity(cyclomatic, nesting, lines),
+                                )
+                            )
 
             except Exception:
                 continue
@@ -109,12 +101,11 @@ class CalculateComplexityScript(BaseCLIScript):
                     "cyclomatic_complexity": m.cyclomatic,
                     "nesting_depth": m.nesting_depth,
                     "lines": m.lines,
-                    "severity": m.severity
+                    "severity": m.severity,
                 }
                 for m in metrics
-            ]
+            ],
         }
-
 
         return result
 
@@ -165,6 +156,7 @@ class CalculateComplexityScript(BaseCLIScript):
 def main():
     """CLI entry point."""
     from lib.cli.base import create_cli_script
+
     create_cli_script(CalculateComplexityScript)
 
 

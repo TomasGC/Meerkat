@@ -4,13 +4,14 @@
 from pathlib import Path
 
 import pytest
-
 from cli.find_unused_code import FindUnusedCodeScript
+
 
 @pytest.fixture
 def script():
     """Create script instance."""
     return FindUnusedCodeScript()
+
 
 @pytest.fixture
 def temp_python_file(tmp_path):
@@ -35,17 +36,20 @@ obj = UsedClass()
 """)
     return file
 
+
 def test_detect_language_python(script, tmp_path):
     """Test Python language detection."""
     (tmp_path / "test.py").touch()
     lang = script._detect_language(tmp_path)
     assert lang == "python"
 
+
 def test_detect_language_typescript(script, tmp_path):
     """Test TypeScript language detection."""
     (tmp_path / "test.ts").touch()
     lang = script._detect_language(tmp_path)
     assert lang == "typescript"
+
 
 def test_find_unused_python_functions(script, temp_python_file):
     """Test detection of unused Python functions."""
@@ -57,6 +61,7 @@ def test_find_unused_python_functions(script, temp_python_file):
     assert "used_function" not in unused_names
     assert "UsedClass" not in unused_names
 
+
 def test_unused_symbol_confidence(script, temp_python_file):
     """Test confidence levels for unused symbols."""
     unused = script._find_unused_python(temp_python_file, recursive=False)
@@ -65,8 +70,10 @@ def test_unused_symbol_confidence(script, temp_python_file):
     for u in unused:
         assert u.confidence == "high"
 
+
 def test_script_execution_success(script, temp_python_file, monkeypatch):
     """Test full script execution."""
+
     class Args:
         path = temp_python_file.parent
         recursive = False

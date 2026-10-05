@@ -5,10 +5,10 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-
 from cli.read_yaml_frontmatter import extract_frontmatter, parse_yaml_simple
 from lib import paths
 from lib.utils import write_file_safe
+
 
 def test_extract_frontmatter_valid(tmp_path):
     """Test extracting valid YAML frontmatter."""
@@ -32,6 +32,7 @@ def test_extract_frontmatter_valid(tmp_path):
     assert frontmatter["description"] == "A test skill"
     assert frontmatter["model"] == "sonnet"
 
+
 def test_extract_frontmatter_missing(tmp_path):
     """Test extraction when no frontmatter present."""
     content = "# Just content, no frontmatter"
@@ -42,6 +43,7 @@ def test_extract_frontmatter_missing(tmp_path):
     frontmatter = extract_frontmatter(file_path)
 
     assert frontmatter is None
+
 
 def test_extract_frontmatter_multiline(tmp_path):
     """Test extracting multiline YAML frontmatter."""
@@ -69,11 +71,13 @@ def test_extract_frontmatter_multiline(tmp_path):
     assert isinstance(frontmatter["tools"], list)
     assert len(frontmatter["tools"]) == 3
 
+
 def test_extract_frontmatter_nonexistent_file():
     """Test extraction with nonexistent file."""
     frontmatter = extract_frontmatter(Path("/nonexistent/file.md"))
 
     assert frontmatter is None
+
 
 def test_parse_yaml_simple_basic():
     """Test simple YAML parser with basic key-value."""
@@ -83,6 +87,7 @@ def test_parse_yaml_simple_basic():
 
     assert parsed["name"] == "test-skill"
     assert parsed["description"] == "A test"
+
 
 def test_parse_yaml_simple_array():
     """Test simple YAML parser with array."""
@@ -94,6 +99,7 @@ def test_parse_yaml_simple_array():
     assert isinstance(parsed["tools"], list)
     assert len(parsed["tools"]) == 3
     assert "Read" in parsed["tools"]
+
 
 def test_parse_yaml_simple_multiline():
     """Test simple YAML parser with multiline string."""
@@ -110,6 +116,7 @@ def test_parse_yaml_simple_multiline():
     assert "Line 1" in parsed["description"]
     assert "Line 2" in parsed["description"]
 
+
 def test_parse_yaml_simple_quoted():
     """Test simple YAML parser with quoted string."""
     yaml_content = 'name: "quoted-name"'
@@ -117,6 +124,7 @@ def test_parse_yaml_simple_quoted():
     parsed = parse_yaml_simple(yaml_content)
 
     assert parsed["name"] == "quoted-name"
+
 
 def test_parse_yaml_simple_empty_value():
     """Test simple YAML parser with empty value."""
@@ -127,6 +135,7 @@ def test_parse_yaml_simple_empty_value():
     assert "name" in parsed
     assert parsed["name"] is None
     assert parsed["description"] == "test"
+
 
 def test_extract_frontmatter_real_skill_file():
     """Test extraction with real skill file (if available)."""
@@ -147,6 +156,7 @@ def test_extract_frontmatter_real_skill_file():
     assert frontmatter is not None
     assert "name" in frontmatter
     assert "description" in frontmatter
+
 
 def test_extract_frontmatter_complex_yaml(tmp_path):
     """Test extraction with complex YAML structure."""
@@ -178,11 +188,13 @@ def test_extract_frontmatter_complex_yaml(tmp_path):
     try:
         # If PyYAML available, check nested structure
         import yaml
+
         assert isinstance(frontmatter.get("tools"), list)
         assert isinstance(frontmatter.get("metadata"), dict)
     except ImportError:
         # Simple parser may not handle nested structures
         pass
+
 
 def test_extract_frontmatter_windows_line_endings(tmp_path):
     """Test extraction with Windows line endings (CRLF)."""

@@ -10,6 +10,7 @@ from typing import Any
 
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
@@ -85,22 +86,26 @@ def format_validation_result(result: ValidationResult, format: OutputFormat) -> 
         Formatted string
     """
     if format == OutputFormat.JSON:
-        return format_json({
-            "success": result.success,
-            "errors": result.errors,
-            "warnings": result.warnings,
-            "info": result.info,
-            "metadata": result.metadata,
-        })
+        return format_json(
+            {
+                "success": result.success,
+                "errors": result.errors,
+                "warnings": result.warnings,
+                "info": result.info,
+                "metadata": result.metadata,
+            }
+        )
 
     elif format == OutputFormat.YAML:
-        return format_yaml({
-            "success": result.success,
-            "errors": result.errors,
-            "warnings": result.warnings,
-            "info": result.info,
-            "metadata": result.metadata,
-        })
+        return format_yaml(
+            {
+                "success": result.success,
+                "errors": result.errors,
+                "warnings": result.warnings,
+                "info": result.info,
+                "metadata": result.metadata,
+            }
+        )
 
     else:  # TEXT
         lines = []
@@ -128,11 +133,7 @@ def format_validation_result(result: ValidationResult, format: OutputFormat) -> 
         return "\n".join(lines)
 
 
-def format_table(
-    headers: list[str],
-    rows: list[list[str]],
-    markdown: bool = False
-) -> str:
+def format_table(headers: list[str], rows: list[list[str]], markdown: bool = False) -> str:
     """
     Format data as ASCII or Markdown table.
 
@@ -157,18 +158,14 @@ def format_table(
 
     if markdown:
         # Markdown table
-        header_line = "| " + " | ".join(
-            h.ljust(col_widths[i]) for i, h in enumerate(headers)
-        ) + " |"
+        header_line = "| " + " | ".join(h.ljust(col_widths[i]) for i, h in enumerate(headers)) + " |"
         lines.append(header_line)
 
         separator = "| " + " | ".join("-" * w for w in col_widths) + " |"
         lines.append(separator)
 
         for row in rows:
-            row_line = "| " + " | ".join(
-                str(cell).ljust(col_widths[i]) for i, cell in enumerate(row)
-            ) + " |"
+            row_line = "| " + " | ".join(str(cell).ljust(col_widths[i]) for i, cell in enumerate(row)) + " |"
             lines.append(row_line)
 
     else:
@@ -177,16 +174,12 @@ def format_table(
 
         lines.append(separator)
 
-        header_line = "|" + "|".join(
-            f" {h.ljust(col_widths[i])} " for i, h in enumerate(headers)
-        ) + "|"
+        header_line = "|" + "|".join(f" {h.ljust(col_widths[i])} " for i, h in enumerate(headers)) + "|"
         lines.append(header_line)
         lines.append(separator)
 
         for row in rows:
-            row_line = "|" + "|".join(
-                f" {str(cell).ljust(col_widths[i])} " for i, cell in enumerate(row)
-            ) + "|"
+            row_line = "|" + "|".join(f" {str(cell).ljust(col_widths[i])} " for i, cell in enumerate(row)) + "|"
             lines.append(row_line)
 
         lines.append(separator)
@@ -194,11 +187,7 @@ def format_table(
     return "\n".join(lines)
 
 
-def format_summary(
-    title: str,
-    stats: dict[str, Any],
-    details: list[str] | None = None
-) -> str:
+def format_summary(title: str, stats: dict[str, Any], details: list[str] | None = None) -> str:
     """
     Format a summary report.
 
@@ -223,11 +212,13 @@ def format_summary(
         lines.append(f"- **{formatted_key}**: {value}")
 
     if details:
-        lines.extend([
-            "",
-            "## Details",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Details",
+                "",
+            ]
+        )
         for detail in details:
             lines.append(f"- {detail}")
 

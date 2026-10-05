@@ -13,10 +13,10 @@ Deep analysis of PowerShell scripts to ensure cross-platform compatibility:
 - Identify encoding issues
 """
 
+import re
 import sys
 from pathlib import Path
 from typing import Any
-import re
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -27,17 +27,17 @@ from lib.cli.base import BaseCLIScript
 def check_hardcoded_paths(content: str, errors: list, warnings: list) -> None:
     """Check for hardcoded Windows/Unix paths."""
     # Windows hardcoded paths
-    if re.search(r'C:\\', content):
+    if re.search(r"C:\\", content):
         errors.append("Hardcoded Windows path detected (C:\\)")
 
-    if re.search(r'[A-Z]:\\(?!\\)', content):
+    if re.search(r"[A-Z]:\\(?!\\)", content):
         errors.append("Hardcoded drive letter path detected")
 
     # Unix hardcoded paths
-    if re.search(r'(?<![a-zA-Z])/home/[a-zA-Z0-9_-]+', content):
+    if re.search(r"(?<![a-zA-Z])/home/[a-zA-Z0-9_-]+", content):
         warnings.append("Hardcoded Unix home path detected (/home/username)")
 
-    if re.search(r'(?<![a-zA-Z])/usr/(?:local/)?bin', content):
+    if re.search(r"(?<![a-zA-Z])/usr/(?:local/)?bin", content):
         warnings.append("Hardcoded Unix system path detected (/usr/bin)")
 
     # Backslash in path strings
@@ -48,9 +48,9 @@ def check_hardcoded_paths(content: str, errors: list, warnings: list) -> None:
 def check_path_api_usage(content: str, warnings: list, info: list) -> None:
     """Check for proper path API usage."""
     # Count path API usage
-    path_combine = len(re.findall(r'\[System\.IO\.Path\]::Combine\(', content))
-    path_join = len(re.findall(r'\[System\.IO\.Path\]::Join\(', content))
-    join_path = len(re.findall(r'Join-Path', content))
+    path_combine = len(re.findall(r"\[System\.IO\.Path\]::Combine\(", content))
+    path_join = len(re.findall(r"\[System\.IO\.Path\]::Join\(", content))
+    join_path = len(re.findall(r"Join-Path", content))
 
     path_api_count = path_combine + path_join + join_path
 
@@ -67,22 +67,22 @@ def check_path_api_usage(content: str, warnings: list, info: list) -> None:
 def check_platform_specific_cmdlets(content: str, warnings: list, info: list) -> None:
     """Check for platform-specific PowerShell cmdlets."""
     windows_only_cmdlets = [
-        'Get-WmiObject',
-        'Get-CimInstance',
-        'Get-EventLog',
-        'Get-WindowsFeature',
-        'Get-Service',
-        'Set-ExecutionPolicy',
-        'Get-Acl',
-        'Set-Acl'
+        "Get-WmiObject",
+        "Get-CimInstance",
+        "Get-EventLog",
+        "Get-WindowsFeature",
+        "Get-Service",
+        "Set-ExecutionPolicy",
+        "Get-Acl",
+        "Set-Acl",
     ]
 
     for cmdlet in windows_only_cmdlets:
-        if re.search(rf'\b{cmdlet}\b', content):
+        if re.search(rf"\b{cmdlet}\b", content):
             warnings.append(f"Platform-specific cmdlet detected: {cmdlet} (may not work on Linux/macOS)")
 
     # Check for platform detection
-    if re.search(r'\$Is(Windows|Linux|MacOS)', content):
+    if re.search(r"\$Is(Windows|Linux|MacOS)", content):
         info.append("Platform detection found (good for cross-platform compatibility)")
 
 
@@ -90,24 +90,24 @@ def check_shebang_and_encoding(file_path: Path, warnings: list, info: list) -> N
     """Check shebang and file encoding."""
     # Read first line
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             first_line = f.readline().strip()
     except Exception:
         first_line = ""
 
     # Check shebang
-    if first_line.startswith('#!/usr/bin/env pwsh'):
+    if first_line.startswith("#!/usr/bin/env pwsh"):
         info.append("Correct shebang for PowerShell 7+")
-    elif first_line.startswith('#!/usr/bin/env powershell'):
+    elif first_line.startswith("#!/usr/bin/env powershell"):
         warnings.append("Shebang uses 'powershell' instead of 'pwsh' (PowerShell 7+)")
-    elif first_line.startswith('#!'):
+    elif first_line.startswith("#!"):
         warnings.append("Non-standard shebang detected")
     else:
         warnings.append("Missing shebang (#!/usr/bin/env pwsh) for Unix compatibility")
 
     # Check file encoding
     try:
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             bom = f.read(3)
 
         if len(bom) >= 3 and bom[0] == 0xEF and bom[1] == 0xBB and bom[2] == 0xBF:
@@ -123,7 +123,7 @@ def check_shebang_and_encoding(file_path: Path, warnings: list, info: list) -> N
 def check_file_naming_conventions(file_name: str, warnings: list, info: list) -> None:
     """Check file naming conventions."""
     # Check for spaces
-    if ' ' in file_name:
+    if " " in file_name:
         warnings.append("Filename contains spaces (may cause issues in scripts)")
 
     # Check for special characters
@@ -131,36 +131,36 @@ def check_file_naming_conventions(file_name: str, warnings: list, info: list) ->
         warnings.append("Filename contains special characters that may be invalid on some platforms")
 
     # Check for mixed case
-    if re.search(r'[A-Z]', file_name) and re.search(r'[a-z]', file_name):
+    if re.search(r"[A-Z]", file_name) and re.search(r"[a-z]", file_name):
         info.append("Filename has mixed case (remember Unix filesystems are case-sensitive)")
 
 
 def check_environment_variables(content: str, warnings: list, info: list) -> None:
     """Check environment variable usage."""
     # Windows-specific environment variables
-    if re.search(r'\$env:USERPROFILE|\$env:APPDATA|\$env:TEMP(?![_A-Z])|\$env:PROGRAMFILES', content):
+    if re.search(r"\$env:USERPROFILE|\$env:APPDATA|\$env:TEMP(?![_A-Z])|\$env:PROGRAMFILES", content):
         warnings.append("Windows-specific environment variable detected (consider cross-platform alternatives)")
 
     # Check for portable HOME
-    if re.search(r'\$env:HOME', content):
+    if re.search(r"\$env:HOME", content):
         info.append("Using portable HOME environment variable")
 
     # Check for proper TEMP usage
-    if re.search(r'\[System\.IO\.Path\]::GetTempPath\(\)', content):
+    if re.search(r"\[System\.IO\.Path\]::GetTempPath\(\)", content):
         info.append("Using cross-platform temp directory method")
 
 
 def check_line_endings(file_path: Path, warnings: list, info: list) -> None:
     """Check line endings."""
     try:
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             content = f.read()
 
-        content_str = content.decode('utf-8', errors='ignore')
+        content_str = content.decode("utf-8", errors="ignore")
 
         # Count line ending types
-        crlf_count = content_str.count('\r\n')
-        lf_count = content_str.count('\n') - crlf_count  # Subtract CRLF newlines
+        crlf_count = content_str.count("\r\n")
+        lf_count = content_str.count("\n") - crlf_count  # Subtract CRLF newlines
 
         if crlf_count > 0 and lf_count > 0:
             warnings.append("Mixed line endings detected (CRLF and LF)")
@@ -189,7 +189,7 @@ def validate_script_cross_platform(script_path: Path) -> dict:
 
     # Read file content
     try:
-        content = script_path.read_text(encoding='utf-8')
+        content = script_path.read_text(encoding="utf-8")
     except Exception as e:
         return {
             "file": str(script_path),
@@ -197,11 +197,7 @@ def validate_script_cross_platform(script_path: Path) -> dict:
             "errors": [f"Failed to read file: {e}"],
             "warnings": [],
             "info": [],
-            "summary": {
-                "errorCount": 1,
-                "warningCount": 0,
-                "infoCount": 0
-            }
+            "summary": {"errorCount": 1, "warningCount": 0, "infoCount": 0},
         }
 
     file_name = script_path.name
@@ -221,11 +217,7 @@ def validate_script_cross_platform(script_path: Path) -> dict:
         "errors": errors,
         "warnings": warnings,
         "info": info,
-        "summary": {
-            "errorCount": len(errors),
-            "warningCount": len(warnings),
-            "infoCount": len(info)
-        }
+        "summary": {"errorCount": len(errors), "warningCount": len(warnings), "infoCount": len(info)},
     }
 
 
@@ -234,27 +226,12 @@ class ValidateCrossPlatformScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--file", help="Path to script file to validate (for single file analysis)")
         parser.add_argument(
-            "--file",
-            help="Path to script file to validate (for single file analysis)"
+            "--path", "-p", default=".", help="Path to directory containing scripts (default: current directory)"
         )
-        parser.add_argument(
-            "--path",
-            "-p",
-            default=".",
-            help="Path to directory containing scripts (default: current directory)"
-        )
-        parser.add_argument(
-            "--recursive",
-            "-r",
-            action="store_true",
-            help="Search subdirectories recursively"
-        )
-        parser.add_argument(
-            "--strict",
-            action="store_true",
-            help="Enable strict mode (warnings become errors)"
-        )
+        parser.add_argument("--recursive", "-r", action="store_true", help="Search subdirectories recursively")
+        parser.add_argument("--strict", action="store_true", help="Enable strict mode (warnings become errors)")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute validation logic."""
@@ -264,17 +241,13 @@ class ValidateCrossPlatformScript(BaseCLIScript):
 
             if not file_path.exists():
                 self.logger.error(f"File not found: {args.file}")
-                return {
-                    "success": False,
-                    "error": f"File not found: {args.file}"
-                }
+                return {"success": False, "error": f"File not found: {args.file}"}
 
             result = validate_script_cross_platform(file_path)
 
             # Apply strict mode
             if args.strict and result["warnings"]:
                 result["valid"] = False
-
 
             return result
 
@@ -284,10 +257,7 @@ class ValidateCrossPlatformScript(BaseCLIScript):
 
             if not path.exists():
                 self.logger.error(f"Path not found: {args.path}")
-                return {
-                    "success": False,
-                    "error": f"Path not found: {args.path}"
-                }
+                return {"success": False, "error": f"Path not found: {args.path}"}
 
             # Get all PowerShell scripts
             if args.recursive:
@@ -310,8 +280,8 @@ class ValidateCrossPlatformScript(BaseCLIScript):
                         "validScripts": 0,
                         "scriptsWithIssues": 0,
                         "totalErrors": 0,
-                        "totalWarnings": 0
-                    }
+                        "totalWarnings": 0,
+                    },
                 }
 
             # Validate each script
@@ -335,7 +305,6 @@ class ValidateCrossPlatformScript(BaseCLIScript):
             valid_scripts = sum(1 for r in results if r["valid"])
             scripts_with_issues = len(results) - valid_scripts
 
-
             return {
                 "success": scripts_with_issues == 0,
                 "path": str(path),
@@ -346,18 +315,15 @@ class ValidateCrossPlatformScript(BaseCLIScript):
                     "validScripts": valid_scripts,
                     "scriptsWithIssues": scripts_with_issues,
                     "totalErrors": total_errors,
-                    "totalWarnings": total_warnings
-                }
+                    "totalWarnings": total_warnings,
+                },
             }
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
         if "file" in result:
             # Single file
-            lines = [
-                f"Cross-Platform Validation: {result['file']}",
-                ""
-            ]
+            lines = [f"Cross-Platform Validation: {result['file']}", ""]
 
             if result["errors"]:
                 lines.append("ERRORS:")
@@ -378,7 +344,9 @@ class ValidateCrossPlatformScript(BaseCLIScript):
                 lines.append("")
 
             status = "[OK]" if result["valid"] else "[FAIL]"
-            lines.append(f"{status} Script is {'cross-platform compatible' if result['valid'] else 'has compatibility issues'}")
+            lines.append(
+                f"{status} Script is {'cross-platform compatible' if result['valid'] else 'has compatibility issues'}"
+            )
 
             return "\n".join(lines)
         else:
@@ -394,7 +362,7 @@ class ValidateCrossPlatformScript(BaseCLIScript):
                 f"  With issues: {result['summary']['scriptsWithIssues']}",
                 f"  Total errors: {result['summary']['totalErrors']}",
                 f"  Total warnings: {result['summary']['totalWarnings']}",
-                ""
+                "",
             ]
 
             for script in result["scripts"]:
@@ -426,18 +394,23 @@ class ValidateCrossPlatformScript(BaseCLIScript):
             # Single file
             status = "[OK]" if result["valid"] else "[FAIL]"
             file_name = Path(result["file"]).name
-            return (f"{status} {file_name} "
-                    f"({result['summary']['errorCount']} errors, "
-                    f"{result['summary']['warningCount']} warnings)")
+            return (
+                f"{status} {file_name} "
+                f"({result['summary']['errorCount']} errors, "
+                f"{result['summary']['warningCount']} warnings)"
+            )
         else:
             # Multiple files
             status = "[OK]" if result["summary"]["scriptsWithIssues"] == 0 else "[FAIL]"
-            return (f"{status} Cross-platform: {result['summary']['validScripts']}/"
-                    f"{result['summary']['totalScripts']} compatible "
-                    f"({result['summary']['totalErrors']} errors, "
-                    f"{result['summary']['totalWarnings']} warnings)")
+            return (
+                f"{status} Cross-platform: {result['summary']['validScripts']}/"
+                f"{result['summary']['totalScripts']} compatible "
+                f"({result['summary']['totalErrors']} errors, "
+                f"{result['summary']['totalWarnings']} warnings)"
+            )
 
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(ValidateCrossPlatformScript)

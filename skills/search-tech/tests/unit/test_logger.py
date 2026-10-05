@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Tests for search_tech.logger module."""
 
-import pytest
 import logging
-
 from pathlib import Path
 
-from search_tech.logger import setup_logger, MetricsCollector
+import pytest
+from search_tech.logger import MetricsCollector, setup_logger
 
 
 class TestSetupLogger:
@@ -57,52 +56,52 @@ class TestMetricsCollector:
         """Test metrics start at zero."""
         metrics = MetricsCollector()
 
-        assert metrics.get('api_calls') == 0
-        assert metrics.get('cache_hits') == 0
-        assert metrics.get('errors') == 0
+        assert metrics.get("api_calls") == 0
+        assert metrics.get("cache_hits") == 0
+        assert metrics.get("errors") == 0
 
     def test_increment_metric(self):
         """Test incrementing a metric."""
         metrics = MetricsCollector()
 
-        metrics.increment('api_calls')
-        assert metrics.get('api_calls') == 1
+        metrics.increment("api_calls")
+        assert metrics.get("api_calls") == 1
 
-        metrics.increment('api_calls', 5)
-        assert metrics.get('api_calls') == 6
+        metrics.increment("api_calls", 5)
+        assert metrics.get("api_calls") == 6
 
     def test_increment_unknown_metric(self):
         """Test incrementing unknown metric does nothing."""
         metrics = MetricsCollector()
 
-        metrics.increment('unknown_metric')
-        assert metrics.get('unknown_metric') == 0
+        metrics.increment("unknown_metric")
+        assert metrics.get("unknown_metric") == 0
 
     def test_reset_metrics(self):
         """Test resetting all metrics."""
         metrics = MetricsCollector()
 
-        metrics.increment('api_calls', 10)
-        metrics.increment('errors', 3)
+        metrics.increment("api_calls", 10)
+        metrics.increment("errors", 3)
 
-        assert metrics.get('api_calls') == 10
-        assert metrics.get('errors') == 3
+        assert metrics.get("api_calls") == 10
+        assert metrics.get("errors") == 3
 
         metrics.reset()
 
-        assert metrics.get('api_calls') == 0
-        assert metrics.get('errors') == 0
+        assert metrics.get("api_calls") == 0
+        assert metrics.get("errors") == 0
 
     def test_cache_hit_rate_calculation(self):
         """Test cache hit rate calculation."""
         metrics = MetricsCollector()
 
-        metrics.increment('cache_hits', 7)
-        metrics.increment('cache_misses', 3)
+        metrics.increment("cache_hits", 7)
+        metrics.increment("cache_misses", 3)
 
         summary = metrics.summary()
 
-        assert summary['cache_hit_rate_percent'] == 70.0
+        assert summary["cache_hit_rate_percent"] == 70.0
 
     def test_cache_hit_rate_with_no_cache_access(self):
         """Test cache hit rate when no cache access."""
@@ -110,38 +109,38 @@ class TestMetricsCollector:
 
         summary = metrics.summary()
 
-        assert summary['cache_hit_rate_percent'] == 0
+        assert summary["cache_hit_rate_percent"] == 0
 
     def test_metrics_summary(self):
         """Test full metrics summary."""
         metrics = MetricsCollector()
 
-        metrics.increment('api_calls', 5)
-        metrics.increment('cache_hits', 3)
-        metrics.increment('cache_misses', 2)
-        metrics.increment('errors', 1)
-        metrics.increment('total_results', 10)
+        metrics.increment("api_calls", 5)
+        metrics.increment("cache_hits", 3)
+        metrics.increment("cache_misses", 2)
+        metrics.increment("errors", 1)
+        metrics.increment("total_results", 10)
 
         summary = metrics.summary()
 
-        assert summary['api_calls'] == 5
-        assert summary['cache_hits'] == 3
-        assert summary['cache_misses'] == 2
-        assert summary['errors'] == 1
-        assert summary['total_results'] == 10
-        assert summary['cache_hit_rate_percent'] == 60.0
+        assert summary["api_calls"] == 5
+        assert summary["cache_hits"] == 3
+        assert summary["cache_misses"] == 2
+        assert summary["errors"] == 1
+        assert summary["total_results"] == 10
+        assert summary["cache_hit_rate_percent"] == 60.0
 
     def test_metrics_string_representation(self):
         """Test metrics __str__ method."""
         metrics = MetricsCollector()
 
-        metrics.increment('api_calls', 3)
-        metrics.increment('cache_hits', 2)
-        metrics.increment('cache_misses', 1)
-        metrics.increment('total_results', 5)
+        metrics.increment("api_calls", 3)
+        metrics.increment("cache_hits", 2)
+        metrics.increment("cache_misses", 1)
+        metrics.increment("total_results", 5)
 
         metrics_str = str(metrics)
 
-        assert 'API calls: 3' in metrics_str
-        assert 'Cache hits: 2/3' in metrics_str
-        assert 'Results: 5' in metrics_str
+        assert "API calls: 3" in metrics_str
+        assert "Cache hits: 2/3" in metrics_str
+        assert "Results: 5" in metrics_str

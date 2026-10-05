@@ -2,14 +2,15 @@
 """Tests for propose_ci_fixes.py"""
 
 import json
-import pytest
 from pathlib import Path
 
+import pytest
 from cli.propose_ci_fixes import (
     ErrorInput,
-    should_delegate_to_ollama,
     extract_context,
+    should_delegate_to_ollama,
 )
+
 
 class TestShouldDelegateToOllama:
     """Test delegation decision logic."""
@@ -17,9 +18,7 @@ class TestShouldDelegateToOllama:
     def test_mechanical_error_delegated(self):
         """Mechanical errors should be delegated to Ollama."""
         error = ErrorInput(
-            error_id="err1",
-            error_type="compilation",
-            error_message="Unresolved reference: ContextCompat"
+            error_id="err1", error_type="compilation", error_message="Unresolved reference: ContextCompat"
         )
 
         assert should_delegate_to_ollama(error) is True
@@ -29,30 +28,25 @@ class TestShouldDelegateToOllama:
         error = ErrorInput(
             error_id="err2",
             error_type="build",
-            error_message="Circular dependency detected between ModuleA and ModuleB"
+            error_message="Circular dependency detected between ModuleA and ModuleB",
         )
 
         assert should_delegate_to_ollama(error) is False
 
     def test_test_assertion_delegated(self):
         """Test assertion errors should be delegated."""
-        error = ErrorInput(
-            error_id="err3",
-            error_type="test",
-            error_message="AssertionError: expected 2 but was 1"
-        )
+        error = ErrorInput(error_id="err3", error_type="test", error_message="AssertionError: expected 2 but was 1")
 
         assert should_delegate_to_ollama(error) is True
 
     def test_architecture_escalated(self):
         """Architecture issues should be escalated."""
         error = ErrorInput(
-            error_id="err4",
-            error_type="compilation",
-            error_message="Refactor needed: design pattern violation"
+            error_id="err4", error_type="compilation", error_message="Refactor needed: design pattern violation"
         )
 
         assert should_delegate_to_ollama(error) is False
+
 
 class TestExtractContext:
     """Test context extraction."""
@@ -76,7 +70,7 @@ line 8
             error_type="compilation",
             error_message="Error at line 5",
             file_path="Test.kt",
-            line_number=5
+            line_number=5,
         )
 
         context = extract_context(error, tmp_path)
@@ -88,11 +82,7 @@ line 8
     def test_extract_context_missing_file(self, tmp_path):
         """Should handle missing file gracefully."""
         error = ErrorInput(
-            error_id="err1",
-            error_type="compilation",
-            error_message="Error",
-            file_path="NonExistent.kt",
-            line_number=5
+            error_id="err1", error_type="compilation", error_message="Error", file_path="NonExistent.kt", line_number=5
         )
 
         context = extract_context(error, tmp_path)
@@ -101,16 +91,12 @@ line 8
 
     def test_extract_context_no_file_path(self, tmp_path):
         """Should handle errors without file path."""
-        error = ErrorInput(
-            error_id="err1",
-            error_type="build",
-            error_message="Build failed",
-            file_path=None
-        )
+        error = ErrorInput(error_id="err1", error_type="build", error_message="Build failed", file_path=None)
 
         context = extract_context(error, tmp_path)
 
         assert context["file_content"] is None
+
 
 class TestProposeCIFixesIntegration:
     """Integration tests for propose_ci_fixes.py"""
@@ -131,11 +117,9 @@ class TestProposeCIFixesIntegration:
 
         script = ProposeCIFixesScript()
 
-        result = script.run([
-            "--errors-json", str(tmp_path / "missing.json"),
-            "--repo-path", str(tmp_path),
-            "--format", "json"
-        ])
+        result = script.run(
+            ["--errors-json", str(tmp_path / "missing.json"), "--repo-path", str(tmp_path), "--format", "json"]
+        )
 
         # Script returns 0 but with success=false in JSON
         assert result == 0
@@ -144,38 +128,40 @@ class TestProposeCIFixesIntegration:
         """Script should process valid errors JSON."""
         # Create errors JSON
         errors_json = tmp_path / "errors.json"
-        errors_json.write_text(json.dumps({
-            "errors": [
+        errors_json.write_text(
+            json.dumps(
                 {
-                    "id": "err1",
-                    "type": "compilation",
-                    "message": "Unresolved reference: ContextCompat",
-                    "file": "Test.kt",
-                    "line": 45
+                    "errors": [
+                        {
+                            "id": "err1",
+                            "type": "compilation",
+                            "message": "Unresolved reference: ContextCompat",
+                            "file": "Test.kt",
+                            "line": 45,
+                        }
+                    ]
                 }
-            ]
-        }))
+            )
+        )
 
         from cli.propose_ci_fixes import ProposeCIFixesScript
 
         script = ProposeCIFixesScript()
 
         # Should not crash (even if Ollama unavailable)
-        result = script.run([
-            "--errors-json", str(errors_json),
-            "--repo-path", str(tmp_path),
-            "--format", "json"
-        ])
+        result = script.run(["--errors-json", str(errors_json), "--repo-path", str(tmp_path), "--format", "json"])
 
         # Either 0 (success) or 1 (Ollama unavailable) is acceptable
         assert result in [0, 1]
+
 
 class TestModelResolution:
     """Verify get_model() is used for model selection, not a hardcoded string."""
 
     def test_invoke_ollama_uses_get_model_with_fast_role(self, tmp_path):
         """invoke_ollama_for_fix calls get_model('fast', ...) to resolve the model name."""
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
+
         import cli.propose_ci_fixes as mod
 
         error = ErrorInput(
@@ -193,7 +179,9 @@ class TestModelResolution:
 
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = '{"fix_type": "add_import", "fixed_code": "import Foo", "reasoning": "r", "confidence": "high"}'
+        mock_result.stdout = (
+            '{"fix_type": "add_import", "fixed_code": "import Foo", "reasoning": "r", "confidence": "high"}'
+        )
 
         with patch.object(mod, "_get_model", fake_get_model):
             with patch("cli.propose_ci_fixes.subprocess.run", return_value=mock_result):

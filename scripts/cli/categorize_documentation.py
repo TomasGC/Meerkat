@@ -32,7 +32,7 @@ FUNCTIONAL_PATTERNS = [
     "faq",
     "pull_request_template",
     "pr_template",
-    "issue_template"
+    "issue_template",
 ]
 
 TECHNICAL_PATTERNS = [
@@ -50,7 +50,7 @@ TECHNICAL_PATTERNS = [
     "setup",
     "install",
     "config",
-    "development"
+    "development",
 ]
 
 TECHNICAL_PATHS = ["docs/", ".claude/", "documentation/", "dev/"]
@@ -69,7 +69,7 @@ def categorize_file(file_path: str) -> dict:
             "path": file_path,
             "name": file_name,
             "category": "PERSONAL",
-            "reason": "Local override file (not committed)"
+            "reason": "Local override file (not committed)",
         }
 
     # FUNCTIONAL category indicators
@@ -79,7 +79,7 @@ def categorize_file(file_path: str) -> dict:
                 "path": file_path,
                 "name": file_name,
                 "category": "FUNCTIONAL",
-                "reason": "User-facing documentation"
+                "reason": "User-facing documentation",
             }
 
     # TECHNICAL category indicators
@@ -89,7 +89,7 @@ def categorize_file(file_path: str) -> dict:
                 "path": file_path,
                 "name": file_name,
                 "category": "TECHNICAL",
-                "reason": "Technical documentation for developers"
+                "reason": "Technical documentation for developers",
             }
 
     # Check path for technical indicators
@@ -99,7 +99,7 @@ def categorize_file(file_path: str) -> dict:
                 "path": file_path,
                 "name": file_name,
                 "category": "TECHNICAL",
-                "reason": "Technical documentation for developers"
+                "reason": "Technical documentation for developers",
             }
 
     # Default to TECHNICAL if in docs/ or .claude/
@@ -108,16 +108,11 @@ def categorize_file(file_path: str) -> dict:
             "path": file_path,
             "name": file_name,
             "category": "TECHNICAL",
-            "reason": "Documentation file in technical directory"
+            "reason": "Documentation file in technical directory",
         }
 
     # Fallback to FUNCTIONAL for root-level docs
-    return {
-        "path": file_path,
-        "name": file_name,
-        "category": "FUNCTIONAL",
-        "reason": "Root-level documentation"
-    }
+    return {"path": file_path, "name": file_name, "category": "FUNCTIONAL", "reason": "Root-level documentation"}
 
 
 def categorize_documentation(files: list[str]) -> dict:
@@ -144,8 +139,8 @@ def categorize_documentation(files: list[str]) -> dict:
         "summary": {
             "functionalCount": len(functional),
             "technicalCount": len(technical),
-            "personalCount": len(personal)
-        }
+            "personalCount": len(personal),
+        },
     }
 
     return result
@@ -156,12 +151,7 @@ class CategorizeDocumentationScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--files",
-            nargs="+",
-            required=True,
-            help="File paths to categorize"
-        )
+        parser.add_argument("--files", nargs="+", required=True, help="File paths to categorize")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute documentation categorization."""
@@ -169,18 +159,11 @@ class CategorizeDocumentationScript(BaseCLIScript):
             # Categorize documentation
             result = categorize_documentation(args.files)
 
-
-            return {
-                "success": True,
-                **result
-            }
+            return {"success": True, **result}
 
         except Exception as e:
             self.logger.error(f"Failed to categorize documentation: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -192,7 +175,7 @@ class CategorizeDocumentationScript(BaseCLIScript):
             "=====================================",
             "",
             f"Total files: {result['total']}",
-            ""
+            "",
         ]
 
         lines.append(f"FUNCTIONAL ({len(result['functional'])} files):")
@@ -216,12 +199,15 @@ class CategorizeDocumentationScript(BaseCLIScript):
         if not result.get("success"):
             return f"[ERROR] {result.get('error', 'Unknown error')}"
 
-        return (f"Categorized {result['total']} files: "
-                f"FUNCTIONAL={result['summary']['functionalCount']}, "
-                f"TECHNICAL={result['summary']['technicalCount']}, "
-                f"PERSONAL={result['summary']['personalCount']}")
+        return (
+            f"Categorized {result['total']} files: "
+            f"FUNCTIONAL={result['summary']['functionalCount']}, "
+            f"TECHNICAL={result['summary']['technicalCount']}, "
+            f"PERSONAL={result['summary']['personalCount']}"
+        )
 
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(CategorizeDocumentationScript)

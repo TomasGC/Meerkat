@@ -39,22 +39,22 @@ def sample_go_project(temp_dir):
     )
     (project_dir / "main.go").write_text(
         'package main\n\nimport "github.com/gin-gonic/gin"\n\nfunc main() {\n'
-        '    router := gin.Default()\n'
+        "    router := gin.Default()\n"
         '    router.GET("/users/:id", getUser)\n'
         '    router.POST("/users", createUser)\n'
         '    router.PUT("/users/:id", updateUser)\n'
         '    router.DELETE("/users/:id", deleteUser)\n'
         '    router.Run(":8080")\n}\n\n'
-        'func getUser(c *gin.Context) {}\n'
-        'func createUser(c *gin.Context) {}\n'
-        'func updateUser(c *gin.Context) {}\n'
-        'func deleteUser(c *gin.Context) {}\n'
+        "func getUser(c *gin.Context) {}\n"
+        "func createUser(c *gin.Context) {}\n"
+        "func updateUser(c *gin.Context) {}\n"
+        "func deleteUser(c *gin.Context) {}\n"
     )
     (project_dir / "handler_test.go").write_text(
         'package main\n\nimport "testing"\n\n'
-        'func TestGetUser(t *testing.T) {}\n'
-        'func TestCreateUser(t *testing.T) {}\n'
-        'func TestCreateUserInvalidInput(t *testing.T) {}\n'
+        "func TestGetUser(t *testing.T) {}\n"
+        "func TestCreateUser(t *testing.T) {}\n"
+        "func TestCreateUserInvalidInput(t *testing.T) {}\n"
     )
     return project_dir
 
@@ -65,11 +65,14 @@ def sample_typescript_project(temp_dir):
     project_dir.mkdir()
 
     (project_dir / "package.json").write_text(
-        json.dumps({
-            "name": "api", "version": "1.0.0",
-            "dependencies": {"express": "^4.18.0"},
-            "devDependencies": {"jest": "^29.0.0"},
-        })
+        json.dumps(
+            {
+                "name": "api",
+                "version": "1.0.0",
+                "dependencies": {"express": "^4.18.0"},
+                "devDependencies": {"jest": "^29.0.0"},
+            }
+        )
     )
     (project_dir / "tsconfig.json").write_text(json.dumps({"compilerOptions": {}}))
 
@@ -105,9 +108,9 @@ def sample_csharp_project(temp_dir):
 
     (project_dir / "Api.csproj").write_text(
         '<Project Sdk="Microsoft.NET.Sdk.Web">\n'
-        '  <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>\n'
+        "  <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>\n"
         '  <ItemGroup><PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" /></ItemGroup>\n'
-        '</Project>\n'
+        "</Project>\n"
     )
 
     controllers_dir = project_dir / "Controllers"
@@ -117,7 +120,7 @@ def sample_csharp_project(temp_dir):
         '[ApiController]\n[Route("api/[controller]")]\n'
         "public class UsersController : ControllerBase\n{\n"
         '    [HttpGet("{id}")] public IActionResult GetUser(int id) => Ok();\n'
-        '    [HttpPost] public IActionResult CreateUser([FromBody] CreateUserRequest r) => Created();\n'
+        "    [HttpPost] public IActionResult CreateUser([FromBody] CreateUserRequest r) => Created();\n"
         '    [HttpPut("{id}")] public IActionResult UpdateUser(int id, [FromBody] UpdateUserRequest r) => NoContent();\n'
         '    [HttpDelete("{id}")] public IActionResult DeleteUser(int id) => NoContent();\n'
         "}\n"
@@ -167,28 +170,71 @@ def sample_endpoints_json(temp_dir):
     data = {
         "endpoint_count": 3,
         "endpoints": [
-            {"path": "/users/:id", "method": "GET",
-             "params": [{"name": "id", "param_type": "path", "data_type": "string",
-                         "required": True, "default_value": None, "constraints": {}}],
-             "response_codes": [200, 400, 401, 403, 404, 500],
-             "file_path": "handlers/users.go", "line_number": 10,
-             "framework": "gin", "handler_name": "getUser"},
-            {"path": "/users", "method": "POST",
-             "params": [
-                 {"name": "email", "param_type": "body", "data_type": "string",
-                  "required": True, "default_value": None, "constraints": {}},
-                 {"name": "name", "param_type": "body", "data_type": "string",
-                  "required": True, "default_value": None, "constraints": {}},
-             ],
-             "response_codes": [201, 400, 401, 403, 409, 422, 500],
-             "file_path": "handlers/users.go", "line_number": 20,
-             "framework": "gin", "handler_name": "createUser"},
-            {"path": "/users/:id", "method": "DELETE",
-             "params": [{"name": "id", "param_type": "path", "data_type": "string",
-                         "required": True, "default_value": None, "constraints": {}}],
-             "response_codes": [204, 400, 401, 403, 404, 500],
-             "file_path": "handlers/users.go", "line_number": 30,
-             "framework": "gin", "handler_name": "deleteUser"},
+            {
+                "path": "/users/:id",
+                "method": "GET",
+                "params": [
+                    {
+                        "name": "id",
+                        "param_type": "path",
+                        "data_type": "string",
+                        "required": True,
+                        "default_value": None,
+                        "constraints": {},
+                    }
+                ],
+                "response_codes": [200, 400, 401, 403, 404, 500],
+                "file_path": "handlers/users.go",
+                "line_number": 10,
+                "framework": "gin",
+                "handler_name": "getUser",
+            },
+            {
+                "path": "/users",
+                "method": "POST",
+                "params": [
+                    {
+                        "name": "email",
+                        "param_type": "body",
+                        "data_type": "string",
+                        "required": True,
+                        "default_value": None,
+                        "constraints": {},
+                    },
+                    {
+                        "name": "name",
+                        "param_type": "body",
+                        "data_type": "string",
+                        "required": True,
+                        "default_value": None,
+                        "constraints": {},
+                    },
+                ],
+                "response_codes": [201, 400, 401, 403, 409, 422, 500],
+                "file_path": "handlers/users.go",
+                "line_number": 20,
+                "framework": "gin",
+                "handler_name": "createUser",
+            },
+            {
+                "path": "/users/:id",
+                "method": "DELETE",
+                "params": [
+                    {
+                        "name": "id",
+                        "param_type": "path",
+                        "data_type": "string",
+                        "required": True,
+                        "default_value": None,
+                        "constraints": {},
+                    }
+                ],
+                "response_codes": [204, 400, 401, 403, 404, 500],
+                "file_path": "handlers/users.go",
+                "line_number": 30,
+                "framework": "gin",
+                "handler_name": "deleteUser",
+            },
         ],
     }
     f = temp_dir / "endpoints.json"
@@ -201,18 +247,50 @@ def sample_tests_json(temp_dir):
     data = {
         "test_count": 4,
         "tests": [
-            {"name": "TestGetUser", "file_path": "handlers/users_test.go", "line_number": 10,
-             "framework": "testing", "tested_endpoint": "/users/:id", "tested_method": "GET",
-             "tested_inputs": ["id"], "expected_outputs": ["200"], "test_type": "unit"},
-            {"name": "TestCreateUser", "file_path": "handlers/users_test.go", "line_number": 20,
-             "framework": "testing", "tested_endpoint": "/users", "tested_method": "POST",
-             "tested_inputs": ["email", "name"], "expected_outputs": ["201"], "test_type": "unit"},
-            {"name": "TestCreateUserInvalidEmail", "file_path": "handlers/users_test.go", "line_number": 30,
-             "framework": "testing", "tested_endpoint": "/users", "tested_method": "POST",
-             "tested_inputs": ["invalid_email"], "expected_outputs": ["400"], "test_type": "unit"},
-            {"name": "TestDeleteUser", "file_path": "handlers/users_test.go", "line_number": 40,
-             "framework": "testing", "tested_endpoint": "/users/:id", "tested_method": "DELETE",
-             "tested_inputs": ["id"], "expected_outputs": ["204"], "test_type": "unit"},
+            {
+                "name": "TestGetUser",
+                "file_path": "handlers/users_test.go",
+                "line_number": 10,
+                "framework": "testing",
+                "tested_endpoint": "/users/:id",
+                "tested_method": "GET",
+                "tested_inputs": ["id"],
+                "expected_outputs": ["200"],
+                "test_type": "unit",
+            },
+            {
+                "name": "TestCreateUser",
+                "file_path": "handlers/users_test.go",
+                "line_number": 20,
+                "framework": "testing",
+                "tested_endpoint": "/users",
+                "tested_method": "POST",
+                "tested_inputs": ["email", "name"],
+                "expected_outputs": ["201"],
+                "test_type": "unit",
+            },
+            {
+                "name": "TestCreateUserInvalidEmail",
+                "file_path": "handlers/users_test.go",
+                "line_number": 30,
+                "framework": "testing",
+                "tested_endpoint": "/users",
+                "tested_method": "POST",
+                "tested_inputs": ["invalid_email"],
+                "expected_outputs": ["400"],
+                "test_type": "unit",
+            },
+            {
+                "name": "TestDeleteUser",
+                "file_path": "handlers/users_test.go",
+                "line_number": 40,
+                "framework": "testing",
+                "tested_endpoint": "/users/:id",
+                "tested_method": "DELETE",
+                "tested_inputs": ["id"],
+                "expected_outputs": ["204"],
+                "test_type": "unit",
+            },
         ],
     }
     f = temp_dir / "tests.json"
@@ -225,21 +303,46 @@ def sample_scenarios_json(temp_dir):
     data = {
         "scenario_count": 10,
         "scenarios": [
-            {"endpoint": "/users/:id", "method": "GET", "input_combination": {"id": "test"},
-             "expected_output": 200, "scenario_type": "happy_path",
-             "description": "Valid request to GET /users/:id"},
-            {"endpoint": "/users/:id", "method": "GET", "input_combination": {"id": None},
-             "expected_output": 400, "scenario_type": "error", "description": "Edge case: id=None"},
-            {"endpoint": "/users/:id", "method": "GET",
-             "input_combination": {"id": "<script>alert('xss')</script>"},
-             "expected_output": 400, "scenario_type": "security", "description": "Security test: xss_script"},
-            {"endpoint": "/users", "method": "POST",
-             "input_combination": {"email": "test@example.com", "name": "Test User"},
-             "expected_output": 201, "scenario_type": "happy_path",
-             "description": "Valid request to POST /users"},
-            {"endpoint": "/users", "method": "POST", "input_combination": {"name": "Test User"},
-             "expected_output": 400, "scenario_type": "error",
-             "description": "Missing required parameter: email"},
+            {
+                "endpoint": "/users/:id",
+                "method": "GET",
+                "input_combination": {"id": "test"},
+                "expected_output": 200,
+                "scenario_type": "happy_path",
+                "description": "Valid request to GET /users/:id",
+            },
+            {
+                "endpoint": "/users/:id",
+                "method": "GET",
+                "input_combination": {"id": None},
+                "expected_output": 400,
+                "scenario_type": "error",
+                "description": "Edge case: id=None",
+            },
+            {
+                "endpoint": "/users/:id",
+                "method": "GET",
+                "input_combination": {"id": "<script>alert('xss')</script>"},
+                "expected_output": 400,
+                "scenario_type": "security",
+                "description": "Security test: xss_script",
+            },
+            {
+                "endpoint": "/users",
+                "method": "POST",
+                "input_combination": {"email": "test@example.com", "name": "Test User"},
+                "expected_output": 201,
+                "scenario_type": "happy_path",
+                "description": "Valid request to POST /users",
+            },
+            {
+                "endpoint": "/users",
+                "method": "POST",
+                "input_combination": {"name": "Test User"},
+                "expected_output": 400,
+                "scenario_type": "error",
+                "description": "Missing required parameter: email",
+            },
         ],
         "breakdown": {"happy_path": 2, "edge_case": 1, "error": 2, "security": 1},
     }
@@ -259,9 +362,7 @@ def minimal_lcov_file(temp_dir):
 @pytest.fixture
 def minimal_go_cover_file(temp_dir):
     content = (
-        "mode: atomic\n"
-        "example.com/api/handlers.go:10.25,12.2 1 3\n"
-        "example.com/api/handlers.go:15.10,17.2 2 0\n"
+        "mode: atomic\n" "example.com/api/handlers.go:10.25,12.2 1 3\n" "example.com/api/handlers.go:15.10,17.2 2 0\n"
     )
     p = temp_dir / "coverage_unit.out"
     p.write_text(content)
@@ -271,8 +372,12 @@ def minimal_go_cover_file(temp_dir):
 @pytest.fixture
 def minimal_project_info_json(temp_dir):
     data = {
-        "language": "python", "frameworks": ["fastapi"], "test_framework": "pytest",
-        "root_path": str(temp_dir), "endpoint_count": 4, "test_file_count": 2,
+        "language": "python",
+        "frameworks": ["fastapi"],
+        "test_framework": "pytest",
+        "root_path": str(temp_dir),
+        "endpoint_count": 4,
+        "test_file_count": 2,
     }
     p = temp_dir / "project_info.json"
     p.write_text(json.dumps(data, indent=2))
@@ -286,7 +391,7 @@ def sample_kotlin_project(temp_dir):
     (project_dir / "build.gradle.kts").write_text(
         'plugins { kotlin("jvm") version "1.9.0"\n'
         '  id("org.springframework.boot") version "3.2.0" }\n'
-        'dependencies {\n'
+        "dependencies {\n"
         '  implementation("org.springframework.boot:spring-boot-starter-web")\n'
         '  testImplementation("org.springframework.boot:spring-boot-starter-test") }\n'
     )
@@ -294,10 +399,10 @@ def sample_kotlin_project(temp_dir):
     src.mkdir(parents=True)
     (src / "UserController.kt").write_text(
         "package com.example\nimport org.springframework.web.bind.annotation.*\n"
-        "@RestController\n@RequestMapping(\"/api/users\")\nclass UserController {\n"
-        "    @GetMapping(\"/{id}\") fun getUser() = Unit\n"
-        "    @PostMapping(\"/\") fun createUser() = Unit\n"
-        "    @DeleteMapping(\"/{id}\") fun deleteUser() = Unit\n}\n"
+        '@RestController\n@RequestMapping("/api/users")\nclass UserController {\n'
+        '    @GetMapping("/{id}") fun getUser() = Unit\n'
+        '    @PostMapping("/") fun createUser() = Unit\n'
+        '    @DeleteMapping("/{id}") fun deleteUser() = Unit\n}\n'
     )
     test = project_dir / "src" / "test" / "kotlin" / "com" / "example"
     test.mkdir(parents=True)
@@ -313,17 +418,16 @@ def sample_rust_project(temp_dir):
     project_dir = temp_dir / "rust-project"
     project_dir.mkdir()
     (project_dir / "Cargo.toml").write_text(
-        "[package]\nname = \"my-api\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n"
-        "[dependencies]\nactix-web = \"4\"\n"
+        '[package]\nname = "my-api"\nversion = "0.1.0"\nedition = "2021"\n\n' '[dependencies]\nactix-web = "4"\n'
     )
     src = project_dir / "src"
     src.mkdir()
     (src / "main.rs").write_text(
-        'use actix_web::{get, post, delete, web, App, HttpServer, Responder};\n'
+        "use actix_web::{get, post, delete, web, App, HttpServer, Responder};\n"
         '#[get("/users/{id}")] async fn get_user() -> impl Responder { "ok" }\n'
         '#[post("/users")] async fn create_user() -> impl Responder { "ok" }\n'
         '#[delete("/users/{id}")] async fn delete_user() -> impl Responder { "ok" }\n'
-        '#[cfg(test)] mod tests {\n    #[test] fn test_get() {}\n    #[test] fn test_create() {}\n}\n'
+        "#[cfg(test)] mod tests {\n    #[test] fn test_get() {}\n    #[test] fn test_create() {}\n}\n"
     )
     return project_dir
 
@@ -332,7 +436,9 @@ def sample_rust_project(temp_dir):
 def sample_matrix_json(temp_dir, sample_scenarios_json, sample_tests_json):
     data = {
         "coverage_stats": {
-            "total_scenarios": 5, "tested_scenarios": 3, "untested_scenarios": 2,
+            "total_scenarios": 5,
+            "tested_scenarios": 3,
+            "untested_scenarios": 2,
             "coverage_percent": 60.0,
             "by_endpoint": {
                 "GET /users/:id": {"total": 3, "tested": 2, "untested": 1, "coverage_percent": 66.67},
@@ -345,18 +451,42 @@ def sample_matrix_json(temp_dir, sample_scenarios_json, sample_tests_json):
             },
         },
         "gaps": [
-            {"scenario": {"endpoint": "/users/:id", "method": "GET",
-                          "input_combination": {"id": "test"}, "expected_output": 200,
-                          "scenario_type": "happy_path", "description": "Valid request to GET /users/:id"},
-             "is_tested": True,
-             "related_tests": [{"name": "TestGetUser", "file_path": "handlers/users_test.go",
-                                "line_number": 10, "framework": "testing",
-                                "tested_endpoint": "/users/:id", "tested_method": "GET",
-                                "tested_inputs": [], "expected_outputs": [], "test_type": "unit"}]},
-            {"scenario": {"endpoint": "/users/:id", "method": "GET",
-                          "input_combination": {"id": None}, "expected_output": 400,
-                          "scenario_type": "error", "description": "Edge case: id=None"},
-             "is_tested": False, "related_tests": []},
+            {
+                "scenario": {
+                    "endpoint": "/users/:id",
+                    "method": "GET",
+                    "input_combination": {"id": "test"},
+                    "expected_output": 200,
+                    "scenario_type": "happy_path",
+                    "description": "Valid request to GET /users/:id",
+                },
+                "is_tested": True,
+                "related_tests": [
+                    {
+                        "name": "TestGetUser",
+                        "file_path": "handlers/users_test.go",
+                        "line_number": 10,
+                        "framework": "testing",
+                        "tested_endpoint": "/users/:id",
+                        "tested_method": "GET",
+                        "tested_inputs": [],
+                        "expected_outputs": [],
+                        "test_type": "unit",
+                    }
+                ],
+            },
+            {
+                "scenario": {
+                    "endpoint": "/users/:id",
+                    "method": "GET",
+                    "input_combination": {"id": None},
+                    "expected_output": 400,
+                    "scenario_type": "error",
+                    "description": "Edge case: id=None",
+                },
+                "is_tested": False,
+                "related_tests": [],
+            },
         ],
     }
     f = temp_dir / "matrix.json"

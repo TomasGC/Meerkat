@@ -1,7 +1,7 @@
 """Unit tests for checkers/check_resource_leaks.py — mechanical layer only (server patched off)."""
+
 from pathlib import Path
 from unittest.mock import patch
-
 
 from ssa.checkers import check_resource_leaks
 

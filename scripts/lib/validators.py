@@ -11,10 +11,7 @@ from pathlib import Path
 from .models import ComponentType, ValidationResult
 
 
-def validate_component_name(
-    name: str,
-    component_type: ComponentType
-) -> ValidationResult:
+def validate_component_name(name: str, component_type: ComponentType) -> ValidationResult:
     """
     Validate component name (skill, script, agent).
 
@@ -68,10 +65,7 @@ def validate_component_name(
 
     success = len(errors) == 0
     return ValidationResult(
-        success=success,
-        errors=errors,
-        warnings=warnings,
-        metadata={"name": name, "type": component_type.value}
+        success=success, errors=errors, warnings=warnings, metadata={"name": name, "type": component_type.value}
     )
 
 
@@ -130,10 +124,7 @@ def validate_yaml_frontmatter(content: str, component_type: ComponentType) -> Va
 
     success = len(errors) == 0
     return ValidationResult(
-        success=success,
-        errors=errors,
-        warnings=warnings,
-        metadata={"component_type": component_type.value}
+        success=success, errors=errors, warnings=warnings, metadata={"component_type": component_type.value}
     )
 
 
@@ -215,12 +206,7 @@ def validate_skill_structure(file_path: Path) -> ValidationResult:
             warnings.append(f"Contains placeholder: {placeholder}")
 
     success = len(errors) == 0
-    return ValidationResult(
-        success=success,
-        errors=errors,
-        warnings=warnings,
-        metadata={"file_path": str(file_path)}
-    )
+    return ValidationResult(success=success, errors=errors, warnings=warnings, metadata={"file_path": str(file_path)})
 
 
 def validate_script_syntax(file_path: Path) -> ValidationResult:
@@ -248,6 +234,7 @@ def validate_script_syntax(file_path: Path) -> ValidationResult:
         language = "python"
         try:
             import ast
+
             content = file_path.read_text(encoding="utf-8")
             ast.parse(content)
         except SyntaxError as e:
@@ -258,11 +245,9 @@ def validate_script_syntax(file_path: Path) -> ValidationResult:
         language = "powershell"
         # Note: Requires PowerShell to be installed
         import subprocess
+
         result = subprocess.run(
-            ["pwsh", "-NoProfile", "-Command", f"Test-Path {file_path}; $?"],
-            capture_output=True,
-            text=True,
-            timeout=5
+            ["pwsh", "-NoProfile", "-Command", f"Test-Path {file_path}; $?"], capture_output=True, text=True, timeout=5
         )
         if result.returncode != 0:
             errors.append(f"PowerShell syntax check failed: {result.stderr}")
@@ -271,12 +256,8 @@ def validate_script_syntax(file_path: Path) -> ValidationResult:
     elif suffix in [".sh", ".bash"]:
         language = "bash"
         import subprocess
-        result = subprocess.run(
-            ["bash", "-n", str(file_path)],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
+
+        result = subprocess.run(["bash", "-n", str(file_path)], capture_output=True, text=True, timeout=5)
         if result.returncode != 0:
             errors.append(f"Bash syntax error: {result.stderr}")
 
@@ -285,8 +266,5 @@ def validate_script_syntax(file_path: Path) -> ValidationResult:
 
     success = len(errors) == 0
     return ValidationResult(
-        success=success,
-        errors=errors,
-        warnings=warnings,
-        metadata={"file_path": str(file_path), "language": language}
+        success=success, errors=errors, warnings=warnings, metadata={"file_path": str(file_path), "language": language}
     )

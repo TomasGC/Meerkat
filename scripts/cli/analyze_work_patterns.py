@@ -24,73 +24,79 @@ from lib.utils import run_command
 # Pattern detection rules
 PATTERN_RULES = {
     "testing": {
-        "patterns": ["*.Tests.ps1", "*.test.ts", "*.test.js", "*_test.go", "*.spec.ts", "test/", "tests/", "__tests__/", "fixtures/"],
+        "patterns": [
+            "*.Tests.ps1",
+            "*.test.ts",
+            "*.test.js",
+            "*_test.go",
+            "*.spec.ts",
+            "test/",
+            "tests/",
+            "__tests__/",
+            "fixtures/",
+        ],
         "excludePatterns": [],
         "keywords": ["test", "spec", "fixture", "mock"],
-        "description": "Comprehensive test suite"
+        "description": "Comprehensive test suite",
     },
     "scripts": {
         "patterns": ["scripts/*.ps1", "*.ps1", "*.sh", "*.bash"],
         "excludePatterns": ["*.Tests.ps1", "test"],
         "keywords": ["script", "automation", "utility"],
-        "description": "Utility scripts"
+        "description": "Utility scripts",
     },
     "standards": {
         "patterns": ["rules/*.md", "standards*.md", "coding-standards/"],
         "excludePatterns": [],
         "keywords": ["standard", "guideline", "convention", "best-practice"],
-        "description": "Coding standards"
+        "description": "Coding standards",
     },
     "hooks": {
         "patterns": ["hooks/*.md", ".git/hooks/", "githooks/"],
         "excludePatterns": [],
         "keywords": ["hook", "pre-commit", "post-commit"],
-        "description": "Git hooks"
+        "description": "Git hooks",
     },
     "skills": {
         "patterns": ["skills/", "SKILL.md"],
         "excludePatterns": [],
         "keywords": ["skill", "automation", "workflow"],
-        "description": "Claude Code skills"
+        "description": "Claude Code skills",
     },
     "agents": {
         "patterns": ["agents/", "AGENT.md"],
         "excludePatterns": [],
         "keywords": ["agent", "autonomous"],
-        "description": "Claude Code agents"
+        "description": "Claude Code agents",
     },
     "documentation": {
         "patterns": ["docs/", "*.md", "README*", "CHANGELOG*"],
         "excludePatterns": ["SKILL.md", "AGENT.md", "rules/", "standards"],
         "keywords": ["doc", "readme", "guide", "tutorial"],
-        "description": "Documentation"
+        "description": "Documentation",
     },
     "infrastructure": {
         "patterns": ["Dockerfile", "docker-compose.yml", ".github/", "azure-pipelines.yml", "*.tf", "terraform/"],
         "excludePatterns": [],
         "keywords": ["infra", "deploy", "ci", "cd", "pipeline"],
-        "description": "Infrastructure changes"
+        "description": "Infrastructure changes",
     },
     "configuration": {
         "patterns": ["*.json", "*.yaml", "*.yml", "*.toml", "*.config", ".env*"],
         "excludePatterns": ["package.json", "package-lock.json"],
         "keywords": ["config", "settings", "environment"],
-        "description": "Configuration updates"
+        "description": "Configuration updates",
     },
     "refactoring": {
         "patterns": [],
         "excludePatterns": [],
         "keywords": ["refactor", "cleanup", "simplify", "extract", "rename"],
-        "description": "Code refactoring"
-    }
+        "description": "Code refactoring",
+    },
 }
 
 
-def get_commit_hashes(
-    commits: Optional[str],
-    auto: bool,
-    base_branch: str
-) -> list[str]:
+def get_commit_hashes(commits: Optional[str], auto: bool, base_branch: str) -> list[str]:
     """
     Get list of commit hashes to analyze.
 
@@ -108,10 +114,7 @@ def get_commit_hashes(
     elif auto:
         # Auto mode: current branch vs base branch
         # Get merge base
-        returncode, merge_base, _ = run_command(
-            ["git", "merge-base", "HEAD", base_branch],
-            timeout=10
-        )
+        returncode, merge_base, _ = run_command(["git", "merge-base", "HEAD", base_branch], timeout=10)
 
         if returncode != 0:
             raise ValueError(f"Failed to find merge base with {base_branch}")
@@ -137,11 +140,7 @@ def get_commit_hashes(
     return commit_hashes
 
 
-def matches_file_pattern(
-    file_path: str,
-    patterns: list[str],
-    exclude_patterns: list[str]
-) -> bool:
+def matches_file_pattern(file_path: str, patterns: list[str], exclude_patterns: list[str]) -> bool:
     """
     Check if file matches pattern rules.
 
@@ -170,18 +169,20 @@ def matches_file_pattern(
 def get_technology_from_extension(extension: str) -> Optional[str]:
     """Get technology from file extension."""
     tech_map = {
-        ".ts": "TypeScript", ".js": "JavaScript", ".py": "Python",
-        ".go": "Go", ".rs": "Rust", ".cs": "C#", ".java": "Java",
-        ".ps1": "PowerShell", ".sh": "Bash"
+        ".ts": "TypeScript",
+        ".js": "JavaScript",
+        ".py": "Python",
+        ".go": "Go",
+        ".rs": "Rust",
+        ".cs": "C#",
+        ".java": "Java",
+        ".ps1": "PowerShell",
+        ".sh": "Bash",
     }
     return tech_map.get(extension.lower())
 
 
-def analyze_work_patterns(
-    commits: Optional[str] = None,
-    auto: bool = False,
-    base_branch: str = "main"
-) -> dict:
+def analyze_work_patterns(commits: Optional[str] = None, auto: bool = False, base_branch: str = "main") -> dict:
     """
     Analyze work patterns from git commits.
 
@@ -226,10 +227,7 @@ def analyze_work_patterns(
 
     # Also check commit messages for refactoring keywords
     for commit_hash in commit_hashes:
-        returncode, commit_msg, _ = run_command(
-            ["git", "log", "-1", "--format=%s", commit_hash],
-            timeout=10
-        )
+        returncode, commit_msg, _ = run_command(["git", "log", "-1", "--format=%s", commit_hash], timeout=10)
 
         if returncode == 0:
             msg_lower = commit_msg.lower()
@@ -243,18 +241,20 @@ def analyze_work_patterns(
     patterns_summary = []
     for pattern_name in patterns_detected:
         rule = PATTERN_RULES[pattern_name]
-        patterns_summary.append({
-            "name": pattern_name,
-            "description": rule["description"],
-            "filesAffected": len(patterns_detected[pattern_name]) if pattern_name != "refactoring" else None
-        })
+        patterns_summary.append(
+            {
+                "name": pattern_name,
+                "description": rule["description"],
+                "filesAffected": len(patterns_detected[pattern_name]) if pattern_name != "refactoring" else None,
+            }
+        )
 
     return {
         "commitsAnalyzed": len(commit_hashes),
         "filesChanged": len(changed_files),
         "patternsDetected": patterns_summary,
         "technologiesUsed": sorted(list(technologies_used)),
-        "commitHashes": commit_hashes
+        "commitHashes": commit_hashes,
     }
 
 
@@ -263,52 +263,26 @@ class AnalyzeWorkPatternsScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--commits", "-c", help="Commit range (e.g., 'HEAD~5..HEAD', 'abc123..def456')")
         parser.add_argument(
-            "--commits",
-            "-c",
-            help="Commit range (e.g., 'HEAD~5..HEAD', 'abc123..def456')"
+            "--auto", "-a", action="store_true", help="Auto mode: analyze current branch vs base branch"
         )
-        parser.add_argument(
-            "--auto",
-            "-a",
-            action="store_true",
-            help="Auto mode: analyze current branch vs base branch"
-        )
-        parser.add_argument(
-            "--base-branch",
-            "-b",
-            default="main",
-            help="Base branch for auto mode (default: main)"
-        )
+        parser.add_argument("--base-branch", "-b", default="main", help="Base branch for auto mode (default: main)")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute work pattern analysis."""
         try:
             # Analyze work patterns
-            result = analyze_work_patterns(
-                commits=args.commits,
-                auto=args.auto,
-                base_branch=args.base_branch
-            )
+            result = analyze_work_patterns(commits=args.commits, auto=args.auto, base_branch=args.base_branch)
 
-
-            return {
-                "success": True,
-                **result
-            }
+            return {"success": True, **result}
 
         except ValueError as e:
             self.logger.error(str(e))
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
         except Exception as e:
             self.logger.error(f"Failed to analyze work patterns: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -320,17 +294,17 @@ class AnalyzeWorkPatternsScript(BaseCLIScript):
             "",
             f"Commits Analyzed: {result['commitsAnalyzed']}",
             f"Files Changed: {result['filesChanged']}",
-            ""
+            "",
         ]
 
-        if result['patternsDetected']:
+        if result["patternsDetected"]:
             lines.append("Patterns Detected:")
-            for pattern in result['patternsDetected']:
-                files_info = f" ({pattern['filesAffected']} files)" if pattern['filesAffected'] else ""
+            for pattern in result["patternsDetected"]:
+                files_info = f" ({pattern['filesAffected']} files)" if pattern["filesAffected"] else ""
                 lines.append(f"  - {pattern['name']}: {pattern['description']}{files_info}")
             lines.append("")
 
-        if result['technologiesUsed']:
+        if result["technologiesUsed"]:
             lines.append(f"Technologies: {', '.join(result['technologiesUsed'])}")
             lines.append("")
 
@@ -341,11 +315,14 @@ class AnalyzeWorkPatternsScript(BaseCLIScript):
         if not result.get("success"):
             return f"[ERROR] {result.get('error', 'Unknown error')}"
 
-        patterns = [p['name'] for p in result['patternsDetected']]
-        return (f"{result['commitsAnalyzed']} commits, {result['filesChanged']} files changed. "
-                f"Patterns: {', '.join(patterns) if patterns else 'none'}")
+        patterns = [p["name"] for p in result["patternsDetected"]]
+        return (
+            f"{result['commitsAnalyzed']} commits, {result['filesChanged']} files changed. "
+            f"Patterns: {', '.join(patterns) if patterns else 'none'}"
+        )
 
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(AnalyzeWorkPatternsScript)

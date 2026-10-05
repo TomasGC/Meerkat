@@ -70,33 +70,21 @@ def get_repo_info(repo_path: Path) -> dict:
         "branch": None,
         "hasRemote": False,
         "remote": None,
-        "remoteUrl": None
+        "remoteUrl": None,
     }
 
     # Get current branch
-    returncode, stdout, stderr = run_command(
-        ["git", "branch", "--show-current"],
-        cwd=repo_path,
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "branch", "--show-current"], cwd=repo_path, timeout=5)
     if returncode == 0 and stdout.strip():
         info["branch"] = stdout.strip()
 
     # Get remote info
-    returncode, stdout, stderr = run_command(
-        ["git", "remote"],
-        cwd=repo_path,
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "remote"], cwd=repo_path, timeout=5)
     if returncode == 0 and stdout.strip():
         remote_name = stdout.strip().split("\n")[0]
 
         # Verify remote has URL
-        returncode, stdout, stderr = run_command(
-            ["git", "remote", "get-url", remote_name],
-            cwd=repo_path,
-            timeout=5
-        )
+        returncode, stdout, stderr = run_command(["git", "remote", "get-url", remote_name], cwd=repo_path, timeout=5)
         if returncode == 0 and stdout.strip():
             info["hasRemote"] = True
             info["remote"] = remote_name
@@ -115,23 +103,12 @@ class FindGitReposScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--path", "-p", default=".", help="Root path to search (defaults to current directory)")
         parser.add_argument(
-            "--path",
-            "-p",
-            default=".",
-            help="Root path to search (defaults to current directory)"
+            "--max-depth", "-d", type=int, default=5, help="Maximum depth to search (default: 5, unlimited: -1)"
         )
         parser.add_argument(
-            "--max-depth",
-            "-d",
-            type=int,
-            default=5,
-            help="Maximum depth to search (default: 5, unlimited: -1)"
-        )
-        parser.add_argument(
-            "--format-list",
-            action="store_true",
-            help="Output as simple list of paths (alternative to --format)"
+            "--format-list", action="store_true", help="Output as simple list of paths (alternative to --format)"
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -142,21 +119,14 @@ class FindGitReposScript(BaseCLIScript):
 
             if not root_path.exists():
                 self.logger.error(f"Path does not exist: {root_path}")
-                return {
-                    "success": False,
-                    "error": f"Path does not exist: {root_path}"
-                }
+                return {"success": False, "error": f"Path does not exist: {root_path}"}
 
             if not root_path.is_dir():
                 self.logger.error(f"Path is not a directory: {root_path}")
-                return {
-                    "success": False,
-                    "error": f"Path is not a directory: {root_path}"
-                }
+                return {"success": False, "error": f"Path is not a directory: {root_path}"}
 
             # Find repositories
             repos = find_git_repos(root_path, args.max_depth)
-
 
             return {
                 "success": True,
@@ -164,15 +134,12 @@ class FindGitReposScript(BaseCLIScript):
                 "maxDepth": args.max_depth,
                 "count": len(repos),
                 "repositories": repos,
-                "format_list": args.format_list if hasattr(args, 'format_list') else False
+                "format_list": args.format_list if hasattr(args, "format_list") else False,
             }
 
         except Exception as e:
             self.logger.error(f"Failed to find git repositories: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -212,4 +179,5 @@ class FindGitReposScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(FindGitReposScript)

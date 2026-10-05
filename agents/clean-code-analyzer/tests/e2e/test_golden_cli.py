@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from lib.testing import golden  # noqa: E402
 
 _ORCHESTRATE = Path(__file__).resolve().parents[2] / "scripts" / "orchestrate.py"
@@ -19,9 +18,21 @@ _PRINCIPLES = {"DRY", "Naming", "Comments", "LawOfDemeter", "CompositionOverInhe
 def test_mechanical_output_matches_expected(project, tmp_path):
     root = golden.project_path(project)
     result = subprocess.run(
-        [sys.executable, str(_ORCHESTRATE), "--path", str(root),
-         "--checks", _CHECKS, "--full", "--format", "json", "--no-stream"],
-        capture_output=True, text=True, timeout=120,
+        [
+            sys.executable,
+            str(_ORCHESTRATE),
+            "--path",
+            str(root),
+            "--checks",
+            _CHECKS,
+            "--full",
+            "--format",
+            "json",
+            "--no-stream",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
         env={**os.environ, "CCA_CACHE_DIR": str(tmp_path / "cache")},
     )
     assert result.returncode == 0, result.stderr

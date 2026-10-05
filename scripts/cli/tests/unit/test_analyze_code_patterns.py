@@ -5,13 +5,14 @@ import json
 from pathlib import Path
 
 import pytest
-
 from cli.analyze_code_patterns import AnalyzeCodePatternsScript
+
 
 @pytest.fixture
 def script():
     """Create script instance."""
     return AnalyzeCodePatternsScript()
+
 
 @pytest.fixture
 def temp_project(tmp_path):
@@ -46,12 +47,14 @@ def transform(values):
 
     return tmp_path
 
+
 def test_run_dead_code_check(script, temp_project, monkeypatch):
     """Test dead code check execution."""
     result = script._run_dead_code_check(temp_project)
 
     assert result is not None
     assert "unused_symbols" in result or "error" in result
+
 
 def test_run_dry_check(script, temp_project, monkeypatch):
     """Test DRY violations check execution."""
@@ -60,6 +63,7 @@ def test_run_dry_check(script, temp_project, monkeypatch):
     assert result is not None
     assert "duplicates" in result or "error" in result
 
+
 def test_run_complexity_check(script, temp_project, monkeypatch):
     """Test complexity check execution."""
     result = script._run_complexity_check(temp_project)
@@ -67,8 +71,10 @@ def test_run_complexity_check(script, temp_project, monkeypatch):
     assert result is not None
     assert "complexity_issues" in result or "error" in result
 
+
 def test_script_execution_success(script, temp_project, monkeypatch):
     """Test full script execution."""
+
     class Args:
         path = temp_project
         checks = "dead_code,dry,complexity"
@@ -83,8 +89,10 @@ def test_script_execution_success(script, temp_project, monkeypatch):
     assert "complexity_issues" in result
     assert "total_issues" in result
 
+
 def test_script_selective_checks(script, temp_project, monkeypatch):
     """Test execution with selective checks."""
+
     class Args:
         path = temp_project
         checks = "dead_code"
@@ -102,7 +110,8 @@ class TestModelResolution:
 
     def test_ask_ollama_uses_get_model_with_fast_role(self, tmp_path):
         """_ask_ollama_dead_code calls get_model('fast', ...) to resolve the model name."""
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
+
         import cli.analyze_code_patterns as mod
 
         item = {"name": "unused_fn", "file": "mod.py"}

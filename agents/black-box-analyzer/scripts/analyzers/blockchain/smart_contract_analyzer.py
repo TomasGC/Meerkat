@@ -78,7 +78,7 @@ class SmartContractAnalyzer(BaseAnalyzer):
                 contract_name = contract_match.group(1)
                 # Bound search to this contract's body — stop at the next contract
                 search_end = contract_matches[i + 1].start() if i + 1 < len(contract_matches) else len(content)
-                search_area = content[contract_match.end():search_end]
+                search_area = content[contract_match.end() : search_end]
 
                 # Extract functions
                 func_pattern = BLOCKCHAIN_PATTERNS["solidity_function"]
@@ -219,7 +219,7 @@ class SmartContractAnalyzer(BaseAnalyzer):
                 module_name = module_match.group(1)
                 # Bound search to this module — stop at next module declaration
                 module_end = module_matches[i + 1].start() if i + 1 < len(module_matches) else len(content)
-                module_area = content[module_match.end():module_end]
+                module_area = content[module_match.end() : module_end]
 
                 # Pattern: public entry fun function_name(...)
                 move_function_pattern = BLOCKCHAIN_PATTERNS["move_function"]
@@ -309,9 +309,7 @@ class SmartContractAnalyzer(BaseAnalyzer):
                     Scenario(
                         endpoint=entry_point.name,
                         method="CALL",
-                        input_combination={
-                            "params": {p.name: "valid_value" for p in entry_point.params}
-                        },
+                        input_combination={"params": {p.name: "valid_value" for p in entry_point.params}},
                         expected_output=0,
                         scenario_type="happy_path",
                         description=f"Call {entry_point.name} with valid params",
@@ -340,9 +338,7 @@ class SmartContractAnalyzer(BaseAnalyzer):
                         Scenario(
                             endpoint=entry_point.name,
                             method="CALL",
-                            input_combination={
-                                "params": {param.name: 2**256 - 1}  # Max uint256
-                            },
+                            input_combination={"params": {param.name: 2**256 - 1}},  # Max uint256
                             expected_output=0,
                             scenario_type="edge_case",
                             description=f"{entry_point.name} with max {param.name}",

@@ -55,25 +55,17 @@ class SQLAnalyzer(BaseAnalyzer):
                 continue
 
             # Stored procedures
-            entry_points.extend(
-                self._extract_stored_procedures(content, file_path, project_path)
-            )
+            entry_points.extend(self._extract_stored_procedures(content, file_path, project_path))
 
             # Functions
-            entry_points.extend(
-                self._extract_functions(content, file_path, project_path)
-            )
+            entry_points.extend(self._extract_functions(content, file_path, project_path))
 
             # Triggers
-            entry_points.extend(
-                self._extract_triggers(content, file_path, project_path)
-            )
+            entry_points.extend(self._extract_triggers(content, file_path, project_path))
 
         return entry_points
 
-    def _extract_stored_procedures(
-        self, content: str, file_path: Path, project_path: Path
-    ) -> list[EntryPoint]:
+    def _extract_stored_procedures(self, content: str, file_path: Path, project_path: Path) -> list[EntryPoint]:
         """Extract stored procedures."""
         procedures = []
 
@@ -105,9 +97,7 @@ class SQLAnalyzer(BaseAnalyzer):
 
         return procedures
 
-    def _extract_functions(
-        self, content: str, file_path: Path, project_path: Path
-    ) -> list[EntryPoint]:
+    def _extract_functions(self, content: str, file_path: Path, project_path: Path) -> list[EntryPoint]:
         """Extract SQL functions."""
         functions = []
 
@@ -139,9 +129,7 @@ class SQLAnalyzer(BaseAnalyzer):
 
         return functions
 
-    def _extract_triggers(
-        self, content: str, file_path: Path, project_path: Path
-    ) -> list[EntryPoint]:
+    def _extract_triggers(self, content: str, file_path: Path, project_path: Path) -> list[EntryPoint]:
         """Extract SQL triggers."""
         triggers = []
 
@@ -235,9 +223,7 @@ class SQLAnalyzer(BaseAnalyzer):
                     Scenario(
                         endpoint=entry_point.name,
                         method="EXECUTE",
-                        input_combination={
-                            "params": {p.name: "valid_value" for p in entry_point.params}
-                        },
+                        input_combination={"params": {p.name: "valid_value" for p in entry_point.params}},
                         expected_output=0,
                         scenario_type="happy_path",
                         description=f"Execute {entry_point.name} with valid params",
@@ -250,9 +236,7 @@ class SQLAnalyzer(BaseAnalyzer):
                         Scenario(
                             endpoint=entry_point.name,
                             method="EXECUTE",
-                            input_combination={
-                                "params": {param.name: None}
-                            },
+                            input_combination={"params": {param.name: None}},
                             expected_output=0,
                             scenario_type="edge_case",
                             description=f"{entry_point.name} with NULL {param.name}",
@@ -266,9 +250,7 @@ class SQLAnalyzer(BaseAnalyzer):
                         Scenario(
                             endpoint=entry_point.name,
                             method="EXECUTE",
-                            input_combination={
-                                "params": {param.name: ""}
-                            },
+                            input_combination={"params": {param.name: ""}},
                             expected_output=0,
                             scenario_type="edge_case",
                             description=f"{entry_point.name} with empty {param.name}",
@@ -282,9 +264,7 @@ class SQLAnalyzer(BaseAnalyzer):
                         Scenario(
                             endpoint=entry_point.name,
                             method="EXECUTE",
-                            input_combination={
-                                "params": {param.name: -1}
-                            },
+                            input_combination={"params": {param.name: -1}},
                             expected_output=0,
                             scenario_type="edge_case",
                             description=f"{entry_point.name} with negative {param.name}",

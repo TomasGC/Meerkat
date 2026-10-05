@@ -35,18 +35,21 @@ def test_run_violation_when_no_real_test(tmp_path):
 
 def test_run_model_results_include_operation_type(tmp_path):
     (tmp_path / "db.py").write_text("def query(conn): return conn.execute('SELECT ...')", encoding="utf-8")
-    model_output = [{
-        "source_file": str(tmp_path / "db.py"),
-        "source_file_name": "db.py",
-        "function": "query",
-        "line": 1,
-        "severity": "high",
-        "operation_type": "db_query",
-        "reason": "complex SQL join needs real DB semantics",
-        "test_scenario": "test query against real PostgreSQL with fixture data",
-    }]
-    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
-         patch("lib.engine.hybrid.analyze_files_parallel", return_value=model_output):
+    model_output = [
+        {
+            "source_file": str(tmp_path / "db.py"),
+            "source_file_name": "db.py",
+            "function": "query",
+            "line": 1,
+            "severity": "high",
+            "operation_type": "db_query",
+            "reason": "complex SQL join needs real DB semantics",
+            "test_scenario": "test query against real PostgreSQL with fixture data",
+        }
+    ]
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), patch(
+        "lib.engine.hybrid.analyze_files_parallel", return_value=model_output
+    ):
         result = run(tmp_path, "python")
     # Both layers report; the AI finding is the one on a real line
     ai = [v for v in result["violations"] if v["line"] > 0]

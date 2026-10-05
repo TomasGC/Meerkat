@@ -13,6 +13,7 @@ from typing import Any
 
 class ComponentType(Enum):
     """Type of component (skill, script, agent)."""
+
     SKILL = "skill"
     SCRIPT = "script"
     AGENT = "agent"
@@ -20,6 +21,7 @@ class ComponentType(Enum):
 
 class OutputFormat(Enum):
     """Output format options."""
+
     JSON = "json"
     YAML = "yaml"
     TEXT = "text"
@@ -27,6 +29,7 @@ class OutputFormat(Enum):
 
 class LogLevel(Enum):
     """Logging levels."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -37,6 +40,7 @@ class LogLevel(Enum):
 @dataclass
 class NameSuggestion:
     """Name suggestion with reasoning."""
+
     name: str
     reasoning: str
     pattern: str  # e.g., "verb-noun", "noun-verb"
@@ -46,6 +50,7 @@ class NameSuggestion:
 @dataclass
 class SkillInfo:
     """Skill metadata from YAML frontmatter."""
+
     name: str
     description: str
     tools: list[str] = field(default_factory=list)
@@ -56,6 +61,7 @@ class SkillInfo:
 @dataclass
 class AgentInfo:
     """Agent metadata from YAML frontmatter."""
+
     name: str
     description: str
     tools: list[str] = field(default_factory=list)
@@ -67,6 +73,7 @@ class AgentInfo:
 @dataclass
 class ScriptInfo:
     """Script metadata."""
+
     name: str
     path: Path
     language: str  # "python", "powershell", "bash"
@@ -77,6 +84,7 @@ class ScriptInfo:
 @dataclass
 class TestCoverageResult:
     """Test coverage analysis result."""
+
     total_scripts: int
     tested_scripts: int
     untested_scripts: int
@@ -90,6 +98,7 @@ class TestCoverageResult:
 @dataclass
 class ValidationResult:
     """Generic validation result."""
+
     success: bool
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -100,6 +109,7 @@ class ValidationResult:
 @dataclass
 class SyntaxCheckResult:
     """Syntax validation result."""
+
     file_path: Path
     language: str
     valid: bool
@@ -110,6 +120,7 @@ class SyntaxCheckResult:
 @dataclass
 class GitCommitInfo:
     """Git commit metadata."""
+
     hash: str
     author: str
     date: str
@@ -122,6 +133,7 @@ class GitCommitInfo:
 @dataclass
 class Issue:
     """Issue information (format depends on active integration profile)."""
+
     key: str  # e.g., "#123"
     summary: str
     description: str
@@ -134,6 +146,7 @@ class Issue:
 @dataclass
 class KanbanEntry:
     """KANBAN.md entry."""
+
     issue_id: str  # e.g., "#123"
     title: str
     status: str  # "TODO", "IN_PROGRESS", "DONE"
@@ -145,6 +158,7 @@ class KanbanEntry:
 @dataclass
 class CIFailure:
     """CI/CD failure information."""
+
     job_name: str
     error_message: str
     error_type: str  # "test", "build", "lint", "security"
@@ -157,6 +171,7 @@ class CIFailure:
 @dataclass
 class FileChange:
     """File change with statistics."""
+
     path: str
     additions: int
     deletions: int
@@ -166,6 +181,7 @@ class FileChange:
 @dataclass
 class BranchCommit:
     """Commit information for branch summary."""
+
     hash: str
     short_hash: str
     message: str
@@ -180,6 +196,7 @@ class BranchCommit:
 @dataclass
 class UncommittedChanges:
     """Uncommitted changes in working directory."""
+
     staged: list[FileChange] = field(default_factory=list)
     unstaged: list[FileChange] = field(default_factory=list)
     untracked: list[FileChange] = field(default_factory=list)
@@ -188,6 +205,7 @@ class UncommittedChanges:
 @dataclass
 class BranchSummary:
     """Comprehensive branch summary."""
+
     current_branch: str
     base_branch: str
     commits_count: int

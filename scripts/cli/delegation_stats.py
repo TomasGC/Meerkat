@@ -67,22 +67,14 @@ class DelegationStats(BaseCLIScript):
         # Filter by date
         if self.args.since:
             since_dt = datetime.fromisoformat(self.args.since)
-            entries = [
-                e
-                for e in entries
-                if datetime.fromisoformat(e["timestamp"]) >= since_dt
-            ]
+            entries = [e for e in entries if datetime.fromisoformat(e["timestamp"]) >= since_dt]
 
         # Filter by last N sessions
         if self.args.last:
             session_starts = [e for e in entries if e.get("event") == "session_start"]
             if len(session_starts) > self.args.last:
                 last_session_time = session_starts[-self.args.last]["timestamp"]
-                entries = [
-                    e
-                    for e in entries
-                    if e["timestamp"] >= last_session_time
-                ]
+                entries = [e for e in entries if e["timestamp"] >= last_session_time]
 
         # Calculate stats
         stats = self._calculate_stats(entries)
@@ -134,17 +126,13 @@ class DelegationStats(BaseCLIScript):
             "summary": {
                 "total_delegations": total_delegations,
                 "total_tokens_saved": total_tokens_saved,
-                "avg_tokens_per_session": (
-                    total_tokens_saved // session_count if session_count > 0 else 0
-                ),
+                "avg_tokens_per_session": (total_tokens_saved // session_count if session_count > 0 else 0),
             },
             "by_type": {
                 "delegations": dict(delegations_by_type),
                 "tokens_saved": dict(tokens_saved_by_type),
             },
-            "top_delegations": sorted(
-                delegations_by_type.items(), key=lambda x: x[1], reverse=True
-            )[:5],
+            "top_delegations": sorted(delegations_by_type.items(), key=lambda x: x[1], reverse=True)[:5],
         }
 
     def _display_stats(self, stats: dict) -> None:

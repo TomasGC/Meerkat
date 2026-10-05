@@ -1,11 +1,10 @@
 """Unit tests for check_crash_bugs — mechanical AST path only (AI mocked out)."""
+
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
-
-from ssa.checkers.check_crash_bugs import run, _check_python_file, _pattern_check, _PRINCIPLE
+from ssa.checkers.check_crash_bugs import _PRINCIPLE, _check_python_file, _pattern_check, run
 
 
 def _make_file(tmp_path: Path, name: str, content: str) -> Path:
@@ -28,8 +27,10 @@ class TestCheckPythonFile:
     def test_detects_subscript_without_guard(self, tmp_path):
         f = _make_file(tmp_path, "parser.py", "first = items[0]\n")
         violations = _check_python_file(f, tmp_path)
-        assert any("bound" in v["message"].lower() or "index" in v["message"].lower() or
-                   "subscript" in v["message"].lower() for v in violations)
+        assert any(
+            "bound" in v["message"].lower() or "index" in v["message"].lower() or "subscript" in v["message"].lower()
+            for v in violations
+        )
 
     def test_syntax_error_returns_empty(self, tmp_path):
         f = _make_file(tmp_path, "bad.py", "def bad(:\n")
@@ -125,8 +126,9 @@ class TestNonPythonIntegration:
             "description": "Parse can throw",
             "fix": "Use TryParse",
         }
-        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=True), \
-             patch("ssa.checkers.check_crash_bugs.analyze_files_parallel", return_value=[fake_item]):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=True), patch(
+            "ssa.checkers.check_crash_bugs.analyze_files_parallel", return_value=[fake_item]
+        ):
             result = run(tmp_path, "csharp", files=[f])
         assert not any(v["message"].startswith("[") for v in result["violations"])
 
@@ -141,8 +143,9 @@ class TestNonPythonIntegration:
             "description": "age may be null",
             "fix": "Check for null",
         }
-        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=True), \
-             patch("ssa.checkers.check_crash_bugs.analyze_files_parallel", return_value=[fake_item]):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=True), patch(
+            "ssa.checkers.check_crash_bugs.analyze_files_parallel", return_value=[fake_item]
+        ):
             result = run(tmp_path, "csharp", files=[f])
         assert any(v["message"].startswith("[NULL_DEREF]") for v in result["violations"])
 
@@ -154,8 +157,9 @@ class TestNonPythonIntegration:
             captured["extra_slots"] = kwargs.get("extra_slots")
             return []
 
-        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=True), \
-             patch("ssa.checkers.check_crash_bugs.analyze_files_parallel", side_effect=fake_analyze):
+        with patch("ssa.checkers.check_crash_bugs.check_server_available", return_value=True), patch(
+            "ssa.checkers.check_crash_bugs.analyze_files_parallel", side_effect=fake_analyze
+        ):
             run(tmp_path, "csharp", files=[f])
         assert "TryParse" in captured["extra_slots"][f]["known_findings"]
 

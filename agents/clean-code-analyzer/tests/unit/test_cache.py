@@ -3,7 +3,6 @@
 import json
 
 import pytest
-
 from lib.engine.cache import clear_cache, get_cached, set_cached
 
 
@@ -51,6 +50,7 @@ class TestGetCached:
         set_cached(cache_dir, f, "solid_analysis", [])
         # Corrupt the cache file
         from lib.engine.cache import _file_hash
+
         key = f"{_file_hash(f)}_solid_analysis"
         cache_file = cache_dir / f"{key}.json"
         cache_file.write_text("{invalid json")
@@ -65,10 +65,12 @@ class TestCacheTTL:
 
         # Backdate mtime to 8 days ago
         from lib.engine.cache import _file_hash
+
         key = f"{_file_hash(f)}_solid_analysis"
         cache_file = cache_dir / f"{key}.json"
         old_mtime = cache_file.stat().st_mtime - (8 * 86400)
         import os
+
         os.utime(cache_file, (old_mtime, old_mtime))
 
         result = get_cached(cache_dir, f, "solid_analysis", max_age_days=7)
@@ -89,10 +91,12 @@ class TestCacheTTL:
 
         # Backdate mtime to 365 days ago
         from lib.engine.cache import _file_hash
+
         key = f"{_file_hash(f)}_solid_analysis"
         cache_file = cache_dir / f"{key}.json"
         old_mtime = cache_file.stat().st_mtime - (365 * 86400)
         import os
+
         os.utime(cache_file, (old_mtime, old_mtime))
 
         result = get_cached(cache_dir, f, "solid_analysis", max_age_days=0)

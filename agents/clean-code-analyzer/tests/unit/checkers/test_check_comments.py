@@ -3,8 +3,6 @@
 from pathlib import Path
 
 import pytest
-
-
 from cca.checkers.check_comments import _check_file
 
 
@@ -63,5 +61,6 @@ class TestRunSignature:
         f = tmp_path / "src.py"
         f.write_text("x = 1\n")
         from cca.checkers.check_comments import run
+
         result = run(tmp_path, "python", files=[f])
         assert result["success"] is True

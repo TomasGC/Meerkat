@@ -16,17 +16,17 @@ Each analyzer handles a specific project type:
 - SmartContractAnalyzer: Solidity, Rust/Solana, Move
 """
 
-from .base_analyzer import BaseAnalyzer
 from .api_analyzer import APIAnalyzer
+from .base_analyzer import BaseAnalyzer
+from .blockchain import SmartContractAnalyzer
 from .cli_analyzer import CLIAnalyzer
-from .mobile_analyzer import MobileAnalyzer
 from .desktop_analyzer import DesktopAnalyzer
+from .event_driven import MessageQueueAnalyzer, ServerlessAnalyzer, WorkerAnalyzer
 from .frontend_analyzer import FrontendAnalyzer
 from .fullstack_analyzer import FullstackAnalyzer
 from .llm_analyzer import LLMAnalyzer
+from .mobile_analyzer import MobileAnalyzer
 from .sql_analyzer import SQLAnalyzer
-from .event_driven import ServerlessAnalyzer, WorkerAnalyzer, MessageQueueAnalyzer
-from .blockchain import SmartContractAnalyzer
 
 __all__ = [
     "BaseAnalyzer",

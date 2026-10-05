@@ -3,8 +3,8 @@
 
 from pathlib import Path
 
+from cca.model_utils import PROMPTS_DIR, check_server_available
 from lib.engine.hybrid import run_hybrid
-from cca.model_utils import check_server_available, PROMPTS_DIR
 
 _PROMPT = "solid_analysis"
 
@@ -21,12 +21,37 @@ def _format(item: dict, rel: str) -> dict:
     }
 
 
-def run(path: Path, language: str, files: list | None = None, agents: int = 1, no_cache: bool = False, role: str = "analyzer",
-        cache_dir: Path | None = None, cache_ttl_days: int = 7) -> dict:
+def run(
+    path: Path,
+    language: str,
+    files: list | None = None,
+    agents: int = 1,
+    no_cache: bool = False,
+    role: str = "analyzer",
+    cache_dir: Path | None = None,
+    cache_ttl_days: int = 7,
+) -> dict:
     if not check_server_available(role):
-        return {"principle": "SOLID", "success": False, "error": "Local AI model not available",
-                "violations": [], "files_analyzed": 0, "duration_ms": 0}
-    return run_hybrid(path, language, "SOLID", _PROMPT, {}, PROMPTS_DIR,
-                       files=files, agents=agents, no_cache=no_cache, role=role,
-                       cache_dir=cache_dir, cache_ttl_days=cache_ttl_days,
-                       format_ai_violation=_format)
+        return {
+            "principle": "SOLID",
+            "success": False,
+            "error": "Local AI model not available",
+            "violations": [],
+            "files_analyzed": 0,
+            "duration_ms": 0,
+        }
+    return run_hybrid(
+        path,
+        language,
+        "SOLID",
+        _PROMPT,
+        {},
+        PROMPTS_DIR,
+        files=files,
+        agents=agents,
+        no_cache=no_cache,
+        role=role,
+        cache_dir=cache_dir,
+        cache_ttl_days=cache_ttl_days,
+        format_ai_violation=_format,
+    )

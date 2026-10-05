@@ -3,10 +3,9 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 import lib.engine.discovery as fu
-from lib.engine.discovery import get_changed_files, get_staged_files, dominant_language, read_file_safe
+import pytest
+from lib.engine.discovery import dominant_language, get_changed_files, get_staged_files, read_file_safe
 
 
 @pytest.fixture(autouse=True)
@@ -18,6 +17,7 @@ def clear_discovery_cache():
 
 
 # ── discover_files ──────────────────────────────────────────────────────────────
+
 
 def test_discover_files_finds_py(tmp_path):
     """discover_files() returns .py files under path."""
@@ -45,6 +45,7 @@ def test_discover_files_skips_directories(tmp_path, skip_dir):
 
 # ── dominant_language ─────────────────────────────────────────────────────────────
 
+
 def test_detect_language_python(tmp_path):
     """Majority .py files → 'python'."""
     for i in range(5):
@@ -71,6 +72,7 @@ def test_detect_language_mixed(tmp_path):
 
 # ── read_file_safe ──────────────────────────────────────────────────────────────
 
+
 def test_read_file_safe_truncates(tmp_path):
     """Files larger than max_chars are truncated and marked."""
     big_file = tmp_path / "big.py"
@@ -90,6 +92,7 @@ def test_read_file_safe_no_truncation_when_small(tmp_path):
 
 
 # ── get_changed_files ───────────────────────────────────────────────────────────
+
 
 def test_get_changed_files_returns_existing_files(tmp_path):
     """get_changed_files returns only files that actually exist on disk."""
@@ -123,6 +126,7 @@ def test_get_changed_files_not_git_repo(tmp_path):
 
 # ── get_staged_files ────────────────────────────────────────────────────────────
 
+
 def test_get_staged_files_returns_staged(tmp_path):
     """get_staged_files calls git diff --cached and returns existing files."""
     (tmp_path / "staged.py").write_text("y = 2")
@@ -139,6 +143,7 @@ def test_get_staged_files_returns_staged(tmp_path):
 
 # ── dominant_language edge cases ──────────────────────────────────────────────────
 
+
 def test_detect_language_empty_dir(tmp_path):
     """Empty directory → 'unknown'."""
     result = dominant_language(tmp_path)
@@ -146,6 +151,7 @@ def test_detect_language_empty_dir(tmp_path):
 
 
 # ── read_file_safe error handling ───────────────────────────────────────────────
+
 
 def test_read_file_safe_oserror_returns_empty(tmp_path):
     """OSError during read_text → returns empty string, no exception raised."""
@@ -158,6 +164,7 @@ def test_read_file_safe_oserror_returns_empty(tmp_path):
 
 
 # ── discover_files cache ────────────────────────────────────────────────────────
+
 
 def test_discovery_cache_hit(tmp_path):
     """Second discover_files call on same path returns cached result."""
@@ -181,6 +188,7 @@ def test_discover_files_single_file(tmp_path):
 
 
 # ── get_branch_files ────────────────────────────────────────────────────────────
+
 
 def test_get_branch_files_nonzero_returns_none(tmp_path):
     """Non-zero returncode (not a git repo / diff failed) → None."""
@@ -228,6 +236,7 @@ def test_get_branch_files_uses_three_dot_diff(tmp_path):
 
 # ── get_changed_files: exception path ───────────────────────────────────────────
 
+
 def test_get_changed_files_exception_returns_none(tmp_path):
     """subprocess raises exception in get_changed_files → returns None."""
     with patch("subprocess.run", side_effect=Exception("git not found")):
@@ -236,6 +245,7 @@ def test_get_changed_files_exception_returns_none(tmp_path):
 
 
 # ── get_staged_files: error paths ────────────────────────────────────────────────
+
 
 def test_get_staged_files_nonzero_returns_none(tmp_path):
     """get_staged_files with non-zero returncode (not a git repo) → None."""

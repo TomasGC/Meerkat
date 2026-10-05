@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Tests for aggregate_results module."""
 
-import pytest
 import json
 import tempfile
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from search_tech.models import SearchResult, Source, ResultType
-from aggregate_results import calculate_rank_score, aggregate_results, format_markdown
+import pytest
+from aggregate_results import aggregate_results, calculate_rank_score, format_markdown
+from search_tech.models import ResultType, SearchResult, Source
 
 
 class TestRankScoreCalculation:
@@ -64,6 +64,7 @@ class TestRankScoreCalculation:
     def test_old_date_no_recency_bonus(self):
         """Test no recency bonus for old results."""
         from datetime import timedelta
+
         old_date = datetime.now() - timedelta(days=365)
         result = SearchResult(
             source=Source.STACKOVERFLOW,
@@ -147,9 +148,9 @@ class TestAggregateResults:
                         "score": 50,
                         "excerpt": "Test",
                     },
-                ]
+                ],
             }
-            with open(test_file, 'w') as f:
+            with open(test_file, "w") as f:
                 json.dump(data, f)
 
             # Aggregate
@@ -178,7 +179,7 @@ class TestAggregateResults:
                         "score": 100,
                         "excerpt": "Test",
                     }
-                ]
+                ],
             }
             data2 = {
                 "success": True,
@@ -191,12 +192,12 @@ class TestAggregateResults:
                         "score": 50,
                         "excerpt": "Test",
                     }
-                ]
+                ],
             }
 
-            with open(file1, 'w') as f:
+            with open(file1, "w") as f:
                 json.dump(data1, f)
-            with open(file2, 'w') as f:
+            with open(file2, "w") as f:
                 json.dump(data2, f)
 
             # Aggregate
@@ -222,9 +223,9 @@ class TestAggregateResults:
                         "excerpt": "Test",
                     }
                     for i in range(20)
-                ]
+                ],
             }
-            with open(test_file, 'w') as f:
+            with open(test_file, "w") as f:
                 json.dump(data, f)
 
             # Aggregate with max_results=5
@@ -267,9 +268,9 @@ class TestAggregateResults:
                         "score": 30,
                         "excerpt": "Test",
                     },
-                ]
+                ],
             }
-            with open(test_file, 'w') as f:
+            with open(test_file, "w") as f:
                 json.dump(data, f)
 
             results = aggregate_results([str(test_file)])
@@ -296,16 +297,13 @@ class TestAggregateResults:
                         "score": 100,
                         "excerpt": "Test",
                     }
-                ]
+                ],
             }
-            data_failed = {
-                "success": False,
-                "error": "Rate limit exceeded"
-            }
+            data_failed = {"success": False, "error": "Rate limit exceeded"}
 
-            with open(success_file, 'w') as f:
+            with open(success_file, "w") as f:
                 json.dump(data_success, f)
-            with open(failed_file, 'w') as f:
+            with open(failed_file, "w") as f:
                 json.dump(data_failed, f)
 
             # Should only get results from success file
@@ -331,9 +329,9 @@ class TestAggregateResults:
                         "score": 100,
                         "excerpt": "Test",
                     }
-                ]
+                ],
             }
-            with open(existing_file, 'w') as f:
+            with open(existing_file, "w") as f:
                 json.dump(data, f)
 
             # Should only get results from existing file
@@ -347,7 +345,7 @@ class TestAggregateResults:
             invalid_file = Path(tmpdir) / "invalid.json"
 
             # Write invalid JSON
-            with open(invalid_file, 'w') as f:
+            with open(invalid_file, "w") as f:
                 f.write("{ invalid json }")
 
             # Should return empty list
@@ -359,11 +357,8 @@ class TestAggregateResults:
         """Test aggregation with no results."""
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = Path(tmpdir) / "empty.json"
-            data = {
-                "success": True,
-                "results": []
-            }
-            with open(test_file, 'w') as f:
+            data = {"success": True, "results": []}
+            with open(test_file, "w") as f:
                 json.dump(data, f)
 
             results = aggregate_results([str(test_file)])

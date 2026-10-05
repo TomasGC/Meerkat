@@ -4,9 +4,8 @@ import asyncio
 import json
 from pathlib import Path
 
-import pytest
-
 import lib.ai.model_utils as model_utils
+import pytest
 from lib.testing import golden
 
 _TEMPLATE = "Review this {language} code.\nSource:\n{source}\nKnown:\n{known_findings}\nReturn JSON.\n"
@@ -143,5 +142,6 @@ def test_fixture_projects_are_not_importable_or_collectable():
     """No package marker and no pytest-collectable file inside the scanned fixture projects."""
     files = [f for f in golden.projects_root().rglob("*") if f.is_file()]
     assert files
-    assert not [f for f in files if f.name == "__init__.py" or f.name.startswith("test_")
-                or f.name.endswith("_test.py")]
+    assert not [
+        f for f in files if f.name == "__init__.py" or f.name.startswith("test_") or f.name.endswith("_test.py")
+    ]

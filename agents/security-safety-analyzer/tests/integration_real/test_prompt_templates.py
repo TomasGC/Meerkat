@@ -4,11 +4,10 @@ No AI server needed. Guards against the class of bug where a template references
 a slot that analyze_files_parallel never provides, which raises KeyError at runtime
 and silently produces zero AI findings.
 """
+
 from pathlib import Path
 
 import pytest
-
-
 from ssa.model_utils import PROMPTS_DIR
 
 # Slots supplied by analyze_files_parallel for every call
@@ -48,8 +47,7 @@ def test_prompt_renders_with_supplied_slots(prompt_file):
         rendered = template.format(**slots)
     except KeyError as exc:
         pytest.fail(
-            f"{prompt_file.name} references slot {exc} which no caller supplies. "
-            f"Available slots: {sorted(slots)}"
+            f"{prompt_file.name} references slot {exc} which no caller supplies. " f"Available slots: {sorted(slots)}"
         )
     except IndexError:
         pytest.fail(f"{prompt_file.name} has an unescaped brace; use {{{{ and }}}} for literals")

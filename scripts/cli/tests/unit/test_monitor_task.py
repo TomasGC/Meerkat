@@ -19,10 +19,10 @@ sys.modules["lib.config.model_config"] = _fake_mc
 sys.modules.pop("monitor_task", None)
 
 # Now safe to import
-from monitor_task import LocalAIMonitor, _DEFAULT_MODEL  # noqa: E402
-
+from monitor_task import _DEFAULT_MODEL, LocalAIMonitor  # noqa: E402
 
 # ── _DEFAULT_MODEL resolved via get_model("fast") ────────────────────────────
+
 
 def test_default_model_resolved_from_config():
     """_DEFAULT_MODEL is resolved via get_model('fast'), not a hardcoded string."""
@@ -31,6 +31,7 @@ def test_default_model_resolved_from_config():
 
 
 # ── LocalAIMonitor.analyze_log: success path ─────────────────────────────────
+
 
 def test_analyze_log_success_returns_parsed_json():
     """analyze_log returns dict from JSON when subprocess succeeds."""
@@ -69,6 +70,7 @@ def test_analyze_log_success_extracts_json_block_from_prose():
 
 # ── LocalAIMonitor.analyze_log: fallback paths ───────────────────────────────
 
+
 def test_analyze_log_fallback_when_returncode_nonzero():
     """analyze_log falls back to _fallback_analysis when subprocess returns non-zero."""
     monitor = LocalAIMonitor(model="test-model")
@@ -95,6 +97,7 @@ def test_analyze_log_fallback_on_exception():
 
 
 # ── LocalAIMonitor._fallback_analysis ────────────────────────────────────────
+
 
 def test_fallback_analysis_detects_build_failure():
     """_fallback_analysis sets status='failed' and problem_detected=True on BUILD FAILED."""

@@ -8,9 +8,8 @@ have switched it off without a sound.
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 import lib.ai.model_utils as mu
+import pytest
 
 
 @pytest.fixture

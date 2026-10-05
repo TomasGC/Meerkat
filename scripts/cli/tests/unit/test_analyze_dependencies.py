@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """Tests for analyze_dependencies.py"""
 
-import pytest
 from pathlib import Path
+
+import pytest
+from cli.analyze_dependencies import (
+    analyze_cargo_toml,
+    analyze_dependencies,
+    analyze_go_mod,
+    analyze_package_json,
+    analyze_pom_xml,
+    analyze_requirements_txt,
+)
 
 # Add parent directory to path for imports
 
-from cli.analyze_dependencies import (
-    analyze_package_json,
-    analyze_requirements_txt,
-    analyze_cargo_toml,
-    analyze_go_mod,
-    analyze_pom_xml,
-    analyze_dependencies,
-)
 
 class TestAnalyzePackageJson:
     """Test Node.js package.json analysis."""
@@ -121,6 +122,7 @@ class TestAnalyzePackageJson:
 
         assert len(result["dependencies"]) == 3
 
+
 class TestAnalyzeRequirementsTxt:
     """Test Python requirements.txt analysis."""
 
@@ -190,6 +192,7 @@ package4"""
         assert result["dependencies"][2]["version"] == "~=3.0.0"
         assert result["dependencies"][3]["version"] == "any"
 
+
 class TestAnalyzeCargoToml:
     """Test Rust Cargo.toml analysis."""
 
@@ -244,6 +247,7 @@ rocket = "0.5"
         result = analyze_cargo_toml(content, 10)
 
         assert result["framework"] == "rocket"
+
 
 class TestAnalyzeGoMod:
     """Test Go go.mod analysis."""
@@ -301,6 +305,7 @@ require (
 
         assert result["framework"] == "fiber"
 
+
 class TestAnalyzePomXml:
     """Test Java/Maven pom.xml analysis."""
 
@@ -348,6 +353,7 @@ class TestAnalyzePomXml:
         result = analyze_pom_xml(content, 10)
 
         assert result["framework"] == "spring"
+
 
 class TestAnalyzeDependencies:
     """Test main analyze_dependencies function."""

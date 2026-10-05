@@ -4,13 +4,14 @@
 from pathlib import Path
 
 import pytest
+from cli.analyze_commit_quality import QUALITY_PATTERNS, SECURITY_PATTERNS, AnalyzeCommitQualityScript
 
-from cli.analyze_commit_quality import AnalyzeCommitQualityScript, SECURITY_PATTERNS, QUALITY_PATTERNS
 
 @pytest.fixture
 def script():
     """Create script instance."""
     return AnalyzeCommitQualityScript()
+
 
 @pytest.fixture
 def temp_git_repo(tmp_path):
@@ -36,6 +37,7 @@ console.log("debug");
 
     return tmp_path
 
+
 def test_security_patterns_loaded():
     """Test that security patterns are loaded."""
     assert "hardcoded_secret" in SECURITY_PATTERNS
@@ -43,15 +45,18 @@ def test_security_patterns_loaded():
     assert "xss_vulnerability" in SECURITY_PATTERNS
     assert "weak_crypto" in SECURITY_PATTERNS
 
+
 def test_quality_patterns_loaded():
     """Test that quality patterns are loaded."""
     assert "magic_number" in QUALITY_PATTERNS
     assert "todo_fixme" in QUALITY_PATTERNS
     assert "console_log" in QUALITY_PATTERNS
 
+
 def test_security_pattern_detection():
     """Test detection of security pattern."""
     import re
+
     line = 'password = "secret123"'
 
     # Should match hardcoded_secret pattern
@@ -60,9 +65,11 @@ def test_security_pattern_detection():
 
     assert match is not None
 
+
 def test_quality_pattern_detection():
     """Test detection of quality pattern."""
     import re
+
     line = "x = 12345"
 
     # Should match magic_number pattern
@@ -71,8 +78,10 @@ def test_quality_pattern_detection():
 
     assert match is not None
 
+
 def test_script_execution_success(script, temp_git_repo, monkeypatch):
     """Test full script execution."""
+
     class Args:
         staged = True
         format = "json"

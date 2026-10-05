@@ -191,7 +191,7 @@ class ServerlessAnalyzer(BaseEventDrivenAnalyzer):
             for match in azure_pattern.finditer(content):
                 # Bound search to 300 chars after decorator to avoid picking up unrelated funcs
                 window_start = match.end()
-                window = content[window_start:window_start + 300]
+                window = content[window_start : window_start + 300]
                 func_pattern = re.compile(r"def\s+(\w+)\s*\(", re.MULTILINE)
                 func_match = func_pattern.search(window)
                 if func_match:
@@ -259,7 +259,7 @@ class ServerlessAnalyzer(BaseEventDrivenAnalyzer):
             for match in gcp_pattern.finditer(content):
                 # Bound search to 300 chars after decorator
                 window_start = match.end()
-                window = content[window_start:window_start + 300]
+                window = content[window_start : window_start + 300]
                 func_pattern = re.compile(r"def\s+(\w+)\s*\(", re.MULTILINE)
                 func_match = func_pattern.search(window)
                 if func_match:
@@ -293,9 +293,7 @@ class ServerlessAnalyzer(BaseEventDrivenAnalyzer):
                 continue
 
             # Pattern: exports.functionName = (req, res) => { }
-            node_gcp_pattern = re.compile(
-                r"exports\.(\w+)\s*=\s*\(req,\s*res\)\s*=>"
-            )
+            node_gcp_pattern = re.compile(r"exports\.(\w+)\s*=\s*\(req,\s*res\)\s*=>")
             for match in node_gcp_pattern.finditer(content):
                 func_name = match.group(1)
                 line_num = content[: match.start()].count("\n") + 1

@@ -8,27 +8,27 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
-
 from cca.checkers.check_inheritance import run
 
 
-@pytest.mark.parametrize("code,should_flag", [
-    # 5-class chain: GoldenRetriever depth=4 (> 3) → flag
-    (
-        "class A: pass\nclass B(A): pass\nclass C(B): pass\n"
-        "class D(C): pass\nclass E(D): pass\n",
-        True,
-    ),
-    # 2-class chain: depth=1 → no flag
-    ("class Animal: pass\nclass Dog(Animal): pass\n", False),
-    # No inheritance: depth=0 → no flag
-    ("class Service:\n    def process(self): pass\n", False),
-    # 3-class chain: depth=2 → no flag
-    ("class A: pass\nclass B(A): pass\nclass C(B): pass\n", False),
-    # 4-class chain: depth=3 (NOT > 3) → no flag
-    ("class A: pass\nclass B(A): pass\nclass C(B): pass\nclass D(C): pass\n", False),
-])
+@pytest.mark.parametrize(
+    "code,should_flag",
+    [
+        # 5-class chain: GoldenRetriever depth=4 (> 3) → flag
+        (
+            "class A: pass\nclass B(A): pass\nclass C(B): pass\n" "class D(C): pass\nclass E(D): pass\n",
+            True,
+        ),
+        # 2-class chain: depth=1 → no flag
+        ("class Animal: pass\nclass Dog(Animal): pass\n", False),
+        # No inheritance: depth=0 → no flag
+        ("class Service:\n    def process(self): pass\n", False),
+        # 3-class chain: depth=2 → no flag
+        ("class A: pass\nclass B(A): pass\nclass C(B): pass\n", False),
+        # 4-class chain: depth=3 (NOT > 3) → no flag
+        ("class A: pass\nclass B(A): pass\nclass C(B): pass\nclass D(C): pass\n", False),
+    ],
+)
 def test_inheritance(tmp_path, code, should_flag):
     """Parametrized composition-over-inheritance depth check."""
     (tmp_path / "mod.py").write_text(code)
@@ -36,9 +36,7 @@ def test_inheritance(tmp_path, code, should_flag):
     assert result["success"] is True
     has_violations = len(result["violations"]) > 0
     assert has_violations == should_flag, (
-        f"Code: {code!r}\n"
-        f"Expected should_flag={should_flag}, "
-        f"got violations={result['violations']}"
+        f"Code: {code!r}\n" f"Expected should_flag={should_flag}, " f"got violations={result['violations']}"
     )
 
 
@@ -53,13 +51,10 @@ def test_inheritance_return_schema(tmp_path):
 
 # ── multiple inheritance ────────────────────────────────────────────────────────
 
+
 def test_inheritance_multiple_non_interface_parents_flagged(tmp_path):
     """Multiple inheritance with two non-interface parents → violation."""
-    code = (
-        "class ConcreteA: pass\n"
-        "class ConcreteB: pass\n"
-        "class Combined(ConcreteA, ConcreteB): pass\n"
-    )
+    code = "class ConcreteA: pass\n" "class ConcreteB: pass\n" "class Combined(ConcreteA, ConcreteB): pass\n"
     (tmp_path / "mod.py").write_text(code)
     result = run(tmp_path, "python")
     assert result["success"] is True
@@ -69,11 +64,7 @@ def test_inheritance_multiple_non_interface_parents_flagged(tmp_path):
 
 def test_inheritance_multiple_with_interface_not_flagged(tmp_path):
     """Multiple inheritance where one parent is IRepository (interface marker) → no violation."""
-    code = (
-        "class ServiceBase: pass\n"
-        "class IRepository: pass\n"
-        "class MyService(ServiceBase, IRepository): pass\n"
-    )
+    code = "class ServiceBase: pass\n" "class IRepository: pass\n" "class MyService(ServiceBase, IRepository): pass\n"
     (tmp_path / "mod.py").write_text(code)
     result = run(tmp_path, "python")
     multi = [v for v in result["violations"] if "multiple inheritance" in v["message"].lower()]
@@ -81,6 +72,7 @@ def test_inheritance_multiple_with_interface_not_flagged(tmp_path):
 
 
 # ── error path ──────────────────────────────────────────────────────────────────
+
 
 def test_inheritance_oserror_skips_file(tmp_path):
     """OSError reading a Python file → file skipped gracefully, success=True."""
@@ -93,9 +85,11 @@ def test_inheritance_oserror_skips_file(tmp_path):
 
 # ── circular guard ──────────────────────────────────────────────────────────────
 
+
 def test_inheritance_circular_guard_no_recursion_error(tmp_path):
     """Circular class hierarchy does not cause infinite recursion."""
     from cca.checkers.check_inheritance import _inheritance_depth
+
     parents_map = {"A": ["B"], "B": ["A"]}
     depth = _inheritance_depth("A", parents_map, set())
     assert isinstance(depth, int)
@@ -103,6 +97,7 @@ def test_inheritance_circular_guard_no_recursion_error(tmp_path):
 
 
 # ── non-Python (TypeScript) deep chain ─────────────────────────────────────────
+
 
 def test_inheritance_non_python_deep_chain_flagged(tmp_path):
     """TypeScript file with 5-class chain (depth 4 > 3) → violation."""
@@ -130,13 +125,11 @@ def test_inheritance_non_python_no_inheritance_no_violation(tmp_path):
 
 # ── single file path ────────────────────────────────────────────────────────────
 
+
 def test_inheritance_single_file_path(tmp_path):
     """run() with a single .py file (not directory) → files_analyzed=1."""
     f = tmp_path / "mod.py"
-    f.write_text(
-        "class A: pass\nclass B(A): pass\nclass C(B): pass\n"
-        "class D(C): pass\nclass E(D): pass\n"
-    )
+    f.write_text("class A: pass\nclass B(A): pass\nclass C(B): pass\n" "class D(C): pass\nclass E(D): pass\n")
     result = run(f, "python")
     assert result["success"] is True
     assert result["files_analyzed"] == 1
@@ -177,17 +170,11 @@ def test_inheritance_check_non_python_oserror_skips(tmp_path):
 
 def test_inheritance_files_list_excludes_other_files_on_disk(tmp_path):
     """Only the files passed in `files=` are scanned, even when others violate on disk."""
-    chain = (
-        "class A: pass\nclass B(A): pass\nclass C(B): pass\n"
-        "class D(C): pass\nclass E(D): pass\n"
-    )
+    chain = "class A: pass\nclass B(A): pass\nclass C(B): pass\n" "class D(C): pass\nclass E(D): pass\n"
     target = tmp_path / "a.py"
     other = tmp_path / "b.py"
     target.write_text(chain)
-    other.write_text(
-        "class V: pass\nclass W(V): pass\nclass X(W): pass\n"
-        "class Y(X): pass\nclass Z(Y): pass\n"
-    )
+    other.write_text("class V: pass\nclass W(V): pass\nclass X(W): pass\n" "class Y(X): pass\nclass Z(Y): pass\n")
     result = run(tmp_path, "python", files=[target])
     assert result["files_analyzed"] == 1
     assert result["violations"]

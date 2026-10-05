@@ -16,6 +16,7 @@ Usage:
 import os
 from pathlib import Path
 
+from lib import paths
 from lib.engine.orchestrator import (  # noqa: F401 — re-exported for tests/unit/test_orchestrate_unit.py
     _build_summary,
     _detect_base_branch,
@@ -24,7 +25,6 @@ from lib.engine.orchestrator import (  # noqa: F401 — re-exported for tests/un
     _progress_bar,
     _run_checker,
 )
-from lib import paths
 from lib.engine.orchestrator import main as _engine_main
 
 # SQL files (#42): comments and naming analyze them (FILE_KINDS includes "query").

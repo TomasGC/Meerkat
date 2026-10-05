@@ -14,7 +14,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-
 pytestmark = pytest.mark.e2e_skills
 
 
@@ -22,17 +21,17 @@ pytestmark = pytest.mark.e2e_skills
 # E2E: analyze-commit skill → analyze_commit_quality.py
 # ---------------------------------------------------------------------------
 
+
 def test_analyze_commit_skill_triggers_quality_check():
     """analyze-commit skill must invoke analyze_commit_quality.py."""
-    from cli.analyze_commit_quality import AnalyzeCommitQualityScript
     import argparse
+
+    from cli.analyze_commit_quality import AnalyzeCommitQualityScript
 
     script = AnalyzeCommitQualityScript()
     with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="--- a/a.py\n+++ b/a.py\n@@ -1,2 +1,4 @@\n+x = 1\n+y = 2\n",
-            stderr=""
+            returncode=0, stdout="--- a/a.py\n+++ b/a.py\n@@ -1,2 +1,4 @@\n+x = 1\n+y = 2\n", stderr=""
         )
         args = argparse.Namespace(commit="HEAD", staged=False, format="json")
         result = script.execute(args)
@@ -42,8 +41,9 @@ def test_analyze_commit_skill_triggers_quality_check():
 
 def test_analyze_commit_skill_clean_code_passes():
     """analyze-commit skill should report no violations for clean code."""
-    from cli.analyze_commit_quality import AnalyzeCommitQualityScript
     import argparse
+
+    from cli.analyze_commit_quality import AnalyzeCommitQualityScript
 
     script = AnalyzeCommitQualityScript()
     clean_diff = (
@@ -62,22 +62,18 @@ def test_analyze_commit_skill_clean_code_passes():
 # E2E: update-context skill → update_kanban.py + generate_kanban_entry.py
 # ---------------------------------------------------------------------------
 
+
 def test_update_context_skill_generates_entry(tmp_path):
     """update-context skill uses generate_kanban_entry + update_kanban."""
-    from cli.generate_kanban_entry import GenerateKanbanEntryScript
     import argparse
+
+    from cli.generate_kanban_entry import GenerateKanbanEntryScript
 
     script = GenerateKanbanEntryScript()
     files = ["scripts/cli/auth.py", "scripts/tests/test_auth.py"]
     with patch("cli.generate_kanban_entry.get_commit_files", return_value=files):
         args = argparse.Namespace(
-            commits="abc123",
-            issue="#1",
-            auto=False,
-            base_branch="",
-            style="professional",
-            max_bullets=5,
-            format="json"
+            commits="abc123", issue="#1", auto=False, base_branch="", style="professional", max_bullets=5, format="json"
         )
         result = script.execute(args)
     assert isinstance(result, dict)
@@ -85,8 +81,9 @@ def test_update_context_skill_generates_entry(tmp_path):
 
 def test_update_context_skill_writes_kanban(tmp_path):
     """update-context skill must persist KANBAN entry to disk."""
-    from cli.update_kanban import UpdateKanbanScript
     import argparse
+
+    from cli.update_kanban import UpdateKanbanScript
 
     kanban = tmp_path / "KANBAN.md"
     kanban.write_text("# KANBAN\n\n---\n\n---\n\n## Notes\n")
@@ -100,7 +97,7 @@ def test_update_context_skill_writes_kanban(tmp_path):
         no_backup=True,
         auto=False,
         format="json",
-        kanban_file=kanban
+        kanban_file=kanban,
     )
     result = script.execute(args)
 
@@ -114,10 +111,12 @@ def test_update_context_skill_writes_kanban(tmp_path):
 # E2E: project-setup skill → validate_skill_structure.py
 # ---------------------------------------------------------------------------
 
+
 def test_project_setup_skill_validates_skill_structure(tmp_path):
     """project-setup skill validates SKILL.md structure during setup."""
-    from cli.validate_skill_structure import ValidateSkillStructureScript
     import argparse
+
+    from cli.validate_skill_structure import ValidateSkillStructureScript
 
     valid_skill = tmp_path / "SKILL.md"
     valid_skill.write_text("""\
@@ -173,10 +172,12 @@ Professional and concise.
 # E2E: search-tech skill → dependency on script orchestration
 # ---------------------------------------------------------------------------
 
+
 def test_analyze_code_skill_detects_project_type(tmp_path):
     """analyze-code skill uses detect_project_type as first step."""
-    from cli.detect_project_type import DetectProjectTypeScript
     import argparse
+
+    from cli.detect_project_type import DetectProjectTypeScript
 
     # Create a Python project structure
     (tmp_path / "requirements.txt").write_text("pytest\nrequests\n")
@@ -192,10 +193,12 @@ def test_analyze_code_skill_detects_project_type(tmp_path):
 # E2E: start-session skill → load_session_context.py
 # ---------------------------------------------------------------------------
 
+
 def test_start_session_skill_loads_context(tmp_path):
     """start-session skill invokes load_session_context to build context."""
-    from cli.load_session_context import LoadSessionContextScript
     import argparse
+
+    from cli.load_session_context import LoadSessionContextScript
 
     # Create minimal project structure
     claude_dir = tmp_path / ".claude"
@@ -203,10 +206,7 @@ def test_start_session_skill_loads_context(tmp_path):
     (claude_dir / "CLAUDE.md").write_text("# Project\n\n## Purpose\nTest project\n")
 
     script = LoadSessionContextScript()
-    args = argparse.Namespace(
-        project_root=tmp_path,
-        format="json"
-    )
+    args = argparse.Namespace(project_root=tmp_path, format="json")
     with patch("cli.load_session_context.run_command", return_value=(0, "main\n", "")):
         result = script.execute(args)
     assert isinstance(result, dict)

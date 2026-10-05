@@ -6,12 +6,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from bba.model_utils import (
+    PROMPTS_DIR,
     analyze_file_with_model,
     call_model,
     run_prompt,
-    PROMPTS_DIR,
 )
 
 
@@ -45,6 +44,7 @@ def test_call_model_returns_none_on_file_not_found(capsys):
 
 def test_call_model_returns_none_on_timeout(capsys):
     import subprocess as _sp
+
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("subprocess.run", side_effect=_sp.TimeoutExpired(cmd="cli", timeout=5)):
             result = call_model("prompt", timeout=5)
@@ -73,8 +73,7 @@ def test_analyze_file_returns_empty_on_call_model_none(tmp_path):
     (prompts_dir / "prompt_name.prompt").write_text("{language}:{source}")
 
     with patch("lib.ai.model_utils.call_model", return_value=None):
-        result = analyze_file_with_model(src, "python", "analyzer", "prompt_name",
-                                         prompts_dir=prompts_dir)
+        result = analyze_file_with_model(src, "python", "analyzer", "prompt_name", prompts_dir=prompts_dir)
     assert result == []
 
 
@@ -87,8 +86,9 @@ def test_analyze_file_annotates_results(tmp_path):
 
     response = json.dumps([{"method": "Bar", "branches": []}])
     with patch("lib.ai.model_utils.call_model", return_value=response):
-        result = analyze_file_with_model(src, "csharp", "analyzer", "prompt_name",
-                                         prompts_dir=prompts_dir, no_cache=True)
+        result = analyze_file_with_model(
+            src, "csharp", "analyzer", "prompt_name", prompts_dir=prompts_dir, no_cache=True
+        )
 
     assert len(result) == 1
     assert result[0]["source_file"] == str(src)
@@ -112,7 +112,6 @@ def test_analyze_file_passes_language_and_role(tmp_path):
 
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("lib.ai.model_utils.call_model", side_effect=fake_call_model):
-            analyze_file_with_model(src, "go", "deep", "analyze_library_branches",
-                                    prompts_dir=prompts_dir)
+            analyze_file_with_model(src, "go", "deep", "analyze_library_branches", prompts_dir=prompts_dir)
 
     assert captured["role"] == "deep"

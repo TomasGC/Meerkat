@@ -2,11 +2,10 @@
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch, mock_open
-
-import pytest
+from unittest.mock import MagicMock, mock_open, patch
 
 import lib.config.model_config as mc
+import pytest
 
 _SAMPLE_CONFIG = {
     "local": {
@@ -34,6 +33,7 @@ def _reset_singleton():
 
 
 # ── get_model: basic role resolution ─────────────────────────────────────────
+
 
 def test_get_model_local_fast(tmp_path):
     """get_model('fast', 'local') returns local fast model name."""
@@ -77,6 +77,7 @@ def test_get_model_online_deep(tmp_path):
 
 # ── Singleton: _load() called only once ──────────────────────────────────────
 
+
 def test_singleton_load_called_once(tmp_path):
     """Files are read on the first _load() only; later calls use the cached dict."""
     _reset_singleton()
@@ -92,6 +93,7 @@ def test_singleton_load_called_once(tmp_path):
 
 # ── Auto-copy: template copied when local config missing ─────────────────────
 
+
 def test_auto_copy_template_when_config_missing(tmp_path):
     """When local config is absent, template is copied and used."""
     _reset_singleton()
@@ -99,8 +101,7 @@ def test_auto_copy_template_when_config_missing(tmp_path):
     template_file.write_text(json.dumps(_SAMPLE_CONFIG))
     local_config = tmp_path / "local_models_config.json"
 
-    with patch.object(mc, "_CONFIG_PATH", local_config), \
-         patch.object(mc, "_TEMPLATE_PATH", template_file):
+    with patch.object(mc, "_CONFIG_PATH", local_config), patch.object(mc, "_TEMPLATE_PATH", template_file):
         result = mc.get_model("fast")
 
     assert local_config.exists(), "local config should have been created from template"
@@ -113,14 +114,14 @@ def test_auto_copy_skipped_when_template_missing(tmp_path):
     local_config = tmp_path / "local_models_config.json"
     template_file = tmp_path / "template_models_config.json"
 
-    with patch.object(mc, "_CONFIG_PATH", local_config), \
-         patch.object(mc, "_TEMPLATE_PATH", template_file):
+    with patch.object(mc, "_CONFIG_PATH", local_config), patch.object(mc, "_TEMPLATE_PATH", template_file):
         result = mc._load()
 
     assert result == {}
 
 
 # ── Missing role / provider: fallback and KeyError ───────────────────────────
+
 
 def test_missing_role_returns_fallback(tmp_path):
     """get_model with unknown role returns fallback when provided."""
@@ -164,6 +165,7 @@ def test_missing_provider_raises_without_fallback(tmp_path):
 
 # ── Template merge: template is the base, local overrides it ────────────────
 
+
 def _write_pair(tmp_path, template: dict, local) -> tuple[Path, Path]:
     template_file = tmp_path / "template_models_config.json"
     template_file.write_text(json.dumps(template))
@@ -178,8 +180,7 @@ def test_template_field_added_later_reaches_older_local_file(tmp_path):
     template = {"local": {"analyzer": "model-a", "guard": "guard-model"}}
     older_local = {"local": {"analyzer": "model-a"}}
     template_file, local_file = _write_pair(tmp_path, template, older_local)
-    with patch.object(mc, "_CONFIG_PATH", local_file), \
-         patch.object(mc, "_TEMPLATE_PATH", template_file):
+    with patch.object(mc, "_CONFIG_PATH", local_file), patch.object(mc, "_TEMPLATE_PATH", template_file):
         assert mc.get_model("guard") == "guard-model"
 
 
@@ -189,8 +190,7 @@ def test_local_value_wins_over_template(tmp_path):
     template = {"local": {"analyzer": "template-model", "fast": "template-fast"}}
     local = {"local": {"analyzer": "my-model"}}
     template_file, local_file = _write_pair(tmp_path, template, local)
-    with patch.object(mc, "_CONFIG_PATH", local_file), \
-         patch.object(mc, "_TEMPLATE_PATH", template_file):
+    with patch.object(mc, "_CONFIG_PATH", local_file), patch.object(mc, "_TEMPLATE_PATH", template_file):
         assert mc.get_model("analyzer") == "my-model"
         assert mc.get_model("fast") == "template-fast"
 
@@ -201,8 +201,7 @@ def test_local_list_and_scalar_override_template(tmp_path):
     template = {"local": {"provider": "ollama", "tags": ["a", "b"]}, "online": {"provider": "anthropic"}}
     local = {"local": {"tags": ["c"]}}
     template_file, local_file = _write_pair(tmp_path, template, local)
-    with patch.object(mc, "_CONFIG_PATH", local_file), \
-         patch.object(mc, "_TEMPLATE_PATH", template_file):
+    with patch.object(mc, "_CONFIG_PATH", local_file), patch.object(mc, "_TEMPLATE_PATH", template_file):
         config = mc._load()
     assert config["local"] == {"provider": "ollama", "tags": ["c"]}
     assert config["online"] == {"provider": "anthropic"}
@@ -210,10 +209,10 @@ def test_local_list_and_scalar_override_template(tmp_path):
 
 # ── Malformed JSON: degrades to the template, not to nothing ────────────────
 
+
 def test_malformed_local_json_degrades_to_template(tmp_path):
     """A broken local_models_config.json falls back to the template's values."""
     _reset_singleton()
     template_file, local_file = _write_pair(tmp_path, _SAMPLE_CONFIG, "not valid json {{{")
-    with patch.object(mc, "_CONFIG_PATH", local_file), \
-         patch.object(mc, "_TEMPLATE_PATH", template_file):
+    with patch.object(mc, "_CONFIG_PATH", local_file), patch.object(mc, "_TEMPLATE_PATH", template_file):
         assert mc._load() == _SAMPLE_CONFIG

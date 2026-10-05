@@ -3,8 +3,6 @@
 
 from pathlib import Path
 
-# Add scripts directory to path
-
 from bba.models import HTTPMethod, Scenario, TestCase, TestFramework
 from generate_coverage_matrix import (
     calculate_coverage_stats,
@@ -13,6 +11,9 @@ from generate_coverage_matrix import (
     generate_markdown_table,
     scenario_matches_test,
 )
+
+# Add scripts directory to path
+
 
 def test_scenario_matches_test_exact_match():
     """Test exact endpoint and method match."""
@@ -36,6 +37,7 @@ def test_scenario_matches_test_exact_match():
 
     assert scenario_matches_test(scenario, test) is True
 
+
 def test_scenario_matches_test_method_mismatch():
     """Test method mismatch returns False."""
     scenario = Scenario(
@@ -57,6 +59,7 @@ def test_scenario_matches_test_method_mismatch():
 
     assert scenario_matches_test(scenario, test) is False
 
+
 def test_scenario_matches_test_happy_path_keyword():
     """Test happy path keyword matching."""
     scenario = Scenario(
@@ -77,6 +80,7 @@ def test_scenario_matches_test_happy_path_keyword():
     )
 
     assert scenario_matches_test(scenario, test) is True
+
 
 def test_scenario_matches_test_error_keyword():
     """Test error case keyword matching."""
@@ -100,6 +104,7 @@ def test_scenario_matches_test_error_keyword():
 
     assert scenario_matches_test(scenario, test) is True
 
+
 def test_scenario_matches_test_security_keyword():
     """Test security case keyword matching."""
     scenario = Scenario(
@@ -121,6 +126,7 @@ def test_scenario_matches_test_security_keyword():
     )
 
     assert scenario_matches_test(scenario, test) is True
+
 
 def test_find_related_tests():
     """Test finding related tests for a scenario."""
@@ -155,6 +161,7 @@ def test_find_related_tests():
 
     assert len(related) == 1
     assert related[0].name == "TestGetUser"
+
 
 def test_calculate_coverage_stats():
     """Test coverage statistics calculation."""
@@ -204,6 +211,7 @@ def test_calculate_coverage_stats():
     assert stats["untested_scenarios"] == 1
     assert stats["coverage_percent"] == 66.67
 
+
 def test_calculate_coverage_stats_by_type():
     """Test coverage statistics by scenario type."""
     from bba.models import CoverageGap
@@ -247,6 +255,7 @@ def test_calculate_coverage_stats_by_type():
     assert stats["by_type"]["error"]["coverage_percent"] == 0.0
     assert stats["by_type"]["security"]["coverage_percent"] == 0.0
 
+
 def test_generate_markdown_table():
     """Test markdown table generation."""
     from bba.models import CoverageGap
@@ -286,6 +295,7 @@ def test_generate_markdown_table():
     assert "❌" in markdown  # Untested scenario
     assert "Coverage" in markdown
 
+
 def test_generate_coverage_matrix(sample_scenarios_json, sample_tests_json):
     """Test full coverage matrix generation."""
     coverage_gaps = generate_coverage_matrix(sample_scenarios_json, sample_tests_json)
@@ -298,6 +308,7 @@ def test_generate_coverage_matrix(sample_scenarios_json, sample_tests_json):
 
     assert tested_count > 0
     # Untested count may be 0 if all scenarios are covered
+
 
 def test_scenario_matches_test_none_tested_endpoint():
     """tested_endpoint=None must not raise — scenario never matches."""
@@ -318,6 +329,7 @@ def test_scenario_matches_test_none_tested_endpoint():
     )
     result = scenario_matches_test(scenario, test)
     assert result is False
+
 
 def test_calculate_coverage_stats_zero_scenarios():
     """Empty gaps list must not raise ZeroDivisionError."""

@@ -1,6 +1,6 @@
 """Unit tests for common/dedup.py — mechanical/AI finding reconciliation."""
-from pathlib import Path
 
+from pathlib import Path
 
 from ssa.dedup import _NO_FINDINGS_TEXT, drop_near_duplicates, format_known_findings
 
@@ -18,17 +18,21 @@ class TestFormatKnownFindings:
         assert result == "- line 7: Hardcoded secret"
 
     def test_multiple_findings_one_per_line(self):
-        result = format_known_findings([
-            _violation(line=3, message="first"),
-            _violation(line=9, message="second"),
-        ])
+        result = format_known_findings(
+            [
+                _violation(line=3, message="first"),
+                _violation(line=9, message="second"),
+            ]
+        )
         assert result.splitlines() == ["- line 3: first", "- line 9: second"]
 
     def test_findings_sorted_by_line(self):
-        result = format_known_findings([
-            _violation(line=42, message="late"),
-            _violation(line=1, message="early"),
-        ])
+        result = format_known_findings(
+            [
+                _violation(line=42, message="late"),
+                _violation(line=1, message="early"),
+            ]
+        )
         assert result.splitlines() == ["- line 1: early", "- line 42: late"]
 
     def test_missing_keys_do_not_raise(self):

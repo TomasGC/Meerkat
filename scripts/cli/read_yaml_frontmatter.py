@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
@@ -34,7 +35,7 @@ def extract_frontmatter(file_path: Path) -> Optional[dict]:
         return None
 
     # Match frontmatter (multiline)
-    pattern = r'^---\n(.*?)\n---'
+    pattern = r"^---\n(.*?)\n---"
     match = re.search(pattern, content, re.DOTALL | re.MULTILINE)
 
     if not match:
@@ -87,10 +88,7 @@ def parse_yaml_simple(yaml_content: str) -> dict:
             elif value.startswith("[") and value.endswith("]"):
                 # Array
                 array_content = value[1:-1]
-                parsed[current_key] = [
-                    item.strip().strip('"').strip("'")
-                    for item in array_content.split(",")
-                ]
+                parsed[current_key] = [item.strip().strip('"').strip("'") for item in array_content.split(",")]
             else:
                 # Simple value - strip quotes if present
                 if value.startswith('"') and value.endswith('"'):
@@ -118,17 +116,8 @@ class ReadYamlFrontmatterScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--file",
-            required=True,
-            type=Path,
-            help="Path to markdown file with YAML frontmatter"
-        )
-        parser.add_argument(
-            "--format-yaml",
-            action="store_true",
-            help="Output as YAML (alternative to --format)"
-        )
+        parser.add_argument("--file", required=True, type=Path, help="Path to markdown file with YAML frontmatter")
+        parser.add_argument("--format-yaml", action="store_true", help="Output as YAML (alternative to --format)")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute YAML frontmatter extraction."""
@@ -139,19 +128,15 @@ class ReadYamlFrontmatterScript(BaseCLIScript):
             if not YAML_AVAILABLE and args.format_yaml:
                 self.logger.warning("PyYAML not installed, using JSON output")
 
-
             return {
                 "success": True,
                 "frontmatter": frontmatter,
-                "format_yaml": args.format_yaml if hasattr(args, 'format_yaml') and YAML_AVAILABLE else False
+                "format_yaml": args.format_yaml if hasattr(args, "format_yaml") and YAML_AVAILABLE else False,
             }
 
         except Exception as e:
             self.logger.error(f"Failed to extract frontmatter: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -188,4 +173,5 @@ class ReadYamlFrontmatterScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(ReadYamlFrontmatterScript)

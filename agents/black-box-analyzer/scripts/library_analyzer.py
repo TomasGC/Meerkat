@@ -47,11 +47,12 @@ def _branch_to_scenario(method: dict, branch: dict, index: int) -> Scenario:
     """Convert a branch extracted by analyze_library_branches into a Scenario."""
     # Reuse Scenario dataclass — repurpose fields for library context
     from bba.models import HTTPMethod
+
     return Scenario(
         endpoint=method.get("method", "unknown"),
-        method=HTTPMethod.GET,           # sentinel — not HTTP, but field is required
+        method=HTTPMethod.GET,  # sentinel — not HTTP, but field is required
         input_combination={"condition": branch.get("condition", "")},
-        expected_output=0,               # sentinel — not an HTTP code
+        expected_output=0,  # sentinel — not an HTTP code
         scenario_type=_infer_scenario_type(branch),
         description=branch.get("test_scenario", branch.get("condition", "")),
     )
@@ -110,8 +111,9 @@ class LibraryAnalyzer:
         """
         return project_info.metadata.get("is_library", False) or not project_info.project_types
 
-    def analyze(self, project_path: Path, project_info, agents: int = 1,
-                typed_agents: bool = False, include_e2e: bool = False) -> AnalysisResult:
+    def analyze(
+        self, project_path: Path, project_info, agents: int = 1, typed_agents: bool = False, include_e2e: bool = False
+    ) -> AnalysisResult:
         src_candidates = [
             project_path / "src",
             project_path / "lib",
@@ -132,13 +134,21 @@ class LibraryAnalyzer:
         def _phase1():
             return _run_script(
                 "analyze_library_branches.py",
-                str(src_path), "--language", language, *agents_args, *typed_args, *e2e_args,
+                str(src_path),
+                "--language",
+                language,
+                *agents_args,
+                *typed_args,
+                *e2e_args,
             )
 
         def _phase4b():
             return _run_script(
                 "scan_tdd_refactoring.py",
-                str(src_path), "--language", language, *agents_args,
+                str(src_path),
+                "--language",
+                language,
+                *agents_args,
             )
 
         with ThreadPoolExecutor(max_workers=2) as pool:
@@ -180,6 +190,7 @@ class LibraryAnalyzer:
             try:
                 tests_data = json.loads(tests_file.read_text())
                 from bba.models import TestFramework
+
                 for t in tests_data.get("tests", []):
                     try:
                         fw = TestFramework(t.get("framework", "unknown"))
@@ -200,10 +211,7 @@ class LibraryAnalyzer:
         gaps: list[CoverageGap] = []
         for scenario in scenarios:
             desc_words = set(scenario.description.lower().split())
-            is_tested = any(
-                len(desc_words & set(name.lower().split())) >= 2
-                for name in covered_descriptions
-            )
+            is_tested = any(len(desc_words & set(name.lower().split())) >= 2 for name in covered_descriptions)
             gaps.append(CoverageGap(scenario=scenario, is_tested=is_tested))
 
         tested = sum(1 for g in gaps if g.is_tested)

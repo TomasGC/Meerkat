@@ -4,11 +4,11 @@
 from pathlib import Path
 
 import pytest
-
 from cli.analyze_ci_failure import (
     CIAnalysis,
     parse_github_url,
 )
+
 
 def test_parse_github_url_pipeline():
     """Test parsing pipeline URL."""
@@ -21,6 +21,7 @@ def test_parse_github_url_pipeline():
     assert repo == "TomasGC/otter"
     assert run_id == "24734772369"
 
+
 def test_parse_github_url_invalid():
     """Test parsing invalid URL."""
     url = "https://github.com/owner/repo"
@@ -29,6 +30,7 @@ def test_parse_github_url_invalid():
 
     # Should be None (no PR checks mocked)
     assert result is None
+
 
 def test_ci_analysis_total_errors():
     """Test total error count."""
@@ -40,10 +42,11 @@ def test_ci_analysis_total_errors():
         test_failures=["error4", "error5", "error6"],
         lint_errors=[],
         build_errors=["error7"],
-        unknown_errors=[]
+        unknown_errors=[],
     )
 
     assert analysis.total_errors == 7
+
 
 def test_ci_analysis_priority_infrastructure():
     """Test priority determination with infrastructure errors."""
@@ -55,10 +58,11 @@ def test_ci_analysis_priority_infrastructure():
         test_failures=[],
         lint_errors=[],
         build_errors=[],
-        unknown_errors=[]
+        unknown_errors=[],
     )
 
     assert analysis.priority_category == "infrastructure"
+
 
 def test_ci_analysis_priority_compilation():
     """Test priority determination with compilation errors."""
@@ -70,10 +74,11 @@ def test_ci_analysis_priority_compilation():
         test_failures=[],
         lint_errors=[],
         build_errors=[],
-        unknown_errors=[]
+        unknown_errors=[],
     )
 
     assert analysis.priority_category == "compilation"
+
 
 def test_ci_analysis_priority_build():
     """Test priority determination with build errors."""
@@ -85,10 +90,11 @@ def test_ci_analysis_priority_build():
         test_failures=[],
         lint_errors=[],
         build_errors=["error1"],
-        unknown_errors=[]
+        unknown_errors=[],
     )
 
     assert analysis.priority_category == "build"
+
 
 def test_ci_analysis_priority_test():
     """Test priority determination with test errors."""
@@ -100,10 +106,11 @@ def test_ci_analysis_priority_test():
         test_failures=["error1"],
         lint_errors=[],
         build_errors=[],
-        unknown_errors=[]
+        unknown_errors=[],
     )
 
     assert analysis.priority_category == "test"
+
 
 def test_ci_analysis_priority_unknown():
     """Test priority determination with unknown errors."""
@@ -115,7 +122,7 @@ def test_ci_analysis_priority_unknown():
         test_failures=[],
         lint_errors=[],
         build_errors=[],
-        unknown_errors=["error1"]
+        unknown_errors=["error1"],
     )
 
     assert analysis.priority_category == "unknown"

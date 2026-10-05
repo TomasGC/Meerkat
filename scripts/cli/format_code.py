@@ -168,9 +168,7 @@ class FormatCode(BaseCLIScript):
 
         return formatters.get(language)
 
-    def _build_command(
-        self, formatter: str, file_path: Path, language: str
-    ) -> list[str]:
+    def _build_command(self, formatter: str, file_path: Path, language: str) -> list[str]:
         """Build formatter command."""
         if formatter == "black":
             cmd = ["black"]

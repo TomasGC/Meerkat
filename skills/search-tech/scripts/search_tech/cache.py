@@ -5,13 +5,13 @@ Simple file-based cache for search results.
 Reduces API calls by caching recent search results.
 """
 
-import json
 import hashlib
+import json
 import os
 import tempfile
-from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 # Cache lives under the user's home, not a world-writable shared directory:
 # /tmp entries are readable and tamperable by every local user.
@@ -67,7 +67,7 @@ class SearchCache:
     def _load_entry(self, cache_path: Path) -> Optional[Dict[str, Any]]:
         """Read a cache entry, discarding it if unreadable or malformed."""
         try:
-            with open(cache_path, 'r', encoding='utf-8') as f:
+            with open(cache_path, "r", encoding="utf-8") as f:
                 entry = json.load(f)
         except FileNotFoundError:
             return None
@@ -84,7 +84,7 @@ class SearchCache:
     def _is_expired(self, entry: Dict[str, Any]) -> bool:
         """True when the entry is past its TTL or carries no usable timestamp."""
         try:
-            cached_time = datetime.fromisoformat(entry['cached_at'])
+            cached_time = datetime.fromisoformat(entry["cached_at"])
         except (KeyError, TypeError, ValueError):
             return True
 
@@ -92,9 +92,9 @@ class SearchCache:
 
     def _write_atomic(self, cache_path: Path, entry: Dict[str, Any]) -> None:
         """Write the entry via a temp file + rename so readers never see a partial file."""
-        fd, tmp_name = tempfile.mkstemp(dir=str(self.cache_dir), suffix='.tmp')
+        fd, tmp_name = tempfile.mkstemp(dir=str(self.cache_dir), suffix=".tmp")
         try:
-            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(entry, f, indent=2, ensure_ascii=False)
             os.replace(tmp_name, cache_path)
         except (OSError, TypeError, ValueError):
@@ -126,15 +126,15 @@ class SearchCache:
         # The key is a truncated hash: confirm the entry really answers this
         # request before trusting it, so a colliding or tampered file is
         # dropped rather than served.
-        if entry.get('query') != query or entry.get('filters') != filters:
+        if entry.get("query") != query or entry.get("filters") != filters:
             self._discard(cache_path)
             return None
 
-        if 'data' not in entry:
+        if "data" not in entry:
             self._discard(cache_path)
             return None
 
-        return entry['data']
+        return entry["data"]
 
     def set(self, query: str, filters: Dict[str, Any], data: Dict[str, Any]):
         """
@@ -149,10 +149,10 @@ class SearchCache:
         cache_path = self._get_cache_path(cache_key)
 
         cached = {
-            'cached_at': datetime.now().isoformat(),
-            'query': query,
-            'filters': filters,
-            'data': data,
+            "cached_at": datetime.now().isoformat(),
+            "query": query,
+            "filters": filters,
+            "data": data,
         }
 
         try:

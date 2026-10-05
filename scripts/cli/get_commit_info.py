@@ -21,18 +21,13 @@ from lib.models import GitCommitInfo
 from lib.utils import run_command
 
 
-def get_commit_info(
-    commit_hash: str = "HEAD",
-    count: int = 1,
-    include_files: bool = False
-) -> list[GitCommitInfo]:
+def get_commit_info(commit_hash: str = "HEAD", count: int = 1, include_files: bool = False) -> list[GitCommitInfo]:
     """Get commit information from git log."""
     # Git log format: hash, short hash, message, author name, author email, date, relative date
     log_format = "%H%n%h%n%s%n%an%n%ae%n%ad%n%ar"
 
     returncode, stdout, stderr = run_command(
-        ["git", "log", f"-{count}", f"--format={log_format}", "--date=iso", commit_hash],
-        timeout=10
+        ["git", "log", f"-{count}", f"--format={log_format}", "--date=iso", commit_hash], timeout=10
     )
 
     if returncode != 0:
@@ -47,10 +42,7 @@ def get_commit_info(
             break  # Incomplete commit block
 
         commit = GitCommitInfo(
-            hash=lines[i].strip(),
-            author=lines[i + 3].strip(),
-            date=lines[i + 5].strip(),
-            message=lines[i + 2].strip()
+            hash=lines[i].strip(), author=lines[i + 3].strip(), date=lines[i + 5].strip(), message=lines[i + 2].strip()
         )
 
         # Get file changes if requested
@@ -67,10 +59,7 @@ def get_commit_info(
 
 def get_commit_files(commit_hash: str) -> tuple[list[str], int, int]:
     """Get files changed in a commit with stats."""
-    returncode, stdout, stderr = run_command(
-        ["git", "show", "--pretty=", "--numstat", commit_hash],
-        timeout=10
-    )
+    returncode, stdout, stderr = run_command(["git", "show", "--pretty=", "--numstat", commit_hash], timeout=10)
 
     if returncode != 0:
         return [], 0, 0
@@ -114,8 +103,10 @@ def format_text_output(commits: list[GitCommitInfo], include_files: bool) -> str
         output.append(f"Message: {commit.message}")
 
         if include_files and commit.files_changed:
-            output.append(f"Files:   {len(commit.files_changed)} changed, "
-                         f"+{commit.insertions} insertions, -{commit.deletions} deletions")
+            output.append(
+                f"Files:   {len(commit.files_changed)} changed, "
+                f"+{commit.insertions} insertions, -{commit.deletions} deletions"
+            )
             for file in commit.files_changed:
                 output.append(f"  - {file}")
 
@@ -135,12 +126,7 @@ def format_csv_output(commits: list[GitCommitInfo], include_files: bool) -> str:
     writer.writeheader()
 
     for commit in commits:
-        row = {
-            "hash": commit.hash,
-            "author": commit.author,
-            "date": commit.date,
-            "message": commit.message
-        }
+        row = {"hash": commit.hash, "author": commit.author, "date": commit.date, "message": commit.message}
 
         if include_files:
             row["files"] = ";".join(commit.files_changed)
@@ -157,61 +143,31 @@ class GetCommitInfoScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--hash",
-            "-H",
-            default="HEAD",
-            help="Commit hash or reference (default: HEAD)"
-        )
-        parser.add_argument(
-            "--count",
-            "-c",
-            type=int,
-            default=1,
-            help="Number of commits to retrieve (default: 1)"
-        )
-        parser.add_argument(
-            "--include-files",
-            action="store_true",
-            help="Include files changed in each commit"
-        )
-        parser.add_argument(
-            "--format-csv",
-            action="store_true",
-            help="Output as CSV (alternative to --format)"
-        )
+        parser.add_argument("--hash", "-H", default="HEAD", help="Commit hash or reference (default: HEAD)")
+        parser.add_argument("--count", "-c", type=int, default=1, help="Number of commits to retrieve (default: 1)")
+        parser.add_argument("--include-files", action="store_true", help="Include files changed in each commit")
+        parser.add_argument("--format-csv", action="store_true", help="Output as CSV (alternative to --format)")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute commit info retrieval."""
         try:
             # Get commit information
-            commits = get_commit_info(
-                commit_hash=args.hash,
-                count=args.count,
-                include_files=args.include_files
-            )
+            commits = get_commit_info(commit_hash=args.hash, count=args.count, include_files=args.include_files)
 
             if not commits:
                 self.logger.warning("No commits found")
-                return {
-                    "success": False,
-                    "error": "No commits found"
-                }
-
+                return {"success": False, "error": "No commits found"}
 
             return {
                 "success": True,
                 "commits": commits,
                 "include_files": args.include_files,
-                "format_csv": args.format_csv if hasattr(args, 'format_csv') else False
+                "format_csv": args.format_csv if hasattr(args, "format_csv") else False,
             }
 
         except Exception as e:
             self.logger.error(f"Failed to get commit info: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -242,4 +198,5 @@ class GetCommitInfoScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(GetCommitInfoScript)

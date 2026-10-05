@@ -76,9 +76,7 @@ def language_extensions() -> dict[str, list[str]]:
 def languages_of_kind(*kinds: str) -> dict[str, list[str]]:
     """language -> [ext], restricted to the given kinds (code, markup, data, query, config)."""
     return {
-        name: list(lang.get("extensions", []))
-        for name, lang in all_languages().items()
-        if lang.get("kind") in kinds
+        name: list(lang.get("extensions", [])) for name, lang in all_languages().items() if lang.get("kind") in kinds
     }
 
 
@@ -102,20 +100,14 @@ def skip_dirs(language: str | None = None) -> set[str]:
 def extensions_where(field: str, value: bool = True) -> set[str]:
     """Extensions of every language whose boolean field equals value."""
     return {
-        e
-        for lang in all_languages().values()
-        if bool(lang.get(field)) is value
-        for e in lang.get("extensions", [])
+        e for lang in all_languages().values() if bool(lang.get(field)) is value for e in lang.get("extensions", [])
     }
 
 
 def comment_style_extensions(style: str) -> set[str]:
     """Extensions of every language using this comment style."""
     return {
-        e
-        for lang in all_languages().values()
-        if lang.get("comment_style") == style
-        for e in lang.get("extensions", [])
+        e for lang in all_languages().values() if lang.get("comment_style") == style for e in lang.get("extensions", [])
     }
 
 
@@ -148,10 +140,7 @@ def project_indicators() -> dict[str, list[str]]:
     Kept as an ordered list in the config, separate from `languages`: it answers
     "what kind of project is this", and its priority differs from the language order.
     """
-    return {
-        entry["language"]: list(entry.get("markers", []))
-        for entry in _load().get("project_indicators", [])
-    }
+    return {entry["language"]: list(entry.get("markers", [])) for entry in _load().get("project_indicators", [])}
 
 
 def standards_for(language: str, dialect: str | None = None) -> str | None:

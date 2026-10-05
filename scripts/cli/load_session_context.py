@@ -31,11 +31,7 @@ def get_issue_from_branch(cwd: Optional[Path] = None) -> Optional[str]:
     Returns:
         Issue ID (format depends on active profile) or None
     """
-    returncode, stdout, stderr = run_command(
-        ["git", "branch", "--show-current"],
-        cwd=cwd,
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "branch", "--show-current"], cwd=cwd, timeout=5)
 
     if returncode != 0 or not stdout.strip():
         return None
@@ -99,11 +95,7 @@ def load_session_context(cwd: Optional[Path] = None) -> dict:
         Context dictionary
     """
     # Get current branch
-    returncode, stdout, stderr = run_command(
-        ["git", "branch", "--show-current"],
-        cwd=cwd,
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "branch", "--show-current"], cwd=cwd, timeout=5)
 
     branch = stdout.strip() if returncode == 0 else None
 
@@ -119,7 +111,7 @@ def load_session_context(cwd: Optional[Path] = None) -> dict:
         "branch": branch,
         "issue": issue_id,
         "kanbanFound": kanban_context is not None,
-        "kanbanContext": kanban_context
+        "kanbanContext": kanban_context,
     }
 
 
@@ -132,18 +124,11 @@ class LoadSessionContextScript(BaseCLIScript):
             # Load session context
             context = load_session_context()
 
-
-            return {
-                "success": True,
-                **context
-            }
+            return {"success": True, **context}
 
         except Exception as e:
             self.logger.error(f"Failed to load session context: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as text for skill consumption."""
@@ -189,4 +174,5 @@ class LoadSessionContextScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(LoadSessionContextScript)

@@ -5,17 +5,21 @@ from pathlib import Path
 
 from analyze_library_branches import _merge_runs
 
+
 def test_merge_runs_empty_runs_returns_empty():
     assert _merge_runs([]) == []
 
+
 def test_merge_runs_single_empty_run_returns_empty():
     assert _merge_runs([[]]) == []
+
 
 def test_merge_runs_single_run_method_no_branches():
     result = _merge_runs([[{"method": "Foo", "branches": []}]])
     assert len(result) == 1
     assert result[0]["method"] == "Foo"
     assert result[0]["branches"] == []
+
 
 def test_merge_runs_deduplicates_identical_method_condition():
     branch = {"condition": "valid input", "outcome": "returns result"}
@@ -25,6 +29,7 @@ def test_merge_runs_deduplicates_identical_method_condition():
     assert len(result) == 1
     assert len(result[0]["branches"]) == 1
 
+
 def test_merge_runs_merges_unique_conditions_same_method():
     run1 = [{"method": "Foo", "branches": [{"condition": "cond A"}]}]
     run2 = [{"method": "Foo", "branches": [{"condition": "cond B"}]}]
@@ -33,6 +38,7 @@ def test_merge_runs_merges_unique_conditions_same_method():
     conditions = {b["condition"] for b in result[0]["branches"]}
     assert conditions == {"cond A", "cond B"}
 
+
 def test_merge_runs_keeps_all_methods():
     run1 = [{"method": "Foo", "branches": [{"condition": "x"}]}]
     run2 = [{"method": "Bar", "branches": [{"condition": "y"}]}]
@@ -40,11 +46,13 @@ def test_merge_runs_keeps_all_methods():
     method_names = {m["method"] for m in result}
     assert method_names == {"Foo", "Bar"}
 
+
 def test_merge_runs_condition_dedup_case_insensitive():
     run1 = [{"method": "Foo", "branches": [{"condition": "NULL input"}]}]
     run2 = [{"method": "Foo", "branches": [{"condition": "null input"}]}]
     result = _merge_runs([run1, run2])
     assert len(result[0]["branches"]) == 1
+
 
 def test_merge_runs_condition_truncated_to_80_for_key():
     base = "x" * 80
@@ -53,11 +61,13 @@ def test_merge_runs_condition_truncated_to_80_for_key():
     result = _merge_runs([run1, run2])
     assert len(result[0]["branches"]) == 1
 
+
 def test_merge_runs_method_missing_key_falls_back_to_empty_string():
     run = [{"signature": "def something()", "branches": [{"condition": "x"}]}]
     result = _merge_runs([run])
     assert len(result) == 1
     assert result[0].get("method", "") == ""
+
 
 def test_merge_runs_branch_missing_condition_key():
     run = [{"method": "Foo", "branches": [{"outcome": "returns result"}]}]
@@ -65,11 +75,13 @@ def test_merge_runs_branch_missing_condition_key():
     assert len(result) == 1
     assert len(result[0]["branches"]) == 1
 
+
 def test_merge_runs_first_run_metadata_wins():
     run1 = [{"method": "Foo", "signature": "sig1", "branches": []}]
     run2 = [{"method": "Foo", "signature": "sig2", "branches": []}]
     result = _merge_runs([run1, run2])
     assert result[0]["signature"] == "sig1"
+
 
 def test_merge_runs_three_runs_union_of_unique_branches():
     run1 = [{"method": "Foo", "branches": [{"condition": "cond A"}]}]
@@ -78,6 +90,7 @@ def test_merge_runs_three_runs_union_of_unique_branches():
     result = _merge_runs([run1, run2, run3])
     assert len(result) == 1
     assert len(result[0]["branches"]) == 3
+
 
 def test_merge_runs_asymmetric_runs_one_empty():
     result = _merge_runs([[], [{"method": "Foo", "branches": [{"condition": "x"}]}]])

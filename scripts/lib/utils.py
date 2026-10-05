@@ -81,24 +81,14 @@ def extract_params_from_path(path: str) -> list[dict[str, str]]:
     colon_params = re.findall(r":(\w+)", path)
     for param in colon_params:
         if param not in seen:
-            params.append({
-                "name": param,
-                "param_type": "path",
-                "data_type": "string",
-                "required": True
-            })
+            params.append({"name": param, "param_type": "path", "data_type": "string", "required": True})
             seen.add(param)
 
     # Pattern 2: ASP.NET/Spring style ({param})
     brace_params = re.findall(r"\{(\w+)\}", path)
     for param in brace_params:
         if param not in seen:
-            params.append({
-                "name": param,
-                "param_type": "path",
-                "data_type": "string",
-                "required": True
-            })
+            params.append({"name": param, "param_type": "path", "data_type": "string", "required": True})
             seen.add(param)
 
     return params
@@ -151,11 +141,7 @@ def detect_language(file_path: Path) -> str | None:
     return language_config.language_for_file(file_path)
 
 
-def run_command(
-    command: list[str],
-    cwd: Path | None = None,
-    timeout: int = 30
-) -> tuple[int, str, str]:
+def run_command(command: list[str], cwd: Path | None = None, timeout: int = 30) -> tuple[int, str, str]:
     """
     Run shell command and return result.
 
@@ -176,7 +162,7 @@ def run_command(
             encoding="utf-8",
             errors="replace",
             timeout=timeout,
-            check=False
+            check=False,
         )
         return result.returncode, result.stdout, result.stderr
     except subprocess.TimeoutExpired:

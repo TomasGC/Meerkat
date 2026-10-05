@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from lib.config import language_config as lc
 
 
@@ -121,8 +120,19 @@ class TestLanguagesOfKind:
     def test_code_kind_matches_the_bba_library_languages(self):
         code = lc.languages_of_kind("code")
         assert len(code) == 15
-        for language in ("python", "csharp", "kotlin", "java", "go", "rust",
-                         "ruby", "typescript", "javascript", "swift", "cpp"):
+        for language in (
+            "python",
+            "csharp",
+            "kotlin",
+            "java",
+            "go",
+            "rust",
+            "ruby",
+            "typescript",
+            "javascript",
+            "swift",
+            "cpp",
+        ):
             assert language in code
 
     @pytest.mark.parametrize("language", ["sql", "yaml", "dockerfile", "razor", "vue"])
@@ -156,9 +166,28 @@ class TestLanguages:
 
     @pytest.mark.parametrize(
         "language",
-        ["python", "typescript", "javascript", "vue", "csharp", "razor", "go", "java",
-         "kotlin", "swift", "rust", "ruby", "cpp", "php", "perl", "powershell",
-         "bash", "sql", "yaml", "dockerfile"],
+        [
+            "python",
+            "typescript",
+            "javascript",
+            "vue",
+            "csharp",
+            "razor",
+            "go",
+            "java",
+            "kotlin",
+            "swift",
+            "rust",
+            "ruby",
+            "cpp",
+            "php",
+            "perl",
+            "powershell",
+            "bash",
+            "sql",
+            "yaml",
+            "dockerfile",
+        ],
     )
     def test_language_present(self, language):
         assert lc.get_language(language)
@@ -195,8 +224,15 @@ class TestLanguageForExtension:
 
     @pytest.mark.parametrize(
         "ext,expected",
-        [(".py", "python"), (".tsx", "typescript"), (".cjs", "javascript"),
-         (".cshtml", "razor"), (".kts", "kotlin"), (".pm", "perl"), (".sql", "sql")],
+        [
+            (".py", "python"),
+            (".tsx", "typescript"),
+            (".cjs", "javascript"),
+            (".cshtml", "razor"),
+            (".kts", "kotlin"),
+            (".pm", "perl"),
+            (".sql", "sql"),
+        ],
     )
     def test_known_extensions(self, ext, expected):
         assert lc.language_for_extension(ext) == expected
@@ -213,9 +249,27 @@ class TestSkipDirs:
 
     @pytest.mark.parametrize(
         "directory",
-        [".git", ".svn", "node_modules", "vendor", "bin", "obj", "dist", "build",
-         "out", "target", "coverage", ".nyc_output", "__pycache__", ".pytest_cache",
-         ".venv", "venv", ".tox", "eggs", ".eggs"],
+        [
+            ".git",
+            ".svn",
+            "node_modules",
+            "vendor",
+            "bin",
+            "obj",
+            "dist",
+            "build",
+            "out",
+            "target",
+            "coverage",
+            ".nyc_output",
+            "__pycache__",
+            ".pytest_cache",
+            ".venv",
+            "venv",
+            ".tox",
+            "eggs",
+            ".eggs",
+        ],
     )
     def test_union_of_both_agent_sets(self, directory):
         """The shipped set is _SKIP_DIRS (CCA/SSA) union EXCLUDED_DIRS (BBA)."""
@@ -225,10 +279,12 @@ class TestSkipDirs:
         assert isinstance(lc.skip_dirs(), set)
 
     def test_language_additions_are_merged(self, custom_config):
-        custom_config({
-            "skip_dirs": ["global"],
-            "languages": {"toy": {"skip_dirs": ["toy_only"]}},
-        })
+        custom_config(
+            {
+                "skip_dirs": ["global"],
+                "languages": {"toy": {"skip_dirs": ["toy_only"]}},
+            }
+        )
         assert lc.skip_dirs("toy") == {"global", "toy_only"}
         assert lc.skip_dirs() == {"global"}
 
@@ -293,6 +349,7 @@ class TestFilenamePatterns:
 
     def test_patterns_are_compiled(self):
         import re
+
         assert isinstance(lc.filename_patterns()["dockerfile"], re.Pattern)
 
 
@@ -329,12 +386,12 @@ class TestStandardsForFile:
     def test_sql_dialect_resolved_from_content(self):
         content = "CREATE TABLE t (a NVARCHAR(9))\nGO\n"
         assert lc.standards_for_file(Path("schema.sql"), content) == "rules/standards-sqlserver.md"
-        assert lc.standards_for_file(Path("schema.sql"), "CREATE TABLE t (id SERIAL)") == \
-            "rules/standards-postgresql.md"
+        assert (
+            lc.standards_for_file(Path("schema.sql"), "CREATE TABLE t (id SERIAL)") == "rules/standards-postgresql.md"
+        )
 
     def test_vue_dialect_resolved_from_content(self):
-        assert lc.standards_for_file(Path("App.vue"), '<script setup lang="ts">') == \
-            "rules/standards-typescript.md"
+        assert lc.standards_for_file(Path("App.vue"), '<script setup lang="ts">') == "rules/standards-typescript.md"
         assert lc.standards_for_file(Path("App.vue"), "<script>") == "rules/standards-javascript.md"
 
     def test_filename_matched_language(self):
@@ -462,11 +519,15 @@ class TestProjectIndicators:
     """Ordered marker-file table used to type a project (BBA), first match wins."""
 
     def test_order_is_preserved(self, custom_config):
-        custom_config({"project_indicators": [
-            {"language": "go", "markers": ["go.mod"]},
-            {"language": "python", "markers": ["requirements.txt"]},
-            {"language": "sql", "markers": ["*.sql"]},
-        ]})
+        custom_config(
+            {
+                "project_indicators": [
+                    {"language": "go", "markers": ["go.mod"]},
+                    {"language": "python", "markers": ["requirements.txt"]},
+                    {"language": "sql", "markers": ["*.sql"]},
+                ]
+            }
+        )
         assert list(lc.project_indicators()) == ["go", "python", "sql"]
 
     def test_shape_is_language_to_markers(self, custom_config):

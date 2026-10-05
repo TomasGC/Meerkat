@@ -77,9 +77,12 @@ def upload_with_codecov(
 ) -> int:
     cmd = [
         codecov_bin,
-        "--file", str(lcov_file),
-        "--flag", flag,
-        "--name", f"coverage-{flag}",
+        "--file",
+        str(lcov_file),
+        "--flag",
+        flag,
+        "--name",
+        f"coverage-{flag}",
         "--nonZero",
     ]
     if token:

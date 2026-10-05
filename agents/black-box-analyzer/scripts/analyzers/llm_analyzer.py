@@ -256,9 +256,7 @@ class LLMAnalyzer(BaseAnalyzer):
                     Scenario(
                         endpoint=entry_point.name,
                         method="TOOL",
-                        input_combination={
-                            "params": {p.name: "valid_value" for p in entry_point.params}
-                        },
+                        input_combination={"params": {p.name: "valid_value" for p in entry_point.params}},
                         expected_output=0,
                         scenario_type="happy_path",
                         description=f"Valid input to tool {entry_point.name}",

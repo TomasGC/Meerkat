@@ -16,7 +16,6 @@ from cca.model_utils import (  # noqa: E402
 )
 
 
-
 def pytest_collection_modifyitems(config, items):
     """Skip every `@pytest.mark.live_ai` test here when the configured server is down."""
     here = Path(__file__).parent

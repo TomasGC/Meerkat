@@ -1,5 +1,7 @@
 """Thread safety stress tests for orchestrate.py concurrent callbacks."""
+
 import threading
+
 import pytest
 
 
@@ -8,8 +10,14 @@ def make_fake_result(principle: str, n_violations: int) -> dict:
         "principle": principle,
         "success": True,
         "violations": [
-            {"file": f"test.py", "line": i, "principle": principle,
-             "severity": "high", "message": f"violation {i}", "suggestion": "fix"}
+            {
+                "file": f"test.py",
+                "line": i,
+                "principle": principle,
+                "severity": "high",
+                "message": f"violation {i}",
+                "suggestion": "fix",
+            }
             for i in range(n_violations)
         ],
         "files_analyzed": 1,
@@ -44,18 +52,15 @@ def test_concurrent_callbacks_no_lost_writes():
         barrier.wait()  # all threads fire simultaneously
         on_checker_done_sim(result)
 
-    threads = [
-        threading.Thread(target=worker, args=(f"principle_{i}",))
-        for i in range(N_THREADS)
-    ]
+    threads = [threading.Thread(target=worker, args=(f"principle_{i}",)) for i in range(N_THREADS)]
     for t in threads:
         t.start()
     for t in threads:
         t.join()
 
-    assert len(all_violations) == N_THREADS * VIOLATIONS_PER_THREAD, (
-        f"Expected {N_THREADS * VIOLATIONS_PER_THREAD}, got {len(all_violations)} — thread safety bug"
-    )
+    assert (
+        len(all_violations) == N_THREADS * VIOLATIONS_PER_THREAD
+    ), f"Expected {N_THREADS * VIOLATIONS_PER_THREAD}, got {len(all_violations)} — thread safety bug"
     assert completed_count[0] == N_THREADS
 
 
@@ -95,7 +100,7 @@ def test_cache_concurrent_writes_no_corruption(tmp_path):
     """Multiple threads writing different cache entries don't corrupt each other."""
     import threading
 
-    from lib.engine.cache import set_cached, get_cached
+    from lib.engine.cache import get_cached, set_cached
 
     cache_dir = tmp_path / ".cache"
     files = []
@@ -108,8 +113,16 @@ def test_cache_concurrent_writes_no_corruption(tmp_path):
     errors = []
 
     def write_and_verify(file_path, idx):
-        violations = [{"file": str(file_path), "line": idx, "principle": "SOLID",
-                       "severity": "high", "message": f"v{idx}", "suggestion": "fix"}]
+        violations = [
+            {
+                "file": str(file_path),
+                "line": idx,
+                "principle": "SOLID",
+                "severity": "high",
+                "message": f"v{idx}",
+                "suggestion": "fix",
+            }
+        ]
         barrier.wait()
         try:
             set_cached(cache_dir, file_path, "solid", violations)
@@ -119,10 +132,7 @@ def test_cache_concurrent_writes_no_corruption(tmp_path):
         except Exception as exc:
             errors.append(f"Exception on {file_path.name}: {exc}")
 
-    threads = [
-        threading.Thread(target=write_and_verify, args=(f, i))
-        for i, f in enumerate(files)
-    ]
+    threads = [threading.Thread(target=write_and_verify, args=(f, i)) for i, f in enumerate(files)]
     for t in threads:
         t.start()
     for t in threads:

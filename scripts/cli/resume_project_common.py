@@ -130,11 +130,7 @@ def convert_to_git_bash_path(path: Path) -> str:
     return path_str
 
 
-def resume_project(
-    project_name: str,
-    project_description: str,
-    project_root: Path
-) -> int:
+def resume_project(project_name: str, project_description: str, project_root: Path) -> int:
     """
     Resume Claude Code project.
 
@@ -185,11 +181,7 @@ def resume_project(
     #   - Load settings.json, CLAUDE.md, KANBAN.md, ARCHITECTURE.md, rules/, docs/
     #   - Invoke /start-session skill (detect branch, offer to read issue)
     try:
-        subprocess.run(
-            ["claude", f"cd {git_bash_path}"],
-            cwd=project_root,
-            check=True
-        )
+        subprocess.run(["claude", f"cd {git_bash_path}"], cwd=project_root, check=True)
     except subprocess.CalledProcessError as e:
         write_error(f"ERROR: Failed to launch Claude: {e}")
         return 1
@@ -205,24 +197,9 @@ class ResumeProjectScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--name",
-            "-n",
-            required=True,
-            help="Project display name (e.g., 'Lynx')"
-        )
-        parser.add_argument(
-            "--description",
-            "-d",
-            required=True,
-            help="Project description (e.g., 'C# .NET 10 app')"
-        )
-        parser.add_argument(
-            "--root",
-            "-r",
-            required=True,
-            help="Project root directory"
-        )
+        parser.add_argument("--name", "-n", required=True, help="Project display name (e.g., 'Lynx')")
+        parser.add_argument("--description", "-d", required=True, help="Project description (e.g., 'C# .NET 10 app')")
+        parser.add_argument("--root", "-r", required=True, help="Project root directory")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute project resumption."""
@@ -230,25 +207,19 @@ class ResumeProjectScript(BaseCLIScript):
             project_root = Path(args.root).resolve()
 
             exit_code = resume_project(
-                project_name=args.name,
-                project_description=args.description,
-                project_root=project_root
+                project_name=args.name, project_description=args.description, project_root=project_root
             )
-
 
             return {
                 "success": exit_code == 0,
                 "project_name": args.name,
                 "project_description": args.description,
-                "project_root": str(project_root)
+                "project_root": str(project_root),
             }
 
         except Exception as e:
             self.logger.error(f"Failed to resume project: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -267,4 +238,5 @@ class ResumeProjectScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(ResumeProjectScript)

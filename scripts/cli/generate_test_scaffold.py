@@ -204,10 +204,7 @@ setup() {{
 
 
 def generate_test_scaffold(
-    file_path: Path,
-    language: str = "auto",
-    output_file: Optional[Path] = None,
-    force: bool = False
+    file_path: Path, language: str = "auto", output_file: Optional[Path] = None, force: bool = False
 ) -> Path:
     """Generate test scaffold file."""
     # Detect language
@@ -240,30 +237,32 @@ def generate_test_scaffold(
 
 def print_next_steps(output_file: Path, language: str) -> str:
     """Generate next steps message."""
-    lines = [
-        f"Generated test file: {output_file}",
-        "",
-        "Next steps:"
-    ]
+    lines = [f"Generated test file: {output_file}", "", "Next steps:"]
 
     if language == "powershell":
-        lines.extend([
-            "1. Update test parameters and assertions",
-            "2. Run tests: Invoke-Pester -Path " + str(output_file),
-            "3. Check coverage: Invoke-Pester -CodeCoverage"
-        ])
+        lines.extend(
+            [
+                "1. Update test parameters and assertions",
+                "2. Run tests: Invoke-Pester -Path " + str(output_file),
+                "3. Check coverage: Invoke-Pester -CodeCoverage",
+            ]
+        )
     elif language == "python":
-        lines.extend([
-            "1. Update imports and test logic",
-            "2. Run tests: pytest " + str(output_file),
-            "3. Check coverage: pytest --cov"
-        ])
+        lines.extend(
+            [
+                "1. Update imports and test logic",
+                "2. Run tests: pytest " + str(output_file),
+                "3. Check coverage: pytest --cov",
+            ]
+        )
     elif language == "bash":
-        lines.extend([
-            "1. Install bats: npm install -g bats",
-            "2. Update test assertions",
-            "3. Run tests: bats " + str(output_file)
-        ])
+        lines.extend(
+            [
+                "1. Install bats: npm install -g bats",
+                "2. Update test assertions",
+                "3. Run tests: bats " + str(output_file),
+            ]
+        )
 
     return "\n".join(lines)
 
@@ -273,40 +272,23 @@ class GenerateTestScaffoldScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--file",
-            type=Path,
-            required=True,
-            help="Path to script file"
-        )
+        parser.add_argument("--file", type=Path, required=True, help="Path to script file")
         parser.add_argument(
             "--language",
             "-l",
             choices=["auto", "powershell", "python", "bash"],
             default="auto",
-            help="Language (default: auto-detect)"
+            help="Language (default: auto-detect)",
         )
-        parser.add_argument(
-            "--output",
-            "-o",
-            type=Path,
-            help="Output test file path (optional)"
-        )
-        parser.add_argument(
-            "--force",
-            action="store_true",
-            help="Overwrite existing test file"
-        )
+        parser.add_argument("--output", "-o", type=Path, help="Output test file path (optional)")
+        parser.add_argument("--force", action="store_true", help="Overwrite existing test file")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute test scaffold generation."""
         try:
             # Generate test scaffold
             output_file = generate_test_scaffold(
-                args.file,
-                language=args.language,
-                output_file=args.output,
-                force=args.force
+                args.file, language=args.language, output_file=args.output, force=args.force
             )
 
             # Detect final language (in case it was auto)
@@ -315,20 +297,11 @@ class GenerateTestScaffoldScript(BaseCLIScript):
             # Generate next steps
             next_steps = print_next_steps(output_file, language)
 
-
-            return {
-                "success": True,
-                "output_file": str(output_file),
-                "language": language,
-                "next_steps": next_steps
-            }
+            return {"success": True, "output_file": str(output_file), "language": language, "next_steps": next_steps}
 
         except Exception as e:
             self.logger.error(f"Failed to generate test scaffold: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -347,4 +320,5 @@ class GenerateTestScaffoldScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(GenerateTestScaffoldScript)

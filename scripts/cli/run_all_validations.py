@@ -43,10 +43,7 @@ def get_validation_script_path(script_name: str) -> Optional[Path]:
     return None
 
 
-def invoke_validation_script(
-    script_path: Path,
-    args: list[str]
-) -> dict:
+def invoke_validation_script(script_path: Path, args: list[str]) -> dict:
     """
     Invoke validation script with arguments.
 
@@ -58,39 +55,22 @@ def invoke_validation_script(
         Result dictionary
     """
     if not script_path.exists():
-        return {
-            "success": False,
-            "error": f"Script not found: {script_path}",
-            "output": None
-        }
+        return {"success": False, "error": f"Script not found: {script_path}", "output": None}
 
     try:
-        result = subprocess.run(
-            ["python", str(script_path)] + args,
-            capture_output=True,
-            text=True,
-            timeout=300
-        )
+        result = subprocess.run(["python", str(script_path)] + args, capture_output=True, text=True, timeout=300)
 
         return {
             "success": result.returncode == 0,
             "exitCode": result.returncode,
             "output": result.stdout,
-            "error": f"Validation failed with exit code {result.returncode}" if result.returncode != 0 else None
+            "error": f"Validation failed with exit code {result.returncode}" if result.returncode != 0 else None,
         }
 
     except subprocess.TimeoutExpired:
-        return {
-            "success": False,
-            "error": "Validation timed out",
-            "output": None
-        }
+        return {"success": False, "error": "Validation timed out", "output": None}
     except Exception as e:
-        return {
-            "success": False,
-            "error": f"Exception: {e}",
-            "output": None
-        }
+        return {"success": False, "error": f"Exception: {e}", "output": None}
 
 
 def run_all_validations(
@@ -100,7 +80,7 @@ def run_all_validations(
     skip_syntax: bool = False,
     skip_coverage: bool = False,
     skip_tests: bool = False,
-    logger=None
+    logger=None,
 ) -> dict:
     """
     Run all validation checks.
@@ -124,37 +104,17 @@ def run_all_validations(
     results = {
         "path": str(path),
         "recursive": recursive,
-        "syntax": {
-            "ran": False,
-            "success": False,
-            "scriptsChecked": 0,
-            "issuesFound": 0,
-            "details": None
-        },
+        "syntax": {"ran": False, "success": False, "scriptsChecked": 0, "issuesFound": 0, "details": None},
         "coverage": {
             "ran": False,
             "success": False,
             "coveragePercent": 0,
             "noTestFile": 0,
             "emptyTestFile": 0,
-            "details": None
+            "details": None,
         },
-        "tests": {
-            "ran": False,
-            "success": False,
-            "total": 0,
-            "passed": 0,
-            "failed": 0,
-            "skipped": 0,
-            "details": None
-        },
-        "summary": {
-            "totalValidations": 0,
-            "passed": 0,
-            "failed": 0,
-            "skipped": 0,
-            "successRate": 0
-        }
+        "tests": {"ran": False, "success": False, "total": 0, "passed": 0, "failed": 0, "skipped": 0, "details": None},
+        "summary": {"totalValidations": 0, "passed": 0, "failed": 0, "skipped": 0, "successRate": 0},
     }
 
     validation_count = 0
@@ -187,8 +147,7 @@ def run_all_validations(
 
             for script_path in scripts:
                 script_result = invoke_validation_script(
-                    syntax_script,
-                    ["--file", str(script_path), "--format", "json"]
+                    syntax_script, ["--file", str(script_path), "--format", "json"]
                 )
 
                 if script_result["success"]:
@@ -273,10 +232,19 @@ def run_all_validations(
         if tests_dir.exists():
             try:
                 result = subprocess.run(
-                    ["python", "-m", "pytest", str(tests_dir), "-q", "--tb=no", "--json-report", "--json-report-file=/tmp/pytest_report.json"],
+                    [
+                        "python",
+                        "-m",
+                        "pytest",
+                        str(tests_dir),
+                        "-q",
+                        "--tb=no",
+                        "--json-report",
+                        "--json-report-file=/tmp/pytest_report.json",
+                    ],
                     capture_output=True,
                     text=True,
-                    timeout=600
+                    timeout=600,
                 )
 
                 # Parse pytest output for counts
@@ -284,6 +252,7 @@ def run_all_validations(
                 if "passed" in output:
                     # Extract counts from pytest output (e.g., "463 passed, 1 skipped")
                     import re
+
                     passed_match = re.search(r"(\d+) passed", output)
                     failed_match = re.search(r"(\d+) failed", output)
                     skipped_match = re.search(r"(\d+) skipped", output)
@@ -291,7 +260,9 @@ def run_all_validations(
                     results["tests"]["passed"] = int(passed_match.group(1)) if passed_match else 0
                     results["tests"]["failed"] = int(failed_match.group(1)) if failed_match else 0
                     results["tests"]["skipped"] = int(skipped_match.group(1)) if skipped_match else 0
-                    results["tests"]["total"] = results["tests"]["passed"] + results["tests"]["failed"] + results["tests"]["skipped"]
+                    results["tests"]["total"] = (
+                        results["tests"]["passed"] + results["tests"]["failed"] + results["tests"]["skipped"]
+                    )
 
                 results["tests"]["success"] = result.returncode == 0
 
@@ -342,37 +313,13 @@ class RunAllValidationsScript(BaseCLIScript):
     def setup_parser(self, parser):
         """Add script-specific arguments."""
         parser.add_argument(
-            "--path",
-            "-p",
-            default=".",
-            help="Path to directory containing scripts (default: current directory)"
+            "--path", "-p", default=".", help="Path to directory containing scripts (default: current directory)"
         )
-        parser.add_argument(
-            "--recursive",
-            "-r",
-            action="store_true",
-            help="Search subdirectories recursively"
-        )
-        parser.add_argument(
-            "--stop-on-error",
-            action="store_true",
-            help="Stop execution on first validation failure"
-        )
-        parser.add_argument(
-            "--skip-syntax",
-            action="store_true",
-            help="Skip syntax validation"
-        )
-        parser.add_argument(
-            "--skip-coverage",
-            action="store_true",
-            help="Skip test coverage check"
-        )
-        parser.add_argument(
-            "--skip-tests",
-            action="store_true",
-            help="Skip test execution"
-        )
+        parser.add_argument("--recursive", "-r", action="store_true", help="Search subdirectories recursively")
+        parser.add_argument("--stop-on-error", action="store_true", help="Stop execution on first validation failure")
+        parser.add_argument("--skip-syntax", action="store_true", help="Skip syntax validation")
+        parser.add_argument("--skip-coverage", action="store_true", help="Skip test coverage check")
+        parser.add_argument("--skip-tests", action="store_true", help="Skip test execution")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute validation checks."""
@@ -387,33 +334,20 @@ class RunAllValidationsScript(BaseCLIScript):
                 skip_syntax=args.skip_syntax,
                 skip_coverage=args.skip_coverage,
                 skip_tests=args.skip_tests,
-                logger=self.logger
+                logger=self.logger,
             )
 
-
-            return {
-                "success": results["summary"]["failed"] == 0,
-                **results
-            }
+            return {"success": results["summary"]["failed"] == 0, **results}
 
         except FileNotFoundError as e:
             self.logger.error(str(e))
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
         except RuntimeError as e:
             self.logger.error(str(e))
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
         except Exception as e:
             self.logger.error(f"Failed to run validations: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -431,7 +365,7 @@ class RunAllValidationsScript(BaseCLIScript):
             f"  Failed: {result['summary']['failed']}",
             f"  Skipped: {result['summary']['skipped']}",
             f"  Success rate: {result['summary']['successRate']}%",
-            ""
+            "",
         ]
 
         if result["syntax"]["ran"]:
@@ -452,7 +386,9 @@ class RunAllValidationsScript(BaseCLIScript):
 
         if result["tests"]["ran"]:
             status = "[OK]" if result["tests"]["success"] else "[FAIL]"
-            lines.append(f"{status} Test execution: {result['tests']['passed']}/{result['tests']['total']} tests passed")
+            lines.append(
+                f"{status} Test execution: {result['tests']['passed']}/{result['tests']['total']} tests passed"
+            )
             if result["tests"]["failed"] > 0:
                 lines.append(f"   Failed: {result['tests']['failed']}")
             if result["tests"]["skipped"] > 0:
@@ -485,4 +421,5 @@ class RunAllValidationsScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(RunAllValidationsScript)

@@ -19,6 +19,7 @@ from lib.cli.base import BaseCLIScript
 @dataclass
 class DuplicateBlock:
     """Duplicate code block."""
+
     locations: list[dict]  # [{"file": "a.py", "lines": "10-15"}, ...]
     similarity: float
     lines: int
@@ -31,25 +32,13 @@ class FindDuplicatesScript(BaseCLIScript):
     def setup_parser(self, parser):
         """Add script-specific arguments."""
         parser.add_argument(
-            "--path",
-            "-p",
-            type=Path,
-            default=Path.cwd(),
-            help="Path to analyze (default: current directory)"
+            "--path", "-p", type=Path, default=Path.cwd(), help="Path to analyze (default: current directory)"
         )
         parser.add_argument(
-            "--threshold",
-            "-t",
-            type=int,
-            default=5,
-            help="Minimum lines to consider duplicate (default: 5)"
+            "--threshold", "-t", type=int, default=5, help="Minimum lines to consider duplicate (default: 5)"
         )
         parser.add_argument(
-            "--similarity",
-            "-s",
-            type=float,
-            default=0.85,
-            help="Similarity threshold 0-1 (default: 0.85)"
+            "--similarity", "-s", type=float, default=0.85, help="Similarity threshold 0-1 (default: 0.85)"
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -57,10 +46,7 @@ class FindDuplicatesScript(BaseCLIScript):
         path = args.path.resolve()
 
         if not path.exists():
-            return {
-                "success": False,
-                "error": f"Path not found: {path}"
-            }
+            return {"success": False, "error": f"Path not found: {path}"}
 
         self.logger.info(f"Finding duplicates in {path}")
 
@@ -76,17 +62,19 @@ class FindDuplicatesScript(BaseCLIScript):
 
                 # Extract blocks (sliding window)
                 for i in range(len(lines) - args.threshold + 1):
-                    block_lines = lines[i:i + args.threshold]
+                    block_lines = lines[i : i + args.threshold]
                     # Skip empty or comment-only blocks
                     non_empty = [l for l in block_lines if l.strip() and not l.strip().startswith("#")]
                     if len(non_empty) >= args.threshold // 2:
-                        blocks.append({
-                            "file": str(file.relative_to(path.parent if path.is_file() else path)),
-                            "start_line": i + 1,
-                            "end_line": i + args.threshold,
-                            "content": "".join(block_lines),
-                            "hash": self._hash_code("".join(block_lines))
-                        })
+                        blocks.append(
+                            {
+                                "file": str(file.relative_to(path.parent if path.is_file() else path)),
+                                "start_line": i + 1,
+                                "end_line": i + args.threshold,
+                                "content": "".join(block_lines),
+                                "hash": self._hash_code("".join(block_lines)),
+                            }
+                        )
 
             except Exception:
                 continue
@@ -96,9 +84,12 @@ class FindDuplicatesScript(BaseCLIScript):
         seen = set()
 
         for i, block1 in enumerate(blocks):
-            for block2 in blocks[i+1:]:
+            for block2 in blocks[i + 1 :]:
                 # Skip same file close lines
-                if block1["file"] == block2["file"] and abs(block1["start_line"] - block2["start_line"]) < args.threshold:
+                if (
+                    block1["file"] == block2["file"]
+                    and abs(block1["start_line"] - block2["start_line"]) < args.threshold
+                ):
                     continue
 
                 similarity = self._calculate_similarity(block1["content"], block2["content"])
@@ -107,15 +98,17 @@ class FindDuplicatesScript(BaseCLIScript):
                     key = tuple(sorted([block1["hash"], block2["hash"]]))
                     if key not in seen:
                         seen.add(key)
-                        duplicates.append(DuplicateBlock(
-                            locations=[
-                                {"file": block1["file"], "lines": f"{block1['start_line']}-{block1['end_line']}"},
-                                {"file": block2["file"], "lines": f"{block2['start_line']}-{block2['end_line']}"}
-                            ],
-                            similarity=similarity,
-                            lines=args.threshold,
-                            severity=self._calculate_severity(similarity, args.threshold)
-                        ))
+                        duplicates.append(
+                            DuplicateBlock(
+                                locations=[
+                                    {"file": block1["file"], "lines": f"{block1['start_line']}-{block1['end_line']}"},
+                                    {"file": block2["file"], "lines": f"{block2['start_line']}-{block2['end_line']}"},
+                                ],
+                                similarity=similarity,
+                                lines=args.threshold,
+                                severity=self._calculate_severity(similarity, args.threshold),
+                            )
+                        )
 
         result = {
             "success": True,
@@ -128,12 +121,11 @@ class FindDuplicatesScript(BaseCLIScript):
                     "locations": d.locations,
                     "similarity": round(d.similarity, 2),
                     "lines": d.lines,
-                    "severity": d.severity
+                    "severity": d.severity,
                 }
                 for d in duplicates
-            ]
+            ],
         }
-
 
         return result
 
@@ -170,6 +162,7 @@ class FindDuplicatesScript(BaseCLIScript):
 def main():
     """CLI entry point."""
     from lib.cli.base import create_cli_script
+
     create_cli_script(FindDuplicatesScript)
 
 

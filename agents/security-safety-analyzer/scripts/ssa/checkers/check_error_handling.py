@@ -65,55 +65,61 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
         body = node.body
         if all(isinstance(stmt, (ast.Pass, ast.Expr)) for stmt in body):
             if all(
-                isinstance(getattr(stmt, "value", None), ast.Constant)
-                for stmt in body
-                if isinstance(stmt, ast.Expr)
+                isinstance(getattr(stmt, "value", None), ast.Constant) for stmt in body if isinstance(stmt, ast.Expr)
             ):
                 exc_type = ast.unparse(node.type) if node.type else "Exception"
-                violations.append({
-                    "principle": "ErrorHandling",
-                    "file": str(file.relative_to(root) if file.is_relative_to(root) else file),
-                    "line": node.lineno,
-                    "severity": "high",
-                    "message": f"Swallowed exception: bare `except {exc_type}: pass`",
-                    "suggestion": "Log the exception or re-raise; never silently swallow",
-                })
+                violations.append(
+                    {
+                        "principle": "ErrorHandling",
+                        "file": str(file.relative_to(root) if file.is_relative_to(root) else file),
+                        "line": node.lineno,
+                        "severity": "high",
+                        "message": f"Swallowed exception: bare `except {exc_type}: pass`",
+                        "suggestion": "Log the exception or re-raise; never silently swallow",
+                    }
+                )
                 continue
 
         if node.type is None:
             has_raise = any(isinstance(s, ast.Raise) for s in ast.walk(node))
             has_log = any(
-                isinstance(s, ast.Call) and isinstance(getattr(s.func, "attr", None), str)
+                isinstance(s, ast.Call)
+                and isinstance(getattr(s.func, "attr", None), str)
                 and s.func.attr in ("error", "warning", "exception", "critical", "info", "debug")
                 for s in ast.walk(node)
             )
             if not has_raise and not has_log:
-                violations.append({
-                    "principle": "ErrorHandling",
-                    "file": str(file.relative_to(root) if file.is_relative_to(root) else file),
-                    "line": node.lineno,
-                    "severity": "high",
-                    "message": "Bare `except:` catches all exceptions without logging or re-raising",
-                    "suggestion": "Catch specific exceptions; log or re-raise",
-                })
+                violations.append(
+                    {
+                        "principle": "ErrorHandling",
+                        "file": str(file.relative_to(root) if file.is_relative_to(root) else file),
+                        "line": node.lineno,
+                        "severity": "high",
+                        "message": "Bare `except:` catches all exceptions without logging or re-raising",
+                        "suggestion": "Catch specific exceptions; log or re-raise",
+                    }
+                )
             continue
 
         if node.type and isinstance(node.type, ast.Name) and node.type.id == "Exception":
             has_raise = any(isinstance(s, ast.Raise) for s in ast.walk(node))
             has_log = any(
-                isinstance(s, ast.Call) and isinstance(getattr(s.func, "attr", None), str)
+                isinstance(s, ast.Call)
+                and isinstance(getattr(s.func, "attr", None), str)
                 and s.func.attr in ("error", "warning", "exception", "critical")
                 for s in ast.walk(node)
             )
             if not has_raise and not has_log:
-                violations.append({
-                    "principle": "ErrorHandling",
-                    "file": str(file.relative_to(root) if file.is_relative_to(root) else file),
-                    "line": node.lineno,
-                    "severity": "medium",
-                    "message": "Caught `Exception` without logging or re-raising — possible silent failure",
-                    "suggestion": "Log the exception or re-raise; prefer specific exception types",
-                })
+                violations.append(
+                    {
+                        "principle": "ErrorHandling",
+                        "file": str(file.relative_to(root) if file.is_relative_to(root) else file),
+                        "line": node.lineno,
+                        "severity": "medium",
+                        "message": "Caught `Exception` without logging or re-raising — possible silent failure",
+                        "suggestion": "Log the exception or re-raise; prefer specific exception types",
+                    }
+                )
 
     return violations
 
@@ -122,14 +128,16 @@ def _detect_non_python_violations(content: str, filename: str, language: str) ->
     violations = []
     for pattern, message in _BLOCK_PATTERNS.get(language, []):
         for match in pattern.finditer(content):
-            violations.append({
-                "principle": "ErrorHandling",
-                "file": filename,
-                "line": content.count("\n", 0, match.start()) + 1,
-                "severity": "high",
-                "message": message,
-                "suggestion": "Handle or log the exception; never silently swallow errors",
-            })
+            violations.append(
+                {
+                    "principle": "ErrorHandling",
+                    "file": filename,
+                    "line": content.count("\n", 0, match.start()) + 1,
+                    "severity": "high",
+                    "message": message,
+                    "suggestion": "Handle or log the exception; never silently swallow errors",
+                }
+            )
     patterns = _GREP_PATTERNS.get(language, [])
     if not patterns:
         return violations
@@ -139,14 +147,16 @@ def _detect_non_python_violations(content: str, filename: str, language: str) ->
             continue
         for i, line in enumerate(lines, 1):
             if pattern.search(line):
-                violations.append({
-                    "principle": "ErrorHandling",
-                    "file": filename,
-                    "line": i,
-                    "severity": "high",
-                    "message": message,
-                    "suggestion": "Handle or log the exception; never silently swallow errors",
-                })
+                violations.append(
+                    {
+                        "principle": "ErrorHandling",
+                        "file": filename,
+                        "line": i,
+                        "severity": "high",
+                        "message": message,
+                        "suggestion": "Handle or log the exception; never silently swallow errors",
+                    }
+                )
     return violations
 
 
@@ -171,9 +181,27 @@ def run(path: Path, language: str, files: list | None = None, agents: int = 1, n
     else:
         for lang, exts in _LANG_EXTS.items():
             for ext in exts:
-                source_files.extend(p for p in path.rglob(f"*{ext}")
-                             if not any(part in {".git", "node_modules", "__pycache__", ".venv", "venv",
-                                                 "bin", "obj", "dist", "vendor", "build", "out"} for part in p.parts))
+                source_files.extend(
+                    p
+                    for p in path.rglob(f"*{ext}")
+                    if not any(
+                        part
+                        in {
+                            ".git",
+                            "node_modules",
+                            "__pycache__",
+                            ".venv",
+                            "venv",
+                            "bin",
+                            "obj",
+                            "dist",
+                            "vendor",
+                            "build",
+                            "out",
+                        }
+                        for part in p.parts
+                    )
+                )
 
     for file in source_files:
         if file.suffix == ".py":

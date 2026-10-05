@@ -76,9 +76,7 @@ class FrontendAnalyzer(BaseAnalyzer):
                 continue
 
             # Function components
-            func_component_pattern = re.compile(
-                r"export\s+(?:default\s+)?function\s+(\w+)\s*\("
-            )
+            func_component_pattern = re.compile(r"export\s+(?:default\s+)?function\s+(\w+)\s*\(")
             for match in func_component_pattern.finditer(content):
                 component_name = match.group(1)
                 line_num = content[: match.start()].count("\n") + 1
@@ -99,9 +97,7 @@ class FrontendAnalyzer(BaseAnalyzer):
                 )
 
             # Arrow function components
-            arrow_component_pattern = re.compile(
-                r"(?:export\s+)?const\s+(\w+)\s*=\s*\(\s*[^)]*\s*\)\s*=>"
-            )
+            arrow_component_pattern = re.compile(r"(?:export\s+)?const\s+(\w+)\s*=\s*\(\s*[^)]*\s*\)\s*=>")
             for match in arrow_component_pattern.finditer(content):
                 component_name = match.group(1)
 
@@ -285,9 +281,7 @@ class FrontendAnalyzer(BaseAnalyzer):
                 continue
 
             # Components
-            component_pattern = re.compile(
-                r"@Component\s*\(\s*\{[^}]*selector:\s*['\"]([^'\"]+)['\"]"
-            )
+            component_pattern = re.compile(r"@Component\s*\(\s*\{[^}]*selector:\s*['\"]([^'\"]+)['\"]")
             for match in component_pattern.finditer(content):
                 selector = match.group(1)
                 line_num = content[: match.start()].count("\n") + 1
@@ -359,9 +353,7 @@ class FrontendAnalyzer(BaseAnalyzer):
                     Scenario(
                         endpoint=entry_point.name,
                         method="RENDER",
-                        input_combination={
-                            "props": {p.name: "valid_value" for p in entry_point.params}
-                        },
+                        input_combination={"props": {p.name: "valid_value" for p in entry_point.params}},
                         expected_output=0,
                         scenario_type="happy_path",
                         description=f"Render {entry_point.name} with valid props",

@@ -36,52 +36,44 @@ _SETUP_STEPS = {
         with:
           python-version: "3.12"
       - run: pip install pytest pytest-cov""",
-
     Language.TYPESCRIPT: """\
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
       - run: npm ci""",
-
     Language.JAVASCRIPT: """\
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
       - run: npm ci""",
-
     Language.GO: """\
       - uses: actions/setup-go@v5
         with:
           go-version: "1.23"
           cache: true""",
-
     Language.CSHARP: """\
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
       - run: dotnet tool install --global dotnet-reportgenerator-globaltool
       - run: dotnet restore""",
-
     Language.JAVA: """\
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
           cache: gradle""",
-
     Language.KOTLIN: """\
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
           cache: gradle""",
-
     Language.RUST: """\
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo install cargo-tarpaulin --locked""",
-
     Language.SWIFT: """\
       - uses: swift-actions/setup-swift@v2
         with:
@@ -91,28 +83,28 @@ _SETUP_STEPS = {
 # -- Language → collect command ------------------------------------------------
 
 _COLLECT_CMD = {
-    Language.PYTHON:     "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.PYTHON: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
     Language.TYPESCRIPT: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
     Language.JAVASCRIPT: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.GO:         "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.CSHARP:     "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.JAVA:       "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.KOTLIN:     "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.RUST:       "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.SWIFT:      "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.GO: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.CSHARP: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.JAVA: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.KOTLIN: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.RUST: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.SWIFT: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
 }
 
 # -- Language → ReportGenerator input format ----------------------------------
 
 _REPORT_FORMAT = {
-    Language.PYTHON:     "lcov",
+    Language.PYTHON: "lcov",
     Language.TYPESCRIPT: "lcov",
     Language.JAVASCRIPT: "lcov",
-    Language.GO:         "lcov",
-    Language.CSHARP:     "lcov",
-    Language.JAVA:       "lcov",
-    Language.KOTLIN:     "lcov",
-    Language.RUST:       "lcov",
+    Language.GO: "lcov",
+    Language.CSHARP: "lcov",
+    Language.JAVA: "lcov",
+    Language.KOTLIN: "lcov",
+    Language.RUST: "lcov",
 }
 
 # -- Language → local coverage command (for Makefile / npm script) ------------─
@@ -122,7 +114,7 @@ _LOCAL_CMD = {
     Language.TYPESCRIPT: "npx jest --testPathPattern={tier} --coverage --coverageReporters lcov --coverageDirectory .coverage-tiers/{tier}",
     Language.JAVASCRIPT: "npx jest --testPathPattern={tier} --coverage --coverageReporters lcov --coverageDirectory .coverage-tiers/{tier}",
     Language.GO: "go test -tags={tier} -coverprofile=.coverage-tiers/coverage_{tier}.out ./... && gcov2lcov -infile .coverage-tiers/coverage_{tier}.out -outfile .coverage-tiers/coverage_{tier}.lcov",
-    Language.CSHARP: "dotnet test --filter Category={tier} --collect:\"XPlat Code Coverage\" --results-directory .coverage-tiers/{tier}",
+    Language.CSHARP: 'dotnet test --filter Category={tier} --collect:"XPlat Code Coverage" --results-directory .coverage-tiers/{tier}',
     Language.JAVA: "./gradlew test -Ptest.groups={tier} jacocoTestReport",
     Language.KOTLIN: "./gradlew test -Ptest.groups={tier} jacocoTestReport",
     Language.RUST: "cargo tarpaulin --features test_{tier} --out Lcov --output-dir .coverage-tiers",
@@ -332,7 +324,8 @@ Examples:
         help="project_info.json file or project directory (auto-detects project_info.json)",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         default=None,
         help="Output path for workflow YAML (default: stdout)",

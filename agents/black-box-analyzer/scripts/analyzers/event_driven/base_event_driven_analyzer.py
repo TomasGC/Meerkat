@@ -11,8 +11,8 @@ All event-driven systems share common patterns:
 """
 
 import sys
-from pathlib import Path
 from abc import abstractmethod
+from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -58,9 +58,7 @@ class BaseEventDrivenAnalyzer(BaseAnalyzer):
                 Scenario(
                     endpoint=entry_point.name,
                     method="EVENT",
-                    input_combination={
-                        "event": {"type": "valid", "payload": "data"}
-                    },
+                    input_combination={"event": {"type": "valid", "payload": "data"}},
                     expected_output=0,
                     scenario_type="happy_path",
                     description=f"Process valid event in {entry_point.name}",
@@ -217,9 +215,7 @@ class BaseEventDrivenAnalyzer(BaseAnalyzer):
             Scenario(
                 endpoint=entry_point.name,
                 method="EVENT",
-                input_combination={
-                    "event": {"type": "invalid", "missing": "required_field"}
-                },
+                input_combination={"event": {"type": "invalid", "missing": "required_field"}},
                 expected_output=1,
                 scenario_type="error",
                 description=f"{entry_point.name} missing required event field",
@@ -228,9 +224,7 @@ class BaseEventDrivenAnalyzer(BaseAnalyzer):
             Scenario(
                 endpoint=entry_point.name,
                 method="EVENT",
-                input_combination={
-                    "event": {"type": "unknown"}
-                },
+                input_combination={"event": {"type": "unknown"}},
                 expected_output=1,
                 scenario_type="error",
                 description=f"{entry_point.name} invalid event type",
@@ -239,9 +233,7 @@ class BaseEventDrivenAnalyzer(BaseAnalyzer):
             Scenario(
                 endpoint=entry_point.name,
                 method="EVENT",
-                input_combination={
-                    "event": "not_valid_json"
-                },
+                input_combination={"event": "not_valid_json"},
                 expected_output=1,
                 scenario_type="error",
                 description=f"{entry_point.name} malformed event payload",
@@ -250,9 +242,7 @@ class BaseEventDrivenAnalyzer(BaseAnalyzer):
             Scenario(
                 endpoint=entry_point.name,
                 method="EVENT",
-                input_combination={
-                    "event": {"type": "valid", "extra_field": "unexpected"}
-                },
+                input_combination={"event": {"type": "valid", "extra_field": "unexpected"}},
                 expected_output=1,
                 scenario_type="edge_case",
                 description=f"{entry_point.name} event schema validation failure",

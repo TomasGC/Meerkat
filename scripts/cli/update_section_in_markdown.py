@@ -22,12 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from lib.cli.base import BaseCLIScript
 
 
-def update_section_in_markdown(
-    file_path: Path,
-    section: str,
-    content: str,
-    create_backup: bool = True
-) -> dict:
+def update_section_in_markdown(file_path: Path, section: str, content: str, create_backup: bool = True) -> dict:
     """
     Update a specific section in a markdown file.
 
@@ -85,7 +80,7 @@ def update_section_in_markdown(
     # Start position is at the beginning of the next line after section header
     start_pos = section_match.end()
     # Skip to next line if there's a newline immediately after
-    if start_pos < len(original_content) and original_content[start_pos] == '\n':
+    if start_pos < len(original_content) and original_content[start_pos] == "\n":
         start_pos += 1
 
     # Find end of section (next section or end of file)
@@ -98,11 +93,7 @@ def update_section_in_markdown(
         end_pos = len(original_content)
 
     # Build new content
-    new_content = (
-        original_content[:start_pos] +
-        f"\n{content}\n" +
-        original_content[end_pos:]
-    )
+    new_content = original_content[:start_pos] + f"\n{content}\n" + original_content[end_pos:]
 
     # Write updated content
     file_path.write_text(new_content, encoding="utf-8")
@@ -117,7 +108,7 @@ def update_section_in_markdown(
         "section": section,
         "updated": True,
         "backup": str(backup_file) if backup_file else None,
-        "linesChanged": lines_changed
+        "linesChanged": lines_changed,
     }
 
     return result
@@ -128,28 +119,12 @@ class UpdateSectionInMarkdownScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--file", required=True, help="Path to markdown file to update")
         parser.add_argument(
-            "--file",
-            required=True,
-            help="Path to markdown file to update"
+            "--section", "-s", required=True, help="Section identifier (e.g., '## Architecture', '4. **Project**')"
         )
-        parser.add_argument(
-            "--section",
-            "-s",
-            required=True,
-            help="Section identifier (e.g., '## Architecture', '4. **Project**')"
-        )
-        parser.add_argument(
-            "--content",
-            "-c",
-            required=True,
-            help="New content for the section"
-        )
-        parser.add_argument(
-            "--no-backup",
-            action="store_true",
-            help="Do not create backup before modifying"
-        )
+        parser.add_argument("--content", "-c", required=True, help="New content for the section")
+        parser.add_argument("--no-backup", action="store_true", help="Do not create backup before modifying")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute section update."""
@@ -158,35 +133,17 @@ class UpdateSectionInMarkdownScript(BaseCLIScript):
             file_path = Path(args.file)
 
             # Update section
-            result = update_section_in_markdown(
-                file_path,
-                args.section,
-                args.content,
-                create_backup=not args.no_backup
-            )
+            result = update_section_in_markdown(file_path, args.section, args.content, create_backup=not args.no_backup)
 
-
-            return {
-                "success": True,
-                **result
-            }
+            return {"success": True, **result}
 
         except FileNotFoundError as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
         except ValueError as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
         except Exception as e:
             self.logger.error(f"Failed to update section: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -196,7 +153,7 @@ class UpdateSectionInMarkdownScript(BaseCLIScript):
         lines = [
             f"Updated section in: {result['file']}",
             f"Section: {result['section']}",
-            f"Lines changed: {result['linesChanged']}"
+            f"Lines changed: {result['linesChanged']}",
         ]
 
         if result.get("backup"):
@@ -209,10 +166,11 @@ class UpdateSectionInMarkdownScript(BaseCLIScript):
         if not result.get("success"):
             return f"[ERROR] {result.get('error', 'Unknown error')}"
 
-        change = f"+{result['linesChanged']}" if result['linesChanged'] > 0 else str(result['linesChanged'])
+        change = f"+{result['linesChanged']}" if result["linesChanged"] > 0 else str(result["linesChanged"])
         return f"[OK] Updated {result['section']} ({change} lines)"
 
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(UpdateSectionInMarkdownScript)

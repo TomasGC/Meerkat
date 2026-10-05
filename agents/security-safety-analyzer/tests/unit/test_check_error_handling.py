@@ -1,9 +1,8 @@
 """Unit tests for check_error_handling (SSA copy) — mechanical path only (no AI)."""
+
 from pathlib import Path
 
 import pytest
-
-
 from ssa.checkers.check_error_handling import run
 
 _PRINCIPLE = "ErrorHandling"
@@ -20,15 +19,16 @@ class TestMechanicalChecks:
         code = "try:\n    risky()\nexcept:\n    pass\n"
         f = _make_file(tmp_path, "handler.py", code)
         result = run(tmp_path, "python", files=[f])
-        assert any("bare" in v["message"].lower() or "except" in v["message"].lower()
-                   for v in result["violations"])
+        assert any("bare" in v["message"].lower() or "except" in v["message"].lower() for v in result["violations"])
 
     def test_detects_swallowed_exception(self, tmp_path):
         code = "try:\n    do_work()\nexcept Exception:\n    pass\n"
         f = _make_file(tmp_path, "handler.py", code)
         result = run(tmp_path, "python", files=[f])
-        assert any("swallow" in v["message"].lower() or "pass" in v["message"].lower()
-                   or "silent" in v["message"].lower() for v in result["violations"])
+        assert any(
+            "swallow" in v["message"].lower() or "pass" in v["message"].lower() or "silent" in v["message"].lower()
+            for v in result["violations"]
+        )
 
     def test_clean_file_no_violations(self, tmp_path):
         code = "try:\n    do_work()\nexcept ValueError as e:\n    logger.error(str(e))\n    raise\n"
@@ -51,7 +51,7 @@ class TestCSharpChecks:
         assert any("TODO" in v["message"] for v in result["violations"])
 
     def test_handled_catch_is_clean(self, tmp_path):
-        code = "catch (Exception ex)\n{\n    _logger.LogError(ex, \"failed\");\n    throw;\n}\n"
+        code = 'catch (Exception ex)\n{\n    _logger.LogError(ex, "failed");\n    throw;\n}\n'
         f = _make_file(tmp_path, "Service.cs", code)
         result = run(tmp_path, "csharp", files=[f])
         assert result["violations"] == []

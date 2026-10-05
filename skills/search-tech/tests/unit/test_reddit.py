@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Tests for search_reddit module."""
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime
-
 from pathlib import Path
+from unittest.mock import Mock, patch
 
-from search_tech.models import SearchQuery, Source, ResultType
-from search_reddit import search_reddit_subreddit, search_reddit
+import pytest
+from search_reddit import search_reddit, search_reddit_subreddit
+from search_tech.models import ResultType, SearchQuery, Source
 
 
 @pytest.fixture
@@ -45,7 +44,7 @@ def mock_reddit_response():
 class TestRedditSearch:
     """Test Reddit search functionality."""
 
-    @patch('search_reddit.requests.get')
+    @patch("search_reddit.requests.get")
     def test_search_subreddit_success(self, mock_get, mock_reddit_response):
         """Test successful subreddit search."""
         mock_response = Mock()
@@ -64,7 +63,7 @@ class TestRedditSearch:
         assert results[0].comments == 45
         assert "r/programming" in results[0].repository
 
-    @patch('search_reddit.requests.get')
+    @patch("search_reddit.requests.get")
     def test_search_subreddit_rate_limit(self, mock_get):
         """Test rate limit handling."""
         mock_response = Mock()
@@ -76,7 +75,7 @@ class TestRedditSearch:
 
         assert len(results) == 0
 
-    @patch('search_reddit.requests.get')
+    @patch("search_reddit.requests.get")
     def test_search_subreddit_timeout(self, mock_get):
         """Test timeout handling."""
         mock_get.side_effect = Exception("Timeout")
@@ -86,29 +85,33 @@ class TestRedditSearch:
 
         assert len(results) == 0
 
-    @patch('search_reddit.search_reddit_subreddit')
+    @patch("search_reddit.search_reddit_subreddit")
     def test_search_multiple_subreddits(self, mock_search):
         """Test searching across multiple subreddits."""
         from search_tech.models import SearchResult
 
         # Mock results from different subreddits
         mock_search.side_effect = [
-            [SearchResult(
-                source=Source.REDDIT,
-                result_type=ResultType.DISCUSSION,
-                title="Result from r/programming",
-                url="https://reddit.com/1",
-                score=100,
-                excerpt="Test",
-            )],
-            [SearchResult(
-                source=Source.REDDIT,
-                result_type=ResultType.DISCUSSION,
-                title="Result from r/learnprogramming",
-                url="https://reddit.com/2",
-                score=50,
-                excerpt="Test",
-            )],
+            [
+                SearchResult(
+                    source=Source.REDDIT,
+                    result_type=ResultType.DISCUSSION,
+                    title="Result from r/programming",
+                    url="https://reddit.com/1",
+                    score=100,
+                    excerpt="Test",
+                )
+            ],
+            [
+                SearchResult(
+                    source=Source.REDDIT,
+                    result_type=ResultType.DISCUSSION,
+                    title="Result from r/learnprogramming",
+                    url="https://reddit.com/2",
+                    score=50,
+                    excerpt="Test",
+                )
+            ],
         ]
 
         query = SearchQuery(keywords=["test"])

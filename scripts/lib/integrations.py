@@ -18,6 +18,7 @@ from . import paths
 @dataclass
 class IntegrationConfig:
     """Integration configuration for a profile."""
+
     profile_name: str
     vcs_provider: str
     vcs_url: str
@@ -106,7 +107,7 @@ def load_integrations(profile: Optional[str] = None) -> IntegrationConfig:
             docs_url=None,
             issues_provider="github",
             issues_url=None,
-            issue_format=r"#(\d+)"
+            issue_format=r"#(\d+)",
         )
 
     with open(profile_file, "r", encoding="utf-8") as f:
@@ -122,7 +123,7 @@ def load_integrations(profile: Optional[str] = None) -> IntegrationConfig:
         docs_url=profile_config["docs"].get("url"),
         issues_provider=profile_config["issues"]["provider"],
         issues_url=profile_config["issues"].get("url"),
-        issue_format=profile_config["issues"]["issue_format"]
+        issue_format=profile_config["issues"]["issue_format"],
     )
 
 
@@ -238,6 +239,7 @@ def validate_profile(profile_path: Path) -> list[str]:
             else:
                 # Validate regex
                 import re
+
                 try:
                     re.compile(issues["issue_format"])
                 except re.error as e:
@@ -269,7 +271,7 @@ def get_profile_detection_info() -> dict[str, str]:
                         "profile_name": mapping["profile"],
                         "detection_source": "path-mapping",
                         "details": f"Matched path: {path}",
-                        "cwd": cwd
+                        "cwd": cwd,
                     }
         except (json.JSONDecodeError, KeyError):
             pass
@@ -281,7 +283,7 @@ def get_profile_detection_info() -> dict[str, str]:
             "profile_name": active_file.read_text(encoding="utf-8").strip(),
             "detection_source": "global .active file",
             "details": str(active_file),
-            "cwd": str(Path.cwd())
+            "cwd": str(Path.cwd()),
         }
 
     # Default fallback
@@ -289,7 +291,7 @@ def get_profile_detection_info() -> dict[str, str]:
         "profile_name": "default",
         "detection_source": "default fallback",
         "details": "No profile configured",
-        "cwd": str(Path.cwd())
+        "cwd": str(Path.cwd()),
     }
 
 
