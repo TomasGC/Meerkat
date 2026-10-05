@@ -1,0 +1,28 @@
+name: Push-CI
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'refactor/**'
+
+concurrency:
+  group: push-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-pipeline:
+    uses: TomasGC/Condor/.github/workflows/python-push-ci.yml@main
+    with:
+      skip-on-no-changes: true
+      # Meerkat's layout: the repo root is the scripts dir, and each component keeps its tests next to its code.
+      scripts-dir: .
+      requirements: >-
+        scripts/requirements.txt
+        agents/black-box-analyzer/scripts/requirements.txt
+        agents/clean-code-analyzer/tests/requirements.txt
+        skills/search-tech/scripts/requirements.txt
+      source-dirs: agents scripts skills
+      exclude-dirs: fixtures template-base
+      exclude-marker: live_ai
