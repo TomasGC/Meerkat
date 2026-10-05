@@ -1,0 +1,16 @@
+# Tool settings only: Meerkat is not an installable package. The values match the flags Condor's Python
+# pipeline passes (#48), so a local run of each tool gives the CI verdict.
+
+[tool.black]
+line-length = 120
+# Deliberately flawed sample code the analyzers are tested on, and project templates.
+extend-exclude = '/(fixtures|template-base)/'
+
+[tool.isort]
+profile = "black"
+line_length = 120
+skip_glob = ["**/fixtures/**", "template-base/**"]
+
+[tool.coverage.run]
+# Coverage measures sources: test trees and fixtures are excluded.
+omit = ["*/tests/*", "tests/*", "*/fixtures/*", "conftest.py"]

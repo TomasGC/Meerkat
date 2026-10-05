@@ -1,0 +1,4 @@
+[flake8]
+# Same settings as Condor's Python pipeline (#48); flake8 does not read pyproject.toml.
+max-line-length = 120
+extend-exclude = fixtures,template-base,skills/synced
