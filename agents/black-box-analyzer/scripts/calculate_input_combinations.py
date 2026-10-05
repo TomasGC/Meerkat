@@ -148,7 +148,7 @@ def generate_scenarios_for_endpoint(endpoint: Endpoint) -> list[Scenario]:
             )
 
     # --- Security Cases: Specific attack patterns ---
-    security_scenarios = [
+    security_scenarios: list[dict[str, Any]] = [
         # XSS
         {
             "name": "xss_script",
@@ -340,7 +340,7 @@ Examples:
             # Group by endpoint
             endpoint_scenario_counts = {}
             for scenario in scenarios:
-                key = f"{scenario.method.value} {scenario.endpoint}"
+                key = f"{scenario.method_name} {scenario.endpoint}"
                 endpoint_scenario_counts[key] = endpoint_scenario_counts.get(key, 0) + 1
 
             print("Scenario counts per endpoint:", file=sys.stderr)

@@ -76,7 +76,7 @@ def read_rules(claude_dir: Path) -> list[dict]:
         List of dictionaries with rule file info
     """
     rules_dir = claude_dir / "rules"
-    results = []
+    results: list[dict] = []
 
     if not rules_dir.exists():
         return results
@@ -139,7 +139,7 @@ def safe_read_context(
         raise FileNotFoundError(f"No .claude directory found at: {path}")
 
     # Initialize results
-    results = {"kanban": None, "architecture": None, "rules": []}
+    results: dict[str, Any] = {"kanban": None, "architecture": None, "rules": []}
 
     # Read KANBAN.md
     if read_all or read_kanban_flag:

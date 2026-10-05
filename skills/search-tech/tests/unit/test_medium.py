@@ -334,3 +334,20 @@ class TestMediumSearch:
             assert mock_get.call_count == api_call_count  # No additional API call
 
             assert len(response1.results) == len(response2.results)
+
+
+@patch("search_medium.requests.get")
+def test_item_with_empty_elements_does_not_drop_the_feed(mock_get):
+    """An empty <description/> or <dc:creator/> used to raise inside the loop and discard every result (#48)."""
+    mock_get.return_value = Mock(
+        status_code=200,
+        content=b"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel>
+  <item><title>Async patterns</title><link>https://medium.com/a/1</link><description/><dc:creator/></item>
+  <item><title>Async errors</title><link>https://medium.com/a/2</link><description>body</description></item>
+</channel></rss>""",
+    )
+    results = search_medium_tag(SearchQuery(keywords=["async"]), "programming")
+    assert [r.url for r in results] == ["https://medium.com/a/1", "https://medium.com/a/2"]
+    assert results[0].excerpt == ""
+    assert results[0].repository == "@unknown"

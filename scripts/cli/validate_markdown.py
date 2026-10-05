@@ -76,9 +76,9 @@ class ValidateMarkdownScript(BaseCLIScript):
 
     def _validate(self, file_path: Path, validation_type: str) -> tuple[list, list, list]:
         """Validate markdown file."""
-        errors = []
-        warnings = []
-        info = []
+        errors: list[str] = []
+        warnings: list[str] = []
+        info: list[str] = []
 
         try:
             content = file_path.read_text(encoding="utf-8")

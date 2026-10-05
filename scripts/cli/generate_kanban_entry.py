@@ -155,7 +155,7 @@ class GenerateKanbanEntryScript(BaseCLIScript):
                 all_files.extend(files)
 
             # Categorize files
-            categories = defaultdict(int)
+            categories: defaultdict[str, int] = defaultdict(int)
             for file in all_files:
                 category = categorize_file(file)
                 categories[category] += 1

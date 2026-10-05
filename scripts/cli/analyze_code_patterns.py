@@ -10,12 +10,15 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+_get_model: Optional[Callable[..., str]]
 try:
-    from lib.config.model_config import get_model as _get_model
+    from lib.config.model_config import get_model
+
+    _get_model = get_model
 except ImportError:
     _get_model = None
 
@@ -47,7 +50,7 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
         checks = [c.strip() for c in args.checks.split(",")]
         self.logger.info(f"Analyzing {path} with checks: {', '.join(checks)}")
 
-        results = {
+        results: dict[str, Any] = {
             "success": True,
             "path": str(path),
             "checks_performed": checks,

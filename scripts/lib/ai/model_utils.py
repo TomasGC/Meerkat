@@ -313,7 +313,8 @@ async def analyze_files_async(
                 seen: set[tuple] = set()
                 chunk_usable = False
                 for resp in responses:
-                    if isinstance(resp, Exception) or not resp:
+                    # BaseException: a cancelled call comes back as CancelledError, which is not an Exception
+                    if isinstance(resp, BaseException) or not resp:
                         continue
                     parsed = extract_json_array(resp)
                     if parsed is not None:
@@ -351,7 +352,7 @@ async def analyze_files_async(
     nested = await asyncio.gather(*tasks, return_exceptions=True)
     all_results: list[dict] = []
     for fp, item in zip(file_paths, nested):
-        if isinstance(item, Exception):
+        if isinstance(item, BaseException):  # CancelledError included
             print(f"[WARN] File analysis error: {item}", file=sys.stderr)
             if failed is not None:
                 failed.add(Path(fp))
@@ -398,7 +399,7 @@ def analyze_files_parallel(
     )
 
 
-def extract_json_array(text: str) -> list | None:
+def extract_json_array(text: str | None) -> list | None:
     """Extract a JSON array from a local AI response that may have surrounding prose."""
     if not text:
         return None

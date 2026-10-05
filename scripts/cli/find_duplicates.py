@@ -133,7 +133,7 @@ class FindDuplicatesScript(BaseCLIScript):
         """Hash code content (normalized)."""
         # Normalize whitespace
         normalized = " ".join(code.split())
-        return hashlib.md5(normalized.encode()).hexdigest()
+        return hashlib.md5(normalized.encode(), usedforsecurity=False).hexdigest()  # a fingerprint, not a secret
 
     def _calculate_similarity(self, code1: str, code2: str) -> float:
         """Calculate token-based similarity."""

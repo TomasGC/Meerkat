@@ -25,7 +25,7 @@ def analyze_package_json(content: str, top_n: int) -> dict:
     """Analyze Node.js package.json file."""
     data = json.loads(content)
 
-    result = {
+    result: dict[str, Any] = {
         "language": "javascript",
         "framework": None,
         "packageManager": "npm",
@@ -74,7 +74,7 @@ def analyze_package_json(content: str, top_n: int) -> dict:
 
 def analyze_requirements_txt(content: str, top_n: int) -> dict:
     """Analyze Python requirements.txt file."""
-    result = {
+    result: dict[str, Any] = {
         "language": "python",
         "framework": None,
         "packageManager": "pip",
@@ -113,7 +113,7 @@ def analyze_requirements_txt(content: str, top_n: int) -> dict:
 
 def analyze_cargo_toml(content: str, top_n: int) -> dict:
     """Analyze Rust Cargo.toml file."""
-    result = {
+    result: dict[str, Any] = {
         "language": "rust",
         "framework": None,
         "packageManager": "cargo",
@@ -180,7 +180,7 @@ def analyze_cargo_toml(content: str, top_n: int) -> dict:
 
 def analyze_go_mod(content: str, top_n: int) -> dict:
     """Analyze Go go.mod file."""
-    result = {
+    result: dict[str, Any] = {
         "language": "go",
         "framework": None,
         "packageManager": "go",
@@ -222,7 +222,7 @@ def analyze_go_mod(content: str, top_n: int) -> dict:
 
 def analyze_pom_xml(content: str, top_n: int) -> dict:
     """Analyze Java pom.xml file."""
-    result = {
+    result: dict[str, Any] = {
         "language": "java",
         "framework": None,
         "packageManager": "maven",

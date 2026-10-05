@@ -29,6 +29,7 @@ import tempfile
 import threading
 from contextlib import ExitStack
 from pathlib import Path
+from typing import Literal
 from unittest import mock
 
 import lib.ai.model_utils as _model_utils
@@ -309,7 +310,7 @@ class replay:  # noqa: N801 — used as a context manager, reads like a function
         )
         return s
 
-    def __exit__(self, exc_type, exc, tb) -> bool:
+    def __exit__(self, exc_type, exc, _tb) -> Literal[False]:
         self._stack.close()
         if exc_type is not None:
             return False

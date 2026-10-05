@@ -5,6 +5,7 @@ Framework patterns, regex, and configuration constants.
 """
 
 import re
+from typing import Any
 
 from lib.config import language_config
 
@@ -178,7 +179,7 @@ DEFAULT_RESPONSE_CODES = {
 }
 
 # Edge case values for input combinations
-EDGE_CASE_VALUES = {
+EDGE_CASE_VALUES: dict[str, list[Any]] = {
     "string": [
         "",  # Empty
         " ",  # Whitespace

@@ -109,7 +109,7 @@ Respond in JSON:
         status = "running"
         problem_detected = False
         errors = []
-        warnings = []
+        warnings: list[str] = []
 
         # Common error patterns
         error_patterns = [
@@ -147,7 +147,7 @@ class TaskMonitor:
         self,
         pid: Optional[int] = None,
         pattern: Optional[str] = None,
-        log_file: Path = None,
+        log_file: Optional[Path] = None,
         task_type: str = "generic",
         output_file: Path = Path("task_notification.txt"),
         poll_interval: int = 10,
@@ -226,6 +226,8 @@ class TaskMonitor:
                 return result.returncode == 0
 
         # Pattern-based: check if any process matches
+        # main() rejects a run with neither --pid nor --pattern.
+        assert self.pattern is not None
         result = subprocess.run(["pgrep", "-f", self.pattern], capture_output=True)
         return result.returncode == 0
 

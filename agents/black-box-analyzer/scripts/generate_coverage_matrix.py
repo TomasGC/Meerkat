@@ -12,7 +12,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from bba.models import CoverageGap, HTTPMethod, Scenario, TestCase
+from bba.models import CoverageGap, HTTPMethod, Scenario, TestCase, parse_method
 from bba.utils import read_json, write_json
 
 
@@ -160,7 +160,7 @@ def generate_coverage_matrix(scenarios_file: Path, tests_file: Path, mode: str =
     for scenario_dict in scenarios_data.get("scenarios", []):
         scenario = Scenario(
             endpoint=scenario_dict["endpoint"],
-            method=HTTPMethod(scenario_dict["method"]),
+            method=parse_method(scenario_dict["method"]),
             input_combination=scenario_dict["input_combination"],
             expected_output=scenario_dict["expected_output"],
             scenario_type=scenario_dict["scenario_type"],
@@ -222,9 +222,9 @@ def calculate_coverage_stats(coverage_gaps: list[CoverageGap]) -> dict:
     coverage_percent = (tested_scenarios / total_scenarios * 100) if total_scenarios > 0 else 0
 
     # Group by endpoint
-    endpoint_stats = {}
+    endpoint_stats: dict[str, dict[str, float]] = {}
     for gap in coverage_gaps:
-        endpoint_key = f"{gap.scenario.method.value} {gap.scenario.endpoint}"
+        endpoint_key = f"{gap.scenario.method_name} {gap.scenario.endpoint}"
         if endpoint_key not in endpoint_stats:
             endpoint_stats[endpoint_key] = {
                 "total": 0,
@@ -243,7 +243,7 @@ def calculate_coverage_stats(coverage_gaps: list[CoverageGap]) -> dict:
         stats["coverage_percent"] = (stats["tested"] / stats["total"] * 100) if stats["total"] > 0 else 0
 
     # Group by scenario type
-    type_stats = {}
+    type_stats: dict[str, dict[str, float]] = {}
     for gap in coverage_gaps:
         scenario_type = gap.scenario.scenario_type
         if scenario_type not in type_stats:
@@ -290,9 +290,9 @@ def generate_markdown_table(coverage_gaps: list[CoverageGap]) -> str:
     lines.append("")
 
     # Group by endpoint
-    endpoint_groups = {}
+    endpoint_groups: dict[str, list[CoverageGap]] = {}
     for gap in coverage_gaps:
-        endpoint_key = f"{gap.scenario.method.value} {gap.scenario.endpoint}"
+        endpoint_key = f"{gap.scenario.method_name} {gap.scenario.endpoint}"
         if endpoint_key not in endpoint_groups:
             endpoint_groups[endpoint_key] = []
         endpoint_groups[endpoint_key].append(gap)

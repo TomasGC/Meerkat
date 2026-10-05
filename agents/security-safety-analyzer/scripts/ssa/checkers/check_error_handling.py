@@ -84,7 +84,7 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
             has_raise = any(isinstance(s, ast.Raise) for s in ast.walk(node))
             has_log = any(
                 isinstance(s, ast.Call)
-                and isinstance(getattr(s.func, "attr", None), str)
+                and isinstance(s.func, ast.Attribute)
                 and s.func.attr in ("error", "warning", "exception", "critical", "info", "debug")
                 for s in ast.walk(node)
             )
@@ -105,7 +105,7 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
             has_raise = any(isinstance(s, ast.Raise) for s in ast.walk(node))
             has_log = any(
                 isinstance(s, ast.Call)
-                and isinstance(getattr(s.func, "attr", None), str)
+                and isinstance(s.func, ast.Attribute)
                 and s.func.attr in ("error", "warning", "exception", "critical")
                 for s in ast.walk(node)
             )

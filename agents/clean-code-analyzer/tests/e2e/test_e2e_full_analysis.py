@@ -13,8 +13,9 @@ FIXTURES_DIRTY = Path(__file__).parent.parent / "fixtures" / "e2e" / "dirty_pyth
 FIXTURES_CLEAN = Path(__file__).parent.parent / "fixtures" / "e2e" / "clean_python"
 
 
+@pytest.mark.usefixtures("local_ai_service")
 @pytest.mark.live_ai
-def test_dirty_code_detected(local_ai_service):
+def test_dirty_code_detected():
     """Dirty fixture files produce violations from mechanical checkers."""
     result = subprocess.run(
         [
@@ -40,8 +41,9 @@ def test_dirty_code_detected(local_ai_service):
     assert "Naming" in principles
 
 
+@pytest.mark.usefixtures("local_ai_service")
 @pytest.mark.live_ai
-def test_clean_code_zero_violations(local_ai_service):
+def test_clean_code_zero_violations():
     """Clean fixture files produce 0 violations from mechanical checkers."""
     result = subprocess.run(
         [
@@ -172,9 +174,10 @@ def test_clear_cache_honours_cca_cache_dir(tmp_path):
     assert "Cleared 2" in result.stderr
 
 
+@pytest.mark.usefixtures("local_ai_service")
 @pytest.mark.live_ai
 @pytest.mark.slow
-def test_agents_n_completes_without_duplicates(local_ai_service, tmp_path):
+def test_agents_n_completes_without_duplicates(tmp_path):
     """--agents 3 completes and emits no duplicate (file, line, principle) entries.
 
     No count ratio against an --agents 1 run: each run is an independent
@@ -227,6 +230,7 @@ except:
     assert len(keys) == len(set(keys)), f"Duplicate violations survived merge: {keys}"
 
 
+@pytest.mark.usefixtures("local_ai_service")
 @pytest.mark.live_ai
 @pytest.mark.slow
 @pytest.mark.parametrize(
@@ -239,7 +243,7 @@ except:
         ("bash", "dirty_bash"),
     ],
 )
-def test_multilang_e2e_violations_detected(local_ai_service, language, fixture_subdir):
+def test_multilang_e2e_violations_detected(language, fixture_subdir):
     """Full pipeline on multi-language dirty fixtures finds violations."""
     import json
     import subprocess

@@ -21,7 +21,7 @@ from lib.cli.base import BaseCLIScript
 from lib.utils import run_command
 
 # Pattern detection rules
-PATTERN_RULES = {
+PATTERN_RULES: dict[str, dict[str, Any]] = {
     "testing": {
         "patterns": [
             "*.Tests.ps1",

@@ -166,7 +166,8 @@ def run_hybrid(
                     return per_file.get(f, [])
 
             extra_slots = {f: {"known_findings": format_known_findings(known_for(f))} for f in source_files}
-            if use_cache:
+            # use_cache implies cache_dir is set; the second test only narrows the type.
+            if use_cache and cache_dir is not None:
                 raw_items, misses = _read_ai_cache(cache_dir, source_files, cache_key, cache_ttl_days)
                 cache_hits = len(source_files) - len(misses)
                 cache_total = len(source_files)

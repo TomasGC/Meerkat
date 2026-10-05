@@ -52,7 +52,7 @@ try:
     from tqdm import tqdm
 except ImportError:
     # Fallback if tqdm not installed
-    class tqdm:
+    class tqdm:  # type: ignore[no-redef]  # minimal stand-in for tqdm when it is not installed
         def __init__(self, *args, **kwargs):
             self.total = kwargs.get("total", 0)
             self.n = 0

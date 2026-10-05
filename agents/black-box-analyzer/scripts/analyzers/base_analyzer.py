@@ -173,9 +173,7 @@ class BaseAnalyzer(ABC):
         if isinstance(obj, Scenario):
             keywords.add(obj.endpoint.lower())
             keywords.add(obj.scenario_type.lower())
-            if hasattr(obj, "method") and obj.method is not None:
-                m = obj.method
-                keywords.add(m.value.lower() if hasattr(m, "value") else str(m).lower())
+            keywords.add(obj.method_name.lower())
 
         elif isinstance(obj, TestCase):
             keywords.add(obj.name.lower())

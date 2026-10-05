@@ -14,13 +14,16 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+_get_model: Optional[Callable[..., str]]
 try:
-    from lib.config.model_config import get_model as _get_model
+    from lib.config.model_config import get_model
+
+    _get_model = get_model
 except ImportError:
     _get_model = None
 
@@ -125,7 +128,7 @@ def extract_context(error: ErrorInput, repo_path: Path) -> dict[str, Any]:
     Returns:
         Context dictionary
     """
-    context = {"file_content": None, "dependencies": [], "related_files": []}
+    context: dict[str, Any] = {"file_content": None, "dependencies": [], "related_files": []}
 
     if not error.file_path:
         return context

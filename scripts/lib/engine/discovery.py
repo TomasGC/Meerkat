@@ -87,10 +87,12 @@ def dominant_language(path: Path, threshold: float = 0.6) -> str:
     language. Ties break toward config order.
     """
     files = discover_files(path)
-    kinds = ("code",)
+    kinds: tuple[str, ...] = ("code",)
     counts = {name: len(group) for name, group in group_by_language(files, kinds).items()}
     if not counts:
-        kinds = tuple({lang.get("kind") for lang in language_config.all_languages().values()} - {None})
+        kinds = tuple(
+            {kind for lang in language_config.all_languages().values() if (kind := lang.get("kind")) is not None}
+        )
         counts = {name: len(group) for name, group in group_by_language(files, kinds).items()}
     if not counts:
         return "unknown"

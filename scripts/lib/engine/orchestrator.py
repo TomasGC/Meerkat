@@ -8,6 +8,7 @@ severity filtering, and json/table output.
 """
 
 import argparse
+import functools
 import importlib
 import inspect
 import json
@@ -387,7 +388,7 @@ def main(
                 args.role,
                 cache_dir,
             )
-            future.add_done_callback(lambda f, n=name: on_checker_done(f, n))
+            future.add_done_callback(functools.partial(on_checker_done, checker_name=name))
 
     results = _completed
 

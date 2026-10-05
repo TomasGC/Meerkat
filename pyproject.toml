@@ -14,3 +14,24 @@ skip_glob = ["**/fixtures/**", "template-base/**"]
 [tool.coverage.run]
 # Coverage measures sources: test trees and fixtures are excluded.
 omit = ["*/tests/*", "tests/*", "*/fixtures/*", "conftest.py"]
+
+[tool.mypy]
+ignore_missing_imports = true
+# The source roots the conftests and package bootstraps put on sys.path; module names are relative to them.
+explicit_package_bases = true
+mypy_path = [
+    "scripts",
+    "agents/black-box-analyzer/scripts",
+    "agents/clean-code-analyzer/scripts",
+    "agents/security-safety-analyzer/scripts",
+    "skills/search-tech/scripts",
+]
+# Sources only, as Condor runs it. The three agents' scripts/orchestrate.py are 3-line CLI wrappers around their
+# package's orchestrate module; all three would be the top-level module "orchestrate".
+exclude = [
+    '(^|/)tests/',
+    '(^|/)fixtures/',
+    '^template-base/',
+    '^skills/synced/',
+    '^agents/[^/]+/scripts/orchestrate\.py$',
+]

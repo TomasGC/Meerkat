@@ -101,7 +101,7 @@ def run_all_validations(
         raise FileNotFoundError(f"Path not found: {path}")
 
     # Initialize results
-    results = {
+    results: dict[str, Any] = {
         "path": str(path),
         "recursive": recursive,
         "syntax": {"ran": False, "success": False, "scriptsChecked": 0, "issuesFound": 0, "details": None},

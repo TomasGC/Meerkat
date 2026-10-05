@@ -53,7 +53,8 @@ def mocked_calc_complexity():
         yield mock_path
 
 
-def test_kiss_high_complexity_creates_violation(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_high_complexity_creates_violation(tmp_path):
     """High-complexity function → KISS violation created from subprocess output."""
     (tmp_path / "app.py").write_text("def process_data(): pass\n")
 
@@ -66,7 +67,8 @@ def test_kiss_high_complexity_creates_violation(tmp_path, mocked_calc_complexity
     assert any(v["principle"] == "KISS" for v in result["violations"])
 
 
-def test_kiss_low_complexity_no_violation(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_low_complexity_no_violation(tmp_path):
     """Low complexity → no complexity violations."""
     (tmp_path / "app.py").write_text("def simple(): return 1\n")
 
@@ -78,7 +80,8 @@ def test_kiss_low_complexity_no_violation(tmp_path, mocked_calc_complexity):
     assert result["violations"] == []
 
 
-def test_kiss_ollama_called_only_when_available(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_ollama_called_only_when_available(tmp_path):
     """analyze_files_parallel is only called when check_server_available=True."""
     (tmp_path / "app.py").write_text("class Foo: pass\n")
 
@@ -137,7 +140,8 @@ def test_kiss_subprocess_json_decode_error_graceful(tmp_path):
     assert result["violations"] == []
 
 
-def test_kiss_incremental_files_filter_by_name(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_incremental_files_filter_by_name(tmp_path):
     """In incremental mode (files=[...]), complexity issues are filtered to changed files."""
     targeted = tmp_path / "targeted.py"
     targeted.write_text("def process_data(): pass\n")
@@ -177,7 +181,8 @@ def test_kiss_incremental_files_filter_by_name(tmp_path, mocked_calc_complexity)
         assert "targeted" in v["file"] or "targeted" in v.get("file", "")
 
 
-def test_kiss_ollama_violation_appended(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_ollama_violation_appended(tmp_path):
     """Ollama returns violation → appended to violations list with principle=KISS.
 
     Mechanical layer is mocked to LOW_COMPLEXITY_OUTPUT (zero findings), so there
@@ -207,7 +212,8 @@ def test_kiss_ollama_violation_appended(tmp_path, mocked_calc_complexity):
     assert "OverEngineering" in kiss_v[0]["message"]
 
 
-def test_kiss_files_not_none_ollama_path(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_files_not_none_ollama_path(tmp_path):
     """files is not None + Ollama available → select_files() honours the explicit list."""
     f = tmp_path / "service.py"
     f.write_text("class X: pass\n")
@@ -240,7 +246,8 @@ def test_kiss_files_analyzed_zero_gets_set_from_source_files(tmp_path):
     assert result["files_analyzed"] >= 1  # set from source_files
 
 
-def test_kiss_ai_finding_near_mechanical_dropped(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_ai_finding_near_mechanical_dropped(tmp_path):
     """AI finding within 3 lines of a mechanical finding in the same file is dropped as a near-duplicate."""
     f = tmp_path / "app.py"
     f.write_text("def process_data(): pass\n")
@@ -264,7 +271,8 @@ def test_kiss_ai_finding_near_mechanical_dropped(tmp_path, mocked_calc_complexit
     assert "High complexity" in result["violations"][0]["message"]
 
 
-def test_kiss_ai_finding_far_from_mechanical_both_kept(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_ai_finding_far_from_mechanical_both_kept(tmp_path):
     """AI finding more than 3 lines from a mechanical finding in the same file survives reconciliation."""
     f = tmp_path / "app.py"
     f.write_text("def process_data(): pass\n" * 40)
@@ -290,7 +298,8 @@ def test_kiss_ai_finding_far_from_mechanical_both_kept(tmp_path, mocked_calc_com
     assert any("OverEngineering" in m for m in messages)
 
 
-def test_kiss_complexity_violation_carries_def_line(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_complexity_violation_carries_def_line(tmp_path):
     """The mechanical violation's line comes from calculate_complexity's `line` field."""
     (tmp_path / "app.py").write_text("def process_data(): pass\n")
 
@@ -301,7 +310,8 @@ def test_kiss_complexity_violation_carries_def_line(tmp_path, mocked_calc_comple
     assert [v["line"] for v in result["violations"]] == [10]
 
 
-def test_kiss_ai_finding_on_line_1_kept_when_mechanical_at_line_10(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_ai_finding_on_line_1_kept_when_mechanical_at_line_10(tmp_path):
     """An AI finding near the top of the file is no longer swallowed by a line-0 mechanical hit."""
     f = tmp_path / "app.py"
     f.write_text("def process_data(): pass\n" * 20)
@@ -324,7 +334,8 @@ def test_kiss_ai_finding_on_line_1_kept_when_mechanical_at_line_10(tmp_path, moc
     assert lines == [1, 10]
 
 
-def test_kiss_two_complexity_issues_same_file_distinct_lines(tmp_path, mocked_calc_complexity):
+@pytest.mark.usefixtures("mocked_calc_complexity")
+def test_kiss_two_complexity_issues_same_file_distinct_lines(tmp_path):
     """Two complexity hits in one file keep distinct lines, so (file, line, principle) dedup keeps both."""
     (tmp_path / "app.py").write_text("def a(): pass\n")
     two_issues = json.dumps(

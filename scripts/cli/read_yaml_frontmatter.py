@@ -57,9 +57,9 @@ def extract_frontmatter(file_path: Path) -> Optional[dict]:
 
 def parse_yaml_simple(yaml_content: str) -> dict:
     """Simple YAML parser (fallback when PyYAML not installed)."""
-    parsed = {}
+    parsed: dict[str, Any] = {}
     current_key = None
-    current_value_lines = []
+    current_value_lines: list[str] = []
     in_multiline = False
 
     for line in yaml_content.split("\n"):

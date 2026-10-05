@@ -237,3 +237,42 @@ def test_analysis_result_from_dict_tolerates_missing_lists():
     assert restored.scenarios == []
     assert restored.risk_assessment == []
     assert restored.metadata == {}
+
+
+# --- non-HTTP scenarios (#48): CLI, SQL, mobile, ... analyzers label the action instead of an HTTP verb ---
+
+
+def _cli_scenario() -> Scenario:
+    return Scenario(
+        endpoint="deploy",
+        method="CLI",
+        input_combination={"--force": True},
+        expected_output=0,
+        scenario_type="happy_path",
+        description="deploy --force",
+    )
+
+
+def test_non_http_scenario_round_trips_with_its_label():
+    data = _cli_scenario().to_dict()
+    assert data["method"] == "CLI"
+    assert Scenario.from_dict(data) == _cli_scenario()
+
+
+def test_http_scenario_round_trips_as_http_method():
+    restored = Scenario.from_dict(_scenario().to_dict())
+    assert isinstance(restored.method, HTTPMethod)
+    assert restored == _scenario()
+
+
+def test_method_name_is_text_for_both_kinds():
+    assert _scenario().method_name == _scenario().method.value
+    assert _cli_scenario().method_name == "CLI"
+
+
+def test_analysis_result_with_non_http_scenarios_serializes_and_restores():
+    """The report JSON and the analysis cache both go through to_dict/from_dict."""
+    result = _result()
+    result.scenarios.append(_cli_scenario())
+    restored = AnalysisResult.from_dict(result.to_dict())
+    assert restored.scenarios[-1] == _cli_scenario()

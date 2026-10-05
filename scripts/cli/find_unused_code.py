@@ -119,7 +119,7 @@ class FindUnusedCodeScript(BaseCLIScript):
             files = list(path.glob(pattern))
 
         # Extract all defined functions/classes
-        defined = {}
+        defined: dict[str, dict[str, Any]] = {}
         for file in files:
             try:
                 with open(file, "r", encoding="utf-8") as f:

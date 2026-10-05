@@ -5,6 +5,7 @@ produced no usable answer" (None, unparseable, exception), so a cache never stor
 a failure as a clean result. call_model_async is replaced per test; no server needed.
 """
 
+import asyncio
 from pathlib import Path
 from unittest.mock import patch
 
@@ -35,7 +36,7 @@ def _responses(by_file: dict[str, list]):
         for name, queue in by_file.items():
             if name in prompt:
                 resp = queue.pop(0)
-                if isinstance(resp, Exception):
+                if isinstance(resp, BaseException):
                     raise resp
                 return resp
         raise AssertionError(f"no response queued for prompt {prompt!r}")
@@ -118,3 +119,22 @@ def test_failed_none_returns_same_items_as_with_failed_set(tmp_path, prompts_dir
     tracked = _run([a, b], prompts_dir, {k: list(v) for k, v in responses.items()}, set())
     assert [Path(i["source_file"]).name for i in untracked] == expected_sources
     assert untracked == tracked
+
+
+# --- cancelled calls (#48): asyncio.CancelledError is a BaseException, not an Exception ---
+
+
+def test_cancelled_call_marks_file_failed_and_keeps_the_others(tmp_path, prompts_dir):
+    a, b = _named(tmp_path, "a.py"), _named(tmp_path, "b.py")
+    failed: set = set()
+    results = _run([a, b], prompts_dir, {"a.py": [asyncio.CancelledError()], "b.py": [_ITEM]}, failed)
+    assert [r["source_file_name"] for r in results] == ["b.py"]
+    assert failed == {a}
+
+
+def test_cancelled_agent_is_skipped_when_another_agent_answers(tmp_path, prompts_dir):
+    f = _named(tmp_path, "a.py")
+    failed: set = set()
+    results = _run([f], prompts_dir, {"a.py": [asyncio.CancelledError(), _ITEM]}, failed, agents=2)
+    assert [r["line"] for r in results] == [3]
+    assert failed == set()

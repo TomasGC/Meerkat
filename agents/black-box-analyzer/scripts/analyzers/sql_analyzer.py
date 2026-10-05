@@ -154,7 +154,7 @@ class SQLAnalyzer(BaseAnalyzer):
 
     def _parse_sql_params(self, params_str: str) -> list[Parameter]:
         """Parse SQL parameters."""
-        params = []
+        params: list[Parameter] = []
 
         if not params_str.strip():
             return params

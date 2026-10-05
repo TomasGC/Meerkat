@@ -35,7 +35,7 @@ class CommitViolation:
 
 # Security patterns (OWASP Top 10 + ORCA)
 # Note: These are DETECTION patterns, not actual vulnerabilities
-SECURITY_PATTERNS = {
+SECURITY_PATTERNS: dict[str, dict[str, Any]] = {
     "hardcoded_secret": {
         "patterns": [
             r'(password|passwd|pwd)\s*=\s*["\'][^"\']+["\']',
@@ -79,7 +79,7 @@ SECURITY_PATTERNS = {
 }
 
 # Quality patterns (Code Quality Standards)
-QUALITY_PATTERNS = {
+QUALITY_PATTERNS: dict[str, dict[str, Any]] = {
     "magic_number": {
         "patterns": [
             r"\b(\d{3,})\b(?!\s*(ms|px|%|rem))",  # Numbers ≥3 digits not followed by units
@@ -223,7 +223,7 @@ class AnalyzeCommitQualityScript(BaseCLIScript):
 
     def _parse_diff(self, diff: str) -> dict[str, list[tuple[int, str]]]:
         """Parse diff to extract file changes."""
-        files_changes = {}
+        files_changes: dict[str, list[tuple[int, str]]] = {}
         current_file = None
         current_line = 0
 

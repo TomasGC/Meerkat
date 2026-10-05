@@ -8,9 +8,9 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 import time
-import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 
@@ -23,6 +23,8 @@ except ImportError:
     print("Error: requests library not found. Install with: pip install requests", file=sys.stderr)
     sys.exit(1)
 
+# Medium's RSS is remote, untrusted XML: defusedxml refuses entity-expansion and external-entity tricks
+from defusedxml import ElementTree as ET
 from search_tech.cache import SearchCache
 from search_tech.logger import MetricsCollector, get_defaults, setup_logger
 from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source, ValidationError
@@ -66,22 +68,20 @@ def search_medium_tag(query: SearchQuery, tag: str, logger=None, metrics=None) -
         search_terms = [kw.lower() for kw in query.keywords]
 
         for item in root.findall(".//item")[: MAX_RESULTS * 2]:  # Get more to filter
-            title = item.find("title").text if item.find("title") is not None else ""
-            description = item.find("description").text if item.find("description") is not None else ""
-            link = item.find("link").text if item.find("link") is not None else ""
-            pub_date = item.find("pubDate").text if item.find("pubDate") is not None else ""
+            # findtext: "" for a missing element and for an empty one (<description/>), whose .text is None
+            title = item.findtext("title", default="")
+            description = item.findtext("description", default="")
+            link = item.findtext("link", default="")
+            pub_date = item.findtext("pubDate", default="")
 
             # Filter by keywords
             if not any(term in title.lower() or term in description.lower() for term in search_terms):
                 continue
 
             # Extract author
-            creator = item.find("{http://purl.org/dc/elements/1.1/}creator")
-            author = creator.text if creator is not None else "unknown"
+            author = item.findtext("{http://purl.org/dc/elements/1.1/}creator", default="") or "unknown"
 
             # Parse excerpt from description (remove HTML)
-            import re
-
             clean_desc = re.sub(r"<[^>]+>", "", description)
             excerpt = clean_desc[:200] + "..." if len(clean_desc) > 200 else clean_desc
 

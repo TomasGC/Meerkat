@@ -88,8 +88,8 @@ class DelegationStats(BaseCLIScript):
     def _calculate_stats(self, entries: list) -> dict:
         """Calculate delegation statistics."""
         total_delegations = 0
-        delegations_by_type = defaultdict(int)
-        tokens_saved_by_type = defaultdict(int)
+        delegations_by_type: defaultdict[str, int] = defaultdict(int)
+        tokens_saved_by_type: defaultdict[str, int] = defaultdict(int)
         session_count = len([e for e in entries if e.get("event") == "session_start"])
 
         # Token savings estimates (from delegation-rules.json)

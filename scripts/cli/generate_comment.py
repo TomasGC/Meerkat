@@ -207,7 +207,7 @@ class GenerateCommentScript(BaseCLIScript):
                 commits_info.append({"hash": commit_hash[:7], "message": message, "files": len(files)})
 
             # Categorize files
-            categories = defaultdict(int)
+            categories: defaultdict[str, int] = defaultdict(int)
             for file_path in all_files:
                 category = categorize_file(file_path)
                 categories[category] += 1

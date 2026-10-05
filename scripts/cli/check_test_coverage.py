@@ -100,7 +100,7 @@ class CheckTestCoverageScript(BaseCLIScript):
     def _find_scripts(self, path: Path, recursive: bool) -> list[Path]:
         """Find all scripts in directory."""
         patterns = ["*.py", "*.ps1"]
-        scripts = []
+        scripts: list[Path] = []
 
         for pattern in patterns:
             if recursive:

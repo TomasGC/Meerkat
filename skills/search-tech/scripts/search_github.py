@@ -128,7 +128,7 @@ def search_github_issues(query: SearchQuery, logger=None, metrics=None, max_retr
                     repo = issue.get("repository", {}).get("nameWithOwner", "unknown")
                     excerpt = f"Issue in {repo}"
 
-                result = SearchResult(
+                search_result = SearchResult(
                     source=Source.GITHUB_ISSUE,
                     result_type=ResultType.ISSUE,
                     title=issue.get("title", ""),
@@ -144,7 +144,7 @@ def search_github_issues(query: SearchQuery, logger=None, metrics=None, max_retr
                         else None
                     ),
                 )
-                results.append(result)
+                results.append(search_result)
 
             metrics.increment("total_results", len(results))
             logger.info(f"Found {len(results)} GitHub issues")
@@ -278,7 +278,7 @@ def search_github_discussions(query: SearchQuery, logger=None, metrics=None, max
                     if category:
                         excerpt += f" ({category})"
 
-                result = SearchResult(
+                search_result = SearchResult(
                     source=Source.GITHUB_DISCUSSION,
                     result_type=ResultType.DISCUSSION,
                     title=disc.get("title", ""),
@@ -293,7 +293,7 @@ def search_github_discussions(query: SearchQuery, logger=None, metrics=None, max
                         else None
                     ),
                 )
-                results.append(result)
+                results.append(search_result)
 
             metrics.increment("total_results", len(results))
             logger.info(f"Found {len(results)} GitHub discussions")

@@ -201,7 +201,7 @@ class SearchResponse:
 
     def _count_sources(self) -> Dict[str, int]:
         """Count results per source."""
-        counts = {}
+        counts: Dict[str, int] = {}
         for result in self.results:
             source = result.source.value
             counts[source] = counts.get(source, 0) + 1

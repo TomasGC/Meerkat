@@ -240,7 +240,7 @@ class SmartContractAnalyzer(BaseAnalyzer):
 
     def _parse_solidity_params(self, func_sig: str) -> list[Parameter]:
         """Parse Solidity function parameters."""
-        params = []
+        params: list[Parameter] = []
 
         # Extract parameter list between parentheses
         param_match = re.search(r"\(([^)]*)\)", func_sig)

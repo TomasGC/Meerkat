@@ -73,7 +73,7 @@ def search_devto(query: SearchQuery, logger=None, metrics=None, cache=None, max_
             metrics.increment("api_calls")
 
             # Dev.to API - search articles
-            params = {
+            params: dict[str, int | str] = {
                 "per_page": MAX_RESULTS * 3,  # Get more to filter later
             }
 

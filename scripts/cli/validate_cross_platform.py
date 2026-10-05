@@ -183,9 +183,9 @@ def validate_script_cross_platform(script_path: Path) -> dict:
     Returns:
         Dictionary with validation results
     """
-    errors = []
-    warnings = []
-    info = []
+    errors: list[str] = []
+    warnings: list[str] = []
+    info: list[str] = []
 
     # Read file content
     try:

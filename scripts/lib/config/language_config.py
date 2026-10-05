@@ -131,7 +131,9 @@ def filename_patterns() -> dict[str, re.Pattern]:
 def matches_filename(language: str, filename: str) -> bool:
     """True if filename matches that language's filename pattern."""
     pattern = get_language(language).get("filename_pattern")
-    return bool(pattern) and bool(re.match(pattern, filename))
+    if not pattern:
+        return False
+    return bool(re.match(pattern, filename))
 
 
 def project_indicators() -> dict[str, list[str]]:

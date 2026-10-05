@@ -52,7 +52,7 @@ def get_issue_from_branch(cwd: Optional[Path] = None) -> Optional[str]:
     return None
 
 
-def load_kanban_entry(issue_id: str, kanban_path: Path = None) -> Optional[str]:
+def load_kanban_entry(issue_id: str, kanban_path: Optional[Path] = None) -> Optional[str]:
     """
     Load KANBAN entry for issue.
 

@@ -126,7 +126,12 @@ def format_csv_output(commits: list[GitCommitInfo], include_files: bool) -> str:
     writer.writeheader()
 
     for commit in commits:
-        row = {"hash": commit.hash, "author": commit.author, "date": commit.date, "message": commit.message}
+        row: dict[str, Any] = {
+            "hash": commit.hash,
+            "author": commit.author,
+            "date": commit.date,
+            "message": commit.message,
+        }
 
         if include_files:
             row["files"] = ";".join(commit.files_changed)

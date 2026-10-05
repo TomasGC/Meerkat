@@ -444,7 +444,7 @@ def parse_python_tests(project_path: Path) -> list[TestCase]:
             # Extract test body (indented block)
             test_body_start = match.end()
             lines = content[test_body_start:].split("\n")
-            test_body_lines = []
+            test_body_lines: list[str] = []
             initial_indent = None
 
             for line in lines:

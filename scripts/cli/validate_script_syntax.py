@@ -90,9 +90,9 @@ class ValidateScriptSyntaxScript(BaseCLIScript):
 
     def _validate_syntax(self, file_path: Path, language: str) -> ValidationResult:
         """Validate script syntax."""
-        errors = []
-        warnings = []
-        info = []
+        errors: list[str] = []
+        warnings: list[str] = []
+        info: list[str] = []
 
         if language == "powershell":
             self._validate_powershell(file_path, errors, warnings, info)

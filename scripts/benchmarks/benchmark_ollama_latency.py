@@ -21,7 +21,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 
 @dataclass
@@ -208,7 +208,7 @@ def generate_report(results: List[BenchmarkResult], system_info: SystemInfo, out
     warm_results = [r for r in results if r.tier == "warm"]
     cold_results = [r for r in results if r.tier == "cold"]
 
-    report = {
+    report: dict[str, Any] = {
         "system_info": asdict(system_info),
         "benchmark_date": datetime.now().isoformat(),
         "results": [asdict(r) for r in results],

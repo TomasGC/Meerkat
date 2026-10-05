@@ -192,7 +192,7 @@ class LLMAnalyzer(BaseAnalyzer):
 
     def _parse_python_params(self, params_str: str) -> list[Parameter]:
         """Parse Python function parameters."""
-        params = []
+        params: list[Parameter] = []
 
         if not params_str.strip():
             return params

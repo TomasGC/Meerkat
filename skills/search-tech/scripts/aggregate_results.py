@@ -35,7 +35,7 @@ def calculate_rank_score(result: SearchResult) -> float:
     Returns:
         Calculated rank score
     """
-    score = result.score
+    score: float = result.score
 
     # Bonus for accepted answers
     if result.accepted:

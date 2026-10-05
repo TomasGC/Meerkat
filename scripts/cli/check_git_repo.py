@@ -48,7 +48,7 @@ class CheckGitRepoScript(BaseCLIScript):
 
     def _get_repo_info(self, path: Path) -> dict:
         """Get detailed repo info."""
-        info = {}
+        info: dict[str, Any] = {}
 
         # Current branch
         returncode, stdout, _ = run_command(["git", "branch", "--show-current"], cwd=path, timeout=5)

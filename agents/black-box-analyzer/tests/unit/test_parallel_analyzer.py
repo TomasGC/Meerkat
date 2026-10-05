@@ -11,7 +11,7 @@ from parallel_analyzer import AnalyzerRouter
 def test_select_analyzers_raises_when_no_match():
     router = AnalyzerRouter()
     for analyzer in router.analyzers:
-        analyzer.can_analyze = lambda pi: False
+        analyzer.can_analyze = lambda _project_info: False
 
     fake_info = MagicMock()
     fake_info.project_types = []

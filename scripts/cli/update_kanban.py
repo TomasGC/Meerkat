@@ -28,7 +28,7 @@ from lib.cli.base import BaseCLIScript
 from lib.utils import run_command
 
 
-def find_kanban_file(start_path: Path = None) -> Path | None:
+def find_kanban_file(start_path: Path | None = None) -> Path | None:
     """
     Search for .claude/contexts/kanban.md in current and parent directories.
 
@@ -67,7 +67,9 @@ def get_commit_title(commit_hash: str) -> str:
     return message
 
 
-def build_entry(issue_id: str, title: str, description: str, ref: str = None, commits: list[str] = None) -> str:
+def build_entry(
+    issue_id: str, title: str, description: str, ref: str | None = None, commits: list[str] | None = None
+) -> str:
     """
     Build KANBAN.md entry.
 
@@ -232,7 +234,7 @@ class UpdateKanbanScript(BaseCLIScript):
                         files = get_commit_files(commit)
                         all_files.extend(files)
 
-                    categories = defaultdict(int)
+                    categories: defaultdict[str, int] = defaultdict(int)
                     for file in all_files:
                         category = categorize_file(file)
                         categories[category] += 1
@@ -250,12 +252,13 @@ class UpdateKanbanScript(BaseCLIScript):
             if args.kanban_file:
                 kanban_file = Path(args.kanban_file)
             else:
-                kanban_file = find_kanban_file()
-                if not kanban_file:
+                found_kanban = find_kanban_file()
+                if not found_kanban:
                     return {
                         "success": False,
                         "error": ".claude/contexts/kanban.md not found in current directory or parent directories",
                     }
+                kanban_file = found_kanban
 
             if not kanban_file.exists():
                 return {"success": False, "error": f"kanban.md not found at: {kanban_file}"}

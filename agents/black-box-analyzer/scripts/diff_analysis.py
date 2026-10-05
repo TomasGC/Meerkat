@@ -262,8 +262,8 @@ def format_markdown(diff: AnalysisDiff) -> str:
     if diff.new_endpoints:
         lines.append("## ➕ New Endpoints")
         lines.append("")
-        for ep in diff.new_endpoints[:20]:
-            lines.append(f"- {ep}")
+        for name in diff.new_endpoints[:20]:
+            lines.append(f"- {name}")
         if len(diff.new_endpoints) > 20:
             lines.append(f"- ... and {len(diff.new_endpoints) - 20} more")
         lines.append("")
@@ -271,8 +271,8 @@ def format_markdown(diff: AnalysisDiff) -> str:
     if diff.removed_endpoints:
         lines.append("## ➖ Removed Endpoints")
         lines.append("")
-        for ep in diff.removed_endpoints[:20]:
-            lines.append(f"- {ep}")
+        for name in diff.removed_endpoints[:20]:
+            lines.append(f"- {name}")
         if len(diff.removed_endpoints) > 20:
             lines.append(f"- ... and {len(diff.removed_endpoints) - 20} more")
         lines.append("")

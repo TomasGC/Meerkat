@@ -25,13 +25,20 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import TypedDict
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from bba.models import Language
 from bba.utils import detect_project_language
 
-TIER_MARKERS = {
+
+class _TierMarkers(TypedDict):
+    pytest: list[str]
+    jest: str
+
+
+TIER_MARKERS: dict[str, _TierMarkers] = {
     "unit": {"pytest": ["-m", "unit"], "jest": "--testPathPattern=unit"},
     "int_mock": {"pytest": ["-m", "int_mock"], "jest": "--testPathPattern=integration"},
     "int_real": {"pytest": ["-m", "int_real"], "jest": "--testPathPattern=int_real"},

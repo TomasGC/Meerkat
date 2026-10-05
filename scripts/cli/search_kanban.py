@@ -69,7 +69,7 @@ def parse_kanban_file(file_path: Path) -> list[KanbanEntry]:
     # Split entries by date pattern (YYYY-MM-DD)
     entries = []
     lines = entries_section.split("\n")
-    current_entry = []
+    current_entry: list[str] = []
 
     for line in lines:
         # New entry starts with date pattern
@@ -145,11 +145,11 @@ def parse_kanban_file(file_path: Path) -> list[KanbanEntry]:
 
 def filter_entries(
     entries: list[KanbanEntry],
-    issue_id: str = None,
-    tag: str = None,
-    date: str = None,
-    date_from: str = None,
-    date_to: str = None,
+    issue_id: str | None = None,
+    tag: str | None = None,
+    date: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
 ) -> list[KanbanEntry]:
     """
     Filter entries based on search criteria.
