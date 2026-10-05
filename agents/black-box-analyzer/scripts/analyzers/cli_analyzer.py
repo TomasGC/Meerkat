@@ -10,13 +10,8 @@ Handles detection and analysis of CLI applications:
 """
 
 import re
-import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from bba.constants import CLI_PATTERNS
 from bba.models import (
     EntryPoint,
     EntryPointType,
@@ -27,7 +22,6 @@ from bba.models import (
     TestCase,
 )
 from bba.utils import (
-    extract_line_number_from_pattern,
     format_path_relative,
     read_file_safe,
     walk_files,

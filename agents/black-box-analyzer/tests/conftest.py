@@ -116,14 +116,11 @@ def sample_csharp_project(temp_dir):
     controllers_dir = project_dir / "Controllers"
     controllers_dir.mkdir()
     (controllers_dir / "UsersController.cs").write_text(
-        "using Microsoft.AspNetCore.Mvc;\n\n"
-        '[ApiController]\n[Route("api/[controller]")]\n'
-        "public class UsersController : ControllerBase\n{\n"
-        '    [HttpGet("{id}")] public IActionResult GetUser(int id) => Ok();\n'
-        "    [HttpPost] public IActionResult CreateUser([FromBody] CreateUserRequest r) => Created();\n"
-        '    [HttpPut("{id}")] public IActionResult UpdateUser(int id, [FromBody] UpdateUserRequest r) => NoContent();\n'
-        '    [HttpDelete("{id}")] public IActionResult DeleteUser(int id) => NoContent();\n'
-        "}\n"
+        'using Microsoft.AspNetCore.Mvc;\n\n[ApiController]\n[Route("api/[controller]")]\npublic class UsersController'
+        ' : ControllerBase\n{\n    [HttpGet("{id}")] public IActionResult GetUser(int id) => Ok();\n    [HttpPost]'
+        ' public IActionResult CreateUser([FromBody] CreateUserRequest r) => Created();\n    [HttpPut("{id}")] public'
+        ' IActionResult UpdateUser(int id, [FromBody] UpdateUserRequest r) => NoContent();\n    [HttpDelete("{id}")]'
+        " public IActionResult DeleteUser(int id) => NoContent();\n}\n"
     )
 
     tests_dir = project_dir / "Tests"
@@ -361,9 +358,7 @@ def minimal_lcov_file(temp_dir):
 
 @pytest.fixture
 def minimal_go_cover_file(temp_dir):
-    content = (
-        "mode: atomic\n" "example.com/api/handlers.go:10.25,12.2 1 3\n" "example.com/api/handlers.go:15.10,17.2 2 0\n"
-    )
+    content = "mode: atomic\nexample.com/api/handlers.go:10.25,12.2 1 3\nexample.com/api/handlers.go:15.10,17.2 2 0\n"
     p = temp_dir / "coverage_unit.out"
     p.write_text(content)
     return p
@@ -418,7 +413,7 @@ def sample_rust_project(temp_dir):
     project_dir = temp_dir / "rust-project"
     project_dir.mkdir()
     (project_dir / "Cargo.toml").write_text(
-        '[package]\nname = "my-api"\nversion = "0.1.0"\nedition = "2021"\n\n' '[dependencies]\nactix-web = "4"\n'
+        '[package]\nname = "my-api"\nversion = "0.1.0"\nedition = "2021"\n\n[dependencies]\nactix-web = "4"\n'
     )
     src = project_dir / "src"
     src.mkdir()

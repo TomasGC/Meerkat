@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from lib.integrations import get_issue_url, get_pr_url, get_profile_detection_info, load_integrations, validate_profile
+from lib.integrations import get_issue_url, get_pr_url, get_profile_detection_info, validate_profile
 
 
 def test_validate_profile_valid():

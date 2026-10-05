@@ -259,8 +259,8 @@ class TestAnalyzeGoMod:
 go 1.20
 
 require (
-	github.com/gin-gonic/gin v1.9.0
-	github.com/stretchr/testify v1.8.0
+\tgithub.com/gin-gonic/gin v1.9.0
+\tgithub.com/stretchr/testify v1.8.0
 )
 """
 
@@ -275,7 +275,7 @@ require (
     def test_framework_detection_gin(self):
         """Test Gin framework detection."""
         content = """require (
-	github.com/gin-gonic/gin v1.9.0
+\tgithub.com/gin-gonic/gin v1.9.0
 )
 """
 
@@ -286,7 +286,7 @@ require (
     def test_framework_detection_echo(self):
         """Test Echo framework detection."""
         content = """require (
-	github.com/labstack/echo/v4 v4.11.0
+\tgithub.com/labstack/echo/v4 v4.11.0
 )
 """
 
@@ -297,7 +297,7 @@ require (
     def test_framework_detection_fiber(self):
         """Test Fiber framework detection."""
         content = """require (
-	github.com/gofiber/fiber/v2 v2.48.0
+\tgithub.com/gofiber/fiber/v2 v2.48.0
 )
 """
 
@@ -411,7 +411,7 @@ serde = "1.0"
         """Test analysis of go.mod file."""
         go_mod = tmp_path / "go.mod"
         go_mod.write_text("""require (
-	github.com/gin-gonic/gin v1.9.0
+\tgithub.com/gin-gonic/gin v1.9.0
 )
 """)
 

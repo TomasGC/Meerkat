@@ -7,11 +7,7 @@ Handles detection and analysis of fullstack frameworks that combine:
 - Data loading (loaders, server components)
 """
 
-import sys
 from pathlib import Path
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from bba.models import (
     EntryPoint,

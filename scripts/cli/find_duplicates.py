@@ -64,7 +64,7 @@ class FindDuplicatesScript(BaseCLIScript):
                 for i in range(len(lines) - args.threshold + 1):
                     block_lines = lines[i : i + args.threshold]
                     # Skip empty or comment-only blocks
-                    non_empty = [l for l in block_lines if l.strip() and not l.strip().startswith("#")]
+                    non_empty = [line for line in block_lines if line.strip() and not line.strip().startswith("#")]
                     if len(non_empty) >= args.threshold // 2:
                         blocks.append(
                             {

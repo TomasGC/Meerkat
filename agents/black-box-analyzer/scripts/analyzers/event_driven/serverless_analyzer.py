@@ -8,11 +8,7 @@ Handles detection and analysis of serverless function entry points:
 """
 
 import re
-import sys
 from pathlib import Path
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from bba.constants import SERVERLESS_PATTERNS
 from bba.models import (

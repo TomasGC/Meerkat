@@ -8,7 +8,6 @@ The one logging implementation: search-tech imports it too (#22).
 
 import logging
 import sys
-from typing import Optional
 
 
 class ColoredFormatter(logging.Formatter):

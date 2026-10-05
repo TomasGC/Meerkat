@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for find_duplicates.py"""
 
-from pathlib import Path
-
 import pytest
 from cli.find_duplicates import FindDuplicatesScript
 

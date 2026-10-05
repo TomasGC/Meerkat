@@ -33,7 +33,6 @@ class SwitchProfileScript(BaseCLIScript):
 
         # List profiles
         if args.list:
-            import json
 
             profiles_list = list_profiles()
             current = load_integrations()

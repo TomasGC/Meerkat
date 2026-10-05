@@ -8,8 +8,6 @@ scripts since they require Claude Code to fully execute.
 These tests validate the skill → script delegation chain.
 """
 
-import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -29,7 +27,7 @@ def test_analyze_commit_skill_triggers_quality_check():
     from cli.analyze_commit_quality import AnalyzeCommitQualityScript
 
     script = AnalyzeCommitQualityScript()
-    with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
+    with patch("lib.utils.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0, stdout="--- a/a.py\n+++ b/a.py\n@@ -1,2 +1,4 @@\n+x = 1\n+y = 2\n", stderr=""
         )
@@ -51,7 +49,7 @@ def test_analyze_commit_skill_clean_code_passes():
         "+def process_data(items: list[str]) -> list[str]:\n"
         "+    return [i.strip() for i in items]\n"
     )
-    with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
+    with patch("lib.utils.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=clean_diff, stderr="")
         args = argparse.Namespace(commit="HEAD", staged=False, format="json")
         result = script.execute(args)

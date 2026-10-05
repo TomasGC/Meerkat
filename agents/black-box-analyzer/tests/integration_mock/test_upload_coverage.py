@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Tests for upload_coverage.py — int_mock tests (shutil.which patched)"""
 
-from pathlib import Path
 from unittest.mock import patch
 
 from upload_coverage import _find_codecov, _merge_lcov

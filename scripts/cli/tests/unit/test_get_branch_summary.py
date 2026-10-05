@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """Tests for get_branch_summary.py"""
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from cli.get_branch_summary import get_current_branch, get_default_base_branch
-from lib.models import BranchCommit, BranchSummary, FileChange, UncommittedChanges
 
 
 def test_get_default_base_branch_main():

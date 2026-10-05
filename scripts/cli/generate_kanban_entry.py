@@ -70,7 +70,8 @@ def generate_descriptions(categories: dict[str, int], style: str = "professional
             )
         else:  # professional
             descriptions.append(
-                "Defined coding standards across 15+ technologies (C#, Go, TypeScript, JavaScript, Vue.js, Docker, Kubernetes)"
+                "Defined coding standards across 15+ technologies (C#, Go, TypeScript, JavaScript, Vue.js, Docker,"
+                " Kubernetes)"
             )
 
     # Documentation
@@ -80,7 +81,8 @@ def generate_descriptions(categories: dict[str, int], style: str = "professional
             descriptions.append(f"Documentation ({count} files)")
         elif style == "detailed":
             descriptions.append(
-                f"Created extensive documentation covering API docs, setup guides, and best practices with {count} files"
+                f"Created extensive documentation covering API docs, setup guides, and best practices with {count}"
+                " files"
             )
         else:  # professional
             descriptions.append(

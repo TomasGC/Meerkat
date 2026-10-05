@@ -13,12 +13,11 @@ Uses intelligent combinatorial explosion management:
 """
 
 import argparse
-import json
 import sys
 from pathlib import Path
 from typing import Any
 
-from bba.constants import DEFAULT_RESPONSE_CODES, EDGE_CASE_VALUES
+from bba.constants import EDGE_CASE_VALUES
 from bba.models import Endpoint, HTTPMethod, Parameter, Scenario
 from bba.utils import read_json, write_json
 

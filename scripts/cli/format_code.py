@@ -10,7 +10,6 @@ Usage:
     python format_code.py --file src/api.ts --check-only
 """
 
-import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -83,7 +82,7 @@ class FormatCode(BaseCLIScript):
         # Run formatter
         try:
             cmd = self._build_command(formatter, file_path, language)
-            result = subprocess.run(
+            subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,

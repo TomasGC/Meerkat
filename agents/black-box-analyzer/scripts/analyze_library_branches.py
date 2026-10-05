@@ -17,7 +17,7 @@ _SHARED = Path(__file__).resolve().parents[3] / "scripts"  # this checkout's sha
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
-from bba.model_utils import PROMPTS_DIR, analyze_file_with_model, analyze_files_parallel, check_server_available
+from bba.model_utils import PROMPTS_DIR, analyze_file_with_model, check_server_available
 from bba.utils import detect_project_language
 from lib.config import language_config
 

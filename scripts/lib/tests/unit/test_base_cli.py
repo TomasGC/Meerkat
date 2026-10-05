@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 """Tests for common/cli/base.py"""
 
-from io import StringIO
-from pathlib import Path
-
-import pytest
 from lib.cli.base import BaseCLIScript, create_cli_script
 
 

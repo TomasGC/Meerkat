@@ -182,7 +182,7 @@ class TestRunHybrid:
 
 class TestRunHybridMechanicalFn:
     def test_mechanical_fn_replaces_scan_patterns(self, tmp_path):
-        f = _make_file(tmp_path, "a.py", "x = 1\n")
+        _make_file(tmp_path, "a.py", "x = 1\n")
 
         def mech(path, files):
             return [

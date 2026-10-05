@@ -6,8 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 # Add scripts directory to path
 scripts_dir = Path(__file__).parent.parent.parent / "scripts"
 

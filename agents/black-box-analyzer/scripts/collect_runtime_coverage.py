@@ -21,7 +21,6 @@ Usage:
 
 import argparse
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -244,7 +243,7 @@ def collect_dotnet(
             "dotnet",
             "test",
             f"--filter={filt}",
-            f"--collect:XPlat Code Coverage",
+            "--collect:XPlat Code Coverage",
             f"--results-directory={output_dir / tier}",
             "--",
             "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=lcov",
@@ -306,7 +305,7 @@ def collect_java(
                 outputs[tier] = lcov_file
             else:
                 print(
-                    f"[WARN] Java tier={tier}: no lcov.info found — "
+                    f"[WARN] Java tier={tier} (rc={rc}): no lcov.info found — "
                     "ensure jacoco-to-cobertura or lcov plugin is configured",
                     file=sys.stderr,
                 )

@@ -11,9 +11,7 @@ Supports both direct run IDs and full GitHub URLs (pipeline or PR).
 """
 
 import re
-import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional

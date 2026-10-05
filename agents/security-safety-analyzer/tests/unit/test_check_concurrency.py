@@ -1,9 +1,8 @@
 """Unit tests for check_concurrency — mechanical patterns plus mocked AI layer."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 from ssa.checkers.check_concurrency import _PRINCIPLE, _mechanical_check, run
 
 

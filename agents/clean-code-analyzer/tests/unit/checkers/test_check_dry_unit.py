@@ -2,11 +2,9 @@
 
 import json
 import subprocess
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import cca.checkers.check_dry as dry_mod
-import pytest
 from cca.checkers.check_dry import run
 
 FIND_DUPLICATES_OUTPUT = json.dumps(

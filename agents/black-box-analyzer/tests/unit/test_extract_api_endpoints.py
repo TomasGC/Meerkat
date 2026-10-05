@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for extract_api_endpoints.py"""
 
-from pathlib import Path
-
 from bba.models import HTTPMethod, Language
 from extract_api_endpoints import (
     extract_csharp_endpoints,

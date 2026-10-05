@@ -8,7 +8,6 @@ Common functions used across skills, agents, and utility scripts.
 import re
 import subprocess
 from pathlib import Path
-from typing import Any
 
 from .config import language_config
 from .models import ComponentType

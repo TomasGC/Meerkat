@@ -31,7 +31,7 @@ def extract_frontmatter(file_path: Path) -> Optional[dict]:
     """Extract YAML frontmatter between --- delimiters."""
     try:
         content = file_path.read_text(encoding="utf-8")
-    except Exception as e:
+    except Exception:
         return None
 
     # Match frontmatter (multiline)

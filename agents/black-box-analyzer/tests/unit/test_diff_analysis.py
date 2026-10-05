@@ -2,11 +2,9 @@
 """Tests for diff_analysis.py — unit tests"""
 
 import json
-from pathlib import Path
 
 import pytest
 from diff_analysis import (
-    AnalysisDiff,
     compare_analyses,
     format_markdown,
     format_summary,

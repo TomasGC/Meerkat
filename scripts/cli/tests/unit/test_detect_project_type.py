@@ -2,9 +2,7 @@
 """Tests for detect_project_type.py"""
 
 import json
-from pathlib import Path
 
-import pytest
 from cli.detect_project_type import detect_project_type
 from lib.utils import write_file_safe
 

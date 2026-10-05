@@ -2,7 +2,6 @@
 """Tests for propose_ci_fixes.py"""
 
 import json
-from pathlib import Path
 
 import pytest
 from cli.propose_ci_fixes import (

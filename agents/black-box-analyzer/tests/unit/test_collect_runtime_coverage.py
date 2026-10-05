@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for collect_runtime_coverage.py — unit tests"""
 
-from pathlib import Path
-
 from collect_runtime_coverage import (
     TIER_MARKERS,
     _convert_go_cover_to_lcov,

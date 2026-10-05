@@ -6,7 +6,6 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-import pytest
 from aggregate_results import aggregate_results, calculate_rank_score, format_markdown
 from search_tech.models import ResultType, SearchResult, Source
 

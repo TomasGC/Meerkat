@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for parse_test_files.py — unit tests"""
 
-from pathlib import Path
-
 from bba.models import Language, TestFramework
 from parse_test_files import (
     _classify_by_regex,

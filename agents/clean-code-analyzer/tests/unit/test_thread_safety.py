@@ -11,7 +11,7 @@ def make_fake_result(principle: str, n_violations: int) -> dict:
         "success": True,
         "violations": [
             {
-                "file": f"test.py",
+                "file": "test.py",
                 "line": i,
                 "principle": principle,
                 "severity": "high",
@@ -138,4 +138,4 @@ def test_cache_concurrent_writes_no_corruption(tmp_path):
     for t in threads:
         t.join()
 
-    assert not errors, f"Cache corruption detected:\n" + "\n".join(errors)
+    assert not errors, "Cache corruption detected:\n" + "\n".join(errors)

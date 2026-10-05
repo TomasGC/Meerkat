@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for open_report.py — int_real tests (real subprocess.run via _run helper)"""
 
-from pathlib import Path
-
 from open_report import _run
 
 

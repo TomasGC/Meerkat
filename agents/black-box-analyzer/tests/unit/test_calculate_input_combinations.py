@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for calculate_input_combinations.py"""
 
-from pathlib import Path
-
 from bba.models import Endpoint, HTTPMethod, Parameter
 from calculate_input_combinations import (
     _is_security_string,

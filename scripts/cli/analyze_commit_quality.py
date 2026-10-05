@@ -9,9 +9,8 @@ The patterns themselves are not vulnerabilities - they are used to FIND issues.
 """
 
 import re
-import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 

@@ -1,9 +1,7 @@
 """Unit tests for internal helpers in orchestrate.py."""
 
-from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from ssa.orchestrate import (
     CHECKERS,
     _build_summary,

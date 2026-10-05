@@ -182,7 +182,7 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
                                     "value": number,
                                     "line": i + 1,
                                     "severity": "medium",
-                                    "suggestion": f"Extract to named constant",
+                                    "suggestion": "Extract to named constant",
                                 }
                             )
 

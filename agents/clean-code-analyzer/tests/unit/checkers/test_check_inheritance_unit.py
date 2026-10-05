@@ -4,7 +4,6 @@ Threshold: depth > 3 means a 5-class chain (GoldenRetriever with depth 4)
 is flagged, but a 4-class chain (depth 3) is NOT.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest

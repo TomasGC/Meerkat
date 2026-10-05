@@ -6,8 +6,6 @@ import types
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 # Load monitor_task module with model_config.get_model mocked so we don't hit disk
 _MONITOR_DIR = Path(__file__).parents[2] / "agents" / "task_monitor"
 sys.path.insert(0, str(_MONITOR_DIR))

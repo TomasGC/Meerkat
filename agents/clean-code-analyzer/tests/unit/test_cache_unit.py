@@ -1,6 +1,5 @@
 """Unit tests for lib.engine.cache — no external deps, isolated to tmp_path."""
 
-import json
 import os
 import time
 from pathlib import Path

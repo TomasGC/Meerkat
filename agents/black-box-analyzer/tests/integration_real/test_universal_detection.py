@@ -40,7 +40,6 @@ class TestCLIProject:
 
     def test_extract_cli_commands(self, cli_project):
         """Should extract CLI commands and flags."""
-        project_info = detect_project_structure(cli_project)
         analyzer = CLIAnalyzer()
 
         entry_points = analyzer.extract_entry_points(cli_project)
@@ -74,7 +73,6 @@ class TestAndroidProject:
 
     def test_extract_android_activities(self, android_project):
         """Should extract Activities and lifecycle methods."""
-        project_info = detect_project_structure(android_project)
         analyzer = MobileAnalyzer()
 
         entry_points = analyzer.extract_entry_points(android_project)
@@ -107,7 +105,6 @@ class TestFrontendProject:
 
     def test_extract_react_components(self, frontend_project):
         """Should extract React components and hooks."""
-        project_info = detect_project_structure(frontend_project)
         analyzer = FrontendAnalyzer()
 
         entry_points = analyzer.extract_entry_points(frontend_project)
@@ -140,7 +137,6 @@ class TestLLMProject:
 
     def test_extract_langchain_tools(self, llm_project):
         """Should extract LangChain tools and agents."""
-        project_info = detect_project_structure(llm_project)
         analyzer = LLMAnalyzer()
 
         entry_points = analyzer.extract_entry_points(llm_project)
@@ -173,7 +169,6 @@ class TestSQLProject:
 
     def test_extract_stored_procedures(self, sql_project):
         """Should extract stored procedures and functions."""
-        project_info = detect_project_structure(sql_project)
         analyzer = SQLAnalyzer()
 
         entry_points = analyzer.extract_entry_points(sql_project)
@@ -206,7 +201,6 @@ class TestServerlessProject:
 
     def test_extract_lambda_handlers(self, serverless_project):
         """Should extract Lambda handlers."""
-        project_info = detect_project_structure(serverless_project)
         analyzer = ServerlessAnalyzer()
 
         entry_points = analyzer.extract_entry_points(serverless_project)
@@ -234,7 +228,6 @@ class TestWorkerProject:
 
     def test_extract_celery_tasks(self, worker_project):
         """Should extract Celery tasks."""
-        project_info = detect_project_structure(worker_project)
         analyzer = WorkerAnalyzer()
 
         entry_points = analyzer.extract_entry_points(worker_project)
@@ -267,7 +260,6 @@ class TestMessageQueueProject:
 
     def test_extract_kafka_consumers(self, mq_project):
         """Should extract Kafka consumers."""
-        project_info = detect_project_structure(mq_project)
         analyzer = MessageQueueAnalyzer()
 
         entry_points = analyzer.extract_entry_points(mq_project)
@@ -295,7 +287,6 @@ class TestSmartContractProject:
 
     def test_extract_solidity_functions(self, contract_project):
         """Should extract Solidity contract functions."""
-        project_info = detect_project_structure(contract_project)
         analyzer = SmartContractAnalyzer()
 
         entry_points = analyzer.extract_entry_points(contract_project)
@@ -334,8 +325,6 @@ class TestHybridProject:
 
     def test_analyze_hybrid_project(self, hybrid_project):
         """Should analyze both mobile and API components."""
-        project_info = detect_project_structure(hybrid_project)
-
         # Mobile analyzer should work
         mobile_analyzer = MobileAnalyzer()
         mobile_entry_points = mobile_analyzer.extract_entry_points(hybrid_project)

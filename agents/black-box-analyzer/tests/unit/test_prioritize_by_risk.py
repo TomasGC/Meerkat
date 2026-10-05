@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for prioritize_by_risk.py"""
 
-from pathlib import Path
-
 from bba.models import CoverageGap, HTTPMethod, Scenario
 from prioritize_by_risk import (
     assess_business_impact,

@@ -1,7 +1,5 @@
 """Tests for check_inheritance — Composition over Inheritance detection."""
 
-from pathlib import Path
-
 import pytest
 from cca.checkers.check_inheritance import _check_python
 

@@ -26,11 +26,10 @@ import re
 import sys
 from pathlib import Path
 
-from bba.constants import TEST_FILE_PATTERNS, TEST_FRAMEWORK_PATTERNS
+from bba.constants import TEST_FRAMEWORK_PATTERNS
 from bba.models import HTTPMethod, Language, TestCase, TestFramework
 from bba.utils import (
     detect_project_language,
-    extract_line_number_from_pattern,
     format_path_relative,
     read_file_safe,
     walk_files,

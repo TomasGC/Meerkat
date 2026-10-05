@@ -16,8 +16,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Protocol
 
-# the shared library is rooted at scripts/, two levels up from lib/ai/
-sys.path.insert(0, str(Path(__file__).parents[2]))
 from lib.config import language_config
 from lib.config.model_config import _load as _load_config
 from lib.config.model_config import get_model

@@ -1,7 +1,6 @@
 """Unit tests for common/file_utils.py — discovery, language detection, git helpers."""
 
 import subprocess
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest

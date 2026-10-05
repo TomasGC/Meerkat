@@ -2,7 +2,6 @@
 """Tests for open_report.py — unit tests (print_summary, step_merge no-files)"""
 
 import json
-from pathlib import Path
 
 from open_report import print_summary, step_merge
 

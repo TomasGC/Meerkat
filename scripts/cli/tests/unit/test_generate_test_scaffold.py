@@ -177,7 +177,7 @@ def test_generate_test_scaffold_no_overwrite(tmp_path):
     write_file_safe(script, "print('Hello')")
 
     # Generate first time
-    output = generate_test_scaffold(script, language="python")
+    generate_test_scaffold(script, language="python")
 
     # Try to generate again without force
     with pytest.raises(FileExistsError, match="already exists"):

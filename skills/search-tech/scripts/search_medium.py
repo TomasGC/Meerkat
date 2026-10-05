@@ -90,7 +90,7 @@ def search_medium_tag(query: SearchQuery, tag: str, logger=None, metrics=None) -
             if pub_date:
                 try:
                     created_date = datetime.strptime(pub_date, "%a, %d %b %Y %H:%M:%S %Z")
-                except:
+                except ValueError:  # an unparseable pubDate leaves created_date unknown
                     pass
 
             result = SearchResult(

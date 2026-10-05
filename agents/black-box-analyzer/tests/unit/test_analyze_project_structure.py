@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for analyze_project_structure.py"""
 
-from pathlib import Path
-
 from analyze_project_structure import (
     analyze_project,
     count_endpoints,

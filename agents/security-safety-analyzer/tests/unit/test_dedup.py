@@ -1,7 +1,5 @@
 """Unit tests for common/dedup.py — mechanical/AI finding reconciliation."""
 
-from pathlib import Path
-
 from ssa.dedup import _NO_FINDINGS_TEXT, drop_near_duplicates, format_known_findings
 
 

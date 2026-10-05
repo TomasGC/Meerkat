@@ -1,8 +1,5 @@
 """Tests for check_comments — TODO/FIXME, commented-out code."""
 
-from pathlib import Path
-
-import pytest
 from cca.checkers.check_comments import _check_file
 
 

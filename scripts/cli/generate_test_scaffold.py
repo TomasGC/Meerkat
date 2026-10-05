@@ -60,7 +60,6 @@ def generate_output_path(file_path: Path, language: str) -> Path:
 def generate_powershell_tests(file_path: Path) -> str:
     """Generate Pester test template."""
     script_name = file_path.name
-    stem = file_path.stem
 
     return f"""#!/usr/bin/env pwsh
 #Requires -Version 7.0

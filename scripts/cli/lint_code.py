@@ -10,7 +10,6 @@ Usage:
     python lint_code.py --file src/api.ts --fix
 """
 
-import argparse
 import subprocess
 import sys
 from pathlib import Path

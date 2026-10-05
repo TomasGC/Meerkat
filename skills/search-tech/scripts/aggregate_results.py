@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from search_tech.logger import MetricsCollector, get_defaults, setup_logger
-from search_tech.models import SearchResponse, SearchResult
+from search_tech.models import SearchResult
 
 
 def calculate_rank_score(result: SearchResult) -> float:
@@ -151,7 +151,10 @@ def format_markdown(results: list, query_str: str) -> str:
         Markdown-formatted string
     """
     if not results:
-        return f'## 🔍 No results found for "{query_str}"\n\n💡 Try:\n- Checking spelling\n- Using more common terms\n- Adding language tags\n'
+        return (
+            f'## 🔍 No results found for "{query_str}"\n\n💡 Try:\n- Checking spelling\n- Using more common terms\n-'
+            " Adding language tags\n"
+        )
 
     lines = [f'## 🔍 Technical Search Results for "{query_str}"', "", f"### Top Results ({len(results)} found)", ""]
 

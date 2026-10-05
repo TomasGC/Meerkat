@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pytest
 from ssa.checkers.check_error_handling import run
 
 _PRINCIPLE = "ErrorHandling"

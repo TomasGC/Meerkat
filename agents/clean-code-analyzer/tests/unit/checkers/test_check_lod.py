@@ -1,7 +1,5 @@
 """Tests for check_lod — Law of Demeter violation detection."""
 
-from pathlib import Path
-
 import pytest
 from cca.checkers.check_lod import _check_file
 

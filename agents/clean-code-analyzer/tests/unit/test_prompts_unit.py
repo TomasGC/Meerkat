@@ -1,7 +1,6 @@
 """Unit tests for prompt file structure — no Ollama required."""
 
 import string
-import sys
 from pathlib import Path
 
 import pytest

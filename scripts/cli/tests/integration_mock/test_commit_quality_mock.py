@@ -5,7 +5,6 @@ Tests the format_commit_message + analyze_commit_quality pipeline
 with mocked git operations.
 """
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -102,7 +101,7 @@ index abc123..def456 100644
 +def create_user(name: str, email: str) -> User:
 +    return User(name=name, email=email)
 """
-    with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
+    with patch("lib.utils.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=clean_diff, stderr="")
         args = argparse.Namespace(commit=None, staged=True, format="json")
         result = quality_script.execute(args)
@@ -119,7 +118,7 @@ def test_quality_detects_hardcoded_secret(quality_script):
 +API_KEY = "sk_live_abc123def456"
 +password = "SuperSecret123!"
 """
-    with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
+    with patch("lib.utils.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=diff_with_secret, stderr="")
         args = argparse.Namespace(commit=None, staged=True, format="json")
         result = quality_script.execute(args)
@@ -139,7 +138,7 @@ def test_quality_detects_todo_comment(quality_script):
 +def process():
 +    pass
 """
-    with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
+    with patch("lib.utils.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=diff_with_todo, stderr="")
         args = argparse.Namespace(commit=None, staged=True, format="json")
         result = quality_script.execute(args)

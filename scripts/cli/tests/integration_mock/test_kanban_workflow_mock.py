@@ -6,7 +6,7 @@ with mocked git operations and file I/O.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from cli.generate_kanban_entry import GenerateKanbanEntryScript

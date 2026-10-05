@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for analyze_library_branches.py — unit tests (_merge_runs)"""
 
-from pathlib import Path
-
 from analyze_library_branches import _merge_runs
 
 

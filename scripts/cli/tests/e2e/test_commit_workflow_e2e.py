@@ -6,8 +6,6 @@ format_commit_message → analyze_commit_quality → format output.
 """
 
 import json
-import sys
-from pathlib import Path
 
 import pytest
 

@@ -4,14 +4,9 @@
 All analyzers (API, CLI, Mobile, Desktop, Frontend, LLM, SQL) inherit from this base.
 """
 
-import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from bba.models import (
     AnalysisResult,
@@ -19,7 +14,6 @@ from bba.models import (
     CoverageMatrix,
     EntryPoint,
     ProjectInfo,
-    ProjectType,
     RiskAssessment,
     Scenario,
     TestCase,

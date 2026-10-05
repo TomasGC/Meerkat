@@ -12,7 +12,7 @@ This provides a common structure for all CLI scripts with:
 import argparse
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Optional
 
 
 class BaseCLIScript(ABC):

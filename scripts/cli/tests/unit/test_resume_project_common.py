@@ -5,7 +5,6 @@ import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from cli.resume_project_common import check_claude_cli, convert_to_git_bash_path, resume_project, validate_project_setup
 
 # Add parent directory to path for imports

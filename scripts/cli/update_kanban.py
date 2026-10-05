@@ -126,7 +126,7 @@ def update_existing_entry(existing: KanbanEntry, new_description: str, new_commi
     title_line = f"{today} - [{existing.issue_id}] {existing.title}"
 
     # Merge descriptions (deduplicate)
-    new_desc_lines = [l for l in new_description.split("\n") if l.startswith("-")]
+    new_desc_lines = [line for line in new_description.split("\n") if line.startswith("-")]
     all_desc = list(dict.fromkeys(existing.description + new_desc_lines))  # Deduplicate preserving order
 
     # Merge commits (deduplicate)

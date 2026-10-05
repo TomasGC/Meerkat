@@ -8,9 +8,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts"
-
 from cca.orchestrate import (
     _build_summary,
     _detect_base_branch,
@@ -19,6 +16,8 @@ from cca.orchestrate import (
     _progress_bar,
 )
 from lib.engine.orchestrator import _SEVERITY_ORDER, _print_table
+
+SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts"
 
 # ── _progress_bar ───────────────────────────────────────────────────────────────
 
@@ -245,7 +244,7 @@ def test_orchestrate_default_mode_uses_branch_files(tmp_path):
             with patch("lib.engine.orchestrator.get_branch_files", return_value=[]) as mock_branch:
                 with patch("lib.engine.orchestrator._run_checker", return_value=_DUMMY_RESULT):
                     out = io.StringIO()
-                    with io.StringIO() as _err, patch("sys.stdout", out):
+                    with patch("sys.stdout", out):
                         orch_main()
 
     mock_detect.assert_called_once_with(tmp_path)

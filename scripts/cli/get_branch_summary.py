@@ -243,7 +243,10 @@ def format_text_summary(summary: BranchSummary) -> str:
 
 def format_brief_summary(summary: BranchSummary) -> str:
     """Format as brief summary."""
-    return f"{summary.commits_count} commits, {summary.unique_files_changed} files changed (+{summary.total_additions} -{summary.total_deletions})"
+    return (
+        f"{summary.commits_count} commits, {summary.unique_files_changed} files changed (+{summary.total_additions}"
+        f" -{summary.total_deletions})"
+    )
 
 
 def format_markdown_summary(summary: BranchSummary) -> str:

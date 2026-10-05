@@ -2,7 +2,6 @@
 """Tests for search_tech.models module."""
 
 from datetime import datetime
-from pathlib import Path
 
 import pytest
 from search_tech.models import (

@@ -4,8 +4,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 scripts_dir = Path(__file__).parent.parent.parent / "scripts"
 
 

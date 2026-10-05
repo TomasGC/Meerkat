@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """Tests for generate_kanban_entry.py"""
 
-from pathlib import Path
-
-import pytest
 from cli.generate_kanban_entry import generate_descriptions
 
 

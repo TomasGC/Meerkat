@@ -2,15 +2,11 @@
 """Tests for common/model_utils.py — int_mock tests (subprocess patched)"""
 
 import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from bba.model_utils import (
-    PROMPTS_DIR,
     analyze_file_with_model,
     call_model,
-    run_prompt,
 )
 
 

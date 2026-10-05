@@ -72,7 +72,9 @@ def _check_file(file: Path, root: Path) -> list[dict]:
                         "line": i,
                         "severity": "low",
                         "message": f"Deep property access ({depth} levels): `{chain[:60]}`",
-                        "suggestion": "Access only direct collaborators; expose needed data through the immediate object",
+                        "suggestion": (
+                            "Access only direct collaborators; expose needed data through the immediate object"
+                        ),
                     }
                 )
 

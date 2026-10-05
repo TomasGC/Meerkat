@@ -1,6 +1,5 @@
 """Unit tests for checkers/check_comments.py — regex/grep, no Ollama."""
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -102,8 +101,6 @@ def test_comments_what_verb_flagged(tmp_path):
 
 def test_comments_oserror_reading_file_skips(tmp_path):
     """OSError reading file → file skipped gracefully, no crash."""
-    from unittest.mock import patch
-
     (tmp_path / "mod.py").write_text("# TODO: fix\nx = 1\n")
     with patch("pathlib.Path.read_text", side_effect=OSError("permission denied")):
         result = run(tmp_path, "python")

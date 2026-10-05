@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for analyze_commit_quality.py"""
 
-from pathlib import Path
-
 import pytest
 from cli.analyze_commit_quality import QUALITY_PATTERNS, SECURITY_PATTERNS, AnalyzeCommitQualityScript
 

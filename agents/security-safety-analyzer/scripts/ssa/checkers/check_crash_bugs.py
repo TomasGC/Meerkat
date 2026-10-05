@@ -140,7 +140,9 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
                         "file": filename,
                         "line": node.lineno,
                         "severity": "medium",
-                        "message": f"Division by variable `{node.right.id}` without zero check — ZeroDivisionError risk",
+                        "message": (
+                            f"Division by variable `{node.right.id}` without zero check — ZeroDivisionError risk"
+                        ),
                         "suggestion": f"Guard with `if {node.right.id} == 0` or use try/except ZeroDivisionError",
                     }
                 )
@@ -148,14 +150,15 @@ def _check_python_file(file: Path, root: Path) -> list[dict]:
         # Subscript on a name without prior length/key check
         if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name):
             if isinstance(node.slice, (ast.Constant, ast.Name)):
-                parent_func = getattr(node, "_parent_func", None)
                 violations.append(
                     {
                         "principle": _PRINCIPLE,
                         "file": filename,
                         "line": node.lineno,
                         "severity": "low",
-                        "message": f"Subscript `{node.value.id}[...]` without bounds/key check — IndexError/KeyError risk",
+                        "message": (
+                            f"Subscript `{node.value.id}[...]` without bounds/key check — IndexError/KeyError risk"
+                        ),
                         "suggestion": f"Check `len({node.value.id})` or use `.get()` before subscripting",
                     }
                 )

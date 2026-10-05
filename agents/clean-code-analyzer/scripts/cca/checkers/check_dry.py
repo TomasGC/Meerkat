@@ -47,14 +47,17 @@ def _mechanical(path: Path, files: list | None) -> tuple[list[dict], int] | dict
         file_str = primary.get("file", "unknown")
         lines_str = primary.get("lines", "0")
         line_start = int(lines_str.split("-")[0]) if "-" in lines_str else int(lines_str or 0)
-        other_refs = ", ".join(f"{l['file']}:{l['lines']}" for l in others)
+        other_refs = ", ".join(f"{loc['file']}:{loc['lines']}" for loc in others)
         violations.append(
             {
                 "principle": "DRY",
                 "file": file_str,
                 "line": line_start,
                 "severity": dup.get("severity", "medium"),
-                "message": f"Duplicate block ({dup.get('lines', '?')} lines, similarity {dup.get('similarity', '?')}) also at {other_refs}",
+                "message": (
+                    f"Duplicate block ({dup.get('lines', '?')} lines, similarity {dup.get('similarity', '?')}) also at"
+                    f" {other_refs}"
+                ),
                 "suggestion": "Extract duplicated logic into a shared function or module",
             }
         )

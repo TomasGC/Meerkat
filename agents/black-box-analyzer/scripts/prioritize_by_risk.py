@@ -33,8 +33,6 @@ Failure probability (1-5):
 """
 
 import argparse
-import json
-import re
 import sys
 from pathlib import Path
 
@@ -60,7 +58,6 @@ def assess_business_impact(scenario: Scenario) -> tuple[int, str]:
     """
     path = scenario.endpoint.lower()
     method = scenario.method
-    scenario_type = scenario.scenario_type
 
     if _is_library_scenario(scenario):
         name = scenario.endpoint.lower()
@@ -110,7 +107,6 @@ def assess_technical_risk(scenario: Scenario) -> tuple[int, str]:
     """
     method = scenario.method
     scenario_type = scenario.scenario_type
-    path = scenario.endpoint.lower()
 
     if _is_library_scenario(scenario):
         condition = scenario.input_combination.get("condition", "").lower()
@@ -176,8 +172,6 @@ def assess_failure_probability(scenario: Scenario) -> tuple[int, str]:
         Tuple of (probability_score, reasoning)
     """
     scenario_type = scenario.scenario_type
-    method = scenario.method
-    path = scenario.endpoint.lower()
 
     if _is_library_scenario(scenario):
         condition = scenario.input_combination.get("condition", "").lower()

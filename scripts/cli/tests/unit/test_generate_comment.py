@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """Tests for generate_comment.py"""
 
-from pathlib import Path
-
-import pytest
 from cli.generate_comment import (
     categorize_file,
     generate_implementation_details,

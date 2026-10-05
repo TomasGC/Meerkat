@@ -1,10 +1,10 @@
 """Unit tests for check_security — mechanical path only (no I/O, AI mocked out)."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-from ssa.checkers.check_security import _INJECTION_PATTERNS, _PRINCIPLE, _SECRET_PATTERNS, _mechanical_check, run
+from ssa.checkers.check_security import _PRINCIPLE, _mechanical_check, run
 
 # --- helpers -----------------------------------------------------------------
 
@@ -211,7 +211,7 @@ class TestRunFunction:
 
     def test_files_kwarg_scopes_analysis(self, tmp_path):
         clean = _make_file(tmp_path, "clean.py", "x = 1\n")
-        dirty = _make_file(tmp_path, "dirty.py", 'password = "secret123"\n')
+        _make_file(tmp_path, "dirty.py", 'password = "secret123"\n')
         with patch("ssa.checkers.check_security.check_server_available", return_value=False):
             result = run(tmp_path, "python", files=[clean])
         assert all(v["file"] != "dirty.py" for v in result["violations"])

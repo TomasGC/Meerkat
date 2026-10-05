@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Tests for open_report.py — int_mock tests (shutil.which patched)"""
 
-from pathlib import Path
 from unittest.mock import patch
 
 from open_report import step_merge, step_reportgenerator

@@ -1,7 +1,5 @@
 """Tests for check_naming — magic numbers, magic strings, single-letter vars."""
 
-from pathlib import Path
-
 import pytest
 from cca.checkers.check_naming import _check_file
 

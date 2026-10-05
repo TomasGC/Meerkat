@@ -1,7 +1,5 @@
 """Real-Ollama integration tests — automatically skipped if Ollama not running."""
 
-from pathlib import Path
-
 import pytest
 
 DIRTY_CODE = """

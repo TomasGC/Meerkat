@@ -10,16 +10,11 @@ All event-driven systems share common patterns:
 - Event validation
 """
 
-import sys
 from abc import abstractmethod
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from bba.models import (
     EntryPoint,
-    Parameter,
     Scenario,
     TestCase,
 )

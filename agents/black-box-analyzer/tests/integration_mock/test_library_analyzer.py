@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Tests for library_analyzer.py — int_mock tests (analyze() with patched _run_script)"""
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from bba.models import ProjectType

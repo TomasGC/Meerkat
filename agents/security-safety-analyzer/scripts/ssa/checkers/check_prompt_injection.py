@@ -63,7 +63,10 @@ def _mechanical_check(file: Path, root: Path, language: str) -> list[dict]:
                         "line": i,
                         "severity": "high",
                         "message": message,
-                        "suggestion": "Sanitize or validate user input before including in prompts; use structured slots, not raw interpolation",
+                        "suggestion": (
+                            "Sanitize or validate user input before including in prompts; use structured slots, not raw"
+                            " interpolation"
+                        ),
                     }
                 )
 
@@ -77,8 +80,12 @@ def _mechanical_check(file: Path, root: Path, language: str) -> list[dict]:
                         "file": filename,
                         "line": i,
                         "severity": "medium",
-                        "message": "Prompt template contains a raw user-input slot — verify caller sanitizes before formatting",
-                        "suggestion": "Document sanitization contract; consider using a wrapper that validates slot values",
+                        "message": (
+                            "Prompt template contains a raw user-input slot — verify caller sanitizes before formatting"
+                        ),
+                        "suggestion": (
+                            "Document sanitization contract; consider using a wrapper that validates slot values"
+                        ),
                     }
                 )
 

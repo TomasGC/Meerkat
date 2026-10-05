@@ -8,7 +8,7 @@ Uses AST parsing and grep to detect defined symbols that are never called.
 import ast
 import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +17,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from lib.cli.base import BaseCLIScript
 from lib.config import language_config
 from lib.engine.discovery import dominant_language
-from lib.utils import run_command
 
 _SUPPORTED_LANGUAGES = ("python", "typescript", "go")
 

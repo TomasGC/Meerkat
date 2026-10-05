@@ -1,7 +1,6 @@
 """Tests for infer_name.py — intelligent name inference for skills/scripts/agents."""
 
 import json
-from pathlib import Path
 
 import pytest
 from cli.infer_name import InferNameScript

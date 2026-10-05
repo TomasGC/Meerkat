@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for generate_ci_workflow.py — unit tests"""
 
-from pathlib import Path
-
 from bba.models import Language, TestFramework
 from generate_ci_workflow import (
     _COLLECT_CMD,

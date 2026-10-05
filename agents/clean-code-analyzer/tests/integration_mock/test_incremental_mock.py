@@ -5,8 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts"
 
 DIRTY_PYTHON = """\

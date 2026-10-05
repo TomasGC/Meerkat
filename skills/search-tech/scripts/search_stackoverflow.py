@@ -170,7 +170,7 @@ def search_stackoverflow(
                 success=True, query=query, results=results, search_time_seconds=time.time() - start_time
             )
 
-        except requests.exceptions.Timeout as e:
+        except requests.exceptions.Timeout:
             last_error = "StackOverflow API timeout (>10s)"
             logger.warning(f"Timeout on attempt {attempt + 1}/{max_retries}")
             metrics.increment("errors")

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Tests for parallel_analyzer.py — unit tests"""
 
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest

@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """Tests for common/model_utils.py — int_real tests (live local AI required)"""
 
-from pathlib import Path
-from unittest.mock import patch
-
 import pytest
 from bba.model_utils import PROMPTS_DIR, analyze_file_with_model, call_model, run_prompt
 

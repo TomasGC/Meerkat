@@ -10,7 +10,6 @@ Used by generate-kanban-entry.py and generate-github-comment.py for automation.
 """
 
 import re
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Optional

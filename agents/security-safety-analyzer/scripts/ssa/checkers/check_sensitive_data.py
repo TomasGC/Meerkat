@@ -63,7 +63,7 @@ _RULES = {
         ),
         (re.compile(r"\bprint\s*\(\s*traceback\."), _LEAKED_INTERNALS, "medium", _LEAKED_INTERNALS_FIX),
         (
-            re.compile(rf"(?:return|jsonify)\s*\([^)]*\bstr\s*\(\s*e(?:xc|rror)?\s*\)"),
+            re.compile(r"(?:return|jsonify)\s*\([^)]*\bstr\s*\(\s*e(?:xc|rror)?\s*\)"),
             _LEAKED_INTERNALS,
             "medium",
             _LEAKED_INTERNALS_FIX,
@@ -147,7 +147,7 @@ _RULES = {
     ],
     "*": [
         (
-            re.compile(rf"(?i)[?&](?:token|api_?key|password|secret|access_token)="),
+            re.compile(r"(?i)[?&](?:token|api_?key|password|secret|access_token)="),
             "Credential passed in a URL query string — captured by logs and referrers",
             "medium",
             "Move the credential into a header or request body",

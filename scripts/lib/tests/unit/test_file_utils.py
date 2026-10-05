@@ -4,7 +4,6 @@
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from lib.file_utils import FileReadResult, read_file_safe, read_files_safe
 
 

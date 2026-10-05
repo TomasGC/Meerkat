@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """Tests for update_kanban.py"""
 
-from pathlib import Path
-
-import pytest
 from cli.search_kanban import KanbanEntry
 from cli.update_kanban import (
     build_entry,

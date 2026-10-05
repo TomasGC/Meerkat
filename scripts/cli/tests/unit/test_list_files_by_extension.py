@@ -255,7 +255,7 @@ def test_is_excluded_relative_path_outside_root(tmp_path):
     # Should return False (not throw exception)
     result = is_excluded(outside_path, tmp_path, DEFAULT_EXCLUDES)
 
-    assert result == False
+    assert result is False
 
 
 def test_find_files_preserves_full_path(sample_project):

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for search_reddit module."""
 
-from datetime import datetime
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -123,7 +121,6 @@ class TestRedditSearch:
 
     def test_reddit_excerpt_extraction(self):
         """Test excerpt extraction from selftext."""
-        from search_tech.models import SearchResult
 
         # Long selftext should be truncated
         long_text = "a" * 250

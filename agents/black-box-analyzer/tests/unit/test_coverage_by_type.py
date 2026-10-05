@@ -2,7 +2,6 @@
 """Tests for coverage_by_type.py — unit tests"""
 
 import json
-from pathlib import Path
 
 from bba.models import HTTPMethod, TestFramework
 from coverage_by_type import (

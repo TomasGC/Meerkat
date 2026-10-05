@@ -7,11 +7,8 @@ checker module; the AI pass itself is patched on lib.engine.hybrid, since
 that's where run_hybrid's real call sites live.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
-import cca.checkers.check_cqrs as cqrs_mod
-import pytest
 from cca.checkers.check_cqrs import run
 
 _CHECK_AVAILABLE = "cca.checkers.check_cqrs.check_server_available"

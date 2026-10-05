@@ -3,7 +3,6 @@
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from ssa.checkers.check_crash_bugs import _PRINCIPLE, _check_python_file, _pattern_check, run
 
 

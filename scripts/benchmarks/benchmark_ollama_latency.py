@@ -155,23 +155,23 @@ def benchmark_model(model: str, config: dict) -> BenchmarkResult:
     print(f"\n[Benchmarking] {model} ({config['tier']} tier, {config['size_gb']}GB)")
 
     # 1. Cold start (unload first)
-    print(f"  [1/3] Cold start (unloading first)...")
+    print("  [1/3] Cold start (unloading first)...")
     stop_all_models()
     time.sleep(2)  # Wait for unload
     _, cold_ms = run_command(["ollama", "run", model, TEST_PROMPT], timeout=120)
     print(f"    [OK] Cold start: {cold_ms}ms")
 
     # 2. Warm start (model already loaded)
-    print(f"  [2/3] Warm start (model loaded)...")
+    print("  [2/3] Warm start (model loaded)...")
     if not is_model_loaded(model):
-        print(f"    [WARN] Model not loaded, loading again...")
+        print("    [WARN] Model not loaded, loading again...")
         run_command(["ollama", "run", model, TEST_PROMPT], timeout=120)
 
     _, warm_ms = run_command(["ollama", "run", model, TEST_PROMPT], timeout=60)
     print(f"    [OK] Warm start: {warm_ms}ms")
 
     # 3. Average response time (3 runs)
-    print(f"  [3/3] Average response (3 runs)...")
+    print("  [3/3] Average response (3 runs)...")
     times = []
     for i in range(3):
         _, run_ms = run_command(["ollama", "run", model, TEST_PROMPT], timeout=60)

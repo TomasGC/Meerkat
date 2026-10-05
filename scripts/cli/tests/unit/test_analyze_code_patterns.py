@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """Tests for analyze_code_patterns.py"""
 
-import json
-from pathlib import Path
-
 import pytest
 from cli.analyze_code_patterns import AnalyzeCodePatternsScript
 

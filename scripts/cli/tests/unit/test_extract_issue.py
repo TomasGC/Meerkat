@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Tests for extract_issue.py"""
 
-from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from cli.extract_issue import extract_issue_from_text
 
 

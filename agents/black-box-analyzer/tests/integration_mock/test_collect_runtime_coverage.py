@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Tests for collect_runtime_coverage.py — int_mock tests (subprocess/tool patched)"""
 
-from pathlib import Path
 from unittest.mock import patch
 
 from collect_runtime_coverage import (

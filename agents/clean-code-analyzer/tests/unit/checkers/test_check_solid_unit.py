@@ -7,11 +7,8 @@ the AI pass itself (run_hybrid's own availability gate + analyze_files_parallel)
 is patched on lib.engine.hybrid, since that's where the real call sites live.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
-import cca.checkers.check_solid as solid_mod
-import pytest
 from cca.checkers.check_solid import run
 
 # Patch targets: check_solid's own early guard vs. run_hybrid's internal call sites.

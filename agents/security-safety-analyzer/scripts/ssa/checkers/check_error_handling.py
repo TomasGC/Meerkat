@@ -207,7 +207,7 @@ def run(path: Path, language: str, files: list | None = None, agents: int = 1, n
         if file.suffix == ".py":
             violations.extend(_check_python_file(file, path))
         else:
-            lang = next((l for l, exts in _LANG_EXTS.items() if file.suffix in exts), "unknown")
+            lang = next((name for name, exts in _LANG_EXTS.items() if file.suffix in exts), "unknown")
             violations.extend(_check_non_python(file, path, lang))
 
     return {

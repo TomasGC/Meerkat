@@ -149,8 +149,6 @@ def test_update_last_section(sample_markdown):
 
 def test_update_preserves_other_sections(sample_markdown):
     """Test that updating one section preserves others."""
-    original = sample_markdown.read_text()
-
     new_content = "Updated architecture."
 
     update_section_in_markdown(sample_markdown, "## Architecture", new_content, create_backup=False)
@@ -182,8 +180,6 @@ def test_update_nonexistent_file(tmp_path):
 
 def test_update_lines_changed_increase(sample_markdown):
     """Test lines changed calculation when adding lines."""
-    original_lines = len(sample_markdown.read_text().split("\n"))
-
     new_content = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5"
 
     result = update_section_in_markdown(sample_markdown, "## Architecture", new_content, create_backup=False)
@@ -194,8 +190,6 @@ def test_update_lines_changed_increase(sample_markdown):
 
 def test_update_lines_changed_decrease(sample_markdown):
     """Test lines changed calculation when removing lines."""
-    original_lines = len(sample_markdown.read_text().split("\n"))
-
     new_content = "Short"
 
     result = update_section_in_markdown(sample_markdown, "## Installation", new_content, create_backup=False)

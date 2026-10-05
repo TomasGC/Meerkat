@@ -7,10 +7,8 @@ availability gate + analyze_files_parallel + file discovery) is exercised
 through lib.engine.hybrid, since that's where the real call sites live.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from cca.checkers.check_ddd import run
 
 _CHECK_AVAILABLE = "cca.checkers.check_ddd.check_server_available"

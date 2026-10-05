@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for read_yaml_frontmatter.py"""
 
+import importlib.util
 from pathlib import Path
 from textwrap import dedent
 
@@ -185,15 +186,10 @@ def test_extract_frontmatter_complex_yaml(tmp_path):
     assert frontmatter is not None
     assert frontmatter["name"] == "complex-skill"
 
-    try:
-        # If PyYAML available, check nested structure
-        import yaml
-
+    # Nested structures are parsed only with PyYAML; the simple fallback parser may flatten them
+    if importlib.util.find_spec("yaml") is not None:
         assert isinstance(frontmatter.get("tools"), list)
         assert isinstance(frontmatter.get("metadata"), dict)
-    except ImportError:
-        # Simple parser may not handle nested structures
-        pass
 
 
 def test_extract_frontmatter_windows_line_endings(tmp_path):

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for generate_coverage_matrix.py"""
 
-from pathlib import Path
-
 from bba.models import HTTPMethod, Scenario, TestCase, TestFramework
 from generate_coverage_matrix import (
     calculate_coverage_stats,
@@ -304,10 +302,8 @@ def test_generate_coverage_matrix(sample_scenarios_json, sample_tests_json):
 
     # Should have tested scenarios
     tested_count = len([g for g in coverage_gaps if g.is_tested])
-    untested_count = len([g for g in coverage_gaps if not g.is_tested])
 
     assert tested_count > 0
-    # Untested count may be 0 if all scenarios are covered
 
 
 def test_scenario_matches_test_none_tested_endpoint():

@@ -17,7 +17,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 _SCRIPTS_DIR = Path(__file__).resolve().parents[3]  # this checkout's scripts/
 sys.path.insert(0, str(_SCRIPTS_DIR))

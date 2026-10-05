@@ -2,7 +2,6 @@
 """Tests for common/cache.py"""
 
 import json
-from pathlib import Path
 
 import pytest
 from bba.cache import AnalysisCache
@@ -23,7 +22,7 @@ from bba.models import (
 def test_cache_init_creates_dir(temp_dir):
     cache_dir = temp_dir / "my-cache"
     assert not cache_dir.exists()
-    cache = AnalysisCache(cache_dir=cache_dir)
+    AnalysisCache(cache_dir=cache_dir)
     assert cache_dir.exists()
 
 

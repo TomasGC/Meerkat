@@ -9,7 +9,6 @@ Creates comprehensive coverage analysis:
 """
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -324,7 +323,8 @@ def generate_markdown_table(coverage_gaps: list[CoverageGap]) -> str:
                 test_names += f" (+{len(gap.related_tests) - 3} more)"
 
             lines.append(
-                f"| {scenario.description} | {scenario.scenario_type} | {scenario.expected_output} | {status} | {test_names or '-'} |"
+                f"| {scenario.description} | {scenario.scenario_type} | {scenario.expected_output} | {status} |"
+                f" {test_names or '-'} |"
             )
 
         lines.append("")
@@ -406,7 +406,8 @@ Examples:
             print("By Scenario Type:", file=sys.stderr)
             for scenario_type, type_stats in stats["by_type"].items():
                 print(
-                    f"  {scenario_type}: {type_stats['tested']}/{type_stats['total']} ({type_stats['coverage_percent']:.1f}%)",
+                    f"  {scenario_type}: {type_stats['tested']}/{type_stats['total']}"
+                    f" ({type_stats['coverage_percent']:.1f}%)",
                     file=sys.stderr,
                 )
             print("", file=sys.stderr)

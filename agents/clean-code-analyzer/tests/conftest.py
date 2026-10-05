@@ -84,7 +84,10 @@ def clean_project(tmp_path):
 
 @pytest.fixture
 def mock_ollama_violations():
-    return '[{"principle": "S", "line": 5, "severity": "high", "violation": "Too many responsibilities", "suggestion": "Split class"}]'
+    return (
+        '[{"principle": "S", "line": 5, "severity": "high", "violation": "Too many responsibilities", "suggestion":'
+        ' "Split class"}]'
+    )
 
 
 @pytest.fixture

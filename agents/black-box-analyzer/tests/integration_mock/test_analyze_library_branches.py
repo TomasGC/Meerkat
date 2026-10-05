@@ -2,7 +2,6 @@
 """Tests for analyze_library_branches.py — int_mock tests (--agents CLI path)"""
 
 import sys
-from pathlib import Path
 from unittest.mock import patch
 
 from analyze_library_branches import main

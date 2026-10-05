@@ -2,9 +2,7 @@
 """Tests for search_tech.logger module."""
 
 import logging
-from pathlib import Path
 
-import pytest
 from search_tech.logger import MetricsCollector, setup_logger
 
 

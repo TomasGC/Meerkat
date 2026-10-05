@@ -10,8 +10,6 @@ those are patched on lib.engine.hybrid, where the real call sites are.
 
 import json
 import subprocess
-import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import cca.checkers.check_kiss as kiss_mod
@@ -380,7 +378,7 @@ def test_tool_failure_warns_on_stderr_and_still_runs_ai(tmp_path, capsys):
                 with patch("lib.engine.hybrid.analyze_files_parallel", return_value=[ai_item]):
                     result = run(tmp_path, "python")
 
-    warnings = [l for l in capsys.readouterr().err.splitlines() if l.startswith("[WARN]")]
+    warnings = [line for line in capsys.readouterr().err.splitlines() if line.startswith("[WARN]")]
     assert warnings == ["[WARN] KISS: calculate_complexity.py failed: boom"]
     assert result["success"] is True
     assert [v["line"] for v in result["violations"]] == [1]
@@ -403,7 +401,7 @@ def test_tool_exception_warns_on_stderr(tmp_path, capsys, side_effect, run_resul
             with patch("lib.engine.hybrid.check_server_available", return_value=False):
                 result = run(tmp_path, "python")
 
-    warnings = [l for l in capsys.readouterr().err.splitlines() if l.startswith("[WARN]")]
+    warnings = [line for line in capsys.readouterr().err.splitlines() if line.startswith("[WARN]")]
     assert warnings == [f"[WARN] KISS: calculate_complexity.py failed: {expected}"]
     assert result["success"] is True
     assert result["violations"] == []

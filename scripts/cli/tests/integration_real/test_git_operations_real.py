@@ -154,8 +154,8 @@ def test_find_git_repos_finds_repo(tmp_path):
 
     from cli.find_git_repos import FindGitReposScript
 
-    repo1 = init_git_repo(tmp_path / "project1")
-    repo2 = init_git_repo(tmp_path / "project2")
+    init_git_repo(tmp_path / "project1")
+    init_git_repo(tmp_path / "project2")
     script = FindGitReposScript()
     args = argparse.Namespace(path=tmp_path, max_depth=2, format="json", exclude=[])
     result = script.execute(args)

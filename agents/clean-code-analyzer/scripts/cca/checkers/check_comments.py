@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from lib.config import language_config
-from lib.engine.discovery import _ALL_EXTENSIONS, _HASH_COMMENT_EXTS, _SKIP_DIRS, is_hash_comment_file
+from lib.engine.discovery import _ALL_EXTENSIONS, _SKIP_DIRS, is_hash_comment_file
 from lib.engine.hybrid import run_hybrid
 
 # SQL is analyzed too (#42): its `--` comments carry the same TODOs and dead code

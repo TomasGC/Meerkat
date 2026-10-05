@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for find_unused_code.py"""
 
-from pathlib import Path
-
 import pytest
 from cli.find_unused_code import FindUnusedCodeScript
 

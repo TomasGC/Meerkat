@@ -9,8 +9,6 @@ real usage.
 """
 
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -53,7 +51,6 @@ def kanban_file(tmp_path: Path) -> Path:
 
 
 def test_search_empty_kanban(kanban_file, capsys):
-    from unittest.mock import patch
 
     from cli.search_kanban import SearchKanbanScript
 
@@ -185,7 +182,6 @@ def test_kanban_search_text_format(kanban_file, capsys):
 
 
 def test_kanban_search_summary_format(kanban_file, capsys):
-    from unittest.mock import patch
 
     from cli.search_kanban import SearchKanbanScript
 

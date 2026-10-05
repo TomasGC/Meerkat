@@ -2,8 +2,7 @@
 """Tests for common/model_utils.py — unit tests (extract_json_*, run_prompt logic, PROMPTS_DIR)"""
 
 import json
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from bba.model_utils import (

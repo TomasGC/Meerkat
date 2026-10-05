@@ -8,7 +8,6 @@ language requirements, and structure standards.
 
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -114,7 +113,7 @@ class ValidateMarkdownScript(BaseCLIScript):
         lines = content.splitlines()
 
         # Check for headings
-        headings = [l for l in lines if l.startswith("#")]
+        headings = [line for line in lines if line.startswith("#")]
         if not headings:
             warnings.append("No markdown headings found")
         else:

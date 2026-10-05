@@ -2,3 +2,17 @@
 # Same settings as Condor's Python pipeline (#48); flake8 does not read pyproject.toml.
 max-line-length = 120
 extend-exclude = fixtures,template-base,skills/synced
+# E203 (whitespace before ':') contradicts black's slice formatting; black's documented flake8 setting.
+extend-ignore = E203
+# E402 only where the import must follow the sys.path bootstrap (#2): files run directly as scripts, which put
+# this checkout's scripts/ on the path before importing lib; each agent package's __init__, which does it once
+# for the whole package; and the test conftests. Modules imported through their package have no bootstrap.
+per-file-ignores =
+    scripts/cli/*.py: E402
+    scripts/cli/*/*.py: E402
+    scripts/cli/agents/task_monitor/*.py: E402
+    agents/*/scripts/*.py: E402
+    agents/*/scripts/*/__init__.py: E402
+    skills/*/scripts/*.py: E402
+    skills/*/scripts/*/__init__.py: E402
+    */tests/conftest.py: E402

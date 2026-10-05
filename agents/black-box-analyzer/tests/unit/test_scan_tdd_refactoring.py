@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 """Tests for scan_tdd_refactoring.py"""
 
-from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
 from scan_tdd_refactoring import _merge_blocker_runs
 
 # ── _merge_blocker_runs ───────────────────────────────────────────────────────

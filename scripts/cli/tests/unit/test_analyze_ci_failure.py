@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """Tests for analyze_ci_failure.py"""
 
-from pathlib import Path
-
-import pytest
 from cli.analyze_ci_failure import (
     CIAnalysis,
     parse_github_url,

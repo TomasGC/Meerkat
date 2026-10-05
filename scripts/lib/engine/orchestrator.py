@@ -302,7 +302,7 @@ def main(
                 f"[Incremental] changed since {args.since}: {len(incremental_files)} files", file=sys.stderr, flush=True
             )
         else:
-            print(f"[Incremental] --since: not a git repo; running full analysis", file=sys.stderr)
+            print("[Incremental] --since: not a git repo; running full analysis", file=sys.stderr)
     elif not args.full:
         base = _detect_base_branch(path)
         if base:

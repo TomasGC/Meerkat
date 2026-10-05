@@ -219,7 +219,7 @@ def test_code_reviewer_agent_security_analysis():
 """
 
     script = AnalyzeCommitQualityScript()
-    with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
+    with patch("lib.utils.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=diff, stderr="")
         args = argparse.Namespace(commit=None, staged=True, format="json")
         result = script.execute(args)

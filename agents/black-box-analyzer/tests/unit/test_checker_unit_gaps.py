@@ -1,6 +1,5 @@
 """Tests for checkers/check_unit_gaps.py"""
 
-from pathlib import Path
 from unittest.mock import patch
 
 from bba.checkers.check_unit_gaps import run

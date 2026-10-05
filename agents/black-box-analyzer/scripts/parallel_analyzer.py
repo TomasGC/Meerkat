@@ -200,7 +200,8 @@ class AnalyzerRouter:
 
                             if verbose:
                                 print(
-                                    f"  ✅ {analyzer.__class__.__name__}: {len(result.entry_points)} entry points, {len(result.scenarios)} scenarios"
+                                    f"  ✅ {analyzer.__class__.__name__}: {len(result.entry_points)} entry points,"
+                                    f" {len(result.scenarios)} scenarios"
                                 )
 
                         except Exception as e:
@@ -510,14 +511,15 @@ Supported project types (19):
         project_info_str = str(project_info_path)
         scripts_dir = Path(__file__).parent
         print("\n── Next steps ──────────────────────────────────────────", file=sys.stderr)
-        print(f"  Visual HTML report (local):", file=sys.stderr)
+        print("  Visual HTML report (local):", file=sys.stderr)
         print(f"    python {scripts_dir}/open_report.py {project_path_str}", file=sys.stderr)
-        print(f"  Generate CI workflow (.github/workflows/coverage.yml):", file=sys.stderr)
+        print("  Generate CI workflow (.github/workflows/coverage.yml):", file=sys.stderr)
         print(
-            f"    python {scripts_dir}/generate_ci_workflow.py {project_info_str} --output .github/workflows/coverage.yml",
+            f"    python {scripts_dir}/generate_ci_workflow.py {project_info_str} --output"
+            " .github/workflows/coverage.yml",
             file=sys.stderr,
         )
-        print(f"  Coverage breakdown by test type:", file=sys.stderr)
+        print("  Coverage breakdown by test type:", file=sys.stderr)
         print(
             f"    python {scripts_dir}/coverage_by_type.py scenarios.json tests.json --markdown breakdown.md",
             file=sys.stderr,

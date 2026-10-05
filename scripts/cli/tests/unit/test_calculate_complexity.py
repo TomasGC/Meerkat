@@ -2,7 +2,6 @@
 """Tests for calculate_complexity.py"""
 
 import ast
-from pathlib import Path
 
 import pytest
 from cli.calculate_complexity import CalculateComplexityScript

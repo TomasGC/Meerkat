@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 """Tests for format_commit_message.py"""
 
-from pathlib import Path
-
-import pytest
 from cli.format_commit_message import (
-    format_commit_message,
     generate_suggestion,
     validate_commit_message,
 )

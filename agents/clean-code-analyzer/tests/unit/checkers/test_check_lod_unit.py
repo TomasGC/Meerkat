@@ -1,6 +1,5 @@
 """Unit tests for checkers/check_lod.py — regex/grep, no Ollama."""
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
