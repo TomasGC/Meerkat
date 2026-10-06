@@ -1,7 +1,7 @@
 # Design Patterns - Meerkat
 
 **Purpose**: Design patterns applied across the Meerkat codebase
-**Last Updated**: 2026-10-05
+**Last Updated**: 2026-10-06
 
 ---
 
@@ -49,6 +49,8 @@
 41. **The Directory Is the Tier (#46)** — a test's tier is the directory right under its `tests/`, and the marker carries the same name, applied by one root-conftest rule. Before, two directory conventions mapped onto marker names matching neither, and 186 tests sat in no tier directory: a marker-selected CI job (`-m unit`) would have skipped them without a word. With no other way to get a tier, the four tier runs are disjoint and add up to the full collection, which is the check that proves it
 42. **Code Follows the Checkout, User Data Follows MEERKAT_HOME (#2)** — `lib.paths.CHECKOUT` is derived from `__file__`, so code, config templates and fixtures always come from the checkout that is running; only the user's own files (local configs, integration profiles, caches) follow `MEERKAT_HOME`. An override for code would recreate the bug it replaces: a clone importing another tree's library. The sys.path bootstrap lives once per agent package, in `__init__`, because every module of the package is imported through it
 43. **Prove a Marker by Removing What It Guards (#2)** — `live_ai` is only trustworthy if `-m "not live_ai"` really never needs the model. The check is to make the model unreachable (`MEERKAT_HOME` with `local.base_url` on a dead port) and run every tier: an unmarked AI caller then fails instead of quietly passing against the developer's server
+44. **Pin a Found Bug, Don't Fix It in Passing (#48)** — raising coverage found 16 real bugs (#50, #51). Each got a test asserting the correct behaviour, marked `xfail(strict=True)` with its issue, and the source was left alone: a coverage change that also fixes ten unrelated bugs cannot be reviewed. Strict mode turns the eventual fix into a failing run until the mark is removed, so the fix cannot land unnoticed
+45. **Pin the Tools That Judge (#48, Condor)** — a lint gate is a function of the tool version as much as of the code: isort 9 re-sorted imports isort 8 accepted, and black, mypy and pylint change verdicts across releases. Condor pins every lint tool in one place and a project formats with the same versions; a bump is a deliberate change. Same for the settings that depend on the environment: isort's first-party detection guessed from the working directory until `src_paths` named the source roots
 32. **Priority Lives in an Ordered List, Not in Per-Item Fields** — when "first match wins" matters, store it as a JSON array (`project_indicators: [{language, markers}]`) rather than a field on each language or an object keyed by name. JSON objects are unordered by spec, a per-language field would inherit the language table's unrelated order (it would have flipped a Go+Python project to Python), and the list can name entries the main table must not contain (`solidity` would have entered every agent's file discovery)
 
 ---

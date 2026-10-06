@@ -275,6 +275,32 @@ python scripts/cli/update_kanban.py --auto
 
 ---
 
+## Lint and Coverage Gates (#48)
+
+The gates Condor's Python pipeline runs on Meerkat, with the versions it pins (`python-lint-checks.yml`): flake8 7.4.1,
+black 26.10.0, isort 9.0.2, pylint 4.1.2, mypy 2.4.0, bandit 1.9.4, pip-audit 2.10.1, vulture 2.16. Install those
+versions to get CI's verdict locally; another version can disagree (isort 8 vs 9 did).
+
+```bash
+cd ~/.claude
+python -m black --check agents scripts skills tests
+python -m isort --check-only agents scripts skills tests
+python -m flake8 agents scripts skills tests
+python -m pylint agents scripts skills tests --disable=C0114,C0115,C0116 --fail-under=7
+python -m mypy agents scripts skills --ignore-missing-imports --no-error-summary
+python -m bandit -r agents scripts skills -ll -q -x "*/tests/*,*/fixtures/*"
+python -m vulture agents scripts skills tests --min-confidence=80 --exclude "*/fixtures/*"
+python -m pytest -q -m "(unit or integration_mock or integration_real) and not live_ai" \
+  --cov=agents --cov=scripts --cov=skills --cov-fail-under=80
+```
+
+Settings live in `pyproject.toml` (black, isort with the source roots as `src_paths`, coverage omitting tests and
+fixtures, mypy with the same roots and its excludes) and `.flake8`. Fixtures (deliberately flawed code) and
+`template-base/` are never linted. On this machine, `skills/synced/` and the gitignored personal
+`skills/local-net10-migration/` are local-only: exclude them when running by directory.
+
+---
+
 ## Syntax Check
 
 ```bash

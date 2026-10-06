@@ -4,6 +4,16 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-06 - [#48] Pass the Condor lint and coverage gates
+- Meerkat passes every gate of Condor's Python pipeline with its pinned tools: black and isort (one formatter-only commit, 312 files), flake8 (538 findings fixed in code; E402 only for script bootstraps), pylint 8.23, mypy (281 errors), bandit, vulture, pip-audit
+- Coverage of sources from 67% to 94% (gate 80%): BBA 58% → 98%, scripts/cli 63% → 86%, search-tech → 96%; library code with no caller deleted (lib/validators.py, most of lib/formatters and lib/utils, search_tech/utils.py)
+- The gates found real bugs: BBA's non-API scenarios crashed the report and the cache, one empty RSS field dropped every Medium result, a cancelled AI call raised TypeError (all fixed with regression tests); 16 more pinned by strict xfail tests (#50, #51)
+- Linux-only verdicts fixed: isort's first-party detection (`src_paths`), `os.startfile` for mypy, isort 9 vs 8 (Condor now pins every tool)
+- Tests: 3322 passed + 23 xfailed (was 2587); CI-safe run, Linux container and Meerkat's Push-CI on GitHub all green
+tags: #lint #coverage #mypy #testing #bugs
+Ref: https://github.com/TomasGC/Meerkat/issues/48
+Commits: 4c0916c, 8925901, 9593b61, 64efca4, 826a125, b1dac53, b0540d1
+
 2026-10-05 - [#2] Run the test suites on GitHub Actions from any checkout
 - Part 1, relocatable checkout: `scripts/lib/paths.py` resolves the repo from `__file__` (`CHECKOUT`); user data (local configs, integration profiles, caches) follows `MEERKAT_HOME`, else the checkout. No code locates the repo through `~/.claude` any more
 - One `sys.path` bootstrap per agent package (`cca`, `ssa`, `bba`, `search_tech`) in its `__init__`; 40 per-module blocks and the engine's inserts removed; a guard test fails if a repo package is loaded from outside the checkout

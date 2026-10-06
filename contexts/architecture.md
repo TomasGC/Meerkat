@@ -4,7 +4,7 @@
 
 **Direction**: support for other assistants (Codex, others) is planned. Keep the assistant-agnostic core (`scripts/lib/`) separate from the Claude Code host layer (`CLAUDE.md`, skills, hooks, `AGENT.md`, `settings.json`); name the role ("the coding assistant"), not the product, in docs and new designs.
 
-**Last Updated**: 2026-10-05
+**Last Updated**: 2026-10-06
 
 ---
 
@@ -39,6 +39,7 @@ Local AI  Scripts  Agents
 ~/.claude/
 ├── CLAUDE.md / CLAUDE.local.md      # Global + personal instructions
 ├── settings.json / settings.local.json
+├── pyproject.toml / .flake8          # tool settings only: black, isort, flake8, mypy, coverage = Condor's gates (#48)
 │
 ├── contexts/                        # Auto-loaded session context
 │   ├── kanban.md                    # Work history
