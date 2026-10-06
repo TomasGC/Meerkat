@@ -14,7 +14,7 @@ import argparse
 import json
 import re
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -119,11 +119,7 @@ def filter_logs(
     # Filter by time
     if since:
         since_dt = datetime.fromisoformat(since)
-        filtered = [
-            e
-            for e in filtered
-            if datetime.fromisoformat(e.timestamp) >= since_dt
-        ]
+        filtered = [e for e in filtered if datetime.fromisoformat(e.timestamp) >= since_dt]
 
     # Filter by level
     if level:
@@ -136,11 +132,7 @@ def filter_logs(
         }
         min_priority = level_priority[level.lower()]
 
-        filtered = [
-            e
-            for e in filtered
-            if level_priority.get(e.level.lower(), 0) >= min_priority
-        ]
+        filtered = [e for e in filtered if level_priority.get(e.level.lower(), 0) >= min_priority]
 
     # Filter by search
     if search:

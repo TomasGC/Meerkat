@@ -1,14 +1,14 @@
 """Unit tests for check_security — mechanical path only (no I/O, AI mocked out)."""
+
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 
-
-from ssa.checkers.check_security import run, _SECRET_PATTERNS, _INJECTION_PATTERNS, _mechanical_check, _PRINCIPLE
-
+from ssa.checkers.check_security import _PRINCIPLE, _mechanical_check, run
 
 # --- helpers -----------------------------------------------------------------
+
 
 def _make_file(tmp_path: Path, name: str, content: str) -> Path:
     f = tmp_path / name
@@ -17,6 +17,7 @@ def _make_file(tmp_path: Path, name: str, content: str) -> Path:
 
 
 # --- _SECRET_PATTERNS --------------------------------------------------------
+
 
 class TestSecretPatterns:
     def test_detects_hardcoded_password(self, tmp_path):
@@ -37,22 +38,20 @@ class TestSecretPatterns:
 
 # --- _INJECTION_PATTERNS -----------------------------------------------------
 
+
 class TestInjectionPatterns:
     def test_detects_python_sql_percent_format(self, tmp_path):
-        f = _make_file(tmp_path, "dao.py",
-                       'cursor.execute("SELECT * FROM users WHERE id = %s" % user_id)\n')
+        f = _make_file(tmp_path, "dao.py", 'cursor.execute("SELECT * FROM users WHERE id = %s" % user_id)\n')
         violations = _mechanical_check(f, tmp_path, "python")
         assert any("sql" in v["message"].lower() or "injection" in v["message"].lower() for v in violations)
 
     def test_detects_python_sql_fstring(self, tmp_path):
-        f = _make_file(tmp_path, "dao.py",
-                       'db.execute(f"SELECT * FROM orders WHERE id = {order_id}")\n')
+        f = _make_file(tmp_path, "dao.py", 'db.execute(f"SELECT * FROM orders WHERE id = {order_id}")\n')
         violations = _mechanical_check(f, tmp_path, "python")
         assert any("sql" in v["message"].lower() or "injection" in v["message"].lower() for v in violations)
 
     def test_no_sql_violation_for_unrelated_code(self, tmp_path):
-        f = _make_file(tmp_path, "utils.py",
-                       'result = compute(x, y)\n')
+        f = _make_file(tmp_path, "utils.py", "result = compute(x, y)\n")
         violations = _mechanical_check(f, tmp_path, "python")
         assert all("sql" not in v["message"].lower() for v in violations)
 
@@ -73,12 +72,12 @@ class TestSsrfAndOpenRedirect:
         assert any("open redirect" in v["message"] for v in violations)
 
     def test_detects_node_ssrf(self, tmp_path):
-        f = _make_file(tmp_path, "proxy.js", 'await fetch(req.query.url);\n')
+        f = _make_file(tmp_path, "proxy.js", "await fetch(req.query.url);\n")
         violations = _mechanical_check(f, tmp_path, "javascript")
         assert any("SSRF" in v["message"] for v in violations)
 
     def test_detects_express_open_redirect(self, tmp_path):
-        f = _make_file(tmp_path, "routes.js", 'res.redirect(req.query.next);\n')
+        f = _make_file(tmp_path, "routes.js", "res.redirect(req.query.next);\n")
         violations = _mechanical_check(f, tmp_path, "javascript")
         assert any("open redirect" in v["message"] for v in violations)
 
@@ -195,6 +194,7 @@ class TestShellAndRazorPatterns:
 
 # --- run() -------------------------------------------------------------------
 
+
 class TestRunFunction:
     def test_returns_correct_schema(self, tmp_path):
         with patch("ssa.checkers.check_security.check_server_available", return_value=False):
@@ -211,8 +211,8 @@ class TestRunFunction:
         assert result["violations"] == []
 
     def test_files_kwarg_scopes_analysis(self, tmp_path):
-        clean = _make_file(tmp_path, "clean.py", 'x = 1\n')
-        dirty = _make_file(tmp_path, "dirty.py", 'password = "secret123"\n')
+        clean = _make_file(tmp_path, "clean.py", "x = 1\n")
+        _make_file(tmp_path, "dirty.py", 'password = "secret123"\n')
         with patch("ssa.checkers.check_security.check_server_available", return_value=False):
             result = run(tmp_path, "python", files=[clean])
         assert all(v["file"] != "dirty.py" for v in result["violations"])
@@ -225,12 +225,15 @@ class TestPythonDynamicCode:
         messages = [v["message"] for v in _mechanical_check(f, tmp_path, "python")]
         assert messages == ["eval()/exec() runs dynamic code — code injection risk"]
 
-    @pytest.mark.parametrize("line", [
-        "value = ast.literal_eval(text)\n",
-        "model.eval()\n",
-        "cursor.execute(query, params)\n",
-        "retrieval(data)\n",
-    ])
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "value = ast.literal_eval(text)\n",
+            "model.eval()\n",
+            "cursor.execute(query, params)\n",
+            "retrieval(data)\n",
+        ],
+    )
     def test_lookalikes_do_not_match(self, tmp_path, line):
         f = _make_file(tmp_path, "dyn.py", line)
         assert _mechanical_check(f, tmp_path, "python") == []

@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 """Tests for analyze_dependencies.py"""
 
-import pytest
 from pathlib import Path
+
+import pytest
+
+from cli.analyze_dependencies import (
+    analyze_cargo_toml,
+    analyze_dependencies,
+    analyze_go_mod,
+    analyze_package_json,
+    analyze_pom_xml,
+    analyze_requirements_txt,
+)
 
 # Add parent directory to path for imports
 
-from cli.analyze_dependencies import (
-    analyze_package_json,
-    analyze_requirements_txt,
-    analyze_cargo_toml,
-    analyze_go_mod,
-    analyze_pom_xml,
-    analyze_dependencies,
-)
 
 class TestAnalyzePackageJson:
     """Test Node.js package.json analysis."""
@@ -121,6 +123,7 @@ class TestAnalyzePackageJson:
 
         assert len(result["dependencies"]) == 3
 
+
 class TestAnalyzeRequirementsTxt:
     """Test Python requirements.txt analysis."""
 
@@ -190,6 +193,7 @@ package4"""
         assert result["dependencies"][2]["version"] == "~=3.0.0"
         assert result["dependencies"][3]["version"] == "any"
 
+
 class TestAnalyzeCargoToml:
     """Test Rust Cargo.toml analysis."""
 
@@ -245,6 +249,7 @@ rocket = "0.5"
 
         assert result["framework"] == "rocket"
 
+
 class TestAnalyzeGoMod:
     """Test Go go.mod analysis."""
 
@@ -255,8 +260,8 @@ class TestAnalyzeGoMod:
 go 1.20
 
 require (
-	github.com/gin-gonic/gin v1.9.0
-	github.com/stretchr/testify v1.8.0
+\tgithub.com/gin-gonic/gin v1.9.0
+\tgithub.com/stretchr/testify v1.8.0
 )
 """
 
@@ -271,7 +276,7 @@ require (
     def test_framework_detection_gin(self):
         """Test Gin framework detection."""
         content = """require (
-	github.com/gin-gonic/gin v1.9.0
+\tgithub.com/gin-gonic/gin v1.9.0
 )
 """
 
@@ -282,7 +287,7 @@ require (
     def test_framework_detection_echo(self):
         """Test Echo framework detection."""
         content = """require (
-	github.com/labstack/echo/v4 v4.11.0
+\tgithub.com/labstack/echo/v4 v4.11.0
 )
 """
 
@@ -293,13 +298,14 @@ require (
     def test_framework_detection_fiber(self):
         """Test Fiber framework detection."""
         content = """require (
-	github.com/gofiber/fiber/v2 v2.48.0
+\tgithub.com/gofiber/fiber/v2 v2.48.0
 )
 """
 
         result = analyze_go_mod(content, 10)
 
         assert result["framework"] == "fiber"
+
 
 class TestAnalyzePomXml:
     """Test Java/Maven pom.xml analysis."""
@@ -348,6 +354,7 @@ class TestAnalyzePomXml:
         result = analyze_pom_xml(content, 10)
 
         assert result["framework"] == "spring"
+
 
 class TestAnalyzeDependencies:
     """Test main analyze_dependencies function."""
@@ -405,7 +412,7 @@ serde = "1.0"
         """Test analysis of go.mod file."""
         go_mod = tmp_path / "go.mod"
         go_mod.write_text("""require (
-	github.com/gin-gonic/gin v1.9.0
+\tgithub.com/gin-gonic/gin v1.9.0
 )
 """)
 

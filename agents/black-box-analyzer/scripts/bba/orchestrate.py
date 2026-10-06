@@ -62,7 +62,9 @@ def _detect_base_branch(path: Path) -> str | None:
     for branch in ("main", "master"):
         r = subprocess.run(
             ["git", "rev-parse", "--verify", branch],
-            capture_output=True, cwd=str(path), timeout=5,
+            capture_output=True,
+            cwd=str(path),
+            timeout=5,
         )
         if r.returncode == 0:
             return branch
@@ -72,7 +74,10 @@ def _detect_base_branch(path: Path) -> str | None:
 def _get_branch_files(path: Path, base: str) -> list[Path] | None:
     r = subprocess.run(
         ["git", "diff", f"{base}...HEAD", "--name-only"],
-        capture_output=True, text=True, cwd=str(path), timeout=10,
+        capture_output=True,
+        text=True,
+        cwd=str(path),
+        timeout=10,
     )
     if r.returncode != 0:
         return None
@@ -87,24 +92,20 @@ def main(argv: list[str] | None = None) -> None:
         return
 
     parser = argparse.ArgumentParser(description="Black-Box Analyzer")
-    parser.add_argument("--gaps", action="store_true",
-                        help="Run the four test-gap checkers instead (engine CLI: see --gaps --help)")
+    parser.add_argument(
+        "--gaps", action="store_true", help="Run the four test-gap checkers instead (engine CLI: see --gaps --help)"
+    )
     parser.add_argument("--path", type=Path, default=Path("."), help="Project path to analyze")
-    parser.add_argument("--full", action="store_true",
-                        help="Analyze entire repo (default: branch-vs-main incremental)")
-    parser.add_argument("--fast", action="store_true",
-                        help="Use 'fast' model role (lighter, quicker)")
-    parser.add_argument("--role", default=None,
-                        help="Override model role: analyzer, fast, deep, reasoning")
-    parser.add_argument("--agents", type=int, default=1,
-                        help="N independent local AI calls per file, dedup-merged")
-    parser.add_argument("--no-cache", action="store_true", dest="no_cache",
-                        help="Bypass per-file local AI cache")
-    parser.add_argument("--clear-cache", action="store_true", dest="clear_cache",
-                        help="Delete all cached local AI results and exit")
+    parser.add_argument("--full", action="store_true", help="Analyze entire repo (default: branch-vs-main incremental)")
+    parser.add_argument("--fast", action="store_true", help="Use 'fast' model role (lighter, quicker)")
+    parser.add_argument("--role", default=None, help="Override model role: analyzer, fast, deep, reasoning")
+    parser.add_argument("--agents", type=int, default=1, help="N independent local AI calls per file, dedup-merged")
+    parser.add_argument("--no-cache", action="store_true", dest="no_cache", help="Bypass per-file local AI cache")
+    parser.add_argument(
+        "--clear-cache", action="store_true", dest="clear_cache", help="Delete all cached local AI results and exit"
+    )
     parser.add_argument("--format", choices=["json", "table", "summary"], default="table")
-    parser.add_argument("--output", type=Path, default=None,
-                        help="Write JSON output to file")
+    parser.add_argument("--output", type=Path, default=None, help="Write JSON output to file")
     args = parser.parse_args(argv)
 
     if args.clear_cache:
@@ -125,11 +126,9 @@ def main(argv: list[str] | None = None) -> None:
         if base:
             changed_files = _get_branch_files(path, base)
             if changed_files is not None:
-                print(f"Incremental mode: {len(changed_files)} changed file(s) vs {base}",
-                      file=sys.stderr)
+                print(f"Incremental mode: {len(changed_files)} changed file(s) vs {base}", file=sys.stderr)
             else:
-                print("No changed files detected vs base branch — nothing to analyze.",
-                      file=sys.stderr)
+                print("No changed files detected vs base branch — nothing to analyze.", file=sys.stderr)
                 return
         else:
             print("No main/master branch found — falling back to full analysis", file=sys.stderr)

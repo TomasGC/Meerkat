@@ -21,7 +21,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 
 @dataclass
@@ -77,8 +77,7 @@ def run_command(cmd: List[str], timeout: int = 60) -> tuple[str, int]:
     start = time.time()
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout, check=True,
-            encoding='utf-8', errors='replace'
+            cmd, capture_output=True, text=True, timeout=timeout, check=True, encoding="utf-8", errors="replace"
         )
         elapsed_ms = int((time.time() - start) * 1000)
         return result.stdout.strip(), elapsed_ms
@@ -93,8 +92,7 @@ def run_command(cmd: List[str], timeout: int = 60) -> tuple[str, int]:
 def stop_all_models():
     """Stop all running Ollama models."""
     try:
-        subprocess.run(["ollama", "stop", "--all"], check=True, capture_output=True,
-                      encoding='utf-8', errors='replace')
+        subprocess.run(["ollama", "stop", "--all"], check=True, capture_output=True, encoding="utf-8", errors="replace")
         print("[OK] All models stopped")
     except subprocess.CalledProcessError:
         print("[WARN] Could not stop all models")
@@ -104,8 +102,7 @@ def is_model_loaded(model: str) -> bool:
     """Check if model is currently loaded in RAM."""
     try:
         result = subprocess.run(
-            ["ollama", "ps"], capture_output=True, text=True, check=True,
-            encoding='utf-8', errors='replace'
+            ["ollama", "ps"], capture_output=True, text=True, check=True, encoding="utf-8", errors="replace"
         )
         return model in result.stdout
     except subprocess.CalledProcessError:
@@ -138,8 +135,7 @@ def get_system_info() -> SystemInfo:
     # Ollama version
     try:
         result = subprocess.run(
-            ["ollama", "--version"], capture_output=True, text=True, check=True,
-            encoding='utf-8', errors='replace'
+            ["ollama", "--version"], capture_output=True, text=True, check=True, encoding="utf-8", errors="replace"
         )
         version = result.stdout.strip()
     except Exception:
@@ -159,23 +155,23 @@ def benchmark_model(model: str, config: dict) -> BenchmarkResult:
     print(f"\n[Benchmarking] {model} ({config['tier']} tier, {config['size_gb']}GB)")
 
     # 1. Cold start (unload first)
-    print(f"  [1/3] Cold start (unloading first)...")
+    print("  [1/3] Cold start (unloading first)...")
     stop_all_models()
     time.sleep(2)  # Wait for unload
     _, cold_ms = run_command(["ollama", "run", model, TEST_PROMPT], timeout=120)
     print(f"    [OK] Cold start: {cold_ms}ms")
 
     # 2. Warm start (model already loaded)
-    print(f"  [2/3] Warm start (model loaded)...")
+    print("  [2/3] Warm start (model loaded)...")
     if not is_model_loaded(model):
-        print(f"    [WARN] Model not loaded, loading again...")
+        print("    [WARN] Model not loaded, loading again...")
         run_command(["ollama", "run", model, TEST_PROMPT], timeout=120)
 
     _, warm_ms = run_command(["ollama", "run", model, TEST_PROMPT], timeout=60)
     print(f"    [OK] Warm start: {warm_ms}ms")
 
     # 3. Average response time (3 runs)
-    print(f"  [3/3] Average response (3 runs)...")
+    print("  [3/3] Average response (3 runs)...")
     times = []
     for i in range(3):
         _, run_ms = run_command(["ollama", "run", model, TEST_PROMPT], timeout=60)
@@ -206,30 +202,23 @@ def benchmark_model(model: str, config: dict) -> BenchmarkResult:
     )
 
 
-def generate_report(
-    results: List[BenchmarkResult], system_info: SystemInfo, output_file: Path
-):
+def generate_report(results: List[BenchmarkResult], system_info: SystemInfo, output_file: Path):
     """Generate benchmark report."""
     hot_results = [r for r in results if r.tier == "hot"]
     warm_results = [r for r in results if r.tier == "warm"]
     cold_results = [r for r in results if r.tier == "cold"]
 
-    report = {
+    report: dict[str, Any] = {
         "system_info": asdict(system_info),
         "benchmark_date": datetime.now().isoformat(),
         "results": [asdict(r) for r in results],
         "summary": {
-            "hot_tier_avg_ms": (
-                sum(r.warm_start_ms for r in hot_results) // len(hot_results)
-                if hot_results else 0
-            ),
+            "hot_tier_avg_ms": (sum(r.warm_start_ms for r in hot_results) // len(hot_results) if hot_results else 0),
             "warm_tier_avg_ms": (
-                sum(r.cold_start_ms for r in warm_results) // len(warm_results)
-                if warm_results else 0
+                sum(r.cold_start_ms for r in warm_results) // len(warm_results) if warm_results else 0
             ),
             "cold_tier_avg_ms": (
-                sum(r.cold_start_ms for r in cold_results) // len(cold_results)
-                if cold_results else 0
+                sum(r.cold_start_ms for r in cold_results) // len(cold_results) if cold_results else 0
             ),
             "swap_detected_models": [r.model for r in results if r.swapped],
         },
@@ -250,11 +239,11 @@ def generate_report(
     print(f"Ollama: {system_info.ollama_version}")
     print()
     print("Average latency by tier:")
-    if report['summary']['hot_tier_avg_ms'] > 0:
+    if report["summary"]["hot_tier_avg_ms"] > 0:
         print(f"  Hot tier (instant):   {report['summary']['hot_tier_avg_ms']}ms")
-    if report['summary']['warm_tier_avg_ms'] > 0:
+    if report["summary"]["warm_tier_avg_ms"] > 0:
         print(f"  Warm tier (5-10s):    {report['summary']['warm_tier_avg_ms']}ms")
-    if report['summary']['cold_tier_avg_ms'] > 0:
+    if report["summary"]["cold_tier_avg_ms"] > 0:
         print(f"  Cold tier (30s+):     {report['summary']['cold_tier_avg_ms']}ms")
     print()
     if report["summary"]["swap_detected_models"]:
@@ -267,9 +256,7 @@ def generate_report(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Benchmark Ollama model latency on 32GB RAM hardware"
-    )
+    parser = argparse.ArgumentParser(description="Benchmark Ollama model latency on 32GB RAM hardware")
     parser.add_argument(
         "--models",
         nargs="+",
@@ -298,9 +285,7 @@ def main():
         models_to_test = {m: cfg for m, cfg in MODELS.items() if cfg["tier"] == "hot"}
 
     if args.skip_cold:
-        models_to_test = {
-            m: cfg for m, cfg in models_to_test.items() if cfg["tier"] != "cold"
-        }
+        models_to_test = {m: cfg for m, cfg in models_to_test.items() if cfg["tier"] != "cold"}
 
     print("=" * 70)
     print("OLLAMA LATENCY BENCHMARK (32GB RAM)")

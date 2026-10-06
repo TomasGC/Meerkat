@@ -16,12 +16,11 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Protocol
 
-# the shared library is rooted at scripts/, two levels up from lib/ai/
-sys.path.insert(0, str(Path(__file__).parents[2]))
 from lib.config import language_config
-from lib.config.model_config import get_model, _load as _load_config
+from lib.config.model_config import _load as _load_config
+from lib.config.model_config import get_model
 
-_THINK_RE = _re.compile(r'<think>.*?</think>', _re.DOTALL)
+_THINK_RE = _re.compile(r"<think>.*?</think>", _re.DOTALL)
 
 
 def _parse_local_server() -> tuple[str, int]:
@@ -39,6 +38,7 @@ LOCAL_AI_HOST, LOCAL_AI_PORT = _parse_local_server()
 
 # Availability cache — avoids re-probing the server for every checker
 _AVAILABILITY_CACHE: dict[str, bool] = {}
+
 
 class ModelCache(Protocol):
     """Per-file result cache an agent hands to the analyze_* functions.
@@ -298,8 +298,10 @@ async def analyze_files_async(
         results: list[dict] = []
         # The prompt names the file's dialect (T-SQL, PostgreSQL) where one is detected;
         # a caller's own per-file "language" slot still wins.
-        slots = {"language": language_config.prompt_language(language, source),
-                 **(extra_slots.get(file_path, {}) if extra_slots else {})}
+        slots = {
+            "language": language_config.prompt_language(language, source),
+            **(extra_slots.get(file_path, {}) if extra_slots else {}),
+        }
         chunk_failed = False
         for chunk in split_into_chunks(source, max_chars):
             prompt = template.format(source=chunk, **slots)
@@ -311,7 +313,8 @@ async def analyze_files_async(
                 seen: set[tuple] = set()
                 chunk_usable = False
                 for resp in responses:
-                    if isinstance(resp, Exception) or not resp:
+                    # BaseException: a cancelled call comes back as CancelledError, which is not an Exception
+                    if isinstance(resp, BaseException) or not resp:
                         continue
                     parsed = extract_json_array(resp)
                     if parsed is not None:
@@ -349,7 +352,7 @@ async def analyze_files_async(
     nested = await asyncio.gather(*tasks, return_exceptions=True)
     all_results: list[dict] = []
     for fp, item in zip(file_paths, nested):
-        if isinstance(item, Exception):
+        if isinstance(item, BaseException):  # CancelledError included
             print(f"[WARN] File analysis error: {item}", file=sys.stderr)
             if failed is not None:
                 failed.add(Path(fp))
@@ -377,15 +380,26 @@ def analyze_files_parallel(
 
     See analyze_files_async for the `failed` contract.
     """
-    return asyncio.run(analyze_files_async(
-        files, language, role, prompt_name, prompts_dir,
-        max_chars=max_chars, agents=agents, no_cache=no_cache,
-        cache_ttl_days=cache_ttl_days, timeout=timeout, extra_slots=extra_slots,
-        failed=failed, cache=cache,
-    ))
+    return asyncio.run(
+        analyze_files_async(
+            files,
+            language,
+            role,
+            prompt_name,
+            prompts_dir,
+            max_chars=max_chars,
+            agents=agents,
+            no_cache=no_cache,
+            cache_ttl_days=cache_ttl_days,
+            timeout=timeout,
+            extra_slots=extra_slots,
+            failed=failed,
+            cache=cache,
+        )
+    )
 
 
-def extract_json_array(text: str) -> list | None:
+def extract_json_array(text: str | None) -> list | None:
     """Extract a JSON array from a local AI response that may have surrounding prose."""
     if not text:
         return None
@@ -401,7 +415,7 @@ def extract_json_array(text: str) -> list | None:
     if start == -1 or end == -1 or end <= start:
         return None
     try:
-        data = json.loads(text[start:end + 1])
+        data = json.loads(text[start : end + 1])
         if isinstance(data, list):
             return data
     except json.JSONDecodeError:
@@ -425,7 +439,7 @@ def extract_json_object(text: str) -> dict | None:
     if start == -1 or end == -1 or end <= start:
         return None
     try:
-        data = json.loads(text[start:end + 1])
+        data = json.loads(text[start : end + 1])
         if isinstance(data, dict):
             return data
     except json.JSONDecodeError:

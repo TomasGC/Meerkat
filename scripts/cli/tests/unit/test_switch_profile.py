@@ -20,6 +20,7 @@ SwitchProfileScript = _mod.SwitchProfileScript
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_mock_config(profile_name: str = "default") -> MagicMock:
     config = MagicMock()
     config.profile_name = profile_name
@@ -31,42 +32,54 @@ def _make_mock_config(profile_name: str = "default") -> MagicMock:
     config.issue_format = r"#(\d+)"
     return config
 
+
 @contextmanager
 def _meerkat_home(root: Path):
     """Point the user root (MEERKAT_HOME, read by lib.paths) at `root` for the block."""
     with patch.dict(os.environ, {"MEERKAT_HOME": str(root)}):
         yield
 
+
 def _args(**kwargs):
     import argparse
+
     defaults = dict(list=False, status=False, create=None, validate=None, profile=None)
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
+
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def script():
     return SwitchProfileScript()
+
 
 @pytest.fixture
 def integrations_dir(tmp_path: Path) -> Path:
     d = tmp_path / ".claude" / "integrations"
     d.mkdir(parents=True)
-    (d / "default.json").write_text(json.dumps({
-        "name": "Default",
-        "vcs": {"provider": "github", "url": "https://github.com", "api_url": "https://api.github.com"},
-        "ci": {"provider": "github-actions"},
-        "docs": {"provider": "github-pages"},
-        "issues": {"provider": "github", "issue_format": r"#(\d+)"}
-    }))
+    (d / "default.json").write_text(
+        json.dumps(
+            {
+                "name": "Default",
+                "vcs": {"provider": "github", "url": "https://github.com", "api_url": "https://api.github.com"},
+                "ci": {"provider": "github-actions"},
+                "docs": {"provider": "github-pages"},
+                "issues": {"provider": "github", "issue_format": r"#(\d+)"},
+            }
+        )
+    )
     return d
+
 
 # ---------------------------------------------------------------------------
 # Unit: missing integrations dir
 # ---------------------------------------------------------------------------
+
 
 def test_missing_integrations_dir(script, tmp_path):
     with _meerkat_home(tmp_path / "nohome"):
@@ -74,9 +87,11 @@ def test_missing_integrations_dir(script, tmp_path):
     assert result["success"] is False
     assert "not found" in result["error"]
 
+
 # ---------------------------------------------------------------------------
 # Unit: show current profile
 # ---------------------------------------------------------------------------
+
 
 def test_show_current_profile(script, integrations_dir):
     with _meerkat_home(integrations_dir.parent):
@@ -86,9 +101,11 @@ def test_show_current_profile(script, integrations_dir):
     assert result["active_profile"] == "default"
     assert result["vcs_provider"] == "github"
 
+
 # ---------------------------------------------------------------------------
 # Unit: list profiles
 # ---------------------------------------------------------------------------
+
 
 def test_list_profiles(script, integrations_dir):
     with _meerkat_home(integrations_dir.parent):
@@ -99,9 +116,11 @@ def test_list_profiles(script, integrations_dir):
     assert len(result["profiles"]) == 2
     assert result["active_profile"] == "default"
 
+
 # ---------------------------------------------------------------------------
 # Unit: switch profile
 # ---------------------------------------------------------------------------
+
 
 def test_switch_profile_success(script, integrations_dir):
     with _meerkat_home(integrations_dir.parent):
@@ -111,6 +130,7 @@ def test_switch_profile_success(script, integrations_dir):
     assert result["success"] is True
     assert result["active_profile"] == "work"
 
+
 def test_switch_profile_not_found(script, integrations_dir):
     with _meerkat_home(integrations_dir.parent):
         with patch.object(_mod, "switch_profile", side_effect=FileNotFoundError("not found")):
@@ -118,15 +138,18 @@ def test_switch_profile_not_found(script, integrations_dir):
     assert result["success"] is False
     assert "error" in result
 
+
 def test_switch_profile_invalid(script, integrations_dir):
     with _meerkat_home(integrations_dir.parent):
         with patch.object(_mod, "switch_profile", side_effect=ValueError("invalid")):
             result = script.execute(_args(profile="??"))
     assert result["success"] is False
 
+
 # ---------------------------------------------------------------------------
 # Unit: validate profile
 # ---------------------------------------------------------------------------
+
 
 def test_validate_profile_valid(script, integrations_dir):
     with _meerkat_home(integrations_dir.parent):
@@ -135,6 +158,7 @@ def test_validate_profile_valid(script, integrations_dir):
     assert result["success"] is True
     assert result["profile"] == "default"
 
+
 def test_validate_profile_invalid(script, integrations_dir):
     with _meerkat_home(integrations_dir.parent):
         with patch.object(_mod, "validate_profile", return_value=["Missing vcs.provider"]):
@@ -142,9 +166,11 @@ def test_validate_profile_invalid(script, integrations_dir):
     assert result["success"] is False
     assert len(result["errors"]) > 0
 
+
 # ---------------------------------------------------------------------------
 # Unit: create profile
 # ---------------------------------------------------------------------------
+
 
 def test_create_profile_new(script, integrations_dir):
     with _meerkat_home(integrations_dir.parent):
@@ -153,20 +179,21 @@ def test_create_profile_new(script, integrations_dir):
     assert result["profile"] == "newprofile"
     assert (integrations_dir / "newprofile.json").exists()
 
+
 def test_create_profile_already_exists(script, integrations_dir):
     with _meerkat_home(integrations_dir.parent):
         result = script.execute(_args(create="default"))
     assert result["success"] is False
     assert "already exists" in result["error"]
 
+
 # ---------------------------------------------------------------------------
 # Unit: status
 # ---------------------------------------------------------------------------
 
+
 def test_show_status(script, integrations_dir):
-    detection_info = {
-        "detection_source": "file", "details": "found .active", "cwd": str(integrations_dir)
-    }
+    detection_info = {"detection_source": "file", "details": "found .active", "cwd": str(integrations_dir)}
     with _meerkat_home(integrations_dir.parent):
         with patch.object(_mod, "get_profile_detection_info", return_value=detection_info):
             with patch.object(_mod, "load_integrations", return_value=_make_mock_config()):

@@ -1,6 +1,5 @@
 """Unit tests for lib.engine.cache — no external deps, isolated to tmp_path."""
 
-import json
 import os
 import time
 from pathlib import Path
@@ -25,6 +24,7 @@ def source_file(tmp_path):
 
 
 # ── get_cached ─────────────────────────────────────────────────────────────────
+
 
 def test_get_cached_returns_none_when_missing(cache_dir, source_file):
     """Cache miss returns None."""
@@ -110,6 +110,7 @@ def test_content_hash_changes_on_file_modification(cache_dir, tmp_path, source_f
 
 # ── error paths ─────────────────────────────────────────────────────────────────
 
+
 def test_file_hash_nonexistent_returns_nohash():
     """_file_hash on nonexistent file returns 'nohash' (OSError caught)."""
     result = cache_mod._file_hash(Path("/nonexistent_file_xyz_does_not_exist_at_all"))
@@ -129,6 +130,7 @@ def test_get_cached_corrupt_json_returns_none(cache_dir, source_file):
 def test_get_cached_unlink_oserror_returns_none(cache_dir, source_file):
     """OSError when unlinking expired file → returns None gracefully (no crash)."""
     import os
+
     violations = [{"line": 1}]
     cache_mod.set_cached(cache_dir, source_file, "test_checker", violations)
     cache_files = list(cache_dir.glob("*.json"))

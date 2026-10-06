@@ -7,7 +7,6 @@ one implementation (#22). `MetricsCollector` stays here: its counters are the
 search summary printed by every search script with `--verbose`.
 """
 
-
 from lib.logger import ColoredFormatter, setup_logger  # noqa: E402,F401 — re-exported
 
 
@@ -17,12 +16,12 @@ class MetricsCollector:
     def __init__(self):
         """Initialize metrics collector."""
         self.metrics = {
-            'api_calls': 0,
-            'cache_hits': 0,
-            'cache_misses': 0,
-            'errors': 0,
-            'retries': 0,
-            'total_results': 0,
+            "api_calls": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "errors": 0,
+            "retries": 0,
+            "total_results": 0,
         }
 
     def increment(self, metric: str, amount: int = 1):
@@ -41,15 +40,12 @@ class MetricsCollector:
 
     def summary(self) -> dict:
         """Get metrics summary."""
-        total_cache = self.metrics['cache_hits'] + self.metrics['cache_misses']
-        cache_hit_rate = (
-            (self.metrics['cache_hits'] / total_cache * 100)
-            if total_cache > 0 else 0
-        )
+        total_cache = self.metrics["cache_hits"] + self.metrics["cache_misses"]
+        cache_hit_rate = (self.metrics["cache_hits"] / total_cache * 100) if total_cache > 0 else 0
 
         return {
             **self.metrics,
-            'cache_hit_rate_percent': round(cache_hit_rate, 1),
+            "cache_hit_rate_percent": round(cache_hit_rate, 1),
         }
 
     def __str__(self) -> str:

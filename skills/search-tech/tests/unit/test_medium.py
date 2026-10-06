@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Tests for search_medium module."""
 
-import pytest
-from unittest.mock import Mock, patch
+import json
+import sys
 from datetime import datetime
-
 from pathlib import Path
+from unittest.mock import Mock, patch
 
-from search_tech.models import SearchQuery, Source, ResultType
-from search_medium import search_medium_tag, search_medium
+import pytest
+
+import search_medium as module
+from search_medium import search_medium, search_medium_tag
+from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source
 
 
 @pytest.fixture
@@ -46,7 +49,7 @@ def mock_medium_rss():
 class TestMediumSearch:
     """Test Medium search functionality."""
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_search_tag_success(self, mock_get, mock_medium_rss):
         """Test successful Medium tag search."""
         mock_response = Mock()
@@ -67,7 +70,7 @@ class TestMediumSearch:
         assert result.url.startswith("https://medium.com/")
         assert result.repository.startswith("@")
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_rss_url_construction(self, mock_get, mock_medium_rss):
         """Test RSS URL is properly constructed."""
         mock_response = Mock()
@@ -82,7 +85,7 @@ class TestMediumSearch:
         call_args = mock_get.call_args
         assert "https://medium.com/feed/tag/javascript" == call_args[0][0]
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_search_keyword_filtering(self, mock_get, mock_medium_rss):
         """Test client-side keyword filtering."""
         mock_response = Mock()
@@ -100,10 +103,11 @@ class TestMediumSearch:
             desc_lower = result.excerpt.lower() if result.excerpt else ""
             assert "python" in title_lower or "python" in desc_lower
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_search_timeout(self, mock_get):
         """Test timeout handling."""
         import requests
+
         mock_get.side_effect = requests.exceptions.Timeout("Timeout")
 
         query = SearchQuery(keywords=["test"])
@@ -111,7 +115,7 @@ class TestMediumSearch:
 
         assert len(results) == 0
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_search_http_error(self, mock_get):
         """Test HTTP error handling."""
         mock_response = Mock()
@@ -124,7 +128,7 @@ class TestMediumSearch:
 
         assert len(results) == 0
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_html_removal_from_description(self, mock_get):
         """Test HTML tags are removed from description."""
         rss_with_html = b"""<?xml version="1.0" encoding="UTF-8"?>
@@ -155,7 +159,7 @@ class TestMediumSearch:
         assert "HTML" in results[0].excerpt
         assert "tags" in results[0].excerpt
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_excerpt_truncation(self, mock_get):
         """Test excerpt truncation to 200 characters."""
         long_description = "a" * 300
@@ -184,7 +188,7 @@ class TestMediumSearch:
         # Should be truncated to 200 + "..."
         assert len(results[0].excerpt) <= 203
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_source_attribution(self, mock_get, mock_medium_rss):
         """Test proper source attribution."""
         mock_response = Mock()
@@ -201,7 +205,7 @@ class TestMediumSearch:
             assert result.source != Source.HASHNODE
             assert result.repository.startswith("@")
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_author_extraction(self, mock_get, mock_medium_rss):
         """Test author is properly extracted from dc:creator."""
         mock_response = Mock()
@@ -216,7 +220,7 @@ class TestMediumSearch:
         result = results[0]
         assert result.repository == "@devauthor1"
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_missing_author_fallback(self, mock_get):
         """Test fallback when author is missing."""
         rss_no_author = b"""<?xml version="1.0" encoding="UTF-8"?>
@@ -242,7 +246,7 @@ class TestMediumSearch:
         assert len(results) == 1
         assert results[0].repository == "@unknown"
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_date_parsing(self, mock_get, mock_medium_rss):
         """Test pubDate parsing."""
         mock_response = Mock()
@@ -258,7 +262,7 @@ class TestMediumSearch:
         assert result.created_date is not None
         assert isinstance(result.created_date, datetime)
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_score_is_zero(self, mock_get, mock_medium_rss):
         """Test score is 0 (Medium doesn't expose claps in RSS)."""
         mock_response = Mock()
@@ -273,29 +277,33 @@ class TestMediumSearch:
             assert result.score == 0
             assert result.comments == 0
 
-    @patch('search_medium.search_medium_tag')
+    @patch("search_medium.search_medium_tag")
     def test_search_multiple_tags(self, mock_search_tag):
         """Test searching across multiple tags."""
         from search_tech.models import SearchResult
 
         # Mock results from different tags
         mock_search_tag.side_effect = [
-            [SearchResult(
-                source=Source.MEDIUM,
-                result_type=ResultType.QUESTION,
-                title="Result from javascript tag",
-                url="https://medium.com/1",
-                score=0,
-                excerpt="Test",
-            )],
-            [SearchResult(
-                source=Source.MEDIUM,
-                result_type=ResultType.QUESTION,
-                title="Result from programming tag",
-                url="https://medium.com/2",
-                score=0,
-                excerpt="Test",
-            )],
+            [
+                SearchResult(
+                    source=Source.MEDIUM,
+                    result_type=ResultType.QUESTION,
+                    title="Result from javascript tag",
+                    url="https://medium.com/1",
+                    score=0,
+                    excerpt="Test",
+                )
+            ],
+            [
+                SearchResult(
+                    source=Source.MEDIUM,
+                    result_type=ResultType.QUESTION,
+                    title="Result from programming tag",
+                    url="https://medium.com/2",
+                    score=0,
+                    excerpt="Test",
+                )
+            ],
         ]
 
         query = SearchQuery(keywords=["test"])
@@ -305,11 +313,12 @@ class TestMediumSearch:
         assert len(response.results) == 2
         assert mock_search_tag.call_count == 2
 
-    @patch('search_medium.requests.get')
+    @patch("search_medium.requests.get")
     def test_cache_integration(self, mock_get, mock_medium_rss):
         """Test cache hit and miss."""
-        from search_tech.cache import SearchCache
         import tempfile
+
+        from search_tech.cache import SearchCache
 
         mock_response = Mock()
         mock_response.status_code = 200
@@ -329,3 +338,65 @@ class TestMediumSearch:
             assert mock_get.call_count == api_call_count  # No additional API call
 
             assert len(response1.results) == len(response2.results)
+
+
+@patch("search_medium.requests.get")
+def test_item_with_empty_elements_does_not_drop_the_feed(mock_get):
+    """An empty <description/> or <dc:creator/> used to raise inside the loop and discard every result (#48)."""
+    mock_get.return_value = Mock(
+        status_code=200,
+        content=b"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel>
+  <item><title>Async patterns</title><link>https://medium.com/a/1</link><description/><dc:creator/></item>
+  <item><title>Async errors</title><link>https://medium.com/a/2</link><description>body</description></item>
+</channel></rss>""",
+    )
+    results = search_medium_tag(SearchQuery(keywords=["async"]), "programming")
+    assert [r.url for r in results] == ["https://medium.com/a/1", "https://medium.com/a/2"]
+    assert results[0].excerpt == ""
+    assert results[0].repository == "@unknown"
+
+
+# ── main() (search function mocked) ──────────────────────────────────────────
+
+
+def _main_response(success=True):
+    query = SearchQuery(keywords=["async"])
+    if not success:
+        return SearchResponse(success=False, query=query, error="Medium down")
+    result = SearchResult(
+        source=Source.MEDIUM, result_type=ResultType.QUESTION, title="T", url="https://x/1", score=1, excerpt="e"
+    )
+    return SearchResponse(success=True, query=query, results=[result])
+
+
+def _run_main(argv, tmp_path, response):
+    out = tmp_path / "out" / "medium.json"
+    with patch.object(sys, "argv", ["search_medium.py", *argv, "--output", str(out), "--no-cache"]), patch.object(
+        module, "search_medium", return_value=response
+    ) as search:
+        module.main()
+    return search, json.loads(out.read_text(encoding="utf-8"))
+
+
+def test_main_writes_results_and_passes_parsed_query(tmp_path):
+    search, data = _run_main(["async errors", "--tags", "python, go", "--verbose"], tmp_path, _main_response())
+    call = search.call_args
+    assert call.args[0].keywords == ["async", "errors"]
+    assert call.args[1] == ["python", "go"]
+    assert call.kwargs["cache"] is None
+    assert data["success"] is True
+    assert [r["title"] for r in data["results"]] == ["T"]
+
+
+def test_main_exits_nonzero_when_search_fails(tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(["async"], tmp_path, _main_response(success=False))
+    assert exc.value.code == 1
+    assert json.loads((tmp_path / "out" / "medium.json").read_text(encoding="utf-8"))["error"] == "Medium down"
+
+
+def test_main_rejects_invalid_query(tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(["   "], tmp_path, _main_response())
+    assert exc.value.code == 1

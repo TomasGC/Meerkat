@@ -12,10 +12,8 @@ import json
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import sys
 
 import pytest
-
 
 from cca.checkers.check_yagni import run
 
@@ -24,6 +22,7 @@ _HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
 
 
 # ── Subprocess path ─────────────────────────────────────────────────────────────
+
 
 def _symbol(file: str, name: str, line_start: int, line_end: int | None = None) -> dict:
     """One entry of find_unused_code.py's `unused_symbols`, in the exact shape the script emits."""
@@ -39,13 +38,15 @@ def _symbol(file: str, name: str, line_start: int, line_end: int | None = None) 
 
 def _unused_payload(*symbols: dict) -> str:
     """find_unused_code.py --format json stdout. The script emits no `files_analyzed` key."""
-    return json.dumps({
-        "success": True,
-        "language": "python",
-        "path": "/fake/project",
-        "total_unused": len(symbols),
-        "unused_symbols": list(symbols),
-    })
+    return json.dumps(
+        {
+            "success": True,
+            "language": "python",
+            "path": "/fake/project",
+            "total_unused": len(symbols),
+            "unused_symbols": list(symbols),
+        }
+    )
 
 
 _UNUSED_JSON = _unused_payload(_symbol("src/utils.py", "old_helper", 10))
@@ -127,6 +128,7 @@ def test_subprocess_timeout_empty_violations(tmp_path):
 
 # ── Ollama path ─────────────────────────────────────────────────────────────────
 
+
 def test_ollama_speculative_violation_added(tmp_path):
     """Ollama returns speculative feature violation → added to results with principle YAGNI.
 
@@ -174,6 +176,7 @@ def test_ollama_unavailable_subprocess_results_still_returned(tmp_path):
 
 # ── Incremental file filtering ──────────────────────────────────────────────────
 
+
 def test_files_filter_only_targeted_file(tmp_path):
     """files=[targeted.py] → only violations for that file returned from subprocess."""
     targeted = tmp_path / "targeted.py"
@@ -210,14 +213,15 @@ def test_files_none_runs_full_path(tmp_path):
 
 # ── Ollama with files=None hits discover_files branch ───────────────────────────
 
+
 def test_yagni_ollama_discover_files_branch(tmp_path):
     """When files=None and Ollama available → default discovery branch is hit."""
     f = tmp_path / "service.py"
     f.write_text("class UserService:\n    def get_user(self): pass\n")
 
-    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path, \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_ollama:
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path, patch(
+        _HYBRID_CHECK_AVAILABLE, return_value=True
+    ), patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_ollama:
         mock_path.exists.return_value = False
         result = run(tmp_path, "python", files=None)
 
@@ -230,9 +234,9 @@ def test_yagni_ollama_discover_files_mixed_language(tmp_path):
     f = tmp_path / "service.py"
     f.write_text("class UserService:\n    pass\n")
 
-    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path, \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]):
+    with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path, patch(
+        _HYBRID_CHECK_AVAILABLE, return_value=True
+    ), patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]):
         mock_path.exists.return_value = False
         result = run(tmp_path, "mixed", files=None)
 
@@ -240,6 +244,7 @@ def test_yagni_ollama_discover_files_mixed_language(tmp_path):
 
 
 # ── Reconciliation (mechanical + AI proximity dedup) ────────────────────────────
+
 
 def test_ai_finding_near_mechanical_dropped(tmp_path):
     """AI finding within 3 lines of a mechanical finding in the same file is dropped as a near-duplicate."""
@@ -288,15 +293,23 @@ def test_ai_finding_far_from_mechanical_both_kept(tmp_path):
     assert any("SpeculativeGenerality" in m for m in messages)
 
 
-@pytest.mark.parametrize("returncode, stdout, reason", [
-    (0, json.dumps({"success": False, "error": "Unsupported language: unknown"}), "Unsupported language: unknown"),
-    (1, "", "exit code 1"),
-])
+@pytest.mark.parametrize(
+    "returncode, stdout, reason",
+    [
+        (0, json.dumps({"success": False, "error": "Unsupported language: unknown"}), "Unsupported language: unknown"),
+        (1, "", "exit code 1"),
+    ],
+)
 def test_tool_failure_warns_on_stderr_and_still_runs_ai(tmp_path, capsys, returncode, stdout, reason):
     """find_unused_code.py failing is reported once on stderr; the AI pass still runs."""
     (tmp_path / "app.py").write_text("def f():\n    return 1\n")
-    ai_item = {"line": 1, "pattern": "speculative-feature", "violation": "v", "suggestion": "s",
-               "source_file": str(tmp_path / "app.py")}
+    ai_item = {
+        "line": 1,
+        "pattern": "speculative-feature",
+        "violation": "v",
+        "suggestion": "s",
+        "source_file": str(tmp_path / "app.py"),
+    }
     with patch("cca.checkers.check_yagni._FIND_UNUSED") as mock_path:
         mock_path.exists.return_value = True
         mock_path.name = "find_unused_code.py"
@@ -305,16 +318,19 @@ def test_tool_failure_warns_on_stderr_and_still_runs_ai(tmp_path, capsys, return
                 with patch(_HYBRID_ANALYZE_PARALLEL, return_value=[ai_item]):
                     result = run(tmp_path, "python")
 
-    warnings = [l for l in capsys.readouterr().err.splitlines() if l.startswith("[WARN]")]
+    warnings = [line for line in capsys.readouterr().err.splitlines() if line.startswith("[WARN]")]
     assert warnings == [f"[WARN] YAGNI: find_unused_code.py failed: {reason}"]
     assert result["success"] is True
     assert [v["line"] for v in result["violations"]] == [1]
 
 
-@pytest.mark.parametrize("side_effect, run_result, expected", [
-    (subprocess.TimeoutExpired("cmd", 60), None, "TimeoutExpired"),
-    (None, MagicMock(returncode=0, stdout="{not json", stderr=""), "JSONDecodeError"),
-])
+@pytest.mark.parametrize(
+    "side_effect, run_result, expected",
+    [
+        (subprocess.TimeoutExpired("cmd", 60), None, "TimeoutExpired"),
+        (None, MagicMock(returncode=0, stdout="{not json", stderr=""), "JSONDecodeError"),
+    ],
+)
 def test_tool_exception_warns_on_stderr(tmp_path, capsys, side_effect, run_result, expected):
     """A timeout or malformed tool output is reported on stderr, not swallowed."""
     (tmp_path / "app.py").write_text("def f():\n    return 1\n")
@@ -325,7 +341,7 @@ def test_tool_exception_warns_on_stderr(tmp_path, capsys, side_effect, run_resul
             with patch("lib.engine.hybrid.check_server_available", return_value=False):
                 result = run(tmp_path, "python")
 
-    warnings = [l for l in capsys.readouterr().err.splitlines() if l.startswith("[WARN]")]
+    warnings = [line for line in capsys.readouterr().err.splitlines() if line.startswith("[WARN]")]
     assert warnings == [f"[WARN] YAGNI: find_unused_code.py failed: {expected}"]
     assert result["success"] is True
     assert result["violations"] == []

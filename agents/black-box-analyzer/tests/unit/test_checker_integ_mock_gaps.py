@@ -1,6 +1,5 @@
 """Tests for checkers/check_integ_mock_gaps.py"""
 
-from pathlib import Path
 from unittest.mock import patch
 
 from bba.checkers.check_integ_mock_gaps import run
@@ -35,18 +34,21 @@ def test_run_violation_when_no_mock_test(tmp_path):
 
 def test_run_model_results_include_interaction_type(tmp_path):
     (tmp_path / "repo.py").write_text("def save(db, obj): db.insert(obj)", encoding="utf-8")
-    model_output = [{
-        "source_file": str(tmp_path / "repo.py"),
-        "source_file_name": "repo.py",
-        "function": "save",
-        "line": 1,
-        "severity": "high",
-        "interaction_type": "database",
-        "reason": "inserts into database without mock test",
-        "test_scenario": "test save with mocked DB returning success and error",
-    }]
-    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
-         patch("lib.engine.hybrid.analyze_files_parallel", return_value=model_output):
+    model_output = [
+        {
+            "source_file": str(tmp_path / "repo.py"),
+            "source_file_name": "repo.py",
+            "function": "save",
+            "line": 1,
+            "severity": "high",
+            "interaction_type": "database",
+            "reason": "inserts into database without mock test",
+            "test_scenario": "test save with mocked DB returning success and error",
+        }
+    ]
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), patch(
+        "lib.engine.hybrid.analyze_files_parallel", return_value=model_output
+    ):
         result = run(tmp_path, "python")
     # Both layers report; the AI finding is the one on a real line
     ai = [v for v in result["violations"] if v["line"] > 0]

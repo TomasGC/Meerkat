@@ -29,6 +29,7 @@ import tempfile
 import threading
 from contextlib import ExitStack
 from pathlib import Path
+from typing import Literal
 from unittest import mock
 
 import lib.ai.model_utils as _model_utils
@@ -51,6 +52,7 @@ PACKAGES: dict[str, str] = {"cca": "cca", "ssa": "ssa", "bba": "bba"}
 
 def _qualified(agent: str, name: str) -> str:
     return f"{PACKAGES[agent]}.{name}"
+
 
 _IDENTITY_FIELDS = ("file", "line", "principle")
 
@@ -94,8 +96,9 @@ def code_project_names() -> list[str]:
     """
     from lib.engine.discovery import group_by_language
 
-    return [name for name in project_names()
-            if group_by_language([f for f in project_path(name).rglob("*") if f.is_file()])]
+    return [
+        name for name in project_names() if group_by_language([f for f in project_path(name).rglob("*") if f.is_file()])
+    ]
 
 
 def expected_path(project: str | Path, agent: str, golden_dir: Path | None = None) -> Path:
@@ -149,13 +152,20 @@ def _template_regex(template: str) -> re.Pattern:
 class Replay:
     """State of one replayed run. Use through `replay(...)`."""
 
-    def __init__(self, project: str | Path, agent: str, prompts_dir: Path, strict_unused: bool = True,
-                 golden_dir: Path | None = None):
+    def __init__(
+        self,
+        project: str | Path,
+        agent: str,
+        prompts_dir: Path,
+        strict_unused: bool = True,
+        golden_dir: Path | None = None,
+    ):
         self.project = project_path(project)
         self.agent = agent
         self.strict_unused = strict_unused
-        self.templates = {p.stem: _template_regex(p.read_text(encoding="utf-8"))
-                          for p in sorted(Path(prompts_dir).glob("*.prompt"))}
+        self.templates = {
+            p.stem: _template_regex(p.read_text(encoding="utf-8")) for p in sorted(Path(prompts_dir).glob("*.prompt"))
+        }
         self.sources = source_texts(self.project)
         self.responses = load_responses(self.project, agent, golden_dir)
         self.used: set[tuple[str, str]] = set()
@@ -185,8 +195,10 @@ class Replay:
         key = keys[0]
         text = self.responses.get(name, {}).get(key)
         if text is None:
-            raise self._fail(f"no recorded response for prompt {name!r}, file {key!r} "
-                             f"(add it to golden/<project>/ai_responses/{self.agent}/{name}.json)")
+            raise self._fail(
+                f"no recorded response for prompt {name!r}, file {key!r} "
+                f"(add it to golden/<project>/ai_responses/{self.agent}/{name}.json)"
+            )
         items = _model_utils.extract_json_array(text) or []
         with self._lock:
             self.used.add((name, key))
@@ -198,13 +210,18 @@ class Replay:
         return text
 
     def unused(self) -> list[str]:
-        return [f"{name}: {key}" for name, entries in self.responses.items()
-                for key in entries if (name, key) not in self.used]
+        return [
+            f"{name}: {key}"
+            for name, entries in self.responses.items()
+            for key in entries
+            if (name, key) not in self.used
+        ]
 
     # -- seams --------------------------------------------------------------
     def _fake_call_model_async(self):
         async def fake(prompt: str, role: str = "fast", timeout: int | None = 600) -> str:
             return self.respond(prompt)
+
         return fake
 
     def _forbidden_sync_call(self, *args, **kwargs):
@@ -228,6 +245,7 @@ class Replay:
                     totals["ai_items"] += counts["ai_items"]
                     totals["dropped"] += counts["dropped"]
             return result
+
         return run_checker
 
     def _wrap_drop(self, original):
@@ -237,6 +255,7 @@ class Replay:
             if counts is not None:
                 counts["dropped"] += len(ai_violations) - len(kept)
             return kept
+
         return drop_near_duplicates
 
 
@@ -260,8 +279,15 @@ class replay:  # noqa: N801 — used as a context manager, reads like a function
     when `strict_unused` — any recorded response the run never asked for.
     """
 
-    def __init__(self, project: str | Path, agent: str, prompts_dir: Path, *, strict_unused: bool = True,
-                 golden_dir: Path | None = None):
+    def __init__(
+        self,
+        project: str | Path,
+        agent: str,
+        prompts_dir: Path,
+        *,
+        strict_unused: bool = True,
+        golden_dir: Path | None = None,
+    ):
         self.state = Replay(project, agent, prompts_dir, strict_unused, golden_dir)
         self._stack = ExitStack()
 
@@ -276,13 +302,15 @@ class replay:  # noqa: N801 — used as a context manager, reads like a function
         shim = sys.modules.get(_qualified(s.agent, "model_utils"))
         if shim is not None and hasattr(shim, "CACHE"):
             stack.enter_context(mock.patch.object(shim, "CACHE", None))
-        stack.enter_context(mock.patch.object(_orchestrator, "_run_checker",
-                                              s._wrap_run_checker(_orchestrator._run_checker)))
-        _patch_bindings(stack, "drop_near_duplicates", _dedup.drop_near_duplicates,
-                        s._wrap_drop(_dedup.drop_near_duplicates))
+        stack.enter_context(
+            mock.patch.object(_orchestrator, "_run_checker", s._wrap_run_checker(_orchestrator._run_checker))
+        )
+        _patch_bindings(
+            stack, "drop_near_duplicates", _dedup.drop_near_duplicates, s._wrap_drop(_dedup.drop_near_duplicates)
+        )
         return s
 
-    def __exit__(self, exc_type, exc, tb) -> bool:
+    def __exit__(self, exc_type, exc, _tb) -> Literal[False]:
         self._stack.close()
         if exc_type is not None:
             return False
@@ -335,11 +363,16 @@ def run_agent(
 
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "report.json"
-        argv = ["--path", str(root), "--full", "--format", "json", "--output", str(out),
-                "--no-stream", *extra_args]
+        argv = ["--path", str(root), "--full", "--format", "json", "--output", str(out), "--no-stream", *extra_args]
         with replay(root, agent, scripts / "prompts" / "local", strict_unused=strict_unused) as state:
-            _orchestrator.main(registry=orchestrate.CHECKERS, app_name=app_name, label_singular=label,
-                               cache_dir=Path(cache_dir), max_workers=workers, argv=argv)
+            _orchestrator.main(
+                registry=orchestrate.CHECKERS,
+                app_name=app_name,
+                label_singular=label,
+                cache_dir=Path(cache_dir),
+                max_workers=workers,
+                argv=argv,
+            )
         report = json.loads(out.read_text(encoding="utf-8"))
 
     if state.failures:
@@ -363,8 +396,9 @@ def _posix_rel(file: str, root: Path | None) -> str:
 def normalise(violations: list[dict], root: Path | None = None) -> list[dict]:
     """Copy violations with `file` as a posix path relative to `root`, sorted deterministically."""
     out = [{**v, "file": _posix_rel(str(v.get("file", "")), root)} for v in violations]
-    return sorted(out, key=lambda v: (v["file"], int(v.get("line", 0)),
-                                      str(v.get("principle", "")), str(v.get("message", ""))))
+    return sorted(
+        out, key=lambda v: (v["file"], int(v.get("line", 0)), str(v.get("principle", "")), str(v.get("message", "")))
+    )
 
 
 def _identity(v: dict) -> tuple:
@@ -388,8 +422,10 @@ def compare(actual: list[dict], expected: list[dict]) -> list[str]:
     for key in sorted(exp.keys() & act.keys(), key=str):
         for field in sorted(set(exp[key]) | set(act[key])):
             if exp[key].get(field) != act[key].get(field):
-                diff.append(f"changed    {_label(key)} {field}: "
-                            f"expected {exp[key].get(field)!r}, got {act[key].get(field)!r}")
+                diff.append(
+                    f"changed    {_label(key)} {field}: "
+                    f"expected {exp[key].get(field)!r}, got {act[key].get(field)!r}"
+                )
     return diff
 
 

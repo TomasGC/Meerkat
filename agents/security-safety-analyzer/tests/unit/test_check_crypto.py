@@ -1,7 +1,7 @@
 """Unit tests for checkers/check_crypto.py — mechanical layer only (server patched off)."""
+
 from pathlib import Path
 from unittest.mock import patch
-
 
 from ssa.checkers import check_crypto
 

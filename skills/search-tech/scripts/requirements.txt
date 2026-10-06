@@ -3,6 +3,9 @@
 # HTTP requests for StackOverflow API
 requests>=2.31.0
 
+# Safe parsing of remote XML (Medium RSS)
+defusedxml>=0.7.1
+
 # Testing dependencies
 pytest>=8.0.0
 pytest-cov>=4.1.0

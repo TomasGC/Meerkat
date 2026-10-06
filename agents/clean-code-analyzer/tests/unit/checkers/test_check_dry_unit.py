@@ -2,36 +2,33 @@
 
 import json
 import subprocess
-from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-import pytest
-
 
 import cca.checkers.check_dry as dry_mod
 from cca.checkers.check_dry import run
 
-FIND_DUPLICATES_OUTPUT = json.dumps({
-    "success": True,
-    "files_analyzed": 2,
-    "duplicates": [
-        {
-            "locations": [
-                {"file": "a.py", "lines": "10-15"},
-                {"file": "b.py", "lines": "5-10"},
-            ],
-            "similarity": 0.95,
-            "lines": 6,
-            "severity": "high",
-        }
-    ],
-})
+FIND_DUPLICATES_OUTPUT = json.dumps(
+    {
+        "success": True,
+        "files_analyzed": 2,
+        "duplicates": [
+            {
+                "locations": [
+                    {"file": "a.py", "lines": "10-15"},
+                    {"file": "b.py", "lines": "5-10"},
+                ],
+                "similarity": 0.95,
+                "lines": 6,
+                "severity": "high",
+            }
+        ],
+    }
+)
 
 
 def test_dry_maps_output(tmp_path):
     """DRY run maps find_duplicates.py JSON output to violations list."""
-    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, \
-         patch("subprocess.run") as mock_run:
+    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, patch("subprocess.run") as mock_run:
         mock_path.exists.return_value = True
         mock_run.return_value = MagicMock(
             returncode=0,
@@ -49,8 +46,7 @@ def test_dry_maps_output(tmp_path):
 
 def test_dry_subprocess_failure(tmp_path):
     """Non-zero returncode → success=False, violations=[]."""
-    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, \
-         patch("subprocess.run") as mock_run:
+    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, patch("subprocess.run") as mock_run:
         mock_path.exists.return_value = True
         mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="error msg")
         result = run(tmp_path, "python")
@@ -72,8 +68,7 @@ def test_dry_find_duplicates_missing(tmp_path):
 def test_dry_no_duplicates(tmp_path):
     """Empty duplicates list → 0 violations, success=True."""
     output = json.dumps({"success": True, "files_analyzed": 1, "duplicates": []})
-    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, \
-         patch("subprocess.run") as mock_run:
+    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, patch("subprocess.run") as mock_run:
         mock_path.exists.return_value = True
         mock_run.return_value = MagicMock(returncode=0, stdout=output, stderr="")
         result = run(tmp_path, "python")
@@ -84,10 +79,12 @@ def test_dry_no_duplicates(tmp_path):
 
 # ── error paths ─────────────────────────────────────────────────────────────────
 
+
 def test_dry_timeout_returns_failure(tmp_path):
     """subprocess.TimeoutExpired → success=False, violations=[]."""
-    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, \
-         patch("subprocess.run", side_effect=subprocess.TimeoutExpired("python", 60)):
+    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, patch(
+        "subprocess.run", side_effect=subprocess.TimeoutExpired("python", 60)
+    ):
         mock_path.exists.return_value = True
         result = run(tmp_path, "python")
 
@@ -97,8 +94,7 @@ def test_dry_timeout_returns_failure(tmp_path):
 
 def test_dry_json_decode_error_returns_failure(tmp_path):
     """Malformed JSON from find_duplicates.py → success=False, violations=[]."""
-    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, \
-         patch("subprocess.run") as mock_run:
+    with patch.object(dry_mod, "_FIND_DUPLICATES") as mock_path, patch("subprocess.run") as mock_run:
         mock_path.exists.return_value = True
         mock_run.return_value = MagicMock(returncode=0, stdout="not valid json {{{", stderr="")
         result = run(tmp_path, "python")

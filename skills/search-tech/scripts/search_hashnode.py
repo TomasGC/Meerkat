@@ -10,8 +10,8 @@ import argparse
 import json
 import sys
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 # Put the scripts dir on the path for the search_tech package
 sys.path.insert(0, str(Path(__file__).parent))
@@ -22,10 +22,9 @@ except ImportError:
     print("Error: requests library not found. Install with: pip install requests", file=sys.stderr)
     sys.exit(1)
 
-from search_tech.models import SearchQuery, SearchResult, SearchResponse, Source, ResultType, ValidationError
-from search_tech.logger import setup_logger, MetricsCollector, get_defaults
 from search_tech.cache import SearchCache
-
+from search_tech.logger import MetricsCollector, get_defaults, setup_logger
+from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source, ValidationError
 
 API_BASE = "https://gql.hashnode.com"
 MAX_RESULTS = 5
@@ -34,11 +33,7 @@ RETRY_DELAY = 2
 
 
 def search_hashnode(
-    query: SearchQuery,
-    logger=None,
-    metrics=None,
-    cache=None,
-    max_retries=MAX_RETRIES
+    query: SearchQuery, logger=None, metrics=None, cache=None, max_retries=MAX_RETRIES
 ) -> SearchResponse:
     """
     Search Hashnode articles via GraphQL.
@@ -63,14 +58,14 @@ def search_hashnode(
         cached_data = cache.get(" ".join(query.keywords), filters)
         if cached_data:
             logger.info("Cache hit for Hashnode query")
-            metrics.increment('cache_hits')
+            metrics.increment("cache_hits")
             return SearchResponse(
                 success=True,
                 query=query,
                 results=[SearchResult.from_dict(r) for r in cached_data.get("results", [])],
-                search_time_seconds=time.time() - start_time
+                search_time_seconds=time.time() - start_time,
             )
-        metrics.increment('cache_misses')
+        metrics.increment("cache_misses")
 
     search_query = " ".join(query.keywords)
     logger.debug(f"Searching Hashnode for: {search_query}")
@@ -106,27 +101,13 @@ def search_hashnode(
     # Retry logic
     for attempt in range(max_retries):
         try:
-            metrics.increment('api_calls')
+            metrics.increment("api_calls")
 
-            headers = {
-                "Content-Type": "application/json",
-                "User-Agent": "TechnicalSearchBot/1.0"
-            }
+            headers = {"Content-Type": "application/json", "User-Agent": "TechnicalSearchBot/1.0"}
 
-            payload = {
-                "query": graphql_query,
-                "variables": {
-                    "query": search_query,
-                    "first": MAX_RESULTS
-                }
-            }
+            payload = {"query": graphql_query, "variables": {"query": search_query, "first": MAX_RESULTS}}
 
-            response = requests.post(
-                API_BASE,
-                json=payload,
-                headers=headers,
-                timeout=10
-            )
+            response = requests.post(API_BASE, json=payload, headers=headers, timeout=10)
 
             response.raise_for_status()
             data = response.json()
@@ -158,12 +139,16 @@ def search_hashnode(
                     excerpt=excerpt.strip(),
                     comments=post.get("responseCount", 0),
                     tags=tags,
-                    created_date=datetime.fromisoformat(post.get("publishedAt", "").replace("Z", "+00:00")) if post.get("publishedAt") else None,
+                    created_date=(
+                        datetime.fromisoformat(post.get("publishedAt", "").replace("Z", "+00:00"))
+                        if post.get("publishedAt")
+                        else None
+                    ),
                     repository=f"@{post.get('author', {}).get('username', 'unknown')}",
                 )
                 results.append(result)
 
-            metrics.increment('total_results', len(results))
+            metrics.increment("total_results", len(results))
             logger.info(f"Found {len(results)} results from Hashnode")
 
             # Cache results
@@ -176,81 +161,50 @@ def search_hashnode(
                 cache.set(" ".join(query.keywords), filters, cache_data)
 
             return SearchResponse(
-                success=True,
-                query=query,
-                results=results,
-                search_time_seconds=time.time() - start_time
+                success=True, query=query, results=results, search_time_seconds=time.time() - start_time
             )
 
         except requests.exceptions.Timeout:
             logger.warning(f"Hashnode timeout (attempt {attempt + 1}/{max_retries})")
-            metrics.increment('errors')
+            metrics.increment("errors")
             if attempt < max_retries - 1:
-                metrics.increment('retries')
+                metrics.increment("retries")
                 time.sleep(RETRY_DELAY)
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Hashnode request error: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return SearchResponse(
                 success=False,
                 query=query,
                 error=f"Hashnode API error: {str(e)}",
-                search_time_seconds=time.time() - start_time
+                search_time_seconds=time.time() - start_time,
             )
 
         except Exception as e:
             logger.error(f"Hashnode search error: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return SearchResponse(
                 success=False,
                 query=query,
                 error=f"Unexpected error: {str(e)}",
-                search_time_seconds=time.time() - start_time
+                search_time_seconds=time.time() - start_time,
             )
 
     return SearchResponse(
-        success=False,
-        query=query,
-        error="All retry attempts failed",
-        search_time_seconds=time.time() - start_time
+        success=False, query=query, error="All retry attempts failed", search_time_seconds=time.time() - start_time
     )
 
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Search Hashnode for technical articles"
-    )
-    parser.add_argument(
-        "query",
-        help="Search query keywords"
-    )
-    parser.add_argument(
-        "--tags",
-        default="",
-        help="Comma-separated tags (e.g., nextjs,react)"
-    )
-    parser.add_argument(
-        "--output",
-        default="hashnode.json",
-        help="Output JSON file (default: hashnode.json)"
-    )
-    parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="Disable cache"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Verbose output"
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Debug output"
-    )
+    parser = argparse.ArgumentParser(description="Search Hashnode for technical articles")
+    parser.add_argument("query", help="Search query keywords")
+    parser.add_argument("--tags", default="", help="Comma-separated tags (e.g., nextjs,react)")
+    parser.add_argument("--output", default="hashnode.json", help="Output JSON file (default: hashnode.json)")
+    parser.add_argument("--no-cache", action="store_true", help="Disable cache")
+    parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--debug", action="store_true", help="Debug output")
 
     args = parser.parse_args()
 
@@ -283,7 +237,7 @@ def main():
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(response.to_dict(), f, indent=2, ensure_ascii=False)
 
     # Print summary

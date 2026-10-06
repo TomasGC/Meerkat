@@ -6,8 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 # Add scripts directory to path
 scripts_dir = Path(__file__).parent.parent.parent / "scripts"
 
@@ -268,7 +266,9 @@ def test_diff_analysis(sample_go_project, temp_dir):
 
     try:
         # Add a new test
-        modified_content = original_content + '\n\nfunc TestUpdateUserSuccess(t *testing.T) {\n\t// Test PUT /users/:id\n}\n'
+        modified_content = (
+            original_content + "\n\nfunc TestUpdateUserSuccess(t *testing.T) {\n\t// Test PUT /users/:id\n}\n"
+        )
         test_go.write_text(modified_content)
 
         # Create current analysis
@@ -417,8 +417,10 @@ def test_project_info_json_written_alongside_output(sample_go_project, temp_dir)
             sys.executable,
             str(scripts_dir / "parallel_analyzer.py"),
             str(sample_go_project),
-            "--output", str(output_file),
-            "--max-workers", "2",
+            "--output",
+            str(output_file),
+            "--max-workers",
+            "2",
         ],
         capture_output=True,
         text=True,
@@ -439,7 +441,8 @@ def test_project_info_json_written_to_project_root_when_no_output(sample_go_proj
             sys.executable,
             str(scripts_dir / "parallel_analyzer.py"),
             str(sample_go_project),
-            "--max-workers", "2",
+            "--max-workers",
+            "2",
         ],
         capture_output=True,
         text=True,

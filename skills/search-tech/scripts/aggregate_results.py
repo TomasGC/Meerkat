@@ -9,14 +9,14 @@ Usage:
 import argparse
 import json
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 # Put the scripts dir on the path for the search_tech package
 sys.path.insert(0, str(Path(__file__).parent))
 
-from search_tech.models import SearchResult, SearchResponse
-from search_tech.logger import setup_logger, MetricsCollector, get_defaults
+from search_tech.logger import MetricsCollector, get_defaults, setup_logger
+from search_tech.models import SearchResult
 
 
 def calculate_rank_score(result: SearchResult) -> float:
@@ -35,7 +35,7 @@ def calculate_rank_score(result: SearchResult) -> float:
     Returns:
         Calculated rank score
     """
-    score = result.score
+    score: float = result.score
 
     # Bonus for accepted answers
     if result.accepted:
@@ -81,19 +81,19 @@ def aggregate_results(input_files: list, max_results: int = 10, logger=None, met
         path = Path(file_path)
         if not path.exists():
             logger.warning(f"File not found: {file_path}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             files_failed += 1
             continue
 
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             # Parse SearchResponse
             if not data.get("success"):
-                error = data.get('error', 'Unknown error')
+                error = data.get("error", "Unknown error")
                 logger.warning(f"{file_path}: {error}")
-                metrics.increment('errors')
+                metrics.increment("errors")
                 files_failed += 1
                 continue
 
@@ -107,18 +107,18 @@ def aggregate_results(input_files: list, max_results: int = 10, logger=None, met
                 results_count += 1
 
             files_loaded += 1
-            metrics.increment('total_results', results_count)
+            metrics.increment("total_results", results_count)
             logger.debug(f"Loaded {results_count} results from {path.name}")
 
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON in {file_path}: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             files_failed += 1
             continue
 
         except Exception as e:
             logger.error(f"Error loading {file_path}: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             files_failed += 1
             continue
 
@@ -151,14 +151,12 @@ def format_markdown(results: list, query_str: str) -> str:
         Markdown-formatted string
     """
     if not results:
-        return f"## 🔍 No results found for \"{query_str}\"\n\n💡 Try:\n- Checking spelling\n- Using more common terms\n- Adding language tags\n"
+        return (
+            f'## 🔍 No results found for "{query_str}"\n\n💡 Try:\n- Checking spelling\n- Using more common terms\n-'
+            " Adding language tags\n"
+        )
 
-    lines = [
-        f"## 🔍 Technical Search Results for \"{query_str}\"",
-        "",
-        f"### Top Results ({len(results)} found)",
-        ""
-    ]
+    lines = [f'## 🔍 Technical Search Results for "{query_str}"', "", f"### Top Results ({len(results)} found)", ""]
 
     for i, result in enumerate(results, 1):
         # Source icon
@@ -211,45 +209,14 @@ def format_markdown(results: list, query_str: str) -> str:
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Aggregate and rank search results from multiple sources"
-    )
-    parser.add_argument(
-        "files",
-        nargs="+",
-        help="JSON result files to aggregate"
-    )
-    parser.add_argument(
-        "--max-results",
-        type=int,
-        default=10,
-        help="Maximum results to return (default: 10)"
-    )
-    parser.add_argument(
-        "--output",
-        default="aggregated.json",
-        help="Output JSON file (default: aggregated.json)"
-    )
-    parser.add_argument(
-        "--markdown",
-        default="",
-        help="Also output markdown file (optional)"
-    )
-    parser.add_argument(
-        "--query",
-        default="search query",
-        help="Original query string for markdown formatting"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Verbose output"
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Debug output"
-    )
+    parser = argparse.ArgumentParser(description="Aggregate and rank search results from multiple sources")
+    parser.add_argument("files", nargs="+", help="JSON result files to aggregate")
+    parser.add_argument("--max-results", type=int, default=10, help="Maximum results to return (default: 10)")
+    parser.add_argument("--output", default="aggregated.json", help="Output JSON file (default: aggregated.json)")
+    parser.add_argument("--markdown", default="", help="Also output markdown file (optional)")
+    parser.add_argument("--query", default="search query", help="Original query string for markdown formatting")
+    parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--debug", action="store_true", help="Debug output")
 
     args = parser.parse_args()
 
@@ -274,14 +241,14 @@ def main():
             "error": "No results found in any input file",
             "total_results": 0,
             "results": [],
-            "sources": {}
+            "sources": {},
         }
     else:
         output_data = {
             "success": True,
             "total_results": len(results),
             "results": [r.to_dict() for r in results],
-            "sources": {}
+            "sources": {},
         }
 
         # Count sources
@@ -294,7 +261,7 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(output_data, f, indent=2, ensure_ascii=False)
         logger.info(f"JSON output written to {output_path}")
     except Exception as e:
@@ -308,7 +275,7 @@ def main():
             markdown_path = Path(args.markdown)
             markdown_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(markdown_path, 'w', encoding='utf-8') as f:
+            with open(markdown_path, "w", encoding="utf-8") as f:
                 f.write(markdown_content)
 
             logger.info(f"Markdown output written to {markdown_path}")

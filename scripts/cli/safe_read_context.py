@@ -38,7 +38,7 @@ def read_kanban(claude_dir: Path) -> Optional[dict]:
         "path": result.path,
         "content": result.content,
         "lines": result.lines,
-        **({"error": result.error} if result.error else {})
+        **({"error": result.error} if result.error else {}),
     }
 
 
@@ -61,7 +61,7 @@ def read_architecture(claude_dir: Path) -> Optional[dict]:
         "path": result.path,
         "content": result.content,
         "lines": result.lines,
-        **({"error": result.error} if result.error else {})
+        **({"error": result.error} if result.error else {}),
     }
 
 
@@ -76,7 +76,7 @@ def read_rules(claude_dir: Path) -> list[dict]:
         List of dictionaries with rule file info
     """
     rules_dir = claude_dir / "rules"
-    results = []
+    results: list[dict] = []
 
     if not rules_dir.exists():
         return results
@@ -114,7 +114,7 @@ def safe_read_context(
     read_kanban_flag: bool = False,
     read_architecture_flag: bool = False,
     read_rules_flag: bool = False,
-    read_all: bool = False
+    read_all: bool = False,
 ) -> dict:
     """
     Safely read Claude context files.
@@ -139,11 +139,7 @@ def safe_read_context(
         raise FileNotFoundError(f"No .claude directory found at: {path}")
 
     # Initialize results
-    results = {
-        "kanban": None,
-        "architecture": None,
-        "rules": []
-    }
+    results: dict[str, Any] = {"kanban": None, "architecture": None, "rules": []}
 
     # Read KANBAN.md
     if read_all or read_kanban_flag:
@@ -165,31 +161,14 @@ class SafeReadContextScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--kanban", action="store_true", help="Read .claude/KANBAN.md")
+        parser.add_argument("--architecture", action="store_true", help="Read .claude/ARCHITECTURE.md")
+        parser.add_argument("--rules", action="store_true", help="Read all .claude/rules/**/*.md files")
         parser.add_argument(
-            "--kanban",
-            action="store_true",
-            help="Read .claude/KANBAN.md"
+            "--all", action="store_true", help="Read all context files (KANBAN, ARCHITECTURE, and rules)"
         )
         parser.add_argument(
-            "--architecture",
-            action="store_true",
-            help="Read .claude/ARCHITECTURE.md"
-        )
-        parser.add_argument(
-            "--rules",
-            action="store_true",
-            help="Read all .claude/rules/**/*.md files"
-        )
-        parser.add_argument(
-            "--all",
-            action="store_true",
-            help="Read all context files (KANBAN, ARCHITECTURE, and rules)"
-        )
-        parser.add_argument(
-            "--path",
-            "-p",
-            default=".",
-            help="Base path to .claude directory (default: current directory)"
+            "--path", "-p", default=".", help="Base path to .claude directory (default: current directory)"
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -203,26 +182,16 @@ class SafeReadContextScript(BaseCLIScript):
                 read_kanban_flag=args.kanban,
                 read_architecture_flag=args.architecture,
                 read_rules_flag=args.rules,
-                read_all=args.all
+                read_all=args.all,
             )
 
-
-            return {
-                "success": True,
-                **results
-            }
+            return {"success": True, **results}
 
         except FileNotFoundError as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
         except Exception as e:
             self.logger.error(f"Failed to read context: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -300,4 +269,5 @@ class SafeReadContextScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(SafeReadContextScript)

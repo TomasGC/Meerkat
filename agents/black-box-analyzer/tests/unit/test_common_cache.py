@@ -2,11 +2,11 @@
 """Tests for common/cache.py"""
 
 import json
-from pathlib import Path
+import os
 
 import pytest
 
-from bba.cache import AnalysisCache
+from bba.cache import AnalysisCache, _model_cache_dir, clear_model_cache, get_model_cached, set_model_cached
 from bba.models import (
     AnalysisResult,
     CoverageMatrix,
@@ -16,15 +16,19 @@ from bba.models import (
     HTTPMethod,
     ProjectType,
     Scenario,
+    TestCase,
+    TestFramework,
 )
 
 # ── init ──────────────────────────────────────────────────────────────────────
 
+
 def test_cache_init_creates_dir(temp_dir):
     cache_dir = temp_dir / "my-cache"
     assert not cache_dir.exists()
-    cache = AnalysisCache(cache_dir=cache_dir)
+    AnalysisCache(cache_dir=cache_dir)
     assert cache_dir.exists()
+
 
 def test_cache_init_project_scoped(temp_dir):
     project = temp_dir / "my-project"
@@ -36,6 +40,7 @@ def test_cache_init_project_scoped(temp_dir):
     cache2 = AnalysisCache(project_path=project2)
     assert cache.cache_dir != cache2.cache_dir
 
+
 def test_cache_init_same_project_same_dir(temp_dir):
     project = temp_dir / "proj"
     project.mkdir()
@@ -43,7 +48,9 @@ def test_cache_init_same_project_same_dir(temp_dir):
     c2 = AnalysisCache(project_path=project)
     assert c1.cache_dir == c2.cache_dir
 
+
 # ── _hash_file ────────────────────────────────────────────────────────────────
+
 
 def test_hash_file_deterministic(temp_dir):
     f = temp_dir / "file.py"
@@ -54,6 +61,7 @@ def test_hash_file_deterministic(temp_dir):
     assert h1 == h2
     assert len(h1) == 64  # SHA256 hex
 
+
 def test_hash_file_changes_on_content_change(temp_dir):
     f = temp_dir / "file.py"
     f.write_text("version 1")
@@ -63,12 +71,15 @@ def test_hash_file_changes_on_content_change(temp_dir):
     h2 = cache._hash_file(f)
     assert h1 != h2
 
+
 def test_hash_file_missing_returns_empty(temp_dir):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     result = cache._hash_file(temp_dir / "nonexistent.py")
     assert result == ""
 
+
 # ── _hash_directory ───────────────────────────────────────────────────────────
+
 
 def test_hash_directory_finds_matching(temp_dir):
     proj = temp_dir / "proj"
@@ -81,6 +92,7 @@ def test_hash_directory_finds_matching(temp_dir):
     assert len(hashes) == 2
     assert all(k.endswith(".py") for k in hashes)
 
+
 def test_hash_directory_empty(temp_dir):
     proj = temp_dir / "empty-proj"
     proj.mkdir()
@@ -88,12 +100,15 @@ def test_hash_directory_empty(temp_dir):
     hashes = cache._hash_directory(proj, ["*.py"])
     assert hashes == {}
 
+
 # ── get_cached_endpoints — miss cases ────────────────────────────────────────
+
 
 def test_get_cached_endpoints_no_cache_returns_none(temp_dir):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     result = cache.get_cached_endpoints(temp_dir, "python")
     assert result is None
+
 
 def test_get_cached_endpoints_language_mismatch_returns_none(temp_dir):
     proj = temp_dir / "proj"
@@ -104,7 +119,9 @@ def test_get_cached_endpoints_language_mismatch_returns_none(temp_dir):
     result = cache.get_cached_endpoints(proj, "go")
     assert result is None
 
+
 # ── save_endpoints / get_cached_endpoints round-trip ─────────────────────────
+
 
 def _make_endpoint(path: str = "/users", method: HTTPMethod = HTTPMethod.GET) -> Endpoint:
     return Endpoint(
@@ -115,6 +132,7 @@ def _make_endpoint(path: str = "/users", method: HTTPMethod = HTTPMethod.GET) ->
         file_path="main.py",
         line_number=1,
     )
+
 
 def test_save_and_get_endpoints_roundtrip(temp_dir):
     proj = temp_dir / "proj"
@@ -130,6 +148,7 @@ def test_save_and_get_endpoints_roundtrip(temp_dir):
     assert "/users" in paths
     assert "/orders" in paths
 
+
 def test_cache_miss_after_source_change(temp_dir):
     proj = temp_dir / "proj"
     proj.mkdir()
@@ -141,7 +160,9 @@ def test_cache_miss_after_source_change(temp_dir):
     result = cache.get_cached_endpoints(proj, "python")
     assert result is None
 
+
 # ── invalidate_all ────────────────────────────────────────────────────────────
+
 
 def test_invalidate_all_clears_cache(temp_dir):
     proj = temp_dir / "proj"
@@ -154,12 +175,15 @@ def test_invalidate_all_clears_cache(temp_dir):
     assert not cache.endpoints_cache.exists()
     assert not cache.metadata_cache.exists()
 
+
 # ── get_cache_info ────────────────────────────────────────────────────────────
+
 
 def test_get_cache_info_empty(temp_dir):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     info = cache.get_cache_info()
     assert info["status"] == "empty"
+
 
 def test_get_cache_info_active(temp_dir):
     proj = temp_dir / "proj"
@@ -171,7 +195,9 @@ def test_get_cache_info_active(temp_dir):
     assert info["status"] == "active"
     assert info["language"] == "python"
 
+
 # ── get_cached_scenarios round-trip ──────────────────────────────────────────
+
 
 def _make_scenario(endpoint: str = "/users") -> Scenario:
     return Scenario(
@@ -183,6 +209,7 @@ def _make_scenario(endpoint: str = "/users") -> Scenario:
         description="test scenario",
     )
 
+
 def test_save_and_get_scenarios_roundtrip(temp_dir):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     scenarios = [_make_scenario("/users"), _make_scenario("/orders")]
@@ -191,13 +218,16 @@ def test_save_and_get_scenarios_roundtrip(temp_dir):
     assert result is not None
     assert len(result) == 2
 
+
 def test_get_scenarios_hash_mismatch_returns_none(temp_dir):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     cache.save_scenarios("hash-v1", [_make_scenario()])
     result = cache.get_cached_scenarios("hash-v2")
     assert result is None
 
+
 # ── get_cached_result / save_result ───────────────────────────────────────────
+
 
 def _make_result(project_type: ProjectType = ProjectType.REST_API) -> AnalysisResult:
     return AnalysisResult(
@@ -223,6 +253,7 @@ def _make_result(project_type: ProjectType = ProjectType.REST_API) -> AnalysisRe
         risk_assessment=[],
     )
 
+
 @pytest.fixture
 def go_project(temp_dir):
     proj = temp_dir / "go-proj"
@@ -231,9 +262,11 @@ def go_project(temp_dir):
     (proj / "main_test.go").write_text("package main")
     return proj
 
+
 def test_get_cached_result_no_file_returns_none(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     assert cache.get_cached_result(go_project, "go", "APIAnalyzer") is None
+
 
 def test_save_and_get_result_roundtrip(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
@@ -244,16 +277,19 @@ def test_save_and_get_result_roundtrip(temp_dir, go_project):
     assert restored.entry_points[0].name == "/users"
     assert isinstance(restored.entry_points[0].type, EntryPointType)
 
+
 def test_result_cache_is_per_analyzer(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     cache.save_result(go_project, "go", "APIAnalyzer", _make_result())
     # A different analyzer must not be served the first one's entry
     assert cache.get_cached_result(go_project, "go", "CLIAnalyzer") is None
 
+
 def test_result_cache_language_mismatch_returns_none(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     cache.save_result(go_project, "go", "APIAnalyzer", _make_result())
     assert cache.get_cached_result(go_project, "python", "APIAnalyzer") is None
+
 
 def test_result_cache_invalidated_by_source_change(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
@@ -261,11 +297,13 @@ def test_result_cache_invalidated_by_source_change(temp_dir, go_project):
     (go_project / "main.go").write_text("package main // edited")
     assert cache.get_cached_result(go_project, "go", "APIAnalyzer") is None
 
+
 def test_result_cache_invalidated_by_test_change(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     cache.save_result(go_project, "go", "APIAnalyzer", _make_result())
     (go_project / "main_test.go").write_text("package main // edited")
     assert cache.get_cached_result(go_project, "go", "APIAnalyzer") is None
+
 
 def test_result_cache_invalidated_by_new_source_file(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
@@ -273,11 +311,13 @@ def test_result_cache_invalidated_by_new_source_file(temp_dir, go_project):
     (go_project / "handlers.go").write_text("package main")
     assert cache.get_cached_result(go_project, "go", "APIAnalyzer") is None
 
+
 def test_result_cache_corrupt_payload_returns_none(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     cache.save_result(go_project, "go", "APIAnalyzer", _make_result())
     cache._result_cache_path("APIAnalyzer").write_text("{not json")
     assert cache.get_cached_result(go_project, "go", "APIAnalyzer") is None
+
 
 def test_result_cache_schema_drift_returns_none(temp_dir, go_project):
     """A payload whose result no longer matches the model must miss, not raise."""
@@ -289,11 +329,13 @@ def test_result_cache_schema_drift_returns_none(temp_dir, go_project):
     path.write_text(json.dumps(payload))
     assert cache.get_cached_result(go_project, "go", "APIAnalyzer") is None
 
+
 def test_result_cache_path_sanitizes_analyzer_name(temp_dir):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
     path = cache._result_cache_path("api/weird name")
     assert path.name == "result_api_weird_name.json"
     assert path.parent == cache.cache_dir
+
 
 def test_save_result_records_cached_analyzers(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
@@ -303,7 +345,9 @@ def test_save_result_records_cached_analyzers(temp_dir, go_project):
     assert info["status"] == "active"
     assert info["cached_analyzers"] == ["APIAnalyzer", "CLIAnalyzer"]
 
+
 # ── invalidate_all with results ───────────────────────────────────────────────
+
 
 def test_invalidate_all_removes_result_files(temp_dir, go_project):
     cache = AnalysisCache(cache_dir=temp_dir / "cache")
@@ -312,6 +356,7 @@ def test_invalidate_all_removes_result_files(temp_dir, go_project):
     assert result_path.exists()
     cache.invalidate_all()
     assert not result_path.exists()
+
 
 def test_invalidate_all_include_projects_clears_subdirs(temp_dir, go_project):
     base = temp_dir / "base-cache"
@@ -324,12 +369,14 @@ def test_invalidate_all_include_projects_clears_subdirs(temp_dir, go_project):
     AnalysisCache(cache_dir=base).invalidate_all(include_projects=True)
     assert not scoped_path.exists()
 
+
 def test_invalidate_all_without_include_projects_keeps_subdirs(temp_dir, go_project):
     base = temp_dir / "base-cache"
     scoped = AnalysisCache(cache_dir=base / "abc123def456")
     scoped.save_result(go_project, "go", "APIAnalyzer", _make_result())
     AnalysisCache(cache_dir=base).invalidate_all()
     assert scoped._result_cache_path("APIAnalyzer").exists()
+
 
 def test_invalidate_all_skips_model_subdir(temp_dir):
     base = temp_dir / "base-cache"
@@ -340,15 +387,218 @@ def test_invalidate_all_skips_model_subdir(temp_dir):
     # Model cache has its own clear function; invalidate_all must not touch it
     assert (models / "abc_api.json").exists()
 
+
 # ── BBA_CACHE_DIR override ───────────────────────────────────────────────────
+
 
 def test_cache_home_honours_env_override(temp_dir, monkeypatch):
     monkeypatch.setenv("BBA_CACHE_DIR", str(temp_dir / "redirected"))
     cache = AnalysisCache()
     assert cache.cache_dir == temp_dir / "redirected"
 
+
 def test_model_cache_dir_honours_env_override(temp_dir, monkeypatch):
     from bba.cache import _model_cache_dir
 
     monkeypatch.setenv("BBA_CACHE_DIR", str(temp_dir / "redirected"))
     assert _model_cache_dir() == temp_dir / "redirected" / "models"
+
+
+def test_result_cache_stale_test_hashes_return_none(temp_dir, go_project):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_result(go_project, "go", "APIAnalyzer", _make_result())
+    path = cache._result_cache_path("APIAnalyzer")
+    payload = json.loads(path.read_text())
+    payload["test_file_hashes"] = {"old_test.go": "deadbeef"}
+    path.write_text(json.dumps(payload))
+    assert cache.get_cached_result(go_project, "go", "APIAnalyzer") is None
+
+
+def test_save_result_write_failure_is_swallowed(temp_dir, go_project, monkeypatch):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    result_path = cache._result_cache_path("APIAnalyzer")
+    real_write_text = type(result_path).write_text
+
+    def write_text(self, *args, **kwargs):
+        if self == result_path:
+            raise OSError("disk full")
+        return real_write_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(type(result_path), "write_text", write_text)
+    cache.save_result(go_project, "go", "APIAnalyzer", _make_result())
+
+    assert not result_path.exists()
+    # Metadata is only recorded for a result that actually reached the disk
+    assert not cache.metadata_cache.exists()
+
+
+# ── corrupt metadata / payloads ───────────────────────────────────────────────
+
+
+def test_get_cached_endpoints_corrupt_metadata_returns_none(temp_dir):
+    proj = temp_dir / "proj"
+    proj.mkdir()
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_endpoints(proj, "python", [_make_endpoint()])
+    cache.metadata_cache.write_text("{broken")
+    assert cache.get_cached_endpoints(proj, "python") is None
+
+
+def test_get_cached_endpoints_corrupt_payload_returns_none(temp_dir):
+    proj = temp_dir / "proj"
+    proj.mkdir()
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_endpoints(proj, "python", [_make_endpoint()])
+    cache.endpoints_cache.write_text('[{"path": "/x"}]')
+    assert cache.get_cached_endpoints(proj, "python") is None
+
+
+def test_load_metadata_corrupt_file_returns_empty(temp_dir):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.metadata_cache.write_text("not json")
+    assert cache._load_metadata() == {}
+
+
+# ── save_tests / get_cached_tests ─────────────────────────────────────────────
+
+
+def _make_test_case(name: str = "test_users") -> TestCase:
+    return TestCase(name=name, file_path="tests/test_main.py", line_number=3, framework=TestFramework.PYTEST)
+
+
+@pytest.fixture
+def py_project(temp_dir):
+    proj = temp_dir / "py-proj"
+    proj.mkdir()
+    (proj / "main.py").write_text("x = 1")
+    (proj / "test_main.py").write_text("def test_x(): pass")
+    return proj
+
+
+def test_save_and_get_tests_roundtrip(temp_dir, py_project):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_tests(py_project, "python", [_make_test_case("a"), _make_test_case("b")])
+    restored = cache.get_cached_tests(py_project, "python")
+    assert [t.name for t in restored] == ["a", "b"]
+    assert cache.get_cache_info()["test_file_count"] == 1
+
+
+def test_get_cached_tests_without_cache_returns_none(temp_dir, py_project):
+    assert AnalysisCache(cache_dir=temp_dir / "cache").get_cached_tests(py_project, "python") is None
+
+
+def test_get_cached_tests_language_mismatch_returns_none(temp_dir, py_project):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_tests(py_project, "python", [_make_test_case()])
+    assert cache.get_cached_tests(py_project, "go") is None
+
+
+def test_get_cached_tests_invalidated_by_test_edit(temp_dir, py_project):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_tests(py_project, "python", [_make_test_case()])
+    (py_project / "test_main.py").write_text("def test_y(): pass")
+    assert cache.get_cached_tests(py_project, "python") is None
+
+
+def test_get_cached_tests_corrupt_metadata_returns_none(temp_dir, py_project):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_tests(py_project, "python", [_make_test_case()])
+    cache.metadata_cache.write_text("{")
+    assert cache.get_cached_tests(py_project, "python") is None
+
+
+def test_get_cached_tests_corrupt_payload_returns_none(temp_dir, py_project):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_tests(py_project, "python", [_make_test_case()])
+    cache.tests_cache.write_text("[{}]")
+    assert cache.get_cached_tests(py_project, "python") is None
+
+
+# ── scenarios: miss branches ──────────────────────────────────────────────────
+
+
+def test_get_cached_scenarios_without_cache_returns_none(temp_dir):
+    assert AnalysisCache(cache_dir=temp_dir / "cache").get_cached_scenarios("h") is None
+
+
+def test_get_cached_scenarios_corrupt_metadata_returns_none(temp_dir):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_scenarios("h", [_make_scenario()])
+    cache.metadata_cache.write_text("{")
+    assert cache.get_cached_scenarios("h") is None
+
+
+def test_get_cached_scenarios_corrupt_payload_returns_none(temp_dir):
+    cache = AnalysisCache(cache_dir=temp_dir / "cache")
+    cache.save_scenarios("h", [_make_scenario()])
+    cache.scenarios_cache.write_text("not json")
+    assert cache.get_cached_scenarios("h") is None
+
+
+# ── per-file model cache ──────────────────────────────────────────────────────
+
+
+def _model_entry(analyzer: str):
+    return next(_model_cache_dir().glob(f"*_{analyzer}.json"))
+
+
+def test_model_cache_roundtrip(temp_dir):
+    src = temp_dir / "a.py"
+    src.write_text("x = 1")
+    set_model_cached(src, "unit", [{"line": 2}])
+    assert get_model_cached(src, "unit") == [{"line": 2}]
+    assert get_model_cached(src, "e2e") is None
+
+
+def test_model_cache_key_follows_file_content(temp_dir):
+    src = temp_dir / "a.py"
+    src.write_text("x = 1")
+    set_model_cached(src, "unit", [{"line": 2}])
+    src.write_text("x = 2")
+    assert get_model_cached(src, "unit") is None
+
+
+def test_model_cache_missing_file_uses_nohash_key(temp_dir):
+    set_model_cached(temp_dir / "missing.py", "unit", [])
+    assert (_model_cache_dir() / "nohash_unit.json").exists()
+
+
+def test_model_cache_expired_entry_is_deleted(temp_dir):
+    src = temp_dir / "a.py"
+    src.write_text("x = 1")
+    set_model_cached(src, "unit", [{"line": 2}])
+    entry = _model_entry("unit")
+    old = entry.stat().st_mtime - 8 * 86400
+    os.utime(entry, (old, old))
+
+    assert get_model_cached(src, "unit", max_age_days=7) is None
+    assert not entry.exists()
+
+
+def test_model_cache_zero_max_age_never_expires(temp_dir):
+    src = temp_dir / "a.py"
+    src.write_text("x = 1")
+    set_model_cached(src, "unit", [{"line": 2}])
+    os.utime(_model_entry("unit"), (0, 0))
+    assert get_model_cached(src, "unit", max_age_days=0) == [{"line": 2}]
+
+
+def test_model_cache_corrupt_entry_returns_none(temp_dir):
+    src = temp_dir / "a.py"
+    src.write_text("x = 1")
+    set_model_cached(src, "unit", [])
+    _model_entry("unit").write_text("{bad")
+    assert get_model_cached(src, "unit") is None
+
+
+def test_clear_model_cache_counts_deleted_entries(temp_dir):
+    for name in ("a.py", "b.py"):
+        (temp_dir / name).write_text(name)
+        set_model_cached(temp_dir / name, "unit", [])
+    assert clear_model_cache() == 2
+    assert clear_model_cache() == 0
+
+
+def test_clear_model_cache_without_dir_returns_zero(temp_dir, monkeypatch):
+    monkeypatch.setenv("BBA_CACHE_DIR", str(temp_dir / "never-created"))
+    assert clear_model_cache() == 0

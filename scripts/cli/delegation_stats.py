@@ -8,13 +8,11 @@ Usage:
     python delegation_stats.py --export stats.json
 """
 
-import argparse
 import json
 import sys
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -67,22 +65,14 @@ class DelegationStats(BaseCLIScript):
         # Filter by date
         if self.args.since:
             since_dt = datetime.fromisoformat(self.args.since)
-            entries = [
-                e
-                for e in entries
-                if datetime.fromisoformat(e["timestamp"]) >= since_dt
-            ]
+            entries = [e for e in entries if datetime.fromisoformat(e["timestamp"]) >= since_dt]
 
         # Filter by last N sessions
         if self.args.last:
             session_starts = [e for e in entries if e.get("event") == "session_start"]
             if len(session_starts) > self.args.last:
                 last_session_time = session_starts[-self.args.last]["timestamp"]
-                entries = [
-                    e
-                    for e in entries
-                    if e["timestamp"] >= last_session_time
-                ]
+                entries = [e for e in entries if e["timestamp"] >= last_session_time]
 
         # Calculate stats
         stats = self._calculate_stats(entries)
@@ -98,8 +88,8 @@ class DelegationStats(BaseCLIScript):
     def _calculate_stats(self, entries: list) -> dict:
         """Calculate delegation statistics."""
         total_delegations = 0
-        delegations_by_type = defaultdict(int)
-        tokens_saved_by_type = defaultdict(int)
+        delegations_by_type: defaultdict[str, int] = defaultdict(int)
+        tokens_saved_by_type: defaultdict[str, int] = defaultdict(int)
         session_count = len([e for e in entries if e.get("event") == "session_start"])
 
         # Token savings estimates (from delegation-rules.json)
@@ -134,17 +124,13 @@ class DelegationStats(BaseCLIScript):
             "summary": {
                 "total_delegations": total_delegations,
                 "total_tokens_saved": total_tokens_saved,
-                "avg_tokens_per_session": (
-                    total_tokens_saved // session_count if session_count > 0 else 0
-                ),
+                "avg_tokens_per_session": (total_tokens_saved // session_count if session_count > 0 else 0),
             },
             "by_type": {
                 "delegations": dict(delegations_by_type),
                 "tokens_saved": dict(tokens_saved_by_type),
             },
-            "top_delegations": sorted(
-                delegations_by_type.items(), key=lambda x: x[1], reverse=True
-            )[:5],
+            "top_delegations": sorted(delegations_by_type.items(), key=lambda x: x[1], reverse=True)[:5],
         }
 
     def _display_stats(self, stats: dict) -> None:

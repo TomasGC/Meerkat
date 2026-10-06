@@ -19,8 +19,9 @@ def project(tmp_path: Path) -> Path:
     root = tmp_path / "service"
     root.mkdir()
     (root / "app.py").write_text("import hashlib\nhashlib.md5(b'x')\n", encoding="utf-8")
-    (root / "pod.yaml").write_text("spec:\n  containers:\n    - securityContext:\n        privileged: true\n",
-                                   encoding="utf-8")
+    (root / "pod.yaml").write_text(
+        "spec:\n  containers:\n    - securityContext:\n        privileged: true\n", encoding="utf-8"
+    )
     (root / "Dockerfile").write_text("FROM python:latest\n", encoding="utf-8")
     discovery._DISCOVERY_CACHE.clear()
     return root
@@ -28,12 +29,16 @@ def project(tmp_path: Path) -> Path:
 
 def _run(root: Path, tmp_path: Path, checks: str) -> dict:
     out = tmp_path / "report.json"
-    with patch("lib.ai.model_utils.check_server_available", return_value=False), \
-         patch("lib.engine.hybrid.check_server_available", return_value=False):
-        orchestrator.main(registry=ssa.orchestrate.CHECKERS, app_name="SSA", label_singular="checker",
-                          cache_dir=tmp_path / "cache",
-                          argv=["--path", str(root), "--full", "--checks", checks, "--no-stream",
-                                "--no-cache", "--output", str(out)])
+    with patch("lib.ai.model_utils.check_server_available", return_value=False), patch(
+        "lib.engine.hybrid.check_server_available", return_value=False
+    ):
+        orchestrator.main(
+            registry=ssa.orchestrate.CHECKERS,
+            app_name="SSA",
+            label_singular="checker",
+            cache_dir=tmp_path / "cache",
+            argv=["--path", str(root), "--full", "--checks", checks, "--no-stream", "--no-cache", "--output", str(out)],
+        )
     return json.loads(out.read_text(encoding="utf-8"))
 
 

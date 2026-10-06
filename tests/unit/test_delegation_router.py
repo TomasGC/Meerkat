@@ -2,6 +2,7 @@
 """Unit tests for delegation routing logic"""
 
 import json
+
 import pytest
 
 from lib import paths
@@ -51,8 +52,7 @@ class TestDelegationRouter:
         assert "design_patterns" in claude_only["tasks"]
 
     def test_ollama_tool_format(self, delegation_rules):
-        ollama_tasks = [t for t, c in delegation_rules["auto_delegate"].items()
-                        if "ollama:" in c["tool"]]
+        ollama_tasks = [t for t, c in delegation_rules["auto_delegate"].items() if "ollama:" in c["tool"]]
         assert len(ollama_tasks) >= 2
         for task in ollama_tasks:
             tool = delegation_rules["auto_delegate"][task]["tool"]

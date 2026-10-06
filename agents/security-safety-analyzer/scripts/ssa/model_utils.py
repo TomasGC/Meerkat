@@ -7,13 +7,13 @@ from lib.ai import model_utils as _lib
 from lib.ai.model_utils import (  # noqa: F401
     LOCAL_AI_HOST,
     LOCAL_AI_PORT,
-    check_server_available,
     call_model,
     call_model_async,
     call_model_multi,
-    run_prompt,
+    check_server_available,
     extract_json_array,
     extract_json_object,
+    run_prompt,
     split_into_chunks,
 )
 
@@ -27,10 +27,12 @@ class _ModelCache:
 
     def get(self, file_path: Path, prompt_name: str, max_age_days: int = 7) -> list[dict] | None:
         from .cache import get_cached
+
         return get_cached(file_path, prompt_name, max_age_days=max_age_days)
 
     def set(self, file_path: Path, prompt_name: str, results: list[dict]) -> None:
         from .cache import set_cached
+
         set_cached(file_path, prompt_name, results)
 
 

@@ -12,7 +12,7 @@ This provides a common structure for all CLI scripts with:
 import argparse
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import NoReturn, Optional
 
 
 class BaseCLIScript(ABC):
@@ -21,7 +21,8 @@ class BaseCLIScript(ABC):
     def __init__(self):
         """Initialize the CLI script."""
         self.parser = argparse.ArgumentParser(description=self.__doc__)
-        self.args: Optional[argparse.Namespace] = None
+        # Empty until run() parses argv; subclasses only read it from execute().
+        self.args: argparse.Namespace = argparse.Namespace()
 
     @abstractmethod
     def add_arguments(self) -> None:
@@ -61,7 +62,7 @@ class BaseCLIScript(ABC):
             self.error(f"Error: {e}")
             return 1
 
-    def error(self, message: str, exit_code: int = 1) -> None:
+    def error(self, message: str, exit_code: int = 1) -> NoReturn:
         """
         Print error message and exit.
 
@@ -75,15 +76,3 @@ class BaseCLIScript(ABC):
     def success(self, message: str) -> None:
         """Print success message."""
         print(message)
-
-
-def main_template(script_class: type) -> None:
-    """
-    Template for script entry points.
-
-    Usage:
-        if __name__ == "__main__":
-            main_template(MyScriptClass)
-    """
-    script = script_class()
-    sys.exit(script.run())

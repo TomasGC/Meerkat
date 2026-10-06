@@ -1,23 +1,18 @@
 #!/usr/bin/env python3
 """Tests for common/file_utils.py"""
 
-import pytest
 from pathlib import Path
 from unittest.mock import patch
 
-from lib.file_utils import read_file_safe, read_files_safe, FileReadResult
+from lib.file_utils import FileReadResult, read_file_safe, read_files_safe
+
 
 class TestFileReadResult:
     """Test FileReadResult dataclass."""
 
     def test_file_read_result_success(self):
         """Test successful file read result."""
-        result = FileReadResult(
-            exists=True,
-            path="/test/file.txt",
-            content="Hello World",
-            lines=1
-        )
+        result = FileReadResult(exists=True, path="/test/file.txt", content="Hello World", lines=1)
 
         assert result.exists is True
         assert result.path == "/test/file.txt"
@@ -27,10 +22,7 @@ class TestFileReadResult:
 
     def test_file_read_result_not_found(self):
         """Test file not found result."""
-        result = FileReadResult(
-            exists=False,
-            path="/test/missing.txt"
-        )
+        result = FileReadResult(exists=False, path="/test/missing.txt")
 
         assert result.exists is False
         assert result.content is None
@@ -38,15 +30,12 @@ class TestFileReadResult:
 
     def test_file_read_result_with_error(self):
         """Test file read with error."""
-        result = FileReadResult(
-            exists=True,
-            path="/test/file.txt",
-            error="Permission denied"
-        )
+        result = FileReadResult(exists=True, path="/test/file.txt", error="Permission denied")
 
         assert result.exists is True
         assert result.content is None
         assert result.error == "Permission denied"
+
 
 class TestReadFileSafe:
     """Test read_file_safe function."""
@@ -113,7 +102,7 @@ class TestReadFileSafe:
     def test_read_file_encoding_error(self, tmp_path):
         """Test reading file with wrong encoding."""
         test_file = tmp_path / "binary.txt"
-        test_file.write_bytes(b'\x80\x81\x82')  # Invalid UTF-8
+        test_file.write_bytes(b"\x80\x81\x82")  # Invalid UTF-8
 
         result = read_file_safe(test_file, encoding="utf-8")
 
@@ -130,9 +119,7 @@ class TestReadFileSafe:
         # chmod is a no-op on Windows, so the failure is raised at the read
         # seam instead of relying on filesystem permissions. This also keeps
         # the error branch covered on every platform.
-        with patch.object(
-            Path, "read_text", side_effect=PermissionError(13, "Permission denied")
-        ):
+        with patch.object(Path, "read_text", side_effect=PermissionError(13, "Permission denied")):
             result = read_file_safe(test_file)
 
         assert result.exists is True
@@ -161,6 +148,7 @@ class TestReadFileSafe:
 
         assert result.lines == 5  # Blank lines count
         assert result.content == content
+
 
 class TestReadFilesSafe:
     """Test read_files_safe function."""
@@ -212,7 +200,7 @@ class TestReadFilesSafe:
         file2 = tmp_path / "invalid.txt"
 
         file1.write_text("Valid", encoding="utf-8")
-        file2.write_bytes(b'\x80\x81\x82')  # Invalid UTF-8
+        file2.write_bytes(b"\x80\x81\x82")  # Invalid UTF-8
 
         results = read_files_safe([file1, file2])
 

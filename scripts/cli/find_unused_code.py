@@ -8,7 +8,7 @@ Uses AST parsing and grep to detect defined symbols that are never called.
 import ast
 import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +17,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from lib.cli.base import BaseCLIScript
 from lib.config import language_config
 from lib.engine.discovery import dominant_language
-from lib.utils import run_command
 
 _SUPPORTED_LANGUAGES = ("python", "typescript", "go")
 
@@ -25,6 +24,7 @@ _SUPPORTED_LANGUAGES = ("python", "typescript", "go")
 @dataclass
 class UnusedSymbol:
     """Unused code symbol."""
+
     file: str
     symbol_type: str  # function, class, import
     name: str
@@ -39,25 +39,17 @@ class FindUnusedCodeScript(BaseCLIScript):
     def setup_parser(self, parser):
         """Add script-specific arguments."""
         parser.add_argument(
-            "--path",
-            "-p",
-            type=Path,
-            default=Path.cwd(),
-            help="Path to analyze (default: current directory)"
+            "--path", "-p", type=Path, default=Path.cwd(), help="Path to analyze (default: current directory)"
         )
         parser.add_argument(
-            "--recursive",
-            "-r",
-            action="store_true",
-            default=True,
-            help="Search recursively (default: True)"
+            "--recursive", "-r", action="store_true", default=True, help="Search recursively (default: True)"
         )
         parser.add_argument(
             "--language",
             "-l",
             choices=["python", "typescript", "go", "auto"],
             default="auto",
-            help="Language (default: auto-detect)"
+            help="Language (default: auto-detect)",
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -65,10 +57,7 @@ class FindUnusedCodeScript(BaseCLIScript):
         path = args.path.resolve()
 
         if not path.exists():
-            return {
-                "success": False,
-                "error": f"Path not found: {path}"
-            }
+            return {"success": False, "error": f"Path not found: {path}"}
 
         # Detect language
         language = args.language
@@ -85,10 +74,7 @@ class FindUnusedCodeScript(BaseCLIScript):
         elif language == "go":
             unused = self._find_unused_go(path, args.recursive)
         else:
-            return {
-                "success": False,
-                "error": f"Unsupported language: {language}"
-            }
+            return {"success": False, "error": f"Unsupported language: {language}"}
 
         result = {
             "success": True,
@@ -102,12 +88,11 @@ class FindUnusedCodeScript(BaseCLIScript):
                     "name": u.name,
                     "line_start": u.line_start,
                     "line_end": u.line_end,
-                    "confidence": u.confidence
+                    "confidence": u.confidence,
                 }
                 for u in unused
-            ]
+            ],
         }
-
 
         return result
 
@@ -134,7 +119,7 @@ class FindUnusedCodeScript(BaseCLIScript):
             files = list(path.glob(pattern))
 
         # Extract all defined functions/classes
-        defined = {}
+        defined: dict[str, dict[str, Any]] = {}
         for file in files:
             try:
                 with open(file, "r", encoding="utf-8") as f:
@@ -150,7 +135,7 @@ class FindUnusedCodeScript(BaseCLIScript):
                             "file": str(file.relative_to(path.parent if path.is_file() else path)),
                             "type": "function",
                             "line": node.lineno,
-                            "end_line": node.end_lineno or node.lineno
+                            "end_line": node.end_lineno or node.lineno,
                         }
 
                     elif isinstance(node, ast.ClassDef):
@@ -161,7 +146,7 @@ class FindUnusedCodeScript(BaseCLIScript):
                             "file": str(file.relative_to(path.parent if path.is_file() else path)),
                             "type": "class",
                             "line": node.lineno,
-                            "end_line": node.end_lineno or node.lineno
+                            "end_line": node.end_lineno or node.lineno,
                         }
 
             except Exception:
@@ -177,7 +162,7 @@ class FindUnusedCodeScript(BaseCLIScript):
                 for name in defined.keys():
                     # Check if symbol is called/used (count occurrences > 1 means it's used)
                     # One occurrence is the definition itself
-                    matches = re.findall(rf'\b{name}\b', content)
+                    matches = re.findall(rf"\b{name}\b", content)
                     if len(matches) > 1:
                         called.add(name)
 
@@ -191,14 +176,16 @@ class FindUnusedCodeScript(BaseCLIScript):
                 file_path = path.parent / info["file"] if path.is_file() else path / info["file"]
                 is_exported = self._is_exported_python(file_path, name)
 
-                unused.append(UnusedSymbol(
-                    file=info["file"],
-                    symbol_type=info["type"],
-                    name=name,
-                    line_start=info["line"],
-                    line_end=info["end_line"],
-                    confidence="low" if is_exported else "high"
-                ))
+                unused.append(
+                    UnusedSymbol(
+                        file=info["file"],
+                        symbol_type=info["type"],
+                        name=name,
+                        line_start=info["line"],
+                        line_end=info["end_line"],
+                        confidence="low" if is_exported else "high",
+                    )
+                )
 
         return unused
 
@@ -234,6 +221,7 @@ class FindUnusedCodeScript(BaseCLIScript):
 def main():
     """CLI entry point."""
     from lib.cli.base import create_cli_script
+
     create_cli_script(FindUnusedCodeScript)
 
 

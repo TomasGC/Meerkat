@@ -2,10 +2,10 @@
 """Tests for common/cli/base.py"""
 
 import pytest
-from pathlib import Path
-from io import StringIO
 
+from lib import base_cli as legacy
 from lib.cli.base import BaseCLIScript, create_cli_script
+
 
 class MockScript(BaseCLIScript):
     """Mock script for testing."""
@@ -20,14 +20,10 @@ class MockScript(BaseCLIScript):
         self.execute_called = True
         self.execute_args = args
 
-        if hasattr(args, 'fail') and args.fail:
+        if hasattr(args, "fail") and args.fail:
             raise ValueError("Mock failure")
 
-        return {
-            "success": True,
-            "value": 42,
-            "format": args.format if hasattr(args, 'format') else "json"
-        }
+        return {"success": True, "value": 42, "format": args.format if hasattr(args, "format") else "json"}
 
     def format_text(self, result: dict) -> str:
         """Format as text."""
@@ -36,6 +32,7 @@ class MockScript(BaseCLIScript):
     def format_summary(self, result: dict) -> str:
         """Format as summary."""
         return f"Result: {result['value']}"
+
 
 class MockScriptWithCustomArgs(BaseCLIScript):
     """Mock script with custom arguments."""
@@ -47,10 +44,8 @@ class MockScriptWithCustomArgs(BaseCLIScript):
 
     def execute(self, args) -> dict:
         """Execute with custom args."""
-        return {
-            "custom": args.custom,
-            "flag": args.flag
-        }
+        return {"custom": args.custom, "flag": args.flag}
+
 
 class TestBaseCLIScript:
     """Test BaseCLIScript base class."""
@@ -136,6 +131,7 @@ class TestBaseCLIScript:
 
     def test_run_error_handling(self, capsys):
         """Test error handling during execution."""
+
         class FailScript(BaseCLIScript):
             def execute(self, args) -> dict:
                 raise ValueError("Test error")
@@ -147,6 +143,7 @@ class TestBaseCLIScript:
 
     def test_run_keyboard_interrupt(self):
         """Test keyboard interrupt handling."""
+
         class InterruptScript(BaseCLIScript):
             def execute(self, args) -> dict:
                 raise KeyboardInterrupt()
@@ -188,6 +185,7 @@ class TestBaseCLIScript:
 
     def test_format_text_default(self, capsys):
         """Test default format_text (uses JSON)."""
+
         class DefaultScript(BaseCLIScript):
             def execute(self, args) -> dict:
                 return {"test": "value"}
@@ -200,6 +198,7 @@ class TestBaseCLIScript:
 
     def test_format_summary_default(self):
         """Test default format_summary (same as format_text)."""
+
         class DefaultScript(BaseCLIScript):
             def execute(self, args) -> dict:
                 return {"test": "value"}
@@ -212,20 +211,22 @@ class TestBaseCLIScript:
         # Default implementation uses format_text which uses JSON
         assert '"test": "value"' in summary
 
+
 class TestCreateCLIScript:
     """Test create_cli_script helper function."""
 
     def test_create_cli_script_success(self, monkeypatch, capsys):
         """Test create_cli_script with successful execution."""
         # Mock sys.argv and sys.exit
-        monkeypatch.setattr('sys.argv', ['script.py', '--format', 'summary'])
+        monkeypatch.setattr("sys.argv", ["script.py", "--format", "summary"])
 
         exit_code = None
+
         def mock_exit(code):
             nonlocal exit_code
             exit_code = code
 
-        monkeypatch.setattr('sys.exit', mock_exit)
+        monkeypatch.setattr("sys.exit", mock_exit)
 
         # Create and run
         create_cli_script(MockScript)
@@ -237,22 +238,25 @@ class TestCreateCLIScript:
 
     def test_create_cli_script_error(self, monkeypatch):
         """Test create_cli_script with error."""
+
         class FailScript(BaseCLIScript):
             def execute(self, args) -> dict:
                 raise ValueError("Test error")
 
-        monkeypatch.setattr('sys.argv', ['script.py'])
+        monkeypatch.setattr("sys.argv", ["script.py"])
 
         exit_code = None
+
         def mock_exit(code):
             nonlocal exit_code
             exit_code = code
 
-        monkeypatch.setattr('sys.exit', mock_exit)
+        monkeypatch.setattr("sys.exit", mock_exit)
 
         create_cli_script(FailScript)
 
         assert exit_code == 1
+
 
 class TestIntegration:
     """Integration tests for full CLI workflow."""
@@ -277,3 +281,43 @@ class TestIntegration:
 
         assert exit_code == 0
         assert script.execute_called is True
+
+
+# ── lib/base_cli.py: the argparse-only base used by format_code, lint_code, delegation_stats ──
+
+
+class _LegacyScript(legacy.BaseCLIScript):
+    """Echo the --name argument; raise when asked to."""
+
+    def add_arguments(self):
+        self.parser.add_argument("--name", default="world")
+        self.parser.add_argument("--fail", action="store_true")
+
+    def execute(self):
+        if self.args.fail:
+            raise ValueError("boom")
+        self.success(f"hello {self.args.name}")
+
+
+class TestLegacyBaseCLIScript:
+    def test_run_parses_args_and_executes(self, capsys):
+        assert _LegacyScript().run(["--name", "ada"]) == 0
+        assert capsys.readouterr().out == "hello ada\n"
+
+    def test_run_returns_argparse_exit_code(self, capsys):
+        assert _LegacyScript().run(["--unknown"]) == 2
+        assert "unrecognized arguments" in capsys.readouterr().err
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="bug (#51): run() calls self.error(), whose sys.exit escapes the except block instead of returning 1",
+    )
+    def test_run_returns_one_when_execute_raises(self, capsys):
+        assert _LegacyScript().run(["--fail"]) == 1
+        assert "boom" in capsys.readouterr().err
+
+    def test_error_exits_with_given_code(self, capsys):
+        with pytest.raises(SystemExit) as exc:
+            _LegacyScript().error("bad", exit_code=4)
+        assert exc.value.code == 4
+        assert capsys.readouterr().err == "Error: bad\n"

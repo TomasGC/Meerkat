@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """End-to-end tests for delegation workflow — runs real scripts via subprocess"""
 
-import subprocess
-import pytest
 import json
+import subprocess
 from pathlib import Path
-import time
+
+import pytest
 
 from lib import paths
 
@@ -24,16 +24,18 @@ class TestDelegationWorkflow:
     def test_format_code_workflow(self, temp_project):
         test_file = temp_project / "src" / "main.py"
         result = subprocess.run(
-            ["python", str(paths.SCRIPTS / "cli" / "format_code.py"),
-             "--file", str(test_file), "--language", "python"],
-            capture_output=True, text=True, timeout=10,
-            encoding="utf-8", errors="replace"
+            ["python", str(paths.SCRIPTS / "cli" / "format_code.py"), "--file", str(test_file), "--language", "python"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            encoding="utf-8",
+            errors="replace",
         )
         assert result.returncode in [0, 1]
 
     def test_profile_endpoint_workflow(self):
         import threading
-        from http.server import HTTPServer, BaseHTTPRequestHandler
+        from http.server import BaseHTTPRequestHandler, HTTPServer
 
         class FakeHandler(BaseHTTPRequestHandler):
             def do_GET(self):
@@ -41,6 +43,7 @@ class TestDelegationWorkflow:
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(b'{"status": "ok"}')
+
             def log_message(self, format, *args):
                 pass
 
@@ -49,10 +52,21 @@ class TestDelegationWorkflow:
 
         try:
             result = subprocess.run(
-                ["python", str(paths.SCRIPTS / "delegators" / "profile_endpoint.py"),
-                 "--url", "http://localhost:8889/health", "--duration", "2", "--requests-per-second", "5"],
-                capture_output=True, text=True, timeout=10,
-                encoding="utf-8", errors="replace"
+                [
+                    "python",
+                    str(paths.SCRIPTS / "delegators" / "profile_endpoint.py"),
+                    "--url",
+                    "http://localhost:8889/health",
+                    "--duration",
+                    "2",
+                    "--requests-per-second",
+                    "5",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                encoding="utf-8",
+                errors="replace",
             )
             assert result.returncode == 0
             assert len(result.stdout) > 0
@@ -62,15 +76,19 @@ class TestDelegationWorkflow:
     @pytest.mark.live_ai
     def test_ollama_review_workflow(self):
         try:
-            subprocess.run(["ollama", "ps"], capture_output=True, check=True,
-                           timeout=5, encoding="utf-8", errors="replace")
+            subprocess.run(
+                ["ollama", "ps"], capture_output=True, check=True, timeout=5, encoding="utf-8", errors="replace"
+            )
         except (subprocess.CalledProcessError, FileNotFoundError):
             pytest.skip("Ollama not running")
 
         result = subprocess.run(
             ["ollama", "run", "qwen2.5-coder:7b", "Review this code (one word): def add(a,b): return a+b"],
-            capture_output=True, text=True, timeout=30,
-            encoding="utf-8", errors="replace"
+            capture_output=True,
+            text=True,
+            timeout=30,
+            encoding="utf-8",
+            errors="replace",
         )
         assert result.returncode == 0
         assert len(result.stdout) > 0
@@ -79,13 +97,18 @@ class TestDelegationWorkflow:
         log_file = Path.home() / ".claude" / "logs" / "delegation-stats.jsonl"
         log_file.parent.mkdir(parents=True, exist_ok=True)
         with open(log_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps({"timestamp": "2026-05-11T10:00:00", "event": "session_start",
-                                "delegation_enabled": True}) + "\n")
+            f.write(
+                json.dumps({"timestamp": "2026-05-11T10:00:00", "event": "session_start", "delegation_enabled": True})
+                + "\n"
+            )
 
         result = subprocess.run(
             ["python", str(paths.SCRIPTS / "cli" / "delegation_stats.py")],
-            capture_output=True, text=True, timeout=10,
-            encoding="utf-8", errors="replace"
+            capture_output=True,
+            text=True,
+            timeout=10,
+            encoding="utf-8",
+            errors="replace",
         )
         assert result.returncode == 0
         assert "delegation" in result.stdout.lower()

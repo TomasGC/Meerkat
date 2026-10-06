@@ -11,7 +11,9 @@ import pytest
 import lib.ai.model_utils as mu
 
 _TSQL = "CREATE PROCEDURE dbo.GetOrder @id INT AS\nBEGIN TRY\n  SELECT * FROM [dbo].orders WHERE id = @id\nEND TRY\n"
-_PGSQL = "CREATE FUNCTION get_order(p_id int) RETURNS SETOF orders AS $$\n  SELECT * FROM orders;\n$$ LANGUAGE plpgsql;\n"
+_PGSQL = (
+    "CREATE FUNCTION get_order(p_id int) RETURNS SETOF orders AS $$\n  SELECT * FROM orders;\n$$ LANGUAGE plpgsql;\n"
+)
 
 
 @pytest.fixture
@@ -35,8 +37,14 @@ def _run(tmp_path, prompts_dir, files: dict[str, str], language: str, extra_slot
         return "[]"
 
     with patch.object(mu, "call_model_async", fake):
-        mu.analyze_files_parallel(paths, language, "analyzer", "p", prompts_dir=prompts_dir,
-                                  extra_slots={tmp_path / k: v for k, v in (extra_slots or {}).items()})
+        mu.analyze_files_parallel(
+            paths,
+            language,
+            "analyzer",
+            "p",
+            prompts_dir=prompts_dir,
+            extra_slots={tmp_path / k: v for k, v in (extra_slots or {}).items()},
+        )
     return seen
 
 

@@ -10,13 +10,8 @@ Handles detection and analysis of CLI applications:
 """
 
 import re
-import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from bba.constants import CLI_PATTERNS
 from bba.models import (
     EntryPoint,
     EntryPointType,
@@ -27,7 +22,6 @@ from bba.models import (
     TestCase,
 )
 from bba.utils import (
-    extract_line_number_from_pattern,
     format_path_relative,
     read_file_safe,
     walk_files,
@@ -78,12 +72,10 @@ class CLIAnalyzer(BaseAnalyzer):
                 continue
 
             # Cobra commands
-            cobra_pattern = re.compile(
-                r'&cobra\.Command\s*\{\s*Use:\s*"(\w+)"', re.MULTILINE
-            )
+            cobra_pattern = re.compile(r'&cobra\.Command\s*\{\s*Use:\s*"(\w+)"', re.MULTILINE)
             for match in cobra_pattern.finditer(content):
                 command_name = match.group(1)
-                line_num = content[:match.start()].count("\n") + 1
+                line_num = content[: match.start()].count("\n") + 1
 
                 # Extract flags for this command
                 flags = self._extract_go_flags(content, match.start())
@@ -104,7 +96,7 @@ class CLIAnalyzer(BaseAnalyzer):
             flag_pattern = re.compile(r'flag\.(String|Int|Bool)\s*\(\s*"(\w+)"')
             for match in flag_pattern.finditer(content):
                 flag_type, flag_name = match.groups()
-                line_num = content[:match.start()].count("\n") + 1
+                line_num = content[: match.start()].count("\n") + 1
 
                 entry_points.append(
                     EntryPoint(
@@ -132,9 +124,7 @@ class CLIAnalyzer(BaseAnalyzer):
         flags = []
 
         # Look for .Flags().StringVar, .Flags().IntVar, etc.
-        flag_pattern = re.compile(
-            r'\.Flags\(\)\.(String|Int|Bool)(?:Var)?P?\s*\(\s*[^,]*,\s*"(\w+)"'
-        )
+        flag_pattern = re.compile(r'\.Flags\(\)\.(String|Int|Bool)(?:Var)?P?\s*\(\s*[^,]*,\s*"(\w+)"')
 
         # Only look in the next 500 characters (rough command scope)
         search_area = content[start_pos : start_pos + 500]
@@ -167,7 +157,7 @@ class CLIAnalyzer(BaseAnalyzer):
             click_def_pattern = re.compile(r"def\s+(\w+)\s*\(")
             for dec_match in click_decorator_pattern.finditer(content):
                 cmd_type = dec_match.group(1)
-                window = content[dec_match.end():dec_match.end() + 300]
+                window = content[dec_match.end() : dec_match.end() + 300]
                 def_match = click_def_pattern.search(window)
                 if not def_match:
                     continue
@@ -191,12 +181,10 @@ class CLIAnalyzer(BaseAnalyzer):
                 )
 
             # Argparse
-            argparse_pattern = re.compile(
-                r'add_argument\s*\(\s*["\']--?(\w+)["\']'
-            )
+            argparse_pattern = re.compile(r'add_argument\s*\(\s*["\']--?(\w+)["\']')
             for match in argparse_pattern.finditer(content):
                 arg_name = match.group(1)
-                line_num = content[:match.start()].count("\n") + 1
+                line_num = content[: match.start()].count("\n") + 1
 
                 entry_points.append(
                     EntryPoint(
@@ -250,12 +238,10 @@ class CLIAnalyzer(BaseAnalyzer):
                 continue
 
             # Commander.js commands
-            commander_pattern = re.compile(
-                r'program\.command\s*\(\s*["\'](\w+)["\']'
-            )
+            commander_pattern = re.compile(r'program\.command\s*\(\s*["\'](\w+)["\']')
             for match in commander_pattern.finditer(content):
                 command_name = match.group(1)
-                line_num = content[:match.start()].count("\n") + 1
+                line_num = content[: match.start()].count("\n") + 1
 
                 entry_points.append(
                     EntryPoint(
@@ -284,7 +270,7 @@ class CLIAnalyzer(BaseAnalyzer):
             option_pattern = re.compile(r'\[Option\s*\(\s*["\'](\w+)["\']')
             for match in option_pattern.finditer(content):
                 option_name = match.group(1)
-                line_num = content[:match.start()].count("\n") + 1
+                line_num = content[: match.start()].count("\n") + 1
 
                 entry_points.append(
                     EntryPoint(
@@ -320,7 +306,7 @@ class CLIAnalyzer(BaseAnalyzer):
             command_pattern = re.compile(r'@Command\s*\(\s*name\s*=\s*"(\w+)"')
             for match in command_pattern.finditer(content):
                 command_name = match.group(1)
-                line_num = content[:match.start()].count("\n") + 1
+                line_num = content[: match.start()].count("\n") + 1
 
                 entry_points.append(
                     EntryPoint(
@@ -362,9 +348,7 @@ class CLIAnalyzer(BaseAnalyzer):
                     Scenario(
                         endpoint=entry_point.name,
                         method="CLI",  # Not HTTP, but needed for Scenario model
-                        input_combination={
-                            "flags": [f"--{p.name}=valid" for p in entry_point.params]
-                        },
+                        input_combination={"flags": [f"--{p.name}=valid" for p in entry_point.params]},
                         expected_output=0,  # Exit code 0
                         scenario_type="happy_path",
                         description=f"Valid execution of '{entry_point.name}' with all flags",
@@ -390,9 +374,7 @@ class CLIAnalyzer(BaseAnalyzer):
                         Scenario(
                             endpoint=entry_point.name,
                             method="CLI",
-                            input_combination={
-                                "flags": [f"--{param.name}=<invalid>"]
-                            },
+                            input_combination={"flags": [f"--{param.name}=<invalid>"]},
                             expected_output=1,
                             scenario_type="edge_case",
                             description=f"Invalid value for flag '{param.name}'",
@@ -404,9 +386,7 @@ class CLIAnalyzer(BaseAnalyzer):
                     Scenario(
                         endpoint=entry_point.name,
                         method="CLI",
-                        input_combination={
-                            "flags": ["--input='; rm -rf /'"]
-                        },
+                        input_combination={"flags": ["--input='; rm -rf /'"]},
                         expected_output=1,
                         scenario_type="security",
                         description=f"Command injection attempt on '{entry_point.name}'",

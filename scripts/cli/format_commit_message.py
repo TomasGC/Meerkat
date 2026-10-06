@@ -30,12 +30,14 @@ def _get_commit_pattern() -> str:
     # Build full pattern: <issue>: <type>: <message>
     return rf"^({issue_pattern}):\s+(feat|fix|refactor|test|docs|chore|style|perf|ci|build):\s+.{{3,}}"
 
+
 COMMIT_TYPES = ["feat", "fix", "refactor", "test", "docs", "chore", "style", "perf", "ci", "build"]
 
 
 @dataclass
 class ValidationResult:
     """Commit message validation result."""
+
     valid: bool
     message: str
     errors: list[str]
@@ -43,10 +45,7 @@ class ValidationResult:
     suggestion: Optional[str] = None
 
 
-def validate_commit_message(
-    message: str,
-    suggest: bool = False
-) -> ValidationResult:
+def validate_commit_message(message: str, suggest: bool = False) -> ValidationResult:
     """Validate commit message format using active profile."""
     commit_pattern = _get_commit_pattern()
     issue_pattern = get_issue_format()
@@ -81,13 +80,7 @@ def validate_commit_message(
     if suggest and not is_valid:
         suggestion = generate_suggestion(message)
 
-    return ValidationResult(
-        valid=is_valid,
-        message=message,
-        errors=errors,
-        warnings=warnings,
-        suggestion=suggestion
-    )
+    return ValidationResult(valid=is_valid, message=message, errors=errors, warnings=warnings, suggestion=suggestion)
 
 
 def generate_suggestion(message: str) -> Optional[str]:
@@ -118,7 +111,9 @@ def generate_suggestion(message: str) -> Optional[str]:
     type_match = re.search(r"(feat|fix|refactor|test|docs|chore|style|perf|ci|build)", message)
     if type_match:
         suggested_type = type_match.group(1)
-        suggested_message = re.sub(r"(feat|fix|refactor|test|docs|chore|style|perf|ci|build)[:\s]*", "", suggested_message, count=1)
+        suggested_message = re.sub(
+            r"(feat|fix|refactor|test|docs|chore|style|perf|ci|build)[:\s]*", "", suggested_message, count=1
+        )
     else:
         # Infer type from message
         if re.search(r"\b(add|implement|create)\b", suggested_message):
@@ -166,34 +161,13 @@ class FormatCommitMessageScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--message", "-m", required=True, help="Commit message to validate or format")
+        parser.add_argument("--validate", "-v", action="store_true", help="Validate message format (default mode)")
         parser.add_argument(
-            "--message",
-            "-m",
-            required=True,
-            help="Commit message to validate or format"
+            "--suggest", "-s", action="store_true", help="Generate correction suggestions for invalid messages"
         )
-        parser.add_argument(
-            "--validate",
-            "-v",
-            action="store_true",
-            help="Validate message format (default mode)"
-        )
-        parser.add_argument(
-            "--suggest",
-            "-s",
-            action="store_true",
-            help="Generate correction suggestions for invalid messages"
-        )
-        parser.add_argument(
-            "--issue",
-            "-t",
-            help="Issue ID for formatting mode (e.g., #123)"
-        )
-        parser.add_argument(
-            "--type",
-            choices=COMMIT_TYPES,
-            help="Commit type for formatting mode"
-        )
+        parser.add_argument("--issue", "-t", help="Issue ID for formatting mode (e.g., #123)")
+        parser.add_argument("--type", choices=COMMIT_TYPES, help="Commit type for formatting mode")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute commit message validation or formatting."""
@@ -202,7 +176,6 @@ class FormatCommitMessageScript(BaseCLIScript):
             if args.validate or not (args.issue and args.type):
                 result = validate_commit_message(args.message, args.suggest)
 
-
                 return {
                     "success": True,
                     "mode": "validate",
@@ -210,7 +183,7 @@ class FormatCommitMessageScript(BaseCLIScript):
                     "message": result.message,
                     "errors": result.errors,
                     "warnings": result.warnings,
-                    "suggestion": result.suggestion
+                    "suggestion": result.suggestion,
                 }
 
             # Format mode
@@ -220,21 +193,17 @@ class FormatCommitMessageScript(BaseCLIScript):
                 # Validate the formatted message
                 validation = validate_commit_message(formatted)
 
-
                 return {
                     "success": True,
                     "mode": "format",
                     "original": args.message,
                     "formatted": formatted,
-                    "valid": validation.valid
+                    "valid": validation.valid,
                 }
 
         except Exception as e:
             self.logger.error(f"Failed to process commit message: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -271,7 +240,7 @@ class FormatCommitMessageScript(BaseCLIScript):
             lines = [
                 f"Original: {result['original']}",
                 f"Formatted: {result['formatted']}",
-                f"Valid: {'Yes' if result['valid'] else 'No'}"
+                f"Valid: {'Yes' if result['valid'] else 'No'}",
             ]
             return "\n".join(lines)
 
@@ -290,4 +259,5 @@ class FormatCommitMessageScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(FormatCommitMessageScript)

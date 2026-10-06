@@ -1,6 +1,5 @@
 """Tests for checkers/check_e2e_gaps.py"""
 
-from pathlib import Path
 from unittest.mock import patch
 
 from bba.checkers.check_e2e_gaps import run
@@ -35,18 +34,21 @@ def test_run_violation_when_no_e2e_test(tmp_path):
 
 def test_run_model_results_include_flow_type(tmp_path):
     (tmp_path / "api.py").write_text("@app.post('/users')\ndef create_user(): pass", encoding="utf-8")
-    model_output = [{
-        "source_file": str(tmp_path / "api.py"),
-        "source_file_name": "api.py",
-        "function": "create_user",
-        "line": 2,
-        "severity": "high",
-        "flow_type": "api_endpoint",
-        "reason": "POST /users is the main user registration flow",
-        "test_scenario": "test full registration flow: POST /users → GET /users/{id} → verify",
-    }]
-    with patch("lib.engine.hybrid.check_server_available", return_value=True), \
-         patch("lib.engine.hybrid.analyze_files_parallel", return_value=model_output):
+    model_output = [
+        {
+            "source_file": str(tmp_path / "api.py"),
+            "source_file_name": "api.py",
+            "function": "create_user",
+            "line": 2,
+            "severity": "high",
+            "flow_type": "api_endpoint",
+            "reason": "POST /users is the main user registration flow",
+            "test_scenario": "test full registration flow: POST /users → GET /users/{id} → verify",
+        }
+    ]
+    with patch("lib.engine.hybrid.check_server_available", return_value=True), patch(
+        "lib.engine.hybrid.analyze_files_parallel", return_value=model_output
+    ):
         result = run(tmp_path, "python")
     # Both layers report; the AI finding is the one on a real line
     ai = [v for v in result["violations"] if v["line"] > 0]

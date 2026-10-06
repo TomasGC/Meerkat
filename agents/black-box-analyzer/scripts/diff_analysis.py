@@ -48,7 +48,9 @@ class AnalysisDiff:
                 "old": round(self.old_coverage, 2),
                 "new": round(self.new_coverage, 2),
                 "delta": round(self.coverage_delta, 2),
-                "trend": "improved" if self.coverage_delta > 0 else "regressed" if self.coverage_delta < 0 else "unchanged",
+                "trend": (
+                    "improved" if self.coverage_delta > 0 else "regressed" if self.coverage_delta < 0 else "unchanged"
+                ),
             },
             "gaps": {
                 "old_total": self.old_total_gaps,
@@ -127,14 +129,8 @@ def compare_analyses(baseline: dict, current: dict) -> AnalysisDiff:
 
     # Compare entry-point-level coverage (works for both API endpoints and library methods)
     # "by_entry_point" is the canonical key; fall back to legacy "by_endpoint"
-    baseline_by_endpoint = (
-        baseline_coverage.get("by_entry_point")
-        or baseline_coverage.get("by_endpoint", {})
-    )
-    current_by_endpoint = (
-        current_coverage.get("by_entry_point")
-        or current_coverage.get("by_endpoint", {})
-    )
+    baseline_by_endpoint = baseline_coverage.get("by_entry_point") or baseline_coverage.get("by_endpoint", {})
+    current_by_endpoint = current_coverage.get("by_entry_point") or current_coverage.get("by_endpoint", {})
 
     improved_endpoints = []
     regressed_endpoints = []
@@ -145,19 +141,23 @@ def compare_analyses(baseline: dict, current: dict) -> AnalysisDiff:
             new_cov = current_stats.get("coverage_percent", 0)
 
             if new_cov > old_cov:
-                improved_endpoints.append({
-                    "endpoint": endpoint,
-                    "old_coverage": round(old_cov, 2),
-                    "new_coverage": round(new_cov, 2),
-                    "delta": round(new_cov - old_cov, 2),
-                })
+                improved_endpoints.append(
+                    {
+                        "endpoint": endpoint,
+                        "old_coverage": round(old_cov, 2),
+                        "new_coverage": round(new_cov, 2),
+                        "delta": round(new_cov - old_cov, 2),
+                    }
+                )
             elif new_cov < old_cov:
-                regressed_endpoints.append({
-                    "endpoint": endpoint,
-                    "old_coverage": round(old_cov, 2),
-                    "new_coverage": round(new_cov, 2),
-                    "delta": round(new_cov - old_cov, 2),
-                })
+                regressed_endpoints.append(
+                    {
+                        "endpoint": endpoint,
+                        "old_coverage": round(old_cov, 2),
+                        "new_coverage": round(new_cov, 2),
+                        "delta": round(new_cov - old_cov, 2),
+                    }
+                )
 
     # Sort by delta
     improved_endpoints.sort(key=lambda x: x["delta"], reverse=True)
@@ -229,14 +229,8 @@ def format_markdown(diff: AnalysisDiff) -> str:
     critical_emoji = "✅" if critical_delta <= 0 else "🚨"
     high_emoji = "✅" if high_delta <= 0 else "⚠️"
 
-    lines.append(
-        f"{critical_emoji} **CRITICAL**: {diff.old_critical} → {diff.new_critical} "
-        f"({critical_delta:+d})"
-    )
-    lines.append(
-        f"{high_emoji} **HIGH**: {diff.old_high} → {diff.new_high} "
-        f"({high_delta:+d})"
-    )
+    lines.append(f"{critical_emoji} **CRITICAL**: {diff.old_critical} → {diff.new_critical} " f"({critical_delta:+d})")
+    lines.append(f"{high_emoji} **HIGH**: {diff.old_high} → {diff.new_high} " f"({high_delta:+d})")
     lines.append("")
 
     # Endpoint changes
@@ -261,16 +255,15 @@ def format_markdown(diff: AnalysisDiff) -> str:
 
         for ep in diff.regressed_endpoints[:10]:  # Top 10
             lines.append(
-                f"| {ep['endpoint']} | {ep['old_coverage']:.1f}% | "
-                f"{ep['new_coverage']:.1f}% | {ep['delta']:.1f}% |"
+                f"| {ep['endpoint']} | {ep['old_coverage']:.1f}% | " f"{ep['new_coverage']:.1f}% | {ep['delta']:.1f}% |"
             )
         lines.append("")
 
     if diff.new_endpoints:
         lines.append("## ➕ New Endpoints")
         lines.append("")
-        for ep in diff.new_endpoints[:20]:
-            lines.append(f"- {ep}")
+        for name in diff.new_endpoints[:20]:
+            lines.append(f"- {name}")
         if len(diff.new_endpoints) > 20:
             lines.append(f"- ... and {len(diff.new_endpoints) - 20} more")
         lines.append("")
@@ -278,8 +271,8 @@ def format_markdown(diff: AnalysisDiff) -> str:
     if diff.removed_endpoints:
         lines.append("## ➖ Removed Endpoints")
         lines.append("")
-        for ep in diff.removed_endpoints[:20]:
-            lines.append(f"- {ep}")
+        for name in diff.removed_endpoints[:20]:
+            lines.append(f"- {name}")
         if len(diff.removed_endpoints) > 20:
             lines.append(f"- ... and {len(diff.removed_endpoints) - 20} more")
         lines.append("")
@@ -294,8 +287,7 @@ def format_summary(diff: AnalysisDiff) -> str:
     # Coverage
     trend_emoji = "📈" if diff.coverage_delta > 0 else "📉" if diff.coverage_delta < 0 else "➡️"
     lines.append(
-        f"{trend_emoji} Coverage: {diff.old_coverage:.2f}% → {diff.new_coverage:.2f}% "
-        f"({diff.coverage_delta:+.2f}%)"
+        f"{trend_emoji} Coverage: {diff.old_coverage:.2f}% → {diff.new_coverage:.2f}% " f"({diff.coverage_delta:+.2f}%)"
     )
 
     # Gaps

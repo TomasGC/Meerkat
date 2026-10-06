@@ -5,12 +5,12 @@ import ast
 import re
 from pathlib import Path
 
-from lib.engine.discovery import _SKIP_DIRS, _CLASS_LANG_EXTS
+from lib.engine.discovery import _CLASS_LANG_EXTS, _SKIP_DIRS
 from lib.engine.hybrid import run_hybrid
 
 # Grep patterns for non-Python deep inheritance
 _EXTENDS_RE = re.compile(r"class\s+\w+\s+extends\s+(\w+)")  # TS/JS/Java
-_INHERITS_CS_RE = re.compile(r"class\s+\w+\s*:\s*(\w+)")     # C#
+_INHERITS_CS_RE = re.compile(r"class\s+\w+\s*:\s*(\w+)")  # C#
 
 _INTERFACE_MARKERS = re.compile(
     r"(?:Interface|Abstract|Mixin|Base|ABC|Protocol|IService|IRepository)",
@@ -29,10 +29,7 @@ def _build_inheritance_map_python(files: list[Path]) -> dict[str, list[str]]:
             continue
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
-                parents = [
-                    (ast.unparse(b) if hasattr(ast, "unparse") else getattr(b, "id", "?"))
-                    for b in node.bases
-                ]
+                parents = [(ast.unparse(b) if hasattr(ast, "unparse") else getattr(b, "id", "?")) for b in node.bases]
                 class_parents[node.name] = parents
     return class_parents
 
@@ -64,38 +61,36 @@ def _check_python(files: list[Path], root: Path) -> list[dict]:
             if not isinstance(node, ast.ClassDef):
                 continue
 
-            parents = [
-                (ast.unparse(b) if hasattr(ast, "unparse") else getattr(b, "id", "?"))
-                for b in node.bases
-            ]
+            parents = [(ast.unparse(b) if hasattr(ast, "unparse") else getattr(b, "id", "?")) for b in node.bases]
 
             # Multiple inheritance (non-mixin/interface)
             if len(node.bases) > 1:
-                non_interface = [
-                    p for p in parents
-                    if not _INTERFACE_MARKERS.search(p)
-                ]
+                non_interface = [p for p in parents if not _INTERFACE_MARKERS.search(p)]
                 if len(non_interface) > 1:
-                    violations.append({
-                        "principle": "CompositionOverInheritance",
-                        "file": rel,
-                        "line": node.lineno,
-                        "severity": "medium",
-                        "message": f"`{node.name}` uses multiple inheritance: {', '.join(parents)}",
-                        "suggestion": "Prefer composition; use mixins only for cross-cutting concerns",
-                    })
+                    violations.append(
+                        {
+                            "principle": "CompositionOverInheritance",
+                            "file": rel,
+                            "line": node.lineno,
+                            "severity": "medium",
+                            "message": f"`{node.name}` uses multiple inheritance: {', '.join(parents)}",
+                            "suggestion": "Prefer composition; use mixins only for cross-cutting concerns",
+                        }
+                    )
 
             # Inheritance depth > 3
             depth = _inheritance_depth(node.name, parents_map, set())
             if depth > 3:
-                violations.append({
-                    "principle": "CompositionOverInheritance",
-                    "file": rel,
-                    "line": node.lineno,
-                    "severity": "high",
-                    "message": f"`{node.name}` inheritance depth {depth} (> 3)",
-                    "suggestion": "Flatten the hierarchy; use composition to share behaviour",
-                })
+                violations.append(
+                    {
+                        "principle": "CompositionOverInheritance",
+                        "file": rel,
+                        "line": node.lineno,
+                        "severity": "high",
+                        "message": f"`{node.name}` inheritance depth {depth} (> 3)",
+                        "suggestion": "Flatten the hierarchy; use composition to share behaviour",
+                    }
+                )
 
     return violations
 
@@ -132,14 +127,16 @@ def _check_non_python(files: list[Path], root: Path) -> list[dict]:
                         depth += 1
 
                     if depth > 3:
-                        violations.append({
-                            "principle": "CompositionOverInheritance",
-                            "file": rel,
-                            "line": i,
-                            "severity": "high",
-                            "message": f"`{cls_name}` inheritance depth {depth} (> 3)",
-                            "suggestion": "Flatten the hierarchy; use composition to share behaviour",
-                        })
+                        violations.append(
+                            {
+                                "principle": "CompositionOverInheritance",
+                                "file": rel,
+                                "line": i,
+                                "severity": "high",
+                                "message": f"`{cls_name}` inheritance depth {depth} (> 3)",
+                                "suggestion": "Flatten the hierarchy; use composition to share behaviour",
+                            }
+                        )
 
     return violations
 

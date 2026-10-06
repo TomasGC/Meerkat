@@ -8,20 +8,19 @@ Usage:
 
 import argparse
 import json
-import sys
-import subprocess
-from pathlib import Path
-from datetime import datetime
-import time
 import shutil
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
 
 # Put the scripts dir on the path for the search_tech package
 sys.path.insert(0, str(Path(__file__).parent))
 
-from search_tech.models import SearchQuery, SearchResult, SearchResponse, Source, ResultType, ValidationError
-from search_tech.logger import setup_logger, MetricsCollector, get_defaults
 from search_tech.cache import SearchCache
-
+from search_tech.logger import MetricsCollector, get_defaults, setup_logger
+from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source, ValidationError
 
 MAX_RESULTS_PER_TYPE = 5
 MAX_RETRIES = 3
@@ -44,12 +43,7 @@ def check_gh_cli(logger=None) -> tuple[bool, str]:
 
     # Check if authenticated
     try:
-        result = subprocess.run(
-            ["gh", "auth", "status"],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
+        result = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=5)
         if result.returncode != 0:
             return False, "gh CLI not authenticated. Run: gh auth login"
 
@@ -62,12 +56,7 @@ def check_gh_cli(logger=None) -> tuple[bool, str]:
         return False, f"gh CLI check error: {e}"
 
 
-def search_github_issues(
-    query: SearchQuery,
-    logger=None,
-    metrics=None,
-    max_retries=MAX_RETRIES
-) -> list:
+def search_github_issues(query: SearchQuery, logger=None, metrics=None, max_retries=MAX_RETRIES) -> list:
     """
     Search GitHub issues via gh CLI with retry logic.
 
@@ -100,27 +89,26 @@ def search_github_issues(
     # Retry logic
     for attempt in range(max_retries):
         try:
-            metrics.increment('api_calls')
+            metrics.increment("api_calls")
 
             cmd = [
-                "gh", "search", "issues",
+                "gh",
+                "search",
+                "issues",
                 search_terms,
-                "--limit", str(MAX_RESULTS_PER_TYPE),
-                "--json", "title,url,state,comments,createdAt,reactions,repository,body"
+                "--limit",
+                str(MAX_RESULTS_PER_TYPE),
+                "--json",
+                "title,url,state,comments,createdAt,reactions,repository,body",
             ]
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
             if result.returncode != 0:
                 logger.warning(f"gh search issues failed (attempt {attempt + 1}/{max_retries}): {result.stderr}")
-                metrics.increment('errors')
+                metrics.increment("errors")
                 if attempt < max_retries - 1:
-                    metrics.increment('retries')
+                    metrics.increment("retries")
                     time.sleep(RETRY_DELAY)
                     continue
                 return []
@@ -137,10 +125,10 @@ def search_github_issues(
                 body = issue.get("body", "")
                 excerpt = body[:200] + "..." if len(body) > 200 else body
                 if not excerpt:
-                    repo = issue.get('repository', {}).get('nameWithOwner', 'unknown')
+                    repo = issue.get("repository", {}).get("nameWithOwner", "unknown")
                     excerpt = f"Issue in {repo}"
 
-                result = SearchResult(
+                search_result = SearchResult(
                     source=Source.GITHUB_ISSUE,
                     result_type=ResultType.ISSUE,
                     title=issue.get("title", ""),
@@ -150,40 +138,39 @@ def search_github_issues(
                     comments=issue.get("comments", 0),
                     status=issue.get("state", "unknown"),
                     repository=issue.get("repository", {}).get("nameWithOwner"),
-                    created_date=datetime.fromisoformat(issue.get("createdAt", "").replace("Z", "+00:00")) if issue.get("createdAt") else None,
+                    created_date=(
+                        datetime.fromisoformat(issue.get("createdAt", "").replace("Z", "+00:00"))
+                        if issue.get("createdAt")
+                        else None
+                    ),
                 )
-                results.append(result)
+                results.append(search_result)
 
-            metrics.increment('total_results', len(results))
+            metrics.increment("total_results", len(results))
             logger.info(f"Found {len(results)} GitHub issues")
             return results
 
         except subprocess.TimeoutExpired:
             logger.warning(f"GitHub issues timeout (attempt {attempt + 1}/{max_retries})")
-            metrics.increment('errors')
+            metrics.increment("errors")
             if attempt < max_retries - 1:
-                metrics.increment('retries')
+                metrics.increment("retries")
                 time.sleep(RETRY_DELAY)
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse GitHub issues response: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return []
 
         except Exception as e:
             logger.error(f"GitHub issues search error: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return []
 
     return []
 
 
-def search_github_discussions(
-    query: SearchQuery,
-    logger=None,
-    metrics=None,
-    max_retries=MAX_RETRIES
-) -> list:
+def search_github_discussions(query: SearchQuery, logger=None, metrics=None, max_retries=MAX_RETRIES) -> list:
     """
     Search GitHub discussions via GitHub GraphQL API through gh CLI.
 
@@ -242,26 +229,31 @@ def search_github_discussions(
     # Retry logic
     for attempt in range(max_retries):
         try:
-            metrics.increment('api_calls')
+            metrics.increment("api_calls")
 
             # Call gh api graphql
             result = subprocess.run(
                 [
-                    "gh", "api", "graphql",
-                    "-f", f"query={graphql_query}",
-                    "-f", f"query={search_query}",
-                    "-F", f"limit={MAX_RESULTS_PER_TYPE}"
+                    "gh",
+                    "api",
+                    "graphql",
+                    "-f",
+                    f"query={graphql_query}",
+                    "-f",
+                    f"query={search_query}",
+                    "-F",
+                    f"limit={MAX_RESULTS_PER_TYPE}",
                 ],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
 
             if result.returncode != 0:
                 logger.warning(f"gh api graphql failed (attempt {attempt + 1}/{max_retries}): {result.stderr}")
-                metrics.increment('errors')
+                metrics.increment("errors")
                 if attempt < max_retries - 1:
-                    metrics.increment('retries')
+                    metrics.increment("retries")
                     time.sleep(RETRY_DELAY)
                     continue
                 return []
@@ -280,13 +272,13 @@ def search_github_discussions(
                 body = disc.get("body", "")
                 excerpt = body[:200] + "..." if len(body) > 200 else body
                 if not excerpt:
-                    repo = disc.get('repository', {}).get('nameWithOwner', 'unknown')
-                    category = disc.get('category', {}).get('name', '')
+                    repo = disc.get("repository", {}).get("nameWithOwner", "unknown")
+                    category = disc.get("category", {}).get("name", "")
                     excerpt = f"Discussion in {repo}"
                     if category:
                         excerpt += f" ({category})"
 
-                result = SearchResult(
+                search_result = SearchResult(
                     source=Source.GITHUB_DISCUSSION,
                     result_type=ResultType.DISCUSSION,
                     title=disc.get("title", ""),
@@ -295,29 +287,33 @@ def search_github_discussions(
                     excerpt=excerpt.strip(),
                     comments=disc.get("comments", {}).get("totalCount", 0),
                     repository=disc.get("repository", {}).get("nameWithOwner"),
-                    created_date=datetime.fromisoformat(disc.get("createdAt", "").replace("Z", "+00:00")) if disc.get("createdAt") else None,
+                    created_date=(
+                        datetime.fromisoformat(disc.get("createdAt", "").replace("Z", "+00:00"))
+                        if disc.get("createdAt")
+                        else None
+                    ),
                 )
-                results.append(result)
+                results.append(search_result)
 
-            metrics.increment('total_results', len(results))
+            metrics.increment("total_results", len(results))
             logger.info(f"Found {len(results)} GitHub discussions")
             return results
 
         except subprocess.TimeoutExpired:
             logger.warning(f"GitHub discussions timeout (attempt {attempt + 1}/{max_retries})")
-            metrics.increment('errors')
+            metrics.increment("errors")
             if attempt < max_retries - 1:
-                metrics.increment('retries')
+                metrics.increment("retries")
                 time.sleep(RETRY_DELAY)
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse GitHub discussions response: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return []
 
         except Exception as e:
             logger.error(f"GitHub discussions search error: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return []
 
     return []
@@ -325,48 +321,15 @@ def search_github_discussions(
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Search GitHub Issues and Discussions"
-    )
-    parser.add_argument(
-        "query",
-        help="Search query keywords"
-    )
-    parser.add_argument(
-        "--language",
-        default="",
-        help="Programming language filter (e.g., typescript)"
-    )
-    parser.add_argument(
-        "--issues-only",
-        action="store_true",
-        help="Search only issues (skip discussions)"
-    )
-    parser.add_argument(
-        "--discussions-only",
-        action="store_true",
-        help="Search only discussions (skip issues)"
-    )
-    parser.add_argument(
-        "--output",
-        default="github.json",
-        help="Output JSON file (default: github.json)"
-    )
-    parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="Disable cache"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Verbose output"
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Debug output"
-    )
+    parser = argparse.ArgumentParser(description="Search GitHub Issues and Discussions")
+    parser.add_argument("query", help="Search query keywords")
+    parser.add_argument("--language", default="", help="Programming language filter (e.g., typescript)")
+    parser.add_argument("--issues-only", action="store_true", help="Search only issues (skip discussions)")
+    parser.add_argument("--discussions-only", action="store_true", help="Search only discussions (skip issues)")
+    parser.add_argument("--output", default="github.json", help="Output JSON file (default: github.json)")
+    parser.add_argument("--no-cache", action="store_true", help="Disable cache")
+    parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--debug", action="store_true", help="Debug output")
 
     args = parser.parse_args()
 
@@ -401,12 +364,12 @@ def main():
         cached_data = cache.get(" ".join(query.keywords), filters)
         if cached_data:
             logger.info("Cache hit for GitHub query")
-            metrics.increment('cache_hits')
+            metrics.increment("cache_hits")
             results = [SearchResult.from_dict(r) for r in cached_data.get("results", [])]
 
     # Search if not cached
     if not results:
-        metrics.increment('cache_misses')
+        metrics.increment("cache_misses")
 
         # Search issues
         if not args.discussions_only:
@@ -434,14 +397,14 @@ def main():
         query=query,
         results=results,
         error=None if is_available else error,
-        search_time_seconds=time.time() - start_time
+        search_time_seconds=time.time() - start_time,
     )
 
     # Write output
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(response.to_dict(), f, indent=2, ensure_ascii=False)
 
     # Print summary

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Tests for search_hashnode module."""
 
-import pytest
-from unittest.mock import Mock, patch
+import json
+import sys
 from datetime import datetime
-
 from pathlib import Path
+from unittest.mock import Mock, patch
 
-from search_tech.models import SearchQuery, Source, ResultType
+import pytest
+
+import search_hashnode as module
 from search_hashnode import search_hashnode
+from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source
 
 
 @pytest.fixture
@@ -26,14 +29,8 @@ def mock_hashnode_response():
                             "reactionCount": 245,
                             "responseCount": 34,
                             "publishedAt": "2024-01-15T10:00:00Z",
-                            "tags": [
-                                {"name": "nextjs"},
-                                {"name": "api"},
-                                {"name": "typescript"}
-                            ],
-                            "author": {
-                                "username": "devauthor1"
-                            }
+                            "tags": [{"name": "nextjs"}, {"name": "api"}, {"name": "typescript"}],
+                            "author": {"username": "devauthor1"},
                         }
                     },
                     {
@@ -44,16 +41,10 @@ def mock_hashnode_response():
                             "reactionCount": 189,
                             "responseCount": 28,
                             "publishedAt": "2024-01-20T14:30:00Z",
-                            "tags": [
-                                {"name": "react"},
-                                {"name": "nextjs"},
-                                {"name": "frontend"}
-                            ],
-                            "author": {
-                                "username": "devauthor2"
-                            }
+                            "tags": [{"name": "react"}, {"name": "nextjs"}, {"name": "frontend"}],
+                            "author": {"username": "devauthor2"},
                         }
-                    }
+                    },
                 ]
             }
         }
@@ -63,7 +54,7 @@ def mock_hashnode_response():
 class TestHashnodeSearch:
     """Test Hashnode search functionality."""
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_search_success(self, mock_post, mock_hashnode_response):
         """Test successful Hashnode search."""
         mock_response = Mock()
@@ -86,7 +77,7 @@ class TestHashnodeSearch:
         assert result.url.startswith("https://")
         assert result.repository.startswith("@")
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_graphql_query_structure(self, mock_post, mock_hashnode_response):
         """Test GraphQL query is properly formed."""
         mock_response = Mock()
@@ -103,7 +94,7 @@ class TestHashnodeSearch:
         assert "searchPostsOfPublication" in call_args[1]["json"]["query"]
         assert call_args[1]["json"]["variables"]["query"] == "test"
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_search_with_tags(self, mock_post, mock_hashnode_response):
         """Test search with tags."""
         mock_response = Mock()
@@ -120,7 +111,7 @@ class TestHashnodeSearch:
         query_string = call_args[1]["json"]["variables"]["query"]
         assert "nextjs" in query_string
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_search_rate_limit(self, mock_post):
         """Test rate limit handling."""
         mock_response = Mock()
@@ -134,10 +125,11 @@ class TestHashnodeSearch:
         assert response.success is False
         assert "error" in response.error.lower()
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_search_timeout(self, mock_post):
         """Test timeout handling with retries."""
         import requests
+
         mock_post.side_effect = requests.exceptions.Timeout("Timeout")
 
         query = SearchQuery(keywords=["test"])
@@ -147,18 +139,12 @@ class TestHashnodeSearch:
         assert "retry" in response.error.lower() or "timeout" in response.error.lower()
         assert mock_post.call_count == 2
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_search_empty_results(self, mock_post):
         """Test handling of no results."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "data": {
-                "searchPostsOfPublication": {
-                    "edges": []
-                }
-            }
-        }
+        mock_response.json.return_value = {"data": {"searchPostsOfPublication": {"edges": []}}}
         mock_post.return_value = mock_response
 
         query = SearchQuery(keywords=["xyznonexistent"])
@@ -167,7 +153,7 @@ class TestHashnodeSearch:
         assert response.success is True
         assert len(response.results) == 0
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_excerpt_extraction(self, mock_post, mock_hashnode_response):
         """Test excerpt extraction from brief."""
         # Modify response to have long brief
@@ -185,7 +171,7 @@ class TestHashnodeSearch:
         # Excerpt should be truncated to 200 chars
         assert len(response.results[0].excerpt) == 200
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_excerpt_fallback_to_title(self, mock_post, mock_hashnode_response):
         """Test excerpt fallback when brief is empty."""
         # Remove brief
@@ -203,7 +189,7 @@ class TestHashnodeSearch:
         # Excerpt should fallback to title
         assert response.results[0].excerpt == response.results[0].title
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_source_attribution(self, mock_post, mock_hashnode_response):
         """Test proper source attribution."""
         mock_response = Mock()
@@ -222,7 +208,7 @@ class TestHashnodeSearch:
             assert result.source != Source.DEVTO
             assert result.repository.startswith("@")
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_tags_parsing(self, mock_post, mock_hashnode_response):
         """Test tags are properly extracted."""
         mock_response = Mock()
@@ -238,7 +224,7 @@ class TestHashnodeSearch:
         assert len(result.tags) > 0
         assert "nextjs" in result.tags
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_created_date_parsing(self, mock_post, mock_hashnode_response):
         """Test publishedAt date parsing."""
         mock_response = Mock()
@@ -254,11 +240,12 @@ class TestHashnodeSearch:
         assert result.created_date is not None
         assert isinstance(result.created_date, datetime)
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_cache_integration(self, mock_post, mock_hashnode_response):
         """Test cache hit and miss."""
-        from search_tech.cache import SearchCache
         import tempfile
+
+        from search_tech.cache import SearchCache
 
         mock_response = Mock()
         mock_response.status_code = 200
@@ -279,7 +266,7 @@ class TestHashnodeSearch:
 
             assert len(response1.results) == len(response2.results)
 
-    @patch('search_hashnode.requests.post')
+    @patch("search_hashnode.requests.post")
     def test_reaction_count_as_score(self, mock_post, mock_hashnode_response):
         """Test reactionCount is used as score."""
         mock_response = Mock()
@@ -294,3 +281,48 @@ class TestHashnodeSearch:
         result = response.results[0]
         assert result.score == 245  # From mock data
         assert result.comments == 34  # From mock data
+
+
+# ── main() (search function mocked) ──────────────────────────────────────────
+
+
+def _main_response(success=True):
+    query = SearchQuery(keywords=["async"])
+    if not success:
+        return SearchResponse(success=False, query=query, error="Hashnode down")
+    result = SearchResult(
+        source=Source.HASHNODE, result_type=ResultType.QUESTION, title="T", url="https://x/1", score=1, excerpt="e"
+    )
+    return SearchResponse(success=True, query=query, results=[result])
+
+
+def _run_main(argv, tmp_path, response):
+    out = tmp_path / "out" / "hashnode.json"
+    with patch.object(sys, "argv", ["search_hashnode.py", *argv, "--output", str(out), "--no-cache"]), patch.object(
+        module, "search_hashnode", return_value=response
+    ) as search:
+        module.main()
+    return search, json.loads(out.read_text(encoding="utf-8"))
+
+
+def test_main_writes_results_and_passes_parsed_query(tmp_path):
+    search, data = _run_main(["async errors", "--tags", "nextjs", "--verbose"], tmp_path, _main_response())
+    call = search.call_args
+    assert call.args[0].keywords == ["async", "errors"]
+    assert call.args[0].tags == ["nextjs"]
+    assert call.kwargs["cache"] is None
+    assert data["success"] is True
+    assert [r["title"] for r in data["results"]] == ["T"]
+
+
+def test_main_exits_nonzero_when_search_fails(tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(["async"], tmp_path, _main_response(success=False))
+    assert exc.value.code == 1
+    assert json.loads((tmp_path / "out" / "hashnode.json").read_text(encoding="utf-8"))["error"] == "Hashnode down"
+
+
+def test_main_rejects_invalid_query(tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(["   "], tmp_path, _main_response())
+    assert exc.value.code == 1

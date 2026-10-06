@@ -26,11 +26,10 @@ import re
 import sys
 from pathlib import Path
 
-from bba.constants import TEST_FILE_PATTERNS, TEST_FRAMEWORK_PATTERNS
+from bba.constants import TEST_FRAMEWORK_PATTERNS
 from bba.models import HTTPMethod, Language, TestCase, TestFramework
 from bba.utils import (
     detect_project_language,
-    extract_line_number_from_pattern,
     format_path_relative,
     read_file_safe,
     walk_files,
@@ -61,8 +60,7 @@ _INT_MOCK_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 _E2E_PATTERNS = re.compile(
-    r"cypress|playwright|selenium|detox|espresso|xcuitest"
-    r"|WebDriver|Appium|puppeteer|nightwatch",
+    r"cypress|playwright|selenium|detox|espresso|xcuitest" r"|WebDriver|Appium|puppeteer|nightwatch",
     re.IGNORECASE,
 )
 
@@ -96,7 +94,8 @@ def infer_test_type(test_name: str, test_body: str) -> str:
 
     # Ambiguous — try local AI for a cheap 1-token answer
     try:
-        from bba.model_utils import check_server_available, run_prompt, PROMPTS_DIR
+        from bba.model_utils import PROMPTS_DIR, check_server_available, run_prompt
+
         if check_server_available("fast"):
             response = run_prompt(
                 "infer_test_type",
@@ -282,7 +281,7 @@ def parse_go_tests(project_path: Path) -> list[TestCase]:
 
         for match in matches:
             test_name = match.group(1)
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
 
             # Extract test body (from match to next func or end)
             test_body_start = match.end()
@@ -327,7 +326,7 @@ def parse_typescript_tests(project_path: Path) -> list[TestCase]:
 
         for match in matches:
             test_name = match.group(2)
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
 
             # Extract test body — count from 0; opening '{' of the callback increments to 1,
             # matching '}' decrements back to 0 and terminates.
@@ -386,7 +385,7 @@ def parse_csharp_tests(project_path: Path) -> list[TestCase]:
 
         for match in matches:
             test_name = match.group(2)
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
 
             # Extract test body
             test_body_start = match.end()
@@ -440,12 +439,12 @@ def parse_python_tests(project_path: Path) -> list[TestCase]:
 
         for match in matches:
             test_name = match.group(1)
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
 
             # Extract test body (indented block)
             test_body_start = match.end()
             lines = content[test_body_start:].split("\n")
-            test_body_lines = []
+            test_body_lines: list[str] = []
             initial_indent = None
 
             for line in lines:
@@ -497,7 +496,7 @@ def parse_java_tests(project_path: Path) -> list[TestCase]:
 
         for match in matches:
             test_name = match.group(1)
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
 
             # Extract test body
             test_body_start = match.end()
@@ -551,7 +550,7 @@ def parse_ruby_tests(project_path: Path) -> list[TestCase]:
 
         for match in matches:
             test_name = match.group(1)
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
 
             # Extract test body (until matching 'end')
             # start at 0: the 'do' on the it/describe line was already consumed by the regex

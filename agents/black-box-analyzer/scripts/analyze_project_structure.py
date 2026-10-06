@@ -239,8 +239,24 @@ def infer_project_type(frameworks: list[str], endpoint_count: int) -> str:
 # detected language: a hybrid project mixes languages, and detection must see all
 # of them or the second type stays invisible.
 _SIGNAL_EXTENSIONS = [
-    "*.go", "*.py", "*.ts", "*.tsx", "*.js", "*.jsx", "*.cs", "*.java", "*.kt",
-    "*.swift", "*.rb", "*.rs", "*.sol", "*.sql", "*.cpp", "*.h", "*.xaml", "*.vue",
+    "*.go",
+    "*.py",
+    "*.ts",
+    "*.tsx",
+    "*.js",
+    "*.jsx",
+    "*.cs",
+    "*.java",
+    "*.kt",
+    "*.swift",
+    "*.rb",
+    "*.rs",
+    "*.sol",
+    "*.sql",
+    "*.cpp",
+    "*.h",
+    "*.xaml",
+    "*.vue",
 ]
 
 # Minimum distinct source patterns a type needs when it has no file or manifest
@@ -255,7 +271,13 @@ _MIN_PATTERN_HITS = 2
 _TYPE_SIGNALS: dict[ProjectType, dict] = {
     ProjectType.CLI_APP: {
         "frameworks": (
-            "cobra", "urfave_cli", "clap", "click", "typer", "commander", "yargs",
+            "cobra",
+            "urfave_cli",
+            "clap",
+            "click",
+            "typer",
+            "commander",
+            "yargs",
             "picocli",
         ),
         "patterns": CLI_PATTERNS,
@@ -343,9 +365,7 @@ def _count_pattern_hits(sources: dict[Path, str], signal: dict) -> int:
     return hits
 
 
-def detect_project_types(
-    project_path: Path, frameworks: list[str], endpoint_count: int
-) -> list[ProjectType]:
+def detect_project_types(project_path: Path, frameworks: list[str], endpoint_count: int) -> list[ProjectType]:
     """
     Detect every project type present, not only API types.
 
@@ -452,10 +472,7 @@ def analyze_project(project_path: Path) -> ProjectInfo:
         test_framework=test_framework,
         detected_patterns={},
         metadata={
-            "has_api_prefixes": any(
-                (project_path / prefix.strip("/")).exists()
-                for prefix in API_PATH_PREFIXES
-            ),
+            "has_api_prefixes": any((project_path / prefix.strip("/")).exists() for prefix in API_PATH_PREFIXES),
             "legacy_project_type": project_type,
             "is_library": is_library,
         },

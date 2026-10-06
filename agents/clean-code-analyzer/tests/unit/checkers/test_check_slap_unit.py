@@ -7,11 +7,7 @@ availability gate + analyze_files_parallel + file discovery) is exercised
 through lib.engine.hybrid, since that's where the real call sites live.
 """
 
-from pathlib import Path
 from unittest.mock import patch
-
-import pytest
-
 
 from cca.checkers.check_slap import run
 
@@ -21,6 +17,7 @@ _HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
 
 
 # ── Local AI unavailable ────────────────────────────────────────────────────────
+
 
 def test_slap_server_unavailable_returns_failure(tmp_path):
     """Local AI not available → success: False, violations: [] (checker's own guard)."""
@@ -32,6 +29,7 @@ def test_slap_server_unavailable_returns_failure(tmp_path):
 
 
 # ── Violation returned ──────────────────────────────────────────────────────────
+
 
 def test_slap_violation_mapped_with_principle(tmp_path):
     """Local AI returns SLAP violation → mapped with principle: SLAP."""
@@ -53,9 +51,9 @@ def test_slap_violation_mapped_with_principle(tmp_path):
         "suggestion": "Extract low-level operations into separate helper functions",
         "line": 1,
     }
-    with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[raw_item]):
+    with patch(_CHECK_AVAILABLE, return_value=True), patch(_HYBRID_CHECK_AVAILABLE, return_value=True), patch(
+        _HYBRID_ANALYZE_PARALLEL, return_value=[raw_item]
+    ):
         result = run(tmp_path, "python", files=[f])
 
     assert result["success"] is True
@@ -68,13 +66,14 @@ def test_slap_violation_mapped_with_principle(tmp_path):
 
 # ── Empty response ──────────────────────────────────────────────────────────────
 
+
 def test_slap_empty_response_no_violations(tmp_path):
     """Local AI returns [] → success: True, violations: []."""
     f = tmp_path / "clean.py"
     f.write_text("def greet(name): return f'Hello {name}'\n")
-    with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]):
+    with patch(_CHECK_AVAILABLE, return_value=True), patch(_HYBRID_CHECK_AVAILABLE, return_value=True), patch(
+        _HYBRID_ANALYZE_PARALLEL, return_value=[]
+    ):
         result = run(tmp_path, "python", files=[f])
     assert result["success"] is True
     assert result["violations"] == []
@@ -82,13 +81,14 @@ def test_slap_empty_response_no_violations(tmp_path):
 
 # ── files= parameter ───────────────────────────────────────────────────────────
 
+
 def test_slap_files_none_discovers_all(tmp_path):
     """files=None → real file discovery finds the file (discovery path used)."""
     f = tmp_path / "svc.py"
     f.write_text("def fn(): pass\n")
-    with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+    with patch(_CHECK_AVAILABLE, return_value=True), patch(_HYBRID_CHECK_AVAILABLE, return_value=True), patch(
+        _HYBRID_ANALYZE_PARALLEL, return_value=[]
+    ) as mock_analyze:
         result = run(tmp_path, "python", files=None)
     assert result["success"] is True
     called_files = mock_analyze.call_args[0][0]
@@ -101,9 +101,9 @@ def test_slap_files_provided_skips_discovery(tmp_path):
     f.write_text("def fn(): pass\n")
     other = tmp_path / "other.py"
     other.write_text("def other_fn(): pass\n")
-    with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+    with patch(_CHECK_AVAILABLE, return_value=True), patch(_HYBRID_CHECK_AVAILABLE, return_value=True), patch(
+        _HYBRID_ANALYZE_PARALLEL, return_value=[]
+    ) as mock_analyze:
         result = run(tmp_path, "python", files=[f])
     assert result["success"] is True
     called_files = mock_analyze.call_args[0][0]
@@ -113,14 +113,15 @@ def test_slap_files_provided_skips_discovery(tmp_path):
 
 # ── Chunking (verify analyze_files_parallel is called for large files) ──────────
 
+
 def test_slap_large_file_passed_to_analyze(tmp_path):
     """Large file → analyze_files_parallel called with that file."""
     large_file = tmp_path / "big_handler.py"
     large_file.write_text("def fn():\n    pass\n" + "# padding\n" * 1000)
 
-    with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+    with patch(_CHECK_AVAILABLE, return_value=True), patch(_HYBRID_CHECK_AVAILABLE, return_value=True), patch(
+        _HYBRID_ANALYZE_PARALLEL, return_value=[]
+    ) as mock_analyze:
         run(tmp_path, "python", files=[large_file], no_cache=True)
 
     mock_analyze.assert_called_once()

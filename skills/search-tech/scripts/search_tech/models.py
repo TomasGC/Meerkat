@@ -5,20 +5,22 @@ Data models for technical search results.
 Common data structures shared across all search scripts.
 """
 
+import re
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
-import re
+from typing import Any, Dict, List, Optional
 
 
 class ValidationError(Exception):
     """Raised when input validation fails."""
+
     pass
 
 
 class Source(Enum):
     """Search result sources."""
+
     STACKOVERFLOW = "stackoverflow"
     GITHUB_ISSUE = "github_issue"
     GITHUB_DISCUSSION = "github_discussion"
@@ -30,6 +32,7 @@ class Source(Enum):
 
 class ResultType(Enum):
     """Result types."""
+
     QUESTION = "question"
     ISSUE = "issue"
     DISCUSSION = "discussion"
@@ -38,6 +41,7 @@ class ResultType(Enum):
 @dataclass
 class SearchQuery:
     """Parsed search query with validation."""
+
     keywords: List[str]
     tags: List[str] = field(default_factory=list)
     min_score: int = 0
@@ -69,10 +73,8 @@ class SearchQuery:
             raise ValidationError("Too many tags (max 10)")
 
         for tag in self.tags:
-            if not re.match(r'^[a-zA-Z0-9\-\.#+]{1,50}$', tag):
-                raise ValidationError(
-                    f"Invalid tag format: '{tag}' (only alphanumeric, -, ., #, + allowed)"
-                )
+            if not re.match(r"^[a-zA-Z0-9\-\.#+]{1,50}$", tag):
+                raise ValidationError(f"Invalid tag format: '{tag}' (only alphanumeric, -, ., #, + allowed)")
 
         # Score validation
         if self.min_score < 0:
@@ -82,10 +84,8 @@ class SearchQuery:
 
         # Language validation
         if self.language:
-            if not re.match(r'^[a-zA-Z0-9\-+#]{1,30}$', self.language):
-                raise ValidationError(
-                    f"Invalid language format: '{self.language}'"
-                )
+            if not re.match(r"^[a-zA-Z0-9\-+#]{1,30}$", self.language):
+                raise ValidationError(f"Invalid language format: '{self.language}'")
 
     def __str__(self) -> str:
         """String representation for display."""
@@ -104,6 +104,7 @@ class SearchQuery:
 @dataclass
 class SearchResult:
     """Unified search result across all sources."""
+
     source: Source
     result_type: ResultType
     title: str
@@ -166,6 +167,7 @@ class SearchResult:
 @dataclass
 class SearchResponse:
     """Complete search response with metadata."""
+
     success: bool
     query: SearchQuery
     results: List[SearchResult] = field(default_factory=list)
@@ -199,7 +201,7 @@ class SearchResponse:
 
     def _count_sources(self) -> Dict[str, int]:
         """Count results per source."""
-        counts = {}
+        counts: Dict[str, int] = {}
         for result in self.results:
             source = result.source.value
             counts[source] = counts.get(source, 0) + 1

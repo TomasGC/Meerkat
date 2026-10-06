@@ -3,15 +3,16 @@
 Pytest configuration and shared fixtures.
 """
 
-import pytest
-from datetime import datetime
-
 import sys
+from datetime import datetime
 from pathlib import Path
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parents[3] / "scripts"))  # this checkout's shared library
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
-from search_tech.models import SearchQuery, SearchResult, Source, ResultType
+from search_tech.models import ResultType, SearchQuery, SearchResult, Source
 
 
 @pytest.fixture

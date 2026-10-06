@@ -13,11 +13,8 @@ Usage:
 """
 
 import argparse
-import io
-import json
 import sys
 from pathlib import Path
-from textwrap import dedent
 
 # Ensure stdout can handle UTF-8 on Windows (cp1252 default breaks YAML output)
 if hasattr(sys.stdout, "reconfigure"):
@@ -31,98 +28,124 @@ from bba.utils import read_json
 # -- Language → GitHub Actions setup step ------------------------------------─
 
 _SETUP_STEPS = {
-    Language.PYTHON: """\
+    Language.PYTHON: (
+        """\
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pytest pytest-cov""",
-
-    Language.TYPESCRIPT: """\
+      - run: pip install pytest pytest-cov"""
+    ),
+    Language.TYPESCRIPT: (
+        """\
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
-      - run: npm ci""",
-
-    Language.JAVASCRIPT: """\
+      - run: npm ci"""
+    ),
+    Language.JAVASCRIPT: (
+        """\
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
-      - run: npm ci""",
-
-    Language.GO: """\
+      - run: npm ci"""
+    ),
+    Language.GO: (
+        """\
       - uses: actions/setup-go@v5
         with:
           go-version: "1.23"
-          cache: true""",
-
-    Language.CSHARP: """\
+          cache: true"""
+    ),
+    Language.CSHARP: (
+        """\
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
       - run: dotnet tool install --global dotnet-reportgenerator-globaltool
-      - run: dotnet restore""",
-
-    Language.JAVA: """\
+      - run: dotnet restore"""
+    ),
+    Language.JAVA: (
+        """\
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
-          cache: gradle""",
-
-    Language.KOTLIN: """\
+          cache: gradle"""
+    ),
+    Language.KOTLIN: (
+        """\
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
-          cache: gradle""",
-
-    Language.RUST: """\
+          cache: gradle"""
+    ),
+    Language.RUST: (
+        """\
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo install cargo-tarpaulin --locked""",
-
-    Language.SWIFT: """\
+      - run: cargo install cargo-tarpaulin --locked"""
+    ),
+    Language.SWIFT: (
+        """\
       - uses: swift-actions/setup-swift@v2
         with:
-          swift-version: "5.10\"""",
+          swift-version: "5.10\""""
+    ),
 }
 
 # -- Language → collect command ------------------------------------------------
 
 _COLLECT_CMD = {
-    Language.PYTHON:     "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.TYPESCRIPT: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.JAVASCRIPT: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.GO:         "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.CSHARP:     "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.JAVA:       "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.KOTLIN:     "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.RUST:       "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
-    Language.SWIFT:      "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.PYTHON: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.TYPESCRIPT: (
+        "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json"
+    ),
+    Language.JAVASCRIPT: (
+        "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json"
+    ),
+    Language.GO: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.CSHARP: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.JAVA: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.KOTLIN: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.RUST: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
+    Language.SWIFT: "python scripts/collect_runtime_coverage.py . --tiers ${{ matrix.tier }} --output manifest.json",
 }
 
 # -- Language → ReportGenerator input format ----------------------------------
 
 _REPORT_FORMAT = {
-    Language.PYTHON:     "lcov",
+    Language.PYTHON: "lcov",
     Language.TYPESCRIPT: "lcov",
     Language.JAVASCRIPT: "lcov",
-    Language.GO:         "lcov",
-    Language.CSHARP:     "lcov",
-    Language.JAVA:       "lcov",
-    Language.KOTLIN:     "lcov",
-    Language.RUST:       "lcov",
+    Language.GO: "lcov",
+    Language.CSHARP: "lcov",
+    Language.JAVA: "lcov",
+    Language.KOTLIN: "lcov",
+    Language.RUST: "lcov",
 }
 
 # -- Language → local coverage command (for Makefile / npm script) ------------─
 
 _LOCAL_CMD = {
     Language.PYTHON: "python -m pytest -m {tier} --cov=. --cov-report lcov:.coverage-tiers/coverage_{tier}.lcov -q",
-    Language.TYPESCRIPT: "npx jest --testPathPattern={tier} --coverage --coverageReporters lcov --coverageDirectory .coverage-tiers/{tier}",
-    Language.JAVASCRIPT: "npx jest --testPathPattern={tier} --coverage --coverageReporters lcov --coverageDirectory .coverage-tiers/{tier}",
-    Language.GO: "go test -tags={tier} -coverprofile=.coverage-tiers/coverage_{tier}.out ./... && gcov2lcov -infile .coverage-tiers/coverage_{tier}.out -outfile .coverage-tiers/coverage_{tier}.lcov",
-    Language.CSHARP: "dotnet test --filter Category={tier} --collect:\"XPlat Code Coverage\" --results-directory .coverage-tiers/{tier}",
+    Language.TYPESCRIPT: (
+        "npx jest --testPathPattern={tier} --coverage --coverageReporters lcov --coverageDirectory"
+        " .coverage-tiers/{tier}"
+    ),
+    Language.JAVASCRIPT: (
+        "npx jest --testPathPattern={tier} --coverage --coverageReporters lcov --coverageDirectory"
+        " .coverage-tiers/{tier}"
+    ),
+    Language.GO: (
+        "go test -tags={tier} -coverprofile=.coverage-tiers/coverage_{tier}.out ./... && gcov2lcov -infile"
+        " .coverage-tiers/coverage_{tier}.out -outfile .coverage-tiers/coverage_{tier}.lcov"
+    ),
+    Language.CSHARP: (
+        'dotnet test --filter Category={tier} --collect:"XPlat Code Coverage" --results-directory'
+        " .coverage-tiers/{tier}"
+    ),
     Language.JAVA: "./gradlew test -Ptest.groups={tier} jacocoTestReport",
     Language.KOTLIN: "./gradlew test -Ptest.groups={tier} jacocoTestReport",
     Language.RUST: "cargo tarpaulin --features test_{tier} --out Lcov --output-dir .coverage-tiers",
@@ -298,20 +321,31 @@ coverage-open: coverage-report
 """
 
 
+_JEST_COVERAGE = (
+    "jest --testPathPattern={pattern} --coverage --coverageReporters lcov --coverageDirectory .coverage-tiers/{tier}"
+)
+
+# package.json script entries for JS/TS projects: name -> command, rendered with the values aligned
+_NPM_SCRIPTS = {
+    "coverage:unit": _JEST_COVERAGE.format(pattern="unit", tier="unit"),
+    "coverage:intmock": _JEST_COVERAGE.format(pattern="integration", tier="int_mock"),
+    "coverage:intreal": _JEST_COVERAGE.format(pattern="int_real", tier="int_real"),
+    "coverage:e2e": _JEST_COVERAGE.format(pattern="e2e", tier="e2e"),
+    "coverage:report": (
+        "reportgenerator -reports:.coverage-tiers/*/lcov.info -targetdir:coverage-report -reporttypes:Html"
+    ),
+    "coverage:open": "python scripts/open_report.py . --skip-collect --skip-merge",
+}
+_NPM_KEY_WIDTH = max(len(f'"{name}":') for name in _NPM_SCRIPTS) + 1
+
+
 def generate_npm_scripts(language: Language) -> str:
     """Generate package.json script entries for JS/TS projects."""
     if language not in (Language.TYPESCRIPT, Language.JAVASCRIPT):
         return ""
 
-    return dedent("""\
-        // Add to package.json "scripts" section:
-        "coverage:unit":    "jest --testPathPattern=unit --coverage --coverageReporters lcov --coverageDirectory .coverage-tiers/unit",
-        "coverage:intmock": "jest --testPathPattern=integration --coverage --coverageReporters lcov --coverageDirectory .coverage-tiers/int_mock",
-        "coverage:intreal": "jest --testPathPattern=int_real --coverage --coverageReporters lcov --coverageDirectory .coverage-tiers/int_real",
-        "coverage:e2e":     "jest --testPathPattern=e2e --coverage --coverageReporters lcov --coverageDirectory .coverage-tiers/e2e",
-        "coverage:report":  "reportgenerator -reports:.coverage-tiers/*/lcov.info -targetdir:coverage-report -reporttypes:Html",
-        "coverage:open":    "python scripts/open_report.py . --skip-collect --skip-merge"
-    """)
+    entries = [f'"{name}":'.ljust(_NPM_KEY_WIDTH) + f'"{command}"' for name, command in _NPM_SCRIPTS.items()]
+    return '// Add to package.json "scripts" section:\n' + ",\n".join(entries) + "\n"
 
 
 def main():
@@ -332,7 +366,8 @@ Examples:
         help="project_info.json file or project directory (auto-detects project_info.json)",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         default=None,
         help="Output path for workflow YAML (default: stdout)",

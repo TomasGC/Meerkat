@@ -12,8 +12,6 @@ Supports:
 """
 
 import argparse
-import json
-import re
 import sys
 from pathlib import Path
 
@@ -21,7 +19,7 @@ from bba.constants import (
     DEFAULT_RESPONSE_CODES,
     ENDPOINT_PATTERNS,
 )
-from bba.models import Endpoint, HTTPMethod, Language, Parameter
+from bba.models import Endpoint, HTTPMethod, Language
 from bba.utils import (
     detect_project_language,
     extract_line_number_from_pattern,
@@ -31,7 +29,6 @@ from bba.utils import (
     walk_files,
     write_json,
 )
-
 
 
 def extract_go_endpoints(project_path: Path) -> list[Endpoint]:

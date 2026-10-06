@@ -6,11 +6,11 @@ Validates script syntax before execution using language-specific tools.
 """
 
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript, create_cli_script
@@ -21,6 +21,7 @@ from lib.utils import run_command
 @dataclass
 class ValidationResult:
     """Script syntax validation result."""
+
     file: str
     language: str
     valid: bool
@@ -46,24 +47,15 @@ class ValidateScriptSyntaxScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--file",
-            type=Path,
-            required=True,
-            help="Path to script file"
-        )
+        parser.add_argument("--file", type=Path, required=True, help="Path to script file")
         parser.add_argument(
             "--language",
             "-l",
             choices=["auto", "powershell", "python", "bash", "perl"],
             default="auto",
-            help="Script language (default: auto-detect)"
+            help="Script language (default: auto-detect)",
         )
-        parser.add_argument(
-            "--strict",
-            action="store_true",
-            help="Treat warnings as errors"
-        )
+        parser.add_argument("--strict", action="store_true", help="Treat warnings as errors")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute syntax validation."""
@@ -90,7 +82,6 @@ class ValidateScriptSyntaxScript(BaseCLIScript):
             result.warnings = []
             result.valid = False
 
-
         return self._result_to_dict(result)
 
     def _detect_language(self, file_path: Path) -> str:
@@ -99,9 +90,9 @@ class ValidateScriptSyntaxScript(BaseCLIScript):
 
     def _validate_syntax(self, file_path: Path, language: str) -> ValidationResult:
         """Validate script syntax."""
-        errors = []
-        warnings = []
-        info = []
+        errors: list[str] = []
+        warnings: list[str] = []
+        info: list[str] = []
 
         if language == "powershell":
             self._validate_powershell(file_path, errors, warnings, info)
@@ -113,12 +104,7 @@ class ValidateScriptSyntaxScript(BaseCLIScript):
             self._validate_perl(file_path, errors, warnings, info)
 
         return ValidationResult(
-            file=str(file_path),
-            language=language,
-            valid=len(errors) == 0,
-            errors=errors,
-            warnings=warnings,
-            info=info
+            file=str(file_path), language=language, valid=len(errors) == 0, errors=errors, warnings=warnings, info=info
         )
 
     def _validate_powershell(self, file_path: Path, errors: list, warnings: list, info: list):
@@ -141,8 +127,7 @@ if ($parseErrors -and $parseErrors.Count -gt 0) {{
 """
 
         returncode, stdout, stderr = run_command(
-            ["pwsh", "-NoProfile", "-NonInteractive", "-Command", ps_script],
-            timeout=10
+            ["pwsh", "-NoProfile", "-NonInteractive", "-Command", ps_script], timeout=10
         )
 
         if returncode == 0 and "VALID" in stdout:
@@ -157,16 +142,16 @@ if ($parseErrors -and $parseErrors.Count -gt 0) {{
         info.append("Validating Python syntax...")
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
-            compile(content, str(file_path), 'exec')
+            compile(content, str(file_path), "exec")
             info.append("Python syntax valid")
         except SyntaxError as e:
             errors.append(f"Line {e.lineno}: {e.msg}")
 
         # Check shebang
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 first_line = f.readline()
             if not first_line.startswith("#!/usr/bin/env python"):
                 warnings.append("Missing or incorrect shebang (#!/usr/bin/env python3)")
@@ -175,8 +160,8 @@ if ($parseErrors -and $parseErrors.Count -gt 0) {{
 
         # Check hardcoded paths (Windows-style)
         try:
-            content = file_path.read_text(encoding='utf-8')
-            if re.search(r'C:\\', content):
+            content = file_path.read_text(encoding="utf-8")
+            if re.search(r"C:\\", content):
                 warnings.append("Hardcoded Windows path detected (use Path for cross-platform)")
         except Exception:
             pass
@@ -185,10 +170,7 @@ if ($parseErrors -and $parseErrors.Count -gt 0) {{
         """Validate Bash syntax."""
         info.append("Validating Bash syntax...")
 
-        returncode, stdout, stderr = run_command(
-            ["bash", "-n", str(file_path)],
-            timeout=5
-        )
+        returncode, stdout, stderr = run_command(["bash", "-n", str(file_path)], timeout=5)
 
         if returncode == 0:
             info.append("Bash syntax valid")
@@ -199,7 +181,7 @@ if ($parseErrors -and $parseErrors.Count -gt 0) {{
 
         # Check for 'set -euo pipefail'
         try:
-            content = file_path.read_text(encoding='utf-8')
+            content = file_path.read_text(encoding="utf-8")
             if "set -euo pipefail" not in content and "set -eu" not in content:
                 warnings.append("Missing 'set -euo pipefail' (recommended for safety)")
         except Exception:
@@ -209,10 +191,7 @@ if ($parseErrors -and $parseErrors.Count -gt 0) {{
         """Validate Perl syntax."""
         info.append("Validating Perl syntax...")
 
-        returncode, stdout, stderr = run_command(
-            ["perl", "-c", str(file_path)],
-            timeout=5
-        )
+        returncode, stdout, stderr = run_command(["perl", "-c", str(file_path)], timeout=5)
 
         if returncode == 0:
             info.append("Perl syntax valid")
@@ -233,37 +212,33 @@ if ($parseErrors -and $parseErrors.Count -gt 0) {{
             "summary": {
                 "errorCount": result.error_count,
                 "warningCount": result.warning_count,
-                "infoCount": result.info_count
-            }
+                "infoCount": result.info_count,
+            },
         }
 
     def format_text(self, result: dict) -> str:
         """Format result as human-readable text."""
-        lines = [
-            f"Syntax Validation: {result['file']}",
-            f"Language: {result['language']}",
-            ""
-        ]
+        lines = [f"Syntax Validation: {result['file']}", f"Language: {result['language']}", ""]
 
-        if result['errors']:
+        if result["errors"]:
             lines.append("ERRORS:")
-            for error in result['errors']:
+            for error in result["errors"]:
                 lines.append(f"  ❌ {error}")
             lines.append("")
 
-        if result['warnings']:
+        if result["warnings"]:
             lines.append("WARNINGS:")
-            for warning in result['warnings']:
+            for warning in result["warnings"]:
                 lines.append(f"  ⚠️  {warning}")
             lines.append("")
 
-        if result['info']:
+        if result["info"]:
             lines.append("INFO:")
-            for info_msg in result['info']:
+            for info_msg in result["info"]:
                 lines.append(f"  ℹ️  {info_msg}")
             lines.append("")
 
-        if result['valid']:
+        if result["valid"]:
             lines.append("✅ Syntax is valid")
         else:
             lines.append("❌ Syntax validation failed")
@@ -272,11 +247,13 @@ if ($parseErrors -and $parseErrors.Count -gt 0) {{
 
     def format_summary(self, result: dict) -> str:
         """Format result as brief summary."""
-        status = "OK" if result['valid'] else "FAIL"
-        file_name = Path(result['file']).name
-        return (f"[{status}] {file_name} ({result['language']}) - "
-                f"{result['summary']['errorCount']} errors, "
-                f"{result['summary']['warningCount']} warnings")
+        status = "OK" if result["valid"] else "FAIL"
+        file_name = Path(result["file"]).name
+        return (
+            f"[{status}] {file_name} ({result['language']}) - "
+            f"{result['summary']['errorCount']} errors, "
+            f"{result['summary']['warningCount']} warnings"
+        )
 
 
 if __name__ == "__main__":

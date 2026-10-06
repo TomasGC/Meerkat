@@ -2,16 +2,15 @@
 """Tests for common/model_utils.py — unit tests (extract_json_*, run_prompt logic, PROMPTS_DIR)"""
 
 import json
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from bba.model_utils import (
+    PROMPTS_DIR,
     extract_json_array,
     extract_json_object,
     run_prompt,
-    PROMPTS_DIR,
 )
 
 
@@ -119,3 +118,44 @@ def test_prompts_dir_name_is_local():
 
 def test_prompts_dir_parent_is_prompts():
     assert PROMPTS_DIR.parent.name == "prompts"
+
+
+# ── CACHE binding: every analyze_* call gets BBA's own model cache ────────────
+
+
+def test_model_cache_round_trips_through_bba_cache(tmp_path):
+    from bba import model_utils
+
+    source = tmp_path / "a.py"
+    source.write_text("x = 1")
+    model_utils.CACHE.set(source, "unit_gaps", [{"line": 1}])
+    assert model_utils.CACHE.get(source, "unit_gaps") == [{"line": 1}]
+
+
+@pytest.mark.parametrize("name", ["analyze_file_with_model", "analyze_files_parallel"])
+def test_sync_analyze_wrappers_pass_bba_cache(name):
+    from bba import model_utils
+
+    with patch(f"lib.ai.model_utils.{name}", return_value=["r"]) as target:
+        assert getattr(model_utils, name)("f", "python") == ["r"]
+    assert target.call_args.kwargs["cache"] is model_utils.CACHE
+
+
+def test_sync_analyze_wrapper_keeps_caller_cache():
+    from bba import model_utils
+
+    with patch("lib.ai.model_utils.analyze_files_parallel", return_value=[]) as target:
+        model_utils.analyze_files_parallel("f", cache=None)
+    assert target.call_args.kwargs["cache"] is None
+
+
+def test_async_analyze_wrapper_passes_bba_cache():
+    import asyncio
+
+    from bba import model_utils
+
+    async def fake(*_args, **kwargs):
+        return kwargs["cache"]
+
+    with patch("lib.ai.model_utils.analyze_files_async", side_effect=fake):
+        assert asyncio.run(model_utils.analyze_files_async("f")) is model_utils.CACHE

@@ -1,0 +1,46 @@
+# Tool settings only: Meerkat is not an installable package. The values match the flags Condor's Python
+# pipeline passes (#48), so a local run of each tool gives the CI verdict.
+
+[tool.black]
+line-length = 120
+# Deliberately flawed sample code the analyzers are tested on, and project templates.
+extend-exclude = '/(fixtures|template-base)/'
+
+[tool.isort]
+profile = "black"
+line_length = 120
+skip_glob = ["**/fixtures/**", "template-base/**"]
+# First-party packages live under these roots (the ones the conftests put on sys.path). Without them isort guesses
+# from the working directory, and sorts lib/cca/bba imports differently on Linux than on Windows.
+src_paths = [
+    "scripts",
+    "agents/black-box-analyzer/scripts",
+    "agents/clean-code-analyzer/scripts",
+    "agents/security-safety-analyzer/scripts",
+    "skills/search-tech/scripts",
+]
+
+[tool.coverage.run]
+# Coverage measures sources: test trees and fixtures are excluded.
+omit = ["*/tests/*", "tests/*", "*/fixtures/*", "conftest.py"]
+
+[tool.mypy]
+ignore_missing_imports = true
+# The source roots the conftests and package bootstraps put on sys.path; module names are relative to them.
+explicit_package_bases = true
+mypy_path = [
+    "scripts",
+    "agents/black-box-analyzer/scripts",
+    "agents/clean-code-analyzer/scripts",
+    "agents/security-safety-analyzer/scripts",
+    "skills/search-tech/scripts",
+]
+# Sources only, as Condor runs it. The three agents' scripts/orchestrate.py are 3-line CLI wrappers around their
+# package's orchestrate module; all three would be the top-level module "orchestrate".
+exclude = [
+    '(^|/)tests/',
+    '(^|/)fixtures/',
+    '^template-base/',
+    '^skills/synced/',
+    '^agents/[^/]+/scripts/orchestrate\.py$',
+]

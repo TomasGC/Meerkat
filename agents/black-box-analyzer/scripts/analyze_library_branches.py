@@ -17,13 +17,14 @@ _SHARED = Path(__file__).resolve().parents[3] / "scripts"  # this checkout's sha
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
-from lib.config import language_config
+from bba.model_utils import PROMPTS_DIR, analyze_file_with_model, check_server_available
 from bba.utils import detect_project_language
-from bba.model_utils import analyze_file_with_model, analyze_files_parallel, check_server_available, PROMPTS_DIR
+from lib.config import language_config
 
 # Source file extensions per language — code only: a library's methods cannot be
 # extracted from yaml or sql, and those must not win detect_language's vote.
 LANGUAGE_EXTENSIONS = language_config.languages_of_kind("code")
+
 
 def get_source_files(src_path: Path, language: str) -> list[Path]:
     """Return all source files for given language, excluding test files."""
@@ -49,15 +50,16 @@ def get_source_files(src_path: Path, language: str) -> list[Path]:
 
 
 TYPED_PROMPTS = {
-    "unit":     "analyze_branches_unit",
+    "unit": "analyze_branches_unit",
     "int_mock": "analyze_branches_int_mock",
     "int_real": "analyze_branches_int_real",
-    "e2e":      "analyze_branches_e2e",
+    "e2e": "analyze_branches_e2e",
 }
 
 
-def analyze_file(file_path: Path, language: str, role: str, max_chars: int = 8000,
-                 prompt_name: str = "analyze_library_branches") -> list[dict]:
+def analyze_file(
+    file_path: Path, language: str, role: str, max_chars: int = 8000, prompt_name: str = "analyze_library_branches"
+) -> list[dict]:
     """Analyze one source file via local AI. Returns list of method branch objects."""
     return analyze_file_with_model(file_path, language, role, prompt_name, prompts_dir=PROMPTS_DIR, max_chars=max_chars)
 
@@ -71,10 +73,13 @@ def analyze_file_typed(
 ) -> list[dict]:
     """Run one local AI agent per test type in parallel, tag results, merge."""
     from concurrent.futures import ThreadPoolExecutor
+
     types = ["unit", "int_mock", "int_real"] + (["e2e"] if include_e2e else [])
 
     def _run_type(test_type: str) -> list[dict]:
-        results = analyze_file_with_model(file_path, language, role, TYPED_PROMPTS[test_type], prompts_dir=PROMPTS_DIR, max_chars=max_chars)
+        results = analyze_file_with_model(
+            file_path, language, role, TYPED_PROMPTS[test_type], prompts_dir=PROMPTS_DIR, max_chars=max_chars
+        )
         for item in results:
             for branch in item.get("branches", []):
                 branch["test_type_hint"] = test_type.upper()
@@ -93,8 +98,7 @@ def analyze_file_typed(
                 merged[key_m] = {k: v for k, v in method.items() if k != "branches"}
                 merged[key_m]["branches"] = []
             for branch in method.get("branches", []):
-                bkey = (key_m, branch.get("condition", "").lower()[:80],
-                        branch.get("test_type_hint", "").upper())
+                bkey = (key_m, branch.get("condition", "").lower()[:80], branch.get("test_type_hint", "").upper())
                 if bkey not in seen:
                     seen.add(bkey)
                     merged[key_m]["branches"].append(branch)
@@ -169,23 +173,27 @@ Examples:
     )
     parser.add_argument("src_path", type=Path, help="Path to source directory")
     parser.add_argument(
-        "--language", "-l",
+        "--language",
+        "-l",
         default="auto",
         choices=["auto"] + list(LANGUAGE_EXTENSIONS.keys()),
         help="Source language (default: auto-detect)",
     )
     parser.add_argument(
-        "--role", "-m",
+        "--role",
+        "-m",
         default="analyzer",
         help="Model role to use: analyzer, fast, deep, reasoning (default: analyzer)",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         help="Output JSON file (default: stdout)",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Print progress to stderr",
     )
@@ -236,12 +244,14 @@ Examples:
 
     if args.agents > 1:
         from concurrent.futures import ThreadPoolExecutor
+
         if args.verbose:
             print(f"[INFO] Running {args.agents} parallel agents for broader coverage...", file=sys.stderr)
         with ThreadPoolExecutor(max_workers=args.agents) as pool:
             futures = [
-                pool.submit(analyze_library, args.src_path, language, args.role, False,
-                            args.max_chars, typed, include_e2e)
+                pool.submit(
+                    analyze_library, args.src_path, language, args.role, False, args.max_chars, typed, include_e2e
+                )
                 for _ in range(args.agents)
             ]
             runs = [f.result() for f in futures]
@@ -249,8 +259,15 @@ Examples:
         if args.verbose:
             print(f"[INFO] Merged {args.agents} runs: {len(methods)} unique methods", file=sys.stderr)
     else:
-        methods = analyze_library(args.src_path, language, args.role, args.verbose,
-                                  max_chars=args.max_chars, typed_agents=typed, include_e2e=include_e2e)
+        methods = analyze_library(
+            args.src_path,
+            language,
+            args.role,
+            args.verbose,
+            max_chars=args.max_chars,
+            typed_agents=typed,
+            include_e2e=include_e2e,
+        )
 
     output = {
         "language": language,

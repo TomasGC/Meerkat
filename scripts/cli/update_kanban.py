@@ -28,7 +28,7 @@ from lib.cli.base import BaseCLIScript
 from lib.utils import run_command
 
 
-def find_kanban_file(start_path: Path = None) -> Path | None:
+def find_kanban_file(start_path: Path | None = None) -> Path | None:
     """
     Search for .claude/contexts/kanban.md in current and parent directories.
 
@@ -54,10 +54,7 @@ def find_kanban_file(start_path: Path = None) -> Path | None:
 
 def get_commit_title(commit_hash: str) -> str:
     """Get commit message title."""
-    returncode, stdout, stderr = run_command(
-        ["git", "log", "-1", "--format=%s", commit_hash],
-        timeout=5
-    )
+    returncode, stdout, stderr = run_command(["git", "log", "-1", "--format=%s", commit_hash], timeout=5)
 
     if returncode != 0:
         return ""
@@ -71,11 +68,7 @@ def get_commit_title(commit_hash: str) -> str:
 
 
 def build_entry(
-    issue_id: str,
-    title: str,
-    description: str,
-    ref: str = None,
-    commits: list[str] = None
+    issue_id: str, title: str, description: str, ref: str | None = None, commits: list[str] | None = None
 ) -> str:
     """
     Build KANBAN.md entry.
@@ -117,11 +110,7 @@ def build_entry(
     return "\n".join(lines)
 
 
-def update_existing_entry(
-    existing: KanbanEntry,
-    new_description: str,
-    new_commits: list[str]
-) -> str:
+def update_existing_entry(existing: KanbanEntry, new_description: str, new_commits: list[str]) -> str:
     """
     Update existing KANBAN entry.
 
@@ -139,7 +128,7 @@ def update_existing_entry(
     title_line = f"{today} - [{existing.issue_id}] {existing.title}"
 
     # Merge descriptions (deduplicate)
-    new_desc_lines = [l for l in new_description.split("\n") if l.startswith("-")]
+    new_desc_lines = [line for line in new_description.split("\n") if line.startswith("-")]
     all_desc = list(dict.fromkeys(existing.description + new_desc_lines))  # Deduplicate preserving order
 
     # Merge commits (deduplicate)
@@ -173,7 +162,7 @@ def insert_entry_at_top(content: str, entry: str) -> str:
     match = re.search(r"(?ms)(.*?^---[ \t]*\n)", content)
     if match:
         header = match.group(1)
-        rest = content[match.end():].lstrip("\n")
+        rest = content[match.end() :].lstrip("\n")
         return f"{header}\n{entry}\n\n---\n\n{rest}"
     else:
         # No --- found, just prepend
@@ -185,47 +174,22 @@ class UpdateKanbanScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--issue", "-t", default="", help="Ticket ID (auto-detects from branch if not provided)")
         parser.add_argument(
-            "--issue",
-            "-t",
-            default="",
-            help="Ticket ID (auto-detects from branch if not provided)"
+            "--commits", "-c", default="", help="Comma-separated commit hashes (auto-detects if not provided)"
         )
         parser.add_argument(
-            "--commits",
-            "-c",
-            default="",
-            help="Comma-separated commit hashes (auto-detects if not provided)"
+            "--description", "-d", default="", help="Manual description (auto-generates if not provided)"
         )
-        parser.add_argument(
-            "--description",
-            "-d",
-            default="",
-            help="Manual description (auto-generates if not provided)"
-        )
-        parser.add_argument(
-            "--ref",
-            "-r",
-            default="",
-            help="Reference link (issue, docs, etc.)"
-        )
+        parser.add_argument("--ref", "-r", default="", help="Reference link (issue, docs, etc.)")
         parser.add_argument(
             "--kanban-file",
             "-k",
             default="",
-            help="Path to kanban.md (auto-detects .claude/contexts/kanban.md if not provided)"
+            help="Path to kanban.md (auto-detects .claude/contexts/kanban.md if not provided)",
         )
-        parser.add_argument(
-            "--no-backup",
-            action="store_true",
-            help="Skip backup creation"
-        )
-        parser.add_argument(
-            "--auto",
-            "-a",
-            action="store_true",
-            help="Auto-detect issue and commits"
-        )
+        parser.add_argument("--no-backup", action="store_true", help="Skip backup creation")
+        parser.add_argument("--auto", "-a", action="store_true", help="Auto-detect issue and commits")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute KANBAN update."""
@@ -234,10 +198,7 @@ class UpdateKanbanScript(BaseCLIScript):
             if not args.issue:
                 issue_id = extract_issue()
                 if not issue_id:
-                    return {
-                        "success": False,
-                        "error": "Could not detect issue ID. Please provide --issue parameter."
-                    }
+                    return {"success": False, "error": "Could not detect issue ID. Please provide --issue parameter."}
                 self.logger.debug(f"Detected issue: {issue_id}")
             else:
                 issue_id = args.issue
@@ -273,7 +234,7 @@ class UpdateKanbanScript(BaseCLIScript):
                         files = get_commit_files(commit)
                         all_files.extend(files)
 
-                    categories = defaultdict(int)
+                    categories: defaultdict[str, int] = defaultdict(int)
                     for file in all_files:
                         category = categorize_file(file)
                         categories[category] += 1
@@ -291,18 +252,16 @@ class UpdateKanbanScript(BaseCLIScript):
             if args.kanban_file:
                 kanban_file = Path(args.kanban_file)
             else:
-                kanban_file = find_kanban_file()
-                if not kanban_file:
+                found_kanban = find_kanban_file()
+                if not found_kanban:
                     return {
                         "success": False,
-                        "error": ".claude/contexts/kanban.md not found in current directory or parent directories"
+                        "error": ".claude/contexts/kanban.md not found in current directory or parent directories",
                     }
+                kanban_file = found_kanban
 
             if not kanban_file.exists():
-                return {
-                    "success": False,
-                    "error": f"kanban.md not found at: {kanban_file}"
-                }
+                return {"success": False, "error": f"kanban.md not found at: {kanban_file}"}
 
             self.logger.debug(f"Using KANBAN file: {kanban_file}")
 
@@ -358,22 +317,18 @@ class UpdateKanbanScript(BaseCLIScript):
 
                 action = "created"
 
-
             return {
                 "success": True,
                 "issue": issue_id,
                 "action": action,
                 "commits": len(commit_hashes),
                 "kanban_file": str(kanban_file),
-                "backup": str(backup_file) if backup_file else None
+                "backup": str(backup_file) if backup_file else None,
             }
 
         except Exception as e:
             self.logger.error(f"Failed to update KANBAN.md: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -384,7 +339,7 @@ class UpdateKanbanScript(BaseCLIScript):
         lines = [
             f"{action} entry for [{result['issue']}]",
             f"Commits: {result['commits']}",
-            f"KANBAN: {result['kanban_file']}"
+            f"KANBAN: {result['kanban_file']}",
         ]
 
         if result.get("backup"):
@@ -403,4 +358,5 @@ class UpdateKanbanScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(UpdateKanbanScript)

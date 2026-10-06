@@ -23,6 +23,7 @@ from lib.cli.base import BaseCLIScript
 @dataclass
 class KanbanEntry:
     """KANBAN.md entry."""
+
     date: str
     issue_id: str
     title: str
@@ -68,7 +69,7 @@ def parse_kanban_file(file_path: Path) -> list[KanbanEntry]:
     # Split entries by date pattern (YYYY-MM-DD)
     entries = []
     lines = entries_section.split("\n")
-    current_entry = []
+    current_entry: list[str] = []
 
     for line in lines:
         # New entry starts with date pattern
@@ -134,7 +135,7 @@ def parse_kanban_file(file_path: Path) -> list[KanbanEntry]:
             tags=tags,
             refs=refs,
             commits=commits,
-            raw=entry
+            raw=entry,
         )
 
         parsed_entries.append(parsed_entry)
@@ -144,11 +145,11 @@ def parse_kanban_file(file_path: Path) -> list[KanbanEntry]:
 
 def filter_entries(
     entries: list[KanbanEntry],
-    issue_id: str = None,
-    tag: str = None,
-    date: str = None,
-    date_from: str = None,
-    date_to: str = None
+    issue_id: str | None = None,
+    tag: str | None = None,
+    date: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
 ) -> list[KanbanEntry]:
     """
     Filter entries based on search criteria.
@@ -190,34 +191,16 @@ class SearchKanbanScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--issue",
-            "-t",
-            help="Ticket ID to search (e.g., #123)"
-        )
-        parser.add_argument(
-            "--tag",
-            "-T",
-            help="Tag to search (without # prefix)"
-        )
-        parser.add_argument(
-            "--date",
-            "-d",
-            help="Date to search (YYYY-MM-DD format)"
-        )
-        parser.add_argument(
-            "--date-from",
-            help="Start date for date range search"
-        )
-        parser.add_argument(
-            "--date-to",
-            help="End date for date range search"
-        )
+        parser.add_argument("--issue", "-t", help="Ticket ID to search (e.g., #123)")
+        parser.add_argument("--tag", "-T", help="Tag to search (without # prefix)")
+        parser.add_argument("--date", "-d", help="Date to search (YYYY-MM-DD format)")
+        parser.add_argument("--date-from", help="Start date for date range search")
+        parser.add_argument("--date-to", help="End date for date range search")
         parser.add_argument(
             "--path",
             "-p",
             default=".claude/contexts/kanban.md",
-            help="Path to kanban.md (default: .claude/contexts/kanban.md)"
+            help="Path to kanban.md (default: .claude/contexts/kanban.md)",
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -228,11 +211,7 @@ class SearchKanbanScript(BaseCLIScript):
             entries = parse_kanban_file(file_path)
 
             if not entries:
-                return {
-                    "success": True,
-                    "entries": [],
-                    "count": 0
-                }
+                return {"success": True, "entries": [], "count": 0}
 
             # Filter entries
             results = filter_entries(
@@ -241,9 +220,8 @@ class SearchKanbanScript(BaseCLIScript):
                 tag=args.tag,
                 date=args.date,
                 date_from=args.date_from,
-                date_to=args.date_to
+                date_to=args.date_to,
             )
-
 
             return {
                 "success": True,
@@ -256,23 +234,17 @@ class SearchKanbanScript(BaseCLIScript):
                         "description": e.description,
                         "tags": e.tags,
                         "refs": e.refs,
-                        "commits": e.commits
+                        "commits": e.commits,
                     }
                     for e in results
-                ]
+                ],
             }
 
         except FileNotFoundError as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
         except Exception as e:
             self.logger.error(f"Failed to search KANBAN.md: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -285,11 +257,11 @@ class SearchKanbanScript(BaseCLIScript):
         lines = []
         for entry in result["entries"]:
             lines.append(f"{entry['date']} - [{entry['issue']}] {entry['title']}")
-            for desc in entry['description']:
+            for desc in entry["description"]:
                 lines.append(f"  {desc}")
-            if entry['tags']:
+            if entry["tags"]:
                 lines.append(f"  Tags: {', '.join(entry['tags'])}")
-            if entry['commits']:
+            if entry["commits"]:
                 lines.append(f"  Commits: {', '.join(entry['commits'])}")
             lines.append("")
 
@@ -312,4 +284,5 @@ class SearchKanbanScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(SearchKanbanScript)

@@ -7,12 +7,7 @@ Handles detection and analysis of API-based projects:
 - gRPC APIs (gRPC-Go, gRPC-Core)
 """
 
-import re
-import sys
 from pathlib import Path
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from bba.constants import (
     DEFAULT_RESPONSE_CODES,
@@ -23,7 +18,6 @@ from bba.models import (
     EntryPoint,
     EntryPointType,
     HTTPMethod,
-    Parameter,
     ProjectInfo,
     ProjectType,
     Scenario,

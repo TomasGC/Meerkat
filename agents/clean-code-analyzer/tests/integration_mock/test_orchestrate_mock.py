@@ -1,8 +1,8 @@
 """Integration tests: full pipeline via subprocess, mechanical checkers only (no Ollama)."""
 
 import json
-import subprocess
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -78,9 +78,12 @@ def test_full_pipeline_mechanical_only(dirty_src):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(dirty_src),
-            "--checks", "naming,lod,inheritance",
-            "--format", "json",
+            "--path",
+            str(dirty_src),
+            "--checks",
+            "naming,lod,inheritance",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -105,9 +108,12 @@ def test_clean_code_no_mechanical_violations(clean_src):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(clean_src),
-            "--checks", "lod,inheritance",
-            "--format", "json",
+            "--path",
+            str(clean_src),
+            "--checks",
+            "lod,inheritance",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -125,9 +131,12 @@ def test_checker_failure_continues(dirty_src):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(dirty_src),
-            "--checks", "lod,nonexistent_checker",
-            "--format", "json",
+            "--path",
+            str(dirty_src),
+            "--checks",
+            "lod,nonexistent_checker",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -148,9 +157,12 @@ def test_json_output_schema(dirty_src):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(dirty_src),
-            "--checks", "lod",
-            "--format", "json",
+            "--path",
+            str(dirty_src),
+            "--checks",
+            "lod",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -165,6 +177,7 @@ def test_json_output_schema(dirty_src):
 
 # ── Additional coverage ─────────────────────────────────────────────────────────
 
+
 def test_output_flag_writes_file(dirty_project, tmp_path):
     """--output PATH writes JSON results to the specified file."""
     out = tmp_path / "results.json"
@@ -172,11 +185,15 @@ def test_output_flag_writes_file(dirty_project, tmp_path):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(dirty_project / "src"),
-            "--checks", "error_handling,naming",
-            "--format", "json",
+            "--path",
+            str(dirty_project / "src"),
+            "--checks",
+            "error_handling,naming",
+            "--format",
+            "json",
             "--no-cache",
-            "--output", str(out),
+            "--output",
+            str(out),
         ],
         capture_output=True,
         text=True,
@@ -194,9 +211,12 @@ def test_format_table_produces_non_json_output(dirty_project):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(dirty_project / "src"),
-            "--checks", "error_handling",
-            "--format", "table",
+            "--path",
+            str(dirty_project / "src"),
+            "--checks",
+            "error_handling",
+            "--format",
+            "table",
             "--no-cache",
         ],
         capture_output=True,
@@ -219,24 +239,35 @@ def test_min_severity_high_filters_lower_violations(dirty_project):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(dirty_project / "src"),
-            "--checks", "naming",
-            "--format", "json",
+            "--path",
+            str(dirty_project / "src"),
+            "--checks",
+            "naming",
+            "--format",
+            "json",
             "--no-cache",
         ],
-        capture_output=True, text=True, timeout=60,
+        capture_output=True,
+        text=True,
+        timeout=60,
     )
     run_high = subprocess.run(
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(dirty_project / "src"),
-            "--checks", "naming",
-            "--format", "json",
+            "--path",
+            str(dirty_project / "src"),
+            "--checks",
+            "naming",
+            "--format",
+            "json",
             "--no-cache",
-            "--min-severity", "high",
+            "--min-severity",
+            "high",
         ],
-        capture_output=True, text=True, timeout=60,
+        capture_output=True,
+        text=True,
+        timeout=60,
     )
     assert run_all.returncode == 0
     assert run_high.returncode == 0
@@ -254,13 +285,19 @@ def test_top_n_limits_output(dirty_project):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(dirty_project / "src"),
-            "--checks", "naming,error_handling,lod,inheritance",
-            "--format", "json",
+            "--path",
+            str(dirty_project / "src"),
+            "--checks",
+            "naming,error_handling,lod,inheritance",
+            "--format",
+            "json",
             "--no-cache",
-            "--top", "1",
+            "--top",
+            "1",
         ],
-        capture_output=True, text=True, timeout=60,
+        capture_output=True,
+        text=True,
+        timeout=60,
     )
     assert result.returncode == 0, f"stderr: {result.stderr}"
     data = json.loads(result.stdout)
@@ -277,7 +314,9 @@ def test_clear_cache_flag_exits_zero(tmp_path):
 
     result = subprocess.run(
         [sys.executable, str(SCRIPTS_DIR / "orchestrate.py"), "--clear-cache"],
-        capture_output=True, text=True, timeout=10,
+        capture_output=True,
+        text=True,
+        timeout=10,
         env={**os.environ, "CCA_CACHE_DIR": str(cache_dir)},
     )
     assert result.returncode == 0

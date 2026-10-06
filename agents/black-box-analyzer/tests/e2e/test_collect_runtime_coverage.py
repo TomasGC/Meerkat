@@ -11,9 +11,17 @@ scripts_dir = Path(__file__).parent.parent.parent / "scripts"
 
 def test_main_dry_run_outputs_json(sample_python_project):
     result = subprocess.run(
-        [sys.executable, str(scripts_dir / "collect_runtime_coverage.py"),
-         str(sample_python_project), "--dry-run", "--tiers", "unit", "int_mock"],
-        capture_output=True, text=True,
+        [
+            sys.executable,
+            str(scripts_dir / "collect_runtime_coverage.py"),
+            str(sample_python_project),
+            "--dry-run",
+            "--tiers",
+            "unit",
+            "int_mock",
+        ],
+        capture_output=True,
+        text=True,
     )
     try:
         manifest = json.loads(result.stdout)
@@ -25,10 +33,18 @@ def test_main_dry_run_outputs_json(sample_python_project):
 def test_main_dry_run_writes_manifest_file(sample_python_project, temp_dir):
     out = temp_dir / "manifest.json"
     subprocess.run(
-        [sys.executable, str(scripts_dir / "collect_runtime_coverage.py"),
-         str(sample_python_project), "--dry-run",
-         "--tiers", "unit", "--output", str(out)],
-        capture_output=True, text=True,
+        [
+            sys.executable,
+            str(scripts_dir / "collect_runtime_coverage.py"),
+            str(sample_python_project),
+            "--dry-run",
+            "--tiers",
+            "unit",
+            "--output",
+            str(out),
+        ],
+        capture_output=True,
+        text=True,
     )
     if out.exists():
         data = json.loads(out.read_text())

@@ -11,9 +11,9 @@ scripts_dir = Path(__file__).parent.parent.parent / "scripts"
 
 def test_cli_go_project_json_output(sample_go_project):
     result = subprocess.run(
-        [sys.executable, str(scripts_dir / "parse_test_files.py"),
-         str(sample_go_project), "--language", "go"],
-        capture_output=True, text=True,
+        [sys.executable, str(scripts_dir / "parse_test_files.py"), str(sample_go_project), "--language", "go"],
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0
     data = json.loads(result.stdout)

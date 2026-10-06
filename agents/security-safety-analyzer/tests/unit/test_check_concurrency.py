@@ -1,11 +1,9 @@
 """Unit tests for check_concurrency — mechanical patterns plus mocked AI layer."""
+
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-import pytest
-
-
-from ssa.checkers.check_concurrency import run, _mechanical_check, _PRINCIPLE
+from ssa.checkers.check_concurrency import _PRINCIPLE, _mechanical_check, run
 
 
 def _make_file(tmp_path: Path, name: str, content: str) -> Path:
@@ -93,8 +91,9 @@ class TestReconciliation:
             "description": "Static counter is not thread safe",
             "fix": "Use Interlocked",
         }
-        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), \
-             patch("ssa.checkers.check_concurrency.analyze_files_parallel", return_value=[fake_item]):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), patch(
+            "ssa.checkers.check_concurrency.analyze_files_parallel", return_value=[fake_item]
+        ):
             result = run(tmp_path, "csharp", files=[f])
         assert not any(v["message"].startswith("[") for v in result["violations"])
 
@@ -106,8 +105,9 @@ class TestReconciliation:
             captured["extra_slots"] = kwargs.get("extra_slots")
             return []
 
-        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), \
-             patch("ssa.checkers.check_concurrency.analyze_files_parallel", side_effect=fake_analyze):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), patch(
+            "ssa.checkers.check_concurrency.analyze_files_parallel", side_effect=fake_analyze
+        ):
             run(tmp_path, "csharp", files=[f])
         assert "Mutable static field" in captured["extra_slots"][f]["known_findings"]
 
@@ -131,7 +131,7 @@ class TestRunFunction:
         assert "error" not in result
 
     def test_with_server_calls_analyze(self, tmp_path):
-        _make_file(tmp_path, "worker.go", 'package main\nvar counter int\n')
+        _make_file(tmp_path, "worker.go", "package main\nvar counter int\n")
         fake_item = {
             "source_file": str(tmp_path / "worker.go"),
             "issue_type": "RACE_CONDITION",
@@ -140,8 +140,9 @@ class TestRunFunction:
             "description": "Shared counter accessed without lock",
             "fix": "Use sync/atomic or mutex",
         }
-        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), \
-             patch("ssa.checkers.check_concurrency.analyze_files_parallel", return_value=[fake_item]):
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), patch(
+            "ssa.checkers.check_concurrency.analyze_files_parallel", return_value=[fake_item]
+        ):
             result = run(tmp_path, "go")
         assert len(result["violations"]) == 1
         assert result["violations"][0]["principle"] == _PRINCIPLE
@@ -150,10 +151,13 @@ class TestRunFunction:
     def test_files_kwarg_passed_through(self, tmp_path):
         f = _make_file(tmp_path, "a.py", "x=1\n")
         captured = {}
+
         def fake_analyze(files, *args, **kwargs):
             captured["files"] = files
             return []
-        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), \
-             patch("ssa.checkers.check_concurrency.analyze_files_parallel", side_effect=fake_analyze):
+
+        with patch("ssa.checkers.check_concurrency.check_server_available", return_value=True), patch(
+            "ssa.checkers.check_concurrency.analyze_files_parallel", side_effect=fake_analyze
+        ):
             run(tmp_path, "python", files=[f])
         assert captured.get("files") == [f]

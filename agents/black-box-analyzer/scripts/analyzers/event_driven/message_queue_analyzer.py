@@ -9,11 +9,7 @@ Handles detection and analysis of message queue consumers:
 """
 
 import re
-import sys
 from pathlib import Path
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from bba.constants import MESSAGE_QUEUE_PATTERNS
 from bba.models import (

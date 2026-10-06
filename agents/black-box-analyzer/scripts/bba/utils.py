@@ -10,10 +10,10 @@ import sys
 from pathlib import Path
 from typing import Any, Generator
 
+from lib.engine.discovery import dominant_language
+
 from .constants import EXCLUDED_DIRS, LANGUAGE_INDICATORS  # also puts ~/.claude/scripts on sys.path
 from .models import Language, Parameter
-
-from lib.engine.discovery import dominant_language
 
 
 def detect_project_language(project_path: Path) -> Language:
@@ -39,9 +39,7 @@ def detect_project_language(project_path: Path) -> Language:
     return Language(voted) if voted in known else Language.UNKNOWN
 
 
-def walk_files(
-    root_path: Path, patterns: list[str], recursive: bool = True
-) -> Generator[Path, None, None]:
+def walk_files(root_path: Path, patterns: list[str], recursive: bool = True) -> Generator[Path, None, None]:
     """
     Walk directory tree and yield files matching patterns.
 
@@ -130,9 +128,7 @@ def read_json(file_path: Path) -> Any:
     try:
         return json.loads(file_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
-        raise json.JSONDecodeError(
-            f"Invalid JSON in {file_path}: {e.msg}", e.doc, e.pos
-        )
+        raise json.JSONDecodeError(f"Invalid JSON in {file_path}: {e.msg}", e.doc, e.pos)
 
 
 def find_project_root(start_path: Path) -> Path | None:
@@ -212,11 +208,7 @@ def count_lines_of_code(file_path: Path) -> int:
 
     lines = content.splitlines()
     # Simple heuristic: skip empty lines and lines starting with # or //
-    return sum(
-        1
-        for line in lines
-        if line.strip() and not line.strip().startswith(("#", "//"))
-    )
+    return sum(1 for line in lines if line.strip() and not line.strip().startswith(("#", "//")))
 
 
 def format_path_relative(file_path: Path, root_path: Path) -> str:
@@ -274,16 +266,6 @@ def merge_dicts_deep(dict1: dict, dict2: dict) -> dict:
             result[key] = value
 
     return result
-
-
-def ensure_dir(dir_path: Path) -> None:
-    """
-    Ensure directory exists, create if needed.
-
-    Args:
-        dir_path: Directory path
-    """
-    dir_path.mkdir(parents=True, exist_ok=True)
 
 
 def sanitize_filename(filename: str) -> str:

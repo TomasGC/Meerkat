@@ -7,11 +7,10 @@ language requirements, and structure standards.
 """
 
 import re
-from datetime import datetime
+import sys
 from pathlib import Path
 from typing import Any
 
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript, create_cli_script
@@ -22,24 +21,15 @@ class ValidateMarkdownScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--file",
-            type=Path,
-            required=True,
-            help="Path to markdown file"
-        )
+        parser.add_argument("--file", type=Path, required=True, help="Path to markdown file")
         parser.add_argument(
             "--type",
             "-t",
             choices=["auto", "kanban", "architecture", "claude", "generic"],
             default="auto",
-            help="Validation type (default: auto-detect)"
+            help="Validation type (default: auto-detect)",
         )
-        parser.add_argument(
-            "--strict",
-            action="store_true",
-            help="Treat warnings as errors"
-        )
+        parser.add_argument("--strict", action="store_true", help="Treat warnings as errors")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute markdown validation."""
@@ -62,7 +52,6 @@ class ValidateMarkdownScript(BaseCLIScript):
             errors.extend(warnings)
             warnings = []
 
-
         return {
             "file": str(file_path),
             "type": validation_type,
@@ -70,11 +59,7 @@ class ValidateMarkdownScript(BaseCLIScript):
             "errors": errors,
             "warnings": warnings,
             "info": info,
-            "summary": {
-                "errorCount": len(errors),
-                "warningCount": len(warnings),
-                "infoCount": len(info)
-            }
+            "summary": {"errorCount": len(errors), "warningCount": len(warnings), "infoCount": len(info)},
         }
 
     def _detect_type(self, file_path: Path) -> str:
@@ -91,12 +76,12 @@ class ValidateMarkdownScript(BaseCLIScript):
 
     def _validate(self, file_path: Path, validation_type: str) -> tuple[list, list, list]:
         """Validate markdown file."""
-        errors = []
-        warnings = []
-        info = []
+        errors: list[str] = []
+        warnings: list[str] = []
+        info: list[str] = []
 
         try:
-            content = file_path.read_text(encoding='utf-8')
+            content = file_path.read_text(encoding="utf-8")
         except Exception as e:
             errors.append(f"Failed to read file: {e}")
             return errors, warnings, info
@@ -128,7 +113,7 @@ class ValidateMarkdownScript(BaseCLIScript):
         lines = content.splitlines()
 
         # Check for headings
-        headings = [l for l in lines if l.startswith('#')]
+        headings = [line for line in lines if line.startswith("#")]
         if not headings:
             warnings.append("No markdown headings found")
         else:
@@ -170,7 +155,7 @@ class ValidateMarkdownScript(BaseCLIScript):
         info.append("Validating CLAUDE.md format...")
 
         # Check for English content
-        if not re.search(r'[a-zA-Z]', content):
+        if not re.search(r"[a-zA-Z]", content):
             warnings.append("No English text detected")
 
         # Check for common Claude.md sections
@@ -184,42 +169,40 @@ class ValidateMarkdownScript(BaseCLIScript):
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
-        lines = [
-            f"Markdown Validation: {result['file']}",
-            f"Type: {result['type']}",
-            ""
-        ]
+        lines = [f"Markdown Validation: {result['file']}", f"Type: {result['type']}", ""]
 
-        if result['errors']:
+        if result["errors"]:
             lines.append("ERRORS:")
-            for error in result['errors']:
+            for error in result["errors"]:
                 lines.append(f"  [ERROR] {error}")
             lines.append("")
 
-        if result['warnings']:
+        if result["warnings"]:
             lines.append("WARNINGS:")
-            for warning in result['warnings']:
+            for warning in result["warnings"]:
                 lines.append(f"  [WARN] {warning}")
             lines.append("")
 
-        if result['info']:
+        if result["info"]:
             lines.append("INFO:")
-            for info_msg in result['info']:
+            for info_msg in result["info"]:
                 lines.append(f"  [INFO] {info_msg}")
             lines.append("")
 
-        status = "[OK]" if result['valid'] else "[FAIL]"
+        status = "[OK]" if result["valid"] else "[FAIL]"
         lines.append(f"{status} Validation {'passed' if result['valid'] else 'failed'}")
 
         return "\n".join(lines)
 
     def format_summary(self, result: dict) -> str:
         """Format as brief summary."""
-        status = "OK" if result['valid'] else "FAIL"
-        file_name = Path(result['file']).name
-        return (f"[{status}] {file_name} ({result['type']}) - "
-                f"{result['summary']['errorCount']} errors, "
-                f"{result['summary']['warningCount']} warnings")
+        status = "OK" if result["valid"] else "FAIL"
+        file_name = Path(result["file"]).name
+        return (
+            f"[{status}] {file_name} ({result['type']}) - "
+            f"{result['summary']['errorCount']} errors, "
+            f"{result['summary']['warningCount']} warnings"
+        )
 
 
 if __name__ == "__main__":

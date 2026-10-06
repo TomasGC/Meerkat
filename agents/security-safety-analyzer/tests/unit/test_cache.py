@@ -1,11 +1,10 @@
 """Unit tests for common/cache.py."""
+
 import os
 import time
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
 
 import ssa.cache as cache_mod
 

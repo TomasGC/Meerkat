@@ -10,8 +10,8 @@ import argparse
 import json
 import sys
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 # Put the scripts dir on the path for the search_tech package
 sys.path.insert(0, str(Path(__file__).parent))
@@ -22,10 +22,9 @@ except ImportError:
     print("Error: requests library not found. Install with: pip install requests", file=sys.stderr)
     sys.exit(1)
 
-from search_tech.models import SearchQuery, SearchResult, SearchResponse, Source, ResultType, ValidationError
-from search_tech.logger import setup_logger, MetricsCollector, get_defaults
 from search_tech.cache import SearchCache
-
+from search_tech.logger import MetricsCollector, get_defaults, setup_logger
+from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source, ValidationError
 
 API_BASE = "https://www.reddit.com"
 MAX_RESULTS = 5
@@ -35,11 +34,7 @@ DEFAULT_SUBREDDITS = ["programming", "learnprogramming", "AskProgramming"]
 
 
 def search_reddit_subreddit(
-    query: SearchQuery,
-    subreddit: str,
-    logger=None,
-    metrics=None,
-    max_retries=MAX_RETRIES
+    query: SearchQuery, subreddit: str, logger=None, metrics=None, max_retries=MAX_RETRIES
 ) -> list:
     """
     Search a specific subreddit.
@@ -61,7 +56,7 @@ def search_reddit_subreddit(
     # Retry logic
     for attempt in range(max_retries):
         try:
-            metrics.increment('api_calls')
+            metrics.increment("api_calls")
 
             # Reddit JSON API (no auth needed)
             params = {
@@ -71,21 +66,14 @@ def search_reddit_subreddit(
                 "t": "all",  # Time: all, year, month, week, day
             }
 
-            headers = {
-                "User-Agent": "TechnicalSearchBot/1.0"
-            }
+            headers = {"User-Agent": "TechnicalSearchBot/1.0"}
 
-            response = requests.get(
-                f"{API_BASE}/r/{subreddit}/search.json",
-                params=params,
-                headers=headers,
-                timeout=10
-            )
+            response = requests.get(f"{API_BASE}/r/{subreddit}/search.json", params=params, headers=headers, timeout=10)
 
             # Rate limit check
             if response.status_code == 429:
                 logger.warning(f"Reddit rate limit hit for r/{subreddit}")
-                metrics.increment('errors')
+                metrics.increment("errors")
                 return []
 
             response.raise_for_status()
@@ -115,42 +103,40 @@ def search_reddit_subreddit(
                     excerpt=excerpt.strip(),
                     comments=post_data.get("num_comments", 0),
                     tags=[subreddit],
-                    created_date=datetime.fromtimestamp(post_data.get("created_utc", 0)) if post_data.get("created_utc") else None,
+                    created_date=(
+                        datetime.fromtimestamp(post_data.get("created_utc", 0))
+                        if post_data.get("created_utc")
+                        else None
+                    ),
                     repository=f"r/{subreddit}",
                 )
                 results.append(result)
 
-            metrics.increment('total_results', len(results))
+            metrics.increment("total_results", len(results))
             logger.info(f"Found {len(results)} results from r/{subreddit}")
             return results
 
         except requests.exceptions.Timeout:
             logger.warning(f"Reddit timeout for r/{subreddit} (attempt {attempt + 1}/{max_retries})")
-            metrics.increment('errors')
+            metrics.increment("errors")
             if attempt < max_retries - 1:
-                metrics.increment('retries')
+                metrics.increment("retries")
                 time.sleep(RETRY_DELAY)
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Reddit request error for r/{subreddit}: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return []
 
         except Exception as e:
             logger.error(f"Reddit search error for r/{subreddit}: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return []
 
     return []
 
 
-def search_reddit(
-    query: SearchQuery,
-    subreddits: list,
-    logger=None,
-    metrics=None,
-    cache=None
-) -> SearchResponse:
+def search_reddit(query: SearchQuery, subreddits: list, logger=None, metrics=None, cache=None) -> SearchResponse:
     """
     Search multiple subreddits.
 
@@ -173,14 +159,14 @@ def search_reddit(
         cached_data = cache.get(" ".join(query.keywords), filters)
         if cached_data:
             logger.info("Cache hit for Reddit query")
-            metrics.increment('cache_hits')
+            metrics.increment("cache_hits")
             return SearchResponse(
                 success=True,
                 query=query,
                 results=[SearchResult.from_dict(r) for r in cached_data.get("results", [])],
-                search_time_seconds=time.time() - start_time
+                search_time_seconds=time.time() - start_time,
             )
-        metrics.increment('cache_misses')
+        metrics.increment("cache_misses")
 
     # Search all subreddits
     all_results = []
@@ -197,48 +183,22 @@ def search_reddit(
         }
         cache.set(" ".join(query.keywords), filters, cache_data)
 
-    return SearchResponse(
-        success=True,
-        query=query,
-        results=all_results,
-        search_time_seconds=time.time() - start_time
-    )
+    return SearchResponse(success=True, query=query, results=all_results, search_time_seconds=time.time() - start_time)
 
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Search Reddit for technical discussions"
-    )
-    parser.add_argument(
-        "query",
-        help="Search query keywords"
-    )
+    parser = argparse.ArgumentParser(description="Search Reddit for technical discussions")
+    parser.add_argument("query", help="Search query keywords")
     parser.add_argument(
         "--subreddits",
         default=",".join(DEFAULT_SUBREDDITS),
-        help=f"Comma-separated subreddits (default: {','.join(DEFAULT_SUBREDDITS)})"
+        help=f"Comma-separated subreddits (default: {','.join(DEFAULT_SUBREDDITS)})",
     )
-    parser.add_argument(
-        "--output",
-        default="reddit.json",
-        help="Output JSON file (default: reddit.json)"
-    )
-    parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="Disable cache"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Verbose output"
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Debug output"
-    )
+    parser.add_argument("--output", default="reddit.json", help="Output JSON file (default: reddit.json)")
+    parser.add_argument("--no-cache", action="store_true", help="Disable cache")
+    parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--debug", action="store_true", help="Debug output")
 
     args = parser.parse_args()
 
@@ -270,7 +230,7 @@ def main():
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(response.to_dict(), f, indent=2, ensure_ascii=False)
 
     # Print summary

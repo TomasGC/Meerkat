@@ -15,7 +15,6 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -102,7 +101,7 @@ def profile_endpoint(url: str, duration: int, rps: int) -> ProfilingResult:
 
             response_times.append(response_time_ms)
 
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             errors += 1
             response_times.append(5000)  # Timeout
 

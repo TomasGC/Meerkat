@@ -1,9 +1,6 @@
 """Tests for check_naming — magic numbers, magic strings, single-letter vars."""
 
-from pathlib import Path
-
 import pytest
-
 
 from cca.checkers.check_naming import _check_file
 
@@ -58,33 +55,36 @@ class TestRunSignature:
         f = tmp_path / "src.py"
         f.write_text("x = 1\n")
         from cca.checkers.check_naming import run
+
         result = run(tmp_path, "python", files=[f])
         assert result["success"] is True
         assert result["files_analyzed"] == 1
 
 
-@pytest.mark.parametrize("code,should_flag", [
-    # Single-letter in for loop — should NOT flag
-    ("for i in range(10):\n    print(i)\n", False),
-    ("for j, item in enumerate(items):\n    pass\n", False),
-    # Single-letter outside loop (not x/y/z which are math-exempt) — SHOULD flag
-    ("a = compute_total()\n", True),
-    # Named constant definition — should NOT flag magic number
-    ("MAX_RETRIES = 3600\n", False),
-    # Magic number in condition — SHOULD flag
-    ("if retries > 3600:\n    timeout()\n", True),
-    # Named constant used in condition — should NOT flag
-    ("MAX_RETRIES = 3600\nif retries > MAX_RETRIES:\n    pass\n", False),
-    # Allowed abbreviations — should NOT flag (these are > 1 char, won't match single-letter regex)
-    ("def get_user(id):\n    pass\n", False),
-    ("err = validate()\n", False),
-])
+@pytest.mark.parametrize(
+    "code,should_flag",
+    [
+        # Single-letter in for loop — should NOT flag
+        ("for i in range(10):\n    print(i)\n", False),
+        ("for j, item in enumerate(items):\n    pass\n", False),
+        # Single-letter outside loop (not x/y/z which are math-exempt) — SHOULD flag
+        ("a = compute_total()\n", True),
+        # Named constant definition — should NOT flag magic number
+        ("MAX_RETRIES = 3600\n", False),
+        # Magic number in condition — SHOULD flag
+        ("if retries > 3600:\n    timeout()\n", True),
+        # Named constant used in condition — should NOT flag
+        ("MAX_RETRIES = 3600\nif retries > MAX_RETRIES:\n    pass\n", False),
+        # Allowed abbreviations — should NOT flag (these are > 1 char, won't match single-letter regex)
+        ("def get_user(id):\n    pass\n", False),
+        ("err = validate()\n", False),
+    ],
+)
 def test_naming_parametrized(tmp_path, code, should_flag):
     f = tmp_path / "module.py"
     f.write_text(code)
     from cca.checkers.check_naming import _check_file
+
     violations = _check_file(f, tmp_path)
     has_violations = len(violations) > 0
-    assert has_violations == should_flag, (
-        f"Code:\n{code!r}\nExpected violations={should_flag}, got {violations}"
-    )
+    assert has_violations == should_flag, f"Code:\n{code!r}\nExpected violations={should_flag}, got {violations}"

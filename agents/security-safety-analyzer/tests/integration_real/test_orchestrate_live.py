@@ -3,6 +3,7 @@
 The security checker's AI pass analyzes every fixture file, so a run takes minutes; with the model
 offloaded to CPU, over ten. It lived in the mock tier until #36, where it hung the CI-safe run.
 """
+
 import json
 import subprocess
 import sys
@@ -51,10 +52,21 @@ class UserService:
 def _run_orchestrate(src: Path, checks: str, fmt: str) -> subprocess.CompletedProcess:
     """Run orchestrate.py to completion, at most _TIMEOUT_S seconds."""
     return subprocess.run(
-        [sys.executable, str(SCRIPTS_DIR / "orchestrate.py"),
-         "--path", str(src), "--checks", checks,
-         "--format", fmt, "--no-cache", "--full"],
-        capture_output=True, text=True, timeout=_TIMEOUT_S,
+        [
+            sys.executable,
+            str(SCRIPTS_DIR / "orchestrate.py"),
+            "--path",
+            str(src),
+            "--checks",
+            checks,
+            "--format",
+            fmt,
+            "--no-cache",
+            "--full",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=_TIMEOUT_S,
     )
 
 

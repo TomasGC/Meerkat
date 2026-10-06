@@ -7,13 +7,8 @@ the AI pass itself (run_hybrid's own availability gate + analyze_files_parallel)
 is patched on lib.engine.hybrid, since that's where the real call sites live.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
-
-import cca.checkers.check_solid as solid_mod
 from cca.checkers.check_solid import run
 
 # Patch targets: check_solid's own early guard vs. run_hybrid's internal call sites.
@@ -24,11 +19,7 @@ _HYBRID_ANALYZE_PARALLEL = "lib.engine.hybrid.analyze_files_parallel"
 
 def test_solid_returns_violations_when_server_available(tmp_path):
     """SOLID checker maps local AI items to SOLID:X violations."""
-    (tmp_path / "app.py").write_text(
-        "class GodClass:\n"
-        "    def a(self): pass\n"
-        "    def b(self): pass\n"
-    )
+    (tmp_path / "app.py").write_text("class GodClass:\n" "    def a(self): pass\n" "    def b(self): pass\n")
     mock_items = [
         {
             "source_file": str(tmp_path / "app.py"),
@@ -39,9 +30,9 @@ def test_solid_returns_violations_when_server_available(tmp_path):
             "suggestion": "Split class",
         }
     ]
-    with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=mock_items):
+    with patch(_CHECK_AVAILABLE, return_value=True), patch(_HYBRID_CHECK_AVAILABLE, return_value=True), patch(
+        _HYBRID_ANALYZE_PARALLEL, return_value=mock_items
+    ):
         result = run(tmp_path, "python")
 
     assert result["success"] is True
@@ -52,9 +43,9 @@ def test_solid_returns_violations_when_server_available(tmp_path):
 def test_solid_empty_violations_when_no_issues(tmp_path):
     """Empty AI response → 0 violations, success=True."""
     (tmp_path / "app.py").write_text("class Service: pass\n")
-    with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]):
+    with patch(_CHECK_AVAILABLE, return_value=True), patch(_HYBRID_CHECK_AVAILABLE, return_value=True), patch(
+        _HYBRID_ANALYZE_PARALLEL, return_value=[]
+    ):
         result = run(tmp_path, "python")
 
     assert result["success"] is True
@@ -85,6 +76,7 @@ def test_solid_return_schema(tmp_path):
 
 # ── files param + model override ────────────────────────────────────────────────
 
+
 def test_solid_files_param_skips_discovery(tmp_path):
     """When files param provided, only those files are analyzed (no discovery)."""
     explicit = tmp_path / "explicit.py"
@@ -92,9 +84,9 @@ def test_solid_files_param_skips_discovery(tmp_path):
     other = tmp_path / "other.py"
     other.write_text("class Y: pass\n")
 
-    with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+    with patch(_CHECK_AVAILABLE, return_value=True), patch(_HYBRID_CHECK_AVAILABLE, return_value=True), patch(
+        _HYBRID_ANALYZE_PARALLEL, return_value=[]
+    ) as mock_analyze:
         run(tmp_path, "python", files=[explicit])
 
     called_files = mock_analyze.call_args[0][0]
@@ -105,9 +97,9 @@ def test_solid_files_param_skips_discovery(tmp_path):
 def test_solid_role_override_propagated(tmp_path):
     """role param is passed to analyze_files_parallel."""
     (tmp_path / "app.py").write_text("class X: pass\n")
-    with patch(_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_CHECK_AVAILABLE, return_value=True), \
-         patch(_HYBRID_ANALYZE_PARALLEL, return_value=[]) as mock_analyze:
+    with patch(_CHECK_AVAILABLE, return_value=True), patch(_HYBRID_CHECK_AVAILABLE, return_value=True), patch(
+        _HYBRID_ANALYZE_PARALLEL, return_value=[]
+    ) as mock_analyze:
         run(tmp_path, "python", role="deep")
 
     called_role = mock_analyze.call_args[0][2]  # positional: files, language, role, prompt

@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 """Tests for resume_project_common.py"""
 
-import pytest
 import subprocess
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+from cli.resume_project_common import check_claude_cli, convert_to_git_bash_path, resume_project, validate_project_setup
 
 # Add parent directory to path for imports
 
-from cli.resume_project_common import (
-    validate_project_setup,
-    check_claude_cli,
-    convert_to_git_bash_path,
-    resume_project
-)
 
 class TestValidateProjectSetup:
     """Test project setup validation."""
@@ -51,6 +46,7 @@ class TestValidateProjectSetup:
         captured = capsys.readouterr()
         assert "[WARN] No task tracking yet" in captured.out
 
+
 class TestCheckClaudeCli:
     """Test Claude CLI availability check."""
 
@@ -74,6 +70,7 @@ class TestCheckClaudeCli:
         assert result is False
         captured = capsys.readouterr()
         assert "Claude Code CLI not found" in captured.err
+
 
 class TestConvertToGitBashPath:
     """Test Windows path to Git Bash path conversion."""
@@ -106,6 +103,7 @@ class TestConvertToGitBashPath:
         result = convert_to_git_bash_path(path)
 
         assert result == "/home/tomas/project"
+
 
 class TestResumeProject:
     """Test main resume_project function."""
@@ -158,11 +156,7 @@ class TestResumeProject:
 
     def test_project_root_not_exists(self, capsys):
         """Test error when project root doesn't exist."""
-        result = resume_project(
-            "Name",
-            "Description",
-            Path("/nonexistent/path")
-        )
+        result = resume_project("Name", "Description", Path("/nonexistent/path"))
 
         assert result == 1
         captured = capsys.readouterr()

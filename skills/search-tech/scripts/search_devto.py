@@ -10,8 +10,8 @@ import argparse
 import json
 import sys
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 # Put the scripts dir on the path for the search_tech package
 sys.path.insert(0, str(Path(__file__).parent))
@@ -22,10 +22,9 @@ except ImportError:
     print("Error: requests library not found. Install with: pip install requests", file=sys.stderr)
     sys.exit(1)
 
-from search_tech.models import SearchQuery, SearchResult, SearchResponse, Source, ResultType, ValidationError
-from search_tech.logger import setup_logger, MetricsCollector, get_defaults
 from search_tech.cache import SearchCache
-
+from search_tech.logger import MetricsCollector, get_defaults, setup_logger
+from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source, ValidationError
 
 API_BASE = "https://dev.to/api"
 MAX_RESULTS = 5
@@ -33,13 +32,7 @@ MAX_RETRIES = 3
 RETRY_DELAY = 2
 
 
-def search_devto(
-    query: SearchQuery,
-    logger=None,
-    metrics=None,
-    cache=None,
-    max_retries=MAX_RETRIES
-) -> SearchResponse:
+def search_devto(query: SearchQuery, logger=None, metrics=None, cache=None, max_retries=MAX_RETRIES) -> SearchResponse:
     """
     Search Dev.to articles.
 
@@ -63,24 +56,24 @@ def search_devto(
         cached_data = cache.get(" ".join(query.keywords), filters)
         if cached_data:
             logger.info("Cache hit for Dev.to query")
-            metrics.increment('cache_hits')
+            metrics.increment("cache_hits")
             return SearchResponse(
                 success=True,
                 query=query,
                 results=[SearchResult.from_dict(r) for r in cached_data.get("results", [])],
-                search_time_seconds=time.time() - start_time
+                search_time_seconds=time.time() - start_time,
             )
-        metrics.increment('cache_misses')
+        metrics.increment("cache_misses")
 
     logger.debug(f"Searching Dev.to for: {' '.join(query.keywords)}")
 
     # Retry logic
     for attempt in range(max_retries):
         try:
-            metrics.increment('api_calls')
+            metrics.increment("api_calls")
 
             # Dev.to API - search articles
-            params = {
+            params: dict[str, int | str] = {
                 "per_page": MAX_RESULTS * 3,  # Get more to filter later
             }
 
@@ -88,16 +81,9 @@ def search_devto(
             if query.tags:
                 params["tag"] = query.tags[0]  # Dev.to only supports one tag at a time
 
-            headers = {
-                "User-Agent": "TechnicalSearchBot/1.0"
-            }
+            headers = {"User-Agent": "TechnicalSearchBot/1.0"}
 
-            response = requests.get(
-                f"{API_BASE}/articles",
-                params=params,
-                headers=headers,
-                timeout=10
-            )
+            response = requests.get(f"{API_BASE}/articles", params=params, headers=headers, timeout=10)
 
             response.raise_for_status()
             articles = response.json()
@@ -138,12 +124,16 @@ def search_devto(
                     excerpt=excerpt.strip(),
                     comments=article.get("comments_count", 0),
                     tags=article.get("tag_list", []),
-                    created_date=datetime.fromisoformat(article.get("published_at", "").replace("Z", "+00:00")) if article.get("published_at") else None,
+                    created_date=(
+                        datetime.fromisoformat(article.get("published_at", "").replace("Z", "+00:00"))
+                        if article.get("published_at")
+                        else None
+                    ),
                     repository=f"@{article.get('user', {}).get('username', 'unknown')}",
                 )
                 results.append(result)
 
-            metrics.increment('total_results', len(results))
+            metrics.increment("total_results", len(results))
             logger.info(f"Found {len(results)} results from Dev.to")
 
             # Cache results
@@ -156,81 +146,50 @@ def search_devto(
                 cache.set(" ".join(query.keywords), filters, cache_data)
 
             return SearchResponse(
-                success=True,
-                query=query,
-                results=results,
-                search_time_seconds=time.time() - start_time
+                success=True, query=query, results=results, search_time_seconds=time.time() - start_time
             )
 
         except requests.exceptions.Timeout:
             logger.warning(f"Dev.to timeout (attempt {attempt + 1}/{max_retries})")
-            metrics.increment('errors')
+            metrics.increment("errors")
             if attempt < max_retries - 1:
-                metrics.increment('retries')
+                metrics.increment("retries")
                 time.sleep(RETRY_DELAY)
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Dev.to request error: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return SearchResponse(
                 success=False,
                 query=query,
                 error=f"Dev.to API error: {str(e)}",
-                search_time_seconds=time.time() - start_time
+                search_time_seconds=time.time() - start_time,
             )
 
         except Exception as e:
             logger.error(f"Dev.to search error: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
             return SearchResponse(
                 success=False,
                 query=query,
                 error=f"Unexpected error: {str(e)}",
-                search_time_seconds=time.time() - start_time
+                search_time_seconds=time.time() - start_time,
             )
 
     return SearchResponse(
-        success=False,
-        query=query,
-        error="All retry attempts failed",
-        search_time_seconds=time.time() - start_time
+        success=False, query=query, error="All retry attempts failed", search_time_seconds=time.time() - start_time
     )
 
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Search Dev.to for technical articles"
-    )
-    parser.add_argument(
-        "query",
-        help="Search query keywords"
-    )
-    parser.add_argument(
-        "--tags",
-        default="",
-        help="Comma-separated tags (e.g., react,javascript)"
-    )
-    parser.add_argument(
-        "--output",
-        default="devto.json",
-        help="Output JSON file (default: devto.json)"
-    )
-    parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="Disable cache"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Verbose output"
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Debug output"
-    )
+    parser = argparse.ArgumentParser(description="Search Dev.to for technical articles")
+    parser.add_argument("query", help="Search query keywords")
+    parser.add_argument("--tags", default="", help="Comma-separated tags (e.g., react,javascript)")
+    parser.add_argument("--output", default="devto.json", help="Output JSON file (default: devto.json)")
+    parser.add_argument("--no-cache", action="store_true", help="Disable cache")
+    parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--debug", action="store_true", help="Debug output")
 
     args = parser.parse_args()
 
@@ -263,7 +222,7 @@ def main():
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(response.to_dict(), f, indent=2, ensure_ascii=False)
 
     # Print summary

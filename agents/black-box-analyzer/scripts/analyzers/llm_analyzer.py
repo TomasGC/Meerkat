@@ -8,13 +8,8 @@ Handles detection and analysis of LLM agent systems:
 """
 
 import re
-import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from bba.constants import LLM_PATTERNS
 from bba.models import (
     EntryPoint,
     EntryPointType,
@@ -197,7 +192,7 @@ class LLMAnalyzer(BaseAnalyzer):
 
     def _parse_python_params(self, params_str: str) -> list[Parameter]:
         """Parse Python function parameters."""
-        params = []
+        params: list[Parameter] = []
 
         if not params_str.strip():
             return params
@@ -256,9 +251,7 @@ class LLMAnalyzer(BaseAnalyzer):
                     Scenario(
                         endpoint=entry_point.name,
                         method="TOOL",
-                        input_combination={
-                            "params": {p.name: "valid_value" for p in entry_point.params}
-                        },
+                        input_combination={"params": {p.name: "valid_value" for p in entry_point.params}},
                         expected_output=0,
                         scenario_type="happy_path",
                         description=f"Valid input to tool {entry_point.name}",

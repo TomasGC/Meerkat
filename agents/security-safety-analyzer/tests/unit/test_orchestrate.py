@@ -1,9 +1,6 @@
 """Unit tests for internal helpers in orchestrate.py."""
-from pathlib import Path
+
 from unittest.mock import patch
-
-import pytest
-
 
 from ssa.orchestrate import (
     CHECKERS,
@@ -46,14 +43,20 @@ class TestMiniBar:
 class TestBuildSummary:
     def test_counts_severities(self):
         results = [
-            {"principle": "Security", "violations": [
-                {"severity": "high"},
-                {"severity": "high"},
-                {"severity": "medium"},
-            ]},
-            {"principle": "CrashBug", "violations": [
-                {"severity": "low"},
-            ]},
+            {
+                "principle": "Security",
+                "violations": [
+                    {"severity": "high"},
+                    {"severity": "high"},
+                    {"severity": "medium"},
+                ],
+            },
+            {
+                "principle": "CrashBug",
+                "violations": [
+                    {"severity": "low"},
+                ],
+            },
         ]
         summary = _build_summary(results)
         assert summary["Security"]["count"] == 3
@@ -74,13 +77,22 @@ class TestBuildSummary:
 class TestCheckersDict:
     def test_all_checkers_present(self):
         expected = {
-            "security", "crypto", "deserialization", "misconfiguration", "sensitive_data",
-            "crash_bugs", "concurrency", "resource_leaks", "error_handling", "prompt_injection",
+            "security",
+            "crypto",
+            "deserialization",
+            "misconfiguration",
+            "sensitive_data",
+            "crash_bugs",
+            "concurrency",
+            "resource_leaks",
+            "error_handling",
+            "prompt_injection",
         }
         assert set(CHECKERS.keys()) == expected
 
     def test_every_checker_module_is_importable(self):
         import importlib
+
         for key, module_path in CHECKERS.items():
             mod = importlib.import_module(module_path)
             assert callable(mod.run), f"{key}: run() missing"
@@ -118,6 +130,7 @@ class TestRunChecker:
 
     def _fake_module(self, run_fn):
         import types
+
         mod = types.ModuleType("ssa.checkers.fake")
         mod.run = run_fn
         return mod
@@ -129,8 +142,7 @@ class TestRunChecker:
             captured["cache_dir"] = cache_dir
             return {"success": True, "violations": []}
 
-        with patch("lib.engine.orchestrator.importlib.import_module",
-                   return_value=self._fake_module(declares)):
+        with patch("lib.engine.orchestrator.importlib.import_module", return_value=self._fake_module(declares)):
             _run_checker("fake", "ssa.checkers.fake", tmp_path, "python", cache_dir=tmp_path / "c")
         assert captured["cache_dir"] == tmp_path / "c"
 
@@ -138,14 +150,14 @@ class TestRunChecker:
         def plain(path, language, files=None):
             return {"success": True, "violations": []}
 
-        with patch("lib.engine.orchestrator.importlib.import_module",
-                   return_value=self._fake_module(plain)):
+        with patch("lib.engine.orchestrator.importlib.import_module", return_value=self._fake_module(plain)):
             result = _run_checker("fake", "ssa.checkers.fake", tmp_path, "python", cache_dir=tmp_path / "c")
         assert result["success"] is True, result.get("error")
 
     def test_no_ssa_checker_declares_cache_dir(self):
         import importlib
         import inspect
+
         for key, module_path in CHECKERS.items():
             params = inspect.signature(importlib.import_module(module_path).run).parameters
             assert "cache_dir" not in params, key

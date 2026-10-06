@@ -7,20 +7,22 @@ Tests all 19 project types with real fixtures.
 from pathlib import Path
 
 import pytest
+
 from analyze_project_structure import analyze_project as detect_project_structure
 from analyzers.api_analyzer import APIAnalyzer
+from analyzers.blockchain.smart_contract_analyzer import SmartContractAnalyzer
 from analyzers.cli_analyzer import CLIAnalyzer
-from analyzers.mobile_analyzer import MobileAnalyzer
-from analyzers.frontend_analyzer import FrontendAnalyzer
-from analyzers.llm_analyzer import LLMAnalyzer
-from analyzers.sql_analyzer import SQLAnalyzer
+from analyzers.event_driven.message_queue_analyzer import MessageQueueAnalyzer
 from analyzers.event_driven.serverless_analyzer import ServerlessAnalyzer
 from analyzers.event_driven.worker_analyzer import WorkerAnalyzer
-from analyzers.event_driven.message_queue_analyzer import MessageQueueAnalyzer
-from analyzers.blockchain.smart_contract_analyzer import SmartContractAnalyzer
-from bba.models import ProjectType, EntryPointType
+from analyzers.frontend_analyzer import FrontendAnalyzer
+from analyzers.llm_analyzer import LLMAnalyzer
+from analyzers.mobile_analyzer import MobileAnalyzer
+from analyzers.sql_analyzer import SQLAnalyzer
+from bba.models import EntryPointType, ProjectType
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "integration_real"
+
 
 class TestCLIProject:
     """Test CLI project detection and analysis."""
@@ -39,7 +41,6 @@ class TestCLIProject:
 
     def test_extract_cli_commands(self, cli_project):
         """Should extract CLI commands and flags."""
-        project_info = detect_project_structure(cli_project)
         analyzer = CLIAnalyzer()
 
         entry_points = analyzer.extract_entry_points(cli_project)
@@ -57,6 +58,7 @@ class TestCLIProject:
         assert "force" in flag_names or "f" in flag_names
         assert "environment" in flag_names or "e" in flag_names
 
+
 class TestAndroidProject:
     """Test Android project detection and analysis."""
 
@@ -72,7 +74,6 @@ class TestAndroidProject:
 
     def test_extract_android_activities(self, android_project):
         """Should extract Activities and lifecycle methods."""
-        project_info = detect_project_structure(android_project)
         analyzer = MobileAnalyzer()
 
         entry_points = analyzer.extract_entry_points(android_project)
@@ -87,6 +88,7 @@ class TestAndroidProject:
         # Check for UI handlers
         ui_handlers = [ep for ep in entry_points if ep.type == EntryPointType.UI_HANDLER]
         assert len(ui_handlers) >= 1  # onButtonClick
+
 
 class TestFrontendProject:
     """Test React frontend project detection and analysis."""
@@ -104,7 +106,6 @@ class TestFrontendProject:
 
     def test_extract_react_components(self, frontend_project):
         """Should extract React components and hooks."""
-        project_info = detect_project_structure(frontend_project)
         analyzer = FrontendAnalyzer()
 
         entry_points = analyzer.extract_entry_points(frontend_project)
@@ -121,6 +122,7 @@ class TestFrontendProject:
         prop_names = [p.name for p in component.params]
         assert "userId" in prop_names
 
+
 class TestLLMProject:
     """Test LLM agent project detection and analysis."""
 
@@ -136,7 +138,6 @@ class TestLLMProject:
 
     def test_extract_langchain_tools(self, llm_project):
         """Should extract LangChain tools and agents."""
-        project_info = detect_project_structure(llm_project)
         analyzer = LLMAnalyzer()
 
         entry_points = analyzer.extract_entry_points(llm_project)
@@ -153,6 +154,7 @@ class TestLLMProject:
         assert "search_documents" in tool_names
         assert "calculate_risk" in tool_names
 
+
 class TestSQLProject:
     """Test SQL project detection and analysis."""
 
@@ -168,7 +170,6 @@ class TestSQLProject:
 
     def test_extract_stored_procedures(self, sql_project):
         """Should extract stored procedures and functions."""
-        project_info = detect_project_structure(sql_project)
         analyzer = SQLAnalyzer()
 
         entry_points = analyzer.extract_entry_points(sql_project)
@@ -185,6 +186,7 @@ class TestSQLProject:
         functions = [ep for ep in entry_points if ep.type == EntryPointType.SQL_FUNCTION]
         assert len(functions) >= 2
 
+
 class TestServerlessProject:
     """Test serverless project detection and analysis."""
 
@@ -200,7 +202,6 @@ class TestServerlessProject:
 
     def test_extract_lambda_handlers(self, serverless_project):
         """Should extract Lambda handlers."""
-        project_info = detect_project_structure(serverless_project)
         analyzer = ServerlessAnalyzer()
 
         entry_points = analyzer.extract_entry_points(serverless_project)
@@ -211,6 +212,7 @@ class TestServerlessProject:
         # Check Lambda handler type
         lambda_handlers = [ep for ep in entry_points if ep.type == EntryPointType.LAMBDA_HANDLER]
         assert len(lambda_handlers) >= 2
+
 
 class TestWorkerProject:
     """Test background worker project detection and analysis."""
@@ -227,7 +229,6 @@ class TestWorkerProject:
 
     def test_extract_celery_tasks(self, worker_project):
         """Should extract Celery tasks."""
-        project_info = detect_project_structure(worker_project)
         analyzer = WorkerAnalyzer()
 
         entry_points = analyzer.extract_entry_points(worker_project)
@@ -244,6 +245,7 @@ class TestWorkerProject:
         assert "send_email" in task_names
         assert "process_payment" in task_names
 
+
 class TestMessageQueueProject:
     """Test message queue project detection and analysis."""
 
@@ -259,7 +261,6 @@ class TestMessageQueueProject:
 
     def test_extract_kafka_consumers(self, mq_project):
         """Should extract Kafka consumers."""
-        project_info = detect_project_structure(mq_project)
         analyzer = MessageQueueAnalyzer()
 
         entry_points = analyzer.extract_entry_points(mq_project)
@@ -270,6 +271,7 @@ class TestMessageQueueProject:
         # Check consumer type
         consumers = [ep for ep in entry_points if ep.type == EntryPointType.MESSAGE_CONSUMER]
         assert len(consumers) >= 1
+
 
 class TestSmartContractProject:
     """Test smart contract project detection and analysis."""
@@ -286,7 +288,6 @@ class TestSmartContractProject:
 
     def test_extract_solidity_functions(self, contract_project):
         """Should extract Solidity contract functions."""
-        project_info = detect_project_structure(contract_project)
         analyzer = SmartContractAnalyzer()
 
         entry_points = analyzer.extract_entry_points(contract_project)
@@ -306,6 +307,7 @@ class TestSmartContractProject:
         modifiers = [ep for ep in entry_points if ep.type == EntryPointType.CONTRACT_MODIFIER]
         assert len(modifiers) >= 2
 
+
 class TestHybridProject:
     """Test hybrid project detection and analysis."""
 
@@ -324,8 +326,6 @@ class TestHybridProject:
 
     def test_analyze_hybrid_project(self, hybrid_project):
         """Should analyze both mobile and API components."""
-        project_info = detect_project_structure(hybrid_project)
-
         # Mobile analyzer should work
         mobile_analyzer = MobileAnalyzer()
         mobile_entry_points = mobile_analyzer.extract_entry_points(hybrid_project)

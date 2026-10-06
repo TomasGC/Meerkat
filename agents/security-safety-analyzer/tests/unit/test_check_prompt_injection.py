@@ -1,11 +1,9 @@
 """Unit tests for check_prompt_injection — mechanical path only (AI mocked out)."""
+
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
-
-from ssa.checkers.check_prompt_injection import run, _mechanical_check, _PRINCIPLE
+from ssa.checkers.check_prompt_injection import _PRINCIPLE, _mechanical_check, run
 
 
 def _make_file(tmp_path: Path, name: str, content: str) -> Path:
@@ -23,7 +21,7 @@ class TestMechanicalCheck:
         assert violations[0]["severity"] == "high"
 
     def test_detects_format_with_input(self, tmp_path):
-        code = 'prompt = template.format(content=request.body)\n'
+        code = "prompt = template.format(content=request.body)\n"
         f = _make_file(tmp_path, "handler.py", code)
         violations = _mechanical_check(f, tmp_path, "python")
         assert len(violations) >= 1
@@ -35,7 +33,7 @@ class TestMechanicalCheck:
         assert violations == []
 
     def test_detects_js_template_literal(self, tmp_path):
-        code = 'const prompt = `User says: ${userInput}`;\n'
+        code = "const prompt = `User says: ${userInput}`;\n"
         f = _make_file(tmp_path, "api.ts", code)
         violations = _mechanical_check(f, tmp_path, "typescript")
         assert len(violations) >= 1
@@ -77,8 +75,9 @@ class TestRunFunction:
 
     def test_prompt_group_never_reaches_the_ai(self, tmp_path):
         f = _make_file(tmp_path, "system.prompt", "Answer the following: {user_input}\n")
-        with patch("ssa.checkers.check_prompt_injection.check_server_available", return_value=True), \
-             patch("ssa.checkers.check_prompt_injection.analyze_files_parallel") as ai:
+        with patch("ssa.checkers.check_prompt_injection.check_server_available", return_value=True), patch(
+            "ssa.checkers.check_prompt_injection.analyze_files_parallel"
+        ) as ai:
             run(tmp_path, "prompt", files=[f])
         ai.assert_not_called()
 

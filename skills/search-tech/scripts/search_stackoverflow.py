@@ -8,12 +8,12 @@ Usage:
 
 import argparse
 import json
-import sys
 import os
 import re
-from pathlib import Path
-from datetime import datetime, timedelta
+import sys
 import time
+from datetime import datetime, timedelta
+from pathlib import Path
 
 # Put the scripts dir on the path for the search_tech package
 sys.path.insert(0, str(Path(__file__).parent))
@@ -24,10 +24,9 @@ except ImportError:
     print("Error: requests library not found. Install with: pip install requests", file=sys.stderr)
     sys.exit(1)
 
-from search_tech.models import SearchQuery, SearchResult, SearchResponse, Source, ResultType, ValidationError
-from search_tech.logger import setup_logger, MetricsCollector, get_defaults
 from search_tech.cache import SearchCache
-
+from search_tech.logger import MetricsCollector, get_defaults, setup_logger
+from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source, ValidationError
 
 API_BASE = "https://api.stackexchange.com/2.3"
 MAX_RESULTS = 5
@@ -36,11 +35,7 @@ RETRY_DELAY = 2  # seconds
 
 
 def search_stackoverflow(
-    query: SearchQuery,
-    logger=None,
-    metrics=None,
-    cache=None,
-    max_retries=MAX_RETRIES
+    query: SearchQuery, logger=None, metrics=None, cache=None, max_retries=MAX_RETRIES
 ) -> SearchResponse:
     """
     Search StackOverflow API with retry logic and caching.
@@ -69,14 +64,14 @@ def search_stackoverflow(
         cached_data = cache.get(" ".join(query.keywords), filters)
         if cached_data:
             logger.info("Cache hit for StackOverflow query")
-            metrics.increment('cache_hits')
+            metrics.increment("cache_hits")
             return SearchResponse(
                 success=cached_data["success"],
                 query=query,
                 results=[SearchResult.from_dict(r) for r in cached_data.get("results", [])],
-                search_time_seconds=time.time() - start_time
+                search_time_seconds=time.time() - start_time,
             )
-        metrics.increment('cache_misses')
+        metrics.increment("cache_misses")
 
     # Build API parameters
     params = {
@@ -111,26 +106,22 @@ def search_stackoverflow(
     last_error = None
     for attempt in range(max_retries):
         try:
-            metrics.increment('api_calls')
+            metrics.increment("api_calls")
 
-            response = requests.get(
-                f"{API_BASE}/search/advanced",
-                params=params,
-                timeout=10
-            )
+            response = requests.get(f"{API_BASE}/search/advanced", params=params, timeout=10)
 
             # Rate limit
             if response.status_code == 429:
                 quota_remaining = response.headers.get("X-RateLimit-Remaining", 0)
                 error_msg = f"Rate limit exceeded. Remaining: {quota_remaining}"
                 logger.error(error_msg)
-                metrics.increment('errors')
+                metrics.increment("errors")
                 return SearchResponse(
                     success=False,
                     query=query,
                     error=error_msg,
                     rate_limit_exceeded=True,
-                    search_time_seconds=time.time() - start_time
+                    search_time_seconds=time.time() - start_time,
                 )
 
             response.raise_for_status()
@@ -140,7 +131,7 @@ def search_stackoverflow(
             results = []
             for item in data.get("items", []):
                 body = item.get("body", "")
-                clean_body = re.sub(r'<[^>]+>', '', body)
+                clean_body = re.sub(r"<[^>]+>", "", body)
                 excerpt = clean_body[:200] + "..." if len(clean_body) > 200 else clean_body
 
                 result = SearchResult(
@@ -158,7 +149,7 @@ def search_stackoverflow(
                 )
                 results.append(result)
 
-            metrics.increment('total_results', len(results))
+            metrics.increment("total_results", len(results))
             logger.info(f"Found {len(results)} results from StackOverflow")
 
             # Cache successful response
@@ -176,88 +167,44 @@ def search_stackoverflow(
                 cache.set(" ".join(query.keywords), filters, cache_data)
 
             return SearchResponse(
-                success=True,
-                query=query,
-                results=results,
-                search_time_seconds=time.time() - start_time
+                success=True, query=query, results=results, search_time_seconds=time.time() - start_time
             )
 
-        except requests.exceptions.Timeout as e:
+        except requests.exceptions.Timeout:
             last_error = "StackOverflow API timeout (>10s)"
             logger.warning(f"Timeout on attempt {attempt + 1}/{max_retries}")
-            metrics.increment('errors')
+            metrics.increment("errors")
 
         except requests.exceptions.RequestException as e:
             last_error = f"StackOverflow API error: {str(e)}"
             logger.warning(f"Request error on attempt {attempt + 1}/{max_retries}: {e}")
-            metrics.increment('errors')
+            metrics.increment("errors")
 
         # Retry with delay
         if attempt < max_retries - 1:
-            metrics.increment('retries')
+            metrics.increment("retries")
             logger.info(f"Retrying in {RETRY_DELAY}s...")
             time.sleep(RETRY_DELAY)
 
     # All retries failed
     logger.error(f"All {max_retries} attempts failed: {last_error}")
     return SearchResponse(
-        success=False,
-        query=query,
-        error=last_error or "Unknown error",
-        search_time_seconds=time.time() - start_time
+        success=False, query=query, error=last_error or "Unknown error", search_time_seconds=time.time() - start_time
     )
 
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Search StackOverflow API for technical solutions"
-    )
-    parser.add_argument(
-        "query",
-        help="Search query keywords"
-    )
-    parser.add_argument(
-        "--tags",
-        default="",
-        help="Comma-separated tags (e.g., typescript,javascript)"
-    )
-    parser.add_argument(
-        "--min-score",
-        type=int,
-        default=0,
-        help="Minimum score threshold (default: 0)"
-    )
-    parser.add_argument(
-        "--accepted-only",
-        action="store_true",
-        help="Only show questions with accepted answers"
-    )
-    parser.add_argument(
-        "--recent",
-        action="store_true",
-        help="Only show results from last 6 months"
-    )
-    parser.add_argument(
-        "--output",
-        default="stackoverflow.json",
-        help="Output JSON file (default: stackoverflow.json)"
-    )
-    parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="Disable cache"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Verbose output"
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Debug output"
-    )
+    parser = argparse.ArgumentParser(description="Search StackOverflow API for technical solutions")
+    parser.add_argument("query", help="Search query keywords")
+    parser.add_argument("--tags", default="", help="Comma-separated tags (e.g., typescript,javascript)")
+    parser.add_argument("--min-score", type=int, default=0, help="Minimum score threshold (default: 0)")
+    parser.add_argument("--accepted-only", action="store_true", help="Only show questions with accepted answers")
+    parser.add_argument("--recent", action="store_true", help="Only show results from last 6 months")
+    parser.add_argument("--output", default="stackoverflow.json", help="Output JSON file (default: stackoverflow.json)")
+    parser.add_argument("--no-cache", action="store_true", help="Disable cache")
+    parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--debug", action="store_true", help="Debug output")
 
     args = parser.parse_args()
 
@@ -293,7 +240,7 @@ def main():
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(response.to_dict(), f, indent=2, ensure_ascii=False)
 
     # Print summary

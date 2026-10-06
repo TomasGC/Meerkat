@@ -171,11 +171,11 @@ class EntryPointType(Enum):
     SQL_TRIGGER = "sql_trigger"
 
     # Event-Driven Entry Points
-    LAMBDA_HANDLER = "lambda_handler"              # AWS Lambda
-    FUNCTION_HANDLER = "function_handler"          # Azure Functions, Cloud Functions
-    BACKGROUND_JOB = "background_job"              # Celery, Sidekiq, Bull
-    MESSAGE_CONSUMER = "message_consumer"          # Kafka, RabbitMQ, SQS
-    EVENT_SUBSCRIBER = "event_subscriber"          # Event bus subscribers
+    LAMBDA_HANDLER = "lambda_handler"  # AWS Lambda
+    FUNCTION_HANDLER = "function_handler"  # Azure Functions, Cloud Functions
+    BACKGROUND_JOB = "background_job"  # Celery, Sidekiq, Bull
+    MESSAGE_CONSUMER = "message_consumer"  # Kafka, RabbitMQ, SQS
+    EVENT_SUBSCRIBER = "event_subscriber"  # Event bus subscribers
 
     # Blockchain Entry Points
     SMART_CONTRACT_FUNCTION = "smart_contract_function"
@@ -388,22 +388,36 @@ class TestCase:
         )
 
 
+def parse_method(value: str) -> "HTTPMethod | str":
+    """An HTTP verb as HTTPMethod; any other action label (CLI, EXECUTE, EVENT, ...) unchanged."""
+    try:
+        return HTTPMethod(value)
+    except ValueError:
+        return value
+
+
 @dataclass
 class Scenario:
     """Test scenario (input/output combination)."""
 
     endpoint: str
-    method: HTTPMethod
+    # An HTTP verb for API entry points; the analyzer's action label otherwise (CLI, EXECUTE, LIFECYCLE, EVENT, ...)
+    method: "HTTPMethod | str"
     input_combination: dict[str, Any]
     expected_output: int  # HTTP status code
     scenario_type: str  # "happy_path", "edge_case", "error", "security"
     description: str = ""
 
+    @property
+    def method_name(self) -> str:
+        """The method as text, whether an HTTP verb or an action label."""
+        return self.method.value if isinstance(self.method, HTTPMethod) else self.method
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
             "endpoint": self.endpoint,
-            "method": self.method.value,
+            "method": self.method_name,
             "input_combination": self.input_combination,
             "expected_output": self.expected_output,
             "scenario_type": self.scenario_type,
@@ -415,7 +429,7 @@ class Scenario:
         """Rebuild from a to_dict() payload."""
         return cls(
             endpoint=data["endpoint"],
-            method=HTTPMethod(data["method"]),
+            method=parse_method(data["method"]),
             input_combination=data["input_combination"],
             expected_output=data["expected_output"],
             scenario_type=data["scenario_type"],

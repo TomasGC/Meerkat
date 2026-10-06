@@ -1,15 +1,14 @@
 """Unit tests for common/file_utils.py — discovery, language detection, git helpers."""
+
 import subprocess
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-
 from ssa import file_utils
 from ssa.file_utils import (
-    dominant_language,
     discover_files,
+    dominant_language,
     get_branch_files,
     get_changed_files,
     get_staged_files,

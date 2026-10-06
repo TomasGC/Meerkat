@@ -8,6 +8,7 @@ import pytest
 from cli.find_git_repos import find_git_repos, get_repo_info
 from lib.utils import run_command, write_file_safe
 
+
 @pytest.fixture
 def multi_repo_structure(tmp_path):
     """Create a directory structure with multiple git repositories."""
@@ -85,6 +86,7 @@ def multi_repo_structure(tmp_path):
 
     return tmp_path, repos
 
+
 def test_find_git_repos_finds_all(multi_repo_structure):
     """Test finding all repositories."""
     root, expected_repos = multi_repo_structure
@@ -95,6 +97,7 @@ def test_find_git_repos_finds_all(multi_repo_structure):
     found_paths = {Path(r["path"]) for r in repos}
     expected_paths = set(expected_repos)
     assert found_paths == expected_paths
+
 
 def test_find_git_repos_max_depth_1(multi_repo_structure):
     """Test max depth of 1 level."""
@@ -107,6 +110,7 @@ def test_find_git_repos_max_depth_1(multi_repo_structure):
     found_names = {r["name"] for r in repos}
     assert found_names == {"repo1", "repo2"}
 
+
 def test_find_git_repos_max_depth_2(multi_repo_structure):
     """Test max depth of 2 levels."""
     root, expected_repos = multi_repo_structure
@@ -115,6 +119,7 @@ def test_find_git_repos_max_depth_2(multi_repo_structure):
 
     # Should find all 4 repos
     assert len(repos) == 4
+
 
 def test_find_git_repos_sorted(multi_repo_structure):
     """Test that results are sorted by path."""
@@ -126,11 +131,13 @@ def test_find_git_repos_sorted(multi_repo_structure):
     paths = [r["path"] for r in repos]
     assert paths == sorted(paths)
 
+
 def test_find_git_repos_empty_directory(tmp_path):
     """Test searching empty directory."""
     repos = find_git_repos(tmp_path, max_depth=-1)
 
     assert repos == []
+
 
 def test_find_git_repos_no_git_repos(tmp_path):
     """Test directory with no git repos."""
@@ -141,6 +148,7 @@ def test_find_git_repos_no_git_repos(tmp_path):
     repos = find_git_repos(tmp_path, max_depth=-1)
 
     assert repos == []
+
 
 def test_get_repo_info_basic(tmp_path):
     """Test getting basic repository info."""
@@ -160,6 +168,7 @@ def test_get_repo_info_basic(tmp_path):
     assert info["branch"] in ["master", "main"] or info["branch"] is None
     assert info["hasRemote"] is False
 
+
 def test_get_repo_info_with_remote(tmp_path):
     """Test getting repo info with remote."""
     # Create repo with remote
@@ -177,6 +186,7 @@ def test_get_repo_info_with_remote(tmp_path):
     assert info["hasRemote"] is True
     assert info["remote"] == "origin"
     assert info["remoteUrl"] == "https://github.com/test/repo.git"
+
 
 def test_find_git_repos_nested_repos(tmp_path):
     """Test handling of nested repositories."""
@@ -209,6 +219,7 @@ def test_find_git_repos_nested_repos(tmp_path):
     found_names = {r["name"] for r in repos}
     assert found_names == {"parent", "nested"}
 
+
 def test_find_git_repos_max_depth_0(multi_repo_structure):
     """Test max depth of 0 (search only root)."""
     root, expected_repos = multi_repo_structure
@@ -217,6 +228,7 @@ def test_find_git_repos_max_depth_0(multi_repo_structure):
 
     # Should find nothing (no repos in root itself)
     assert repos == []
+
 
 def test_get_repo_info_no_commits(tmp_path):
     """Test repo info for repository with no commits."""

@@ -9,16 +9,16 @@ _SHARED = Path(__file__).resolve().parents[4] / "scripts"
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
+from .cache import SearchCache
+from .logger import MetricsCollector, setup_logger
 from .models import (
-    Source,
     ResultType,
     SearchQuery,
-    SearchResult,
     SearchResponse,
+    SearchResult,
+    Source,
     ValidationError,
 )
-from .logger import setup_logger, MetricsCollector
-from .cache import SearchCache
 
 __all__ = [
     "Source",

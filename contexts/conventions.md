@@ -46,6 +46,15 @@ docs: document BBA analysis result cache
 - No hardcoded values — constants or config
 - No TODO/FIXME — fix or create issue
 - Type annotations on public functions
+- Style: black + isort, line length 120 (`pyproject.toml`, `.flake8`): the settings Condor's lint gate applies (#48)
+- No blanket suppression. A re-export is declared in `__all__`, not hidden behind `# noqa: F401`; `# noqa`,
+  `# type: ignore[code]` and `# nosec` name their reason on the same line. E402 is allowed only where a file runs as a
+  script and must put `scripts/` on `sys.path` first (per-file list in `.flake8`)
+- A fixture requested only for its side effect is `@pytest.mark.usefixtures("name")`, not an unused argument
+- A test patches the call site the code really uses (`lib.utils.subprocess.run` for `run_command`), not a module
+  attribute the code never reads
+- A bug a test exposes but the change does not fix: the test asserts the right behaviour and carries
+  `@pytest.mark.xfail(strict=True, reason="bug (#N): ...")` with an issue; strict mode fails the run once it is fixed
 
 ---
 

@@ -10,7 +10,6 @@ Usage:
     python lint_code.py --file src/api.ts --fix
 """
 
-import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -110,7 +109,7 @@ class LintCode(BaseCLIScript):
 
         # Find files
         pattern = "**/*" if self.args.recursive else "*"
-        files = []
+        files: list[Path] = []
 
         for ext in [".py", ".ts", ".tsx", ".js", ".jsx", ".go"]:
             files.extend(dir_path.glob(f"{pattern}{ext}"))

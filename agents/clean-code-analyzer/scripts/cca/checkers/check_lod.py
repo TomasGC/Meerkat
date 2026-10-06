@@ -4,7 +4,7 @@
 import re
 from pathlib import Path
 
-from lib.engine.discovery import _SKIP_DIRS, _ALL_EXTENSIONS
+from lib.engine.discovery import _ALL_EXTENSIONS, _SKIP_DIRS
 from lib.engine.hybrid import run_hybrid
 
 # Method chain depth > 2: matches a.b().c().d() style
@@ -46,14 +46,16 @@ def _check_file(file: Path, root: Path) -> list[dict]:
             chain = m.group(0)
             depth = chain.count("().")
             if depth >= 2:
-                violations.append({
-                    "principle": "LawOfDemeter",
-                    "file": rel,
-                    "line": i,
-                    "severity": "medium" if depth == 2 else "high",
-                    "message": f"Method chain depth {depth + 1}: `{chain[:60]}`",
-                    "suggestion": "Introduce intermediate local variables or delegate to the direct collaborator",
-                })
+                violations.append(
+                    {
+                        "principle": "LawOfDemeter",
+                        "file": rel,
+                        "line": i,
+                        "severity": "medium" if depth == 2 else "high",
+                        "message": f"Method chain depth {depth + 1}: `{chain[:60]}`",
+                        "suggestion": "Introduce intermediate local variables or delegate to the direct collaborator",
+                    }
+                )
 
         # Deep property access
         for m in _PROP_CHAIN_RE.finditer(line):
@@ -63,14 +65,18 @@ def _check_file(file: Path, root: Path) -> list[dict]:
                 # Skip common false positives
                 if any(skip in chain for skip in ("self.", "this.", "__", "os.path", "sys.argv")):
                     continue
-                violations.append({
-                    "principle": "LawOfDemeter",
-                    "file": rel,
-                    "line": i,
-                    "severity": "low",
-                    "message": f"Deep property access ({depth} levels): `{chain[:60]}`",
-                    "suggestion": "Access only direct collaborators; expose needed data through the immediate object",
-                })
+                violations.append(
+                    {
+                        "principle": "LawOfDemeter",
+                        "file": rel,
+                        "line": i,
+                        "severity": "low",
+                        "message": f"Deep property access ({depth} levels): `{chain[:60]}`",
+                        "suggestion": (
+                            "Access only direct collaborators; expose needed data through the immediate object"
+                        ),
+                    }
+                )
 
     return violations
 
@@ -83,10 +89,7 @@ def _mechanical(path: Path, files: list | None) -> tuple[list[dict], int]:
     else:
         source_files = []
         for ext in _ALL_EXTENSIONS:
-            source_files.extend(
-                p for p in path.rglob(f"*{ext}")
-                if not any(part in _SKIP_DIRS for part in p.parts)
-            )
+            source_files.extend(p for p in path.rglob(f"*{ext}") if not any(part in _SKIP_DIRS for part in p.parts))
     violations = []
     for file in source_files:
         violations.extend(_check_file(file, path))

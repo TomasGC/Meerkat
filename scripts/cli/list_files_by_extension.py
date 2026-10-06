@@ -32,7 +32,7 @@ DEFAULT_EXCLUDES = [
     "target/",
     "__pycache__/",
     ".venv/",
-    "venv/"
+    "venv/",
 ]
 
 
@@ -63,11 +63,7 @@ def is_excluded(file_path: Path, root: Path, exclude_patterns: list[str]) -> boo
     return False
 
 
-def find_files_by_extension(
-    root: Path,
-    extensions: list[str],
-    exclude_patterns: list[str]
-) -> list[Path]:
+def find_files_by_extension(root: Path, extensions: list[str], exclude_patterns: list[str]) -> list[Path]:
     """
     Find files matching extensions, excluding patterns.
 
@@ -101,25 +97,12 @@ class ListFilesByExtensionScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--path", "-p", default=".", help="Root path to search (default: current directory)")
         parser.add_argument(
-            "--path",
-            "-p",
-            default=".",
-            help="Root path to search (default: current directory)"
+            "--extensions", "-e", nargs="+", required=True, help="Extensions to search (e.g., .md .txt .cs)"
         )
         parser.add_argument(
-            "--extensions",
-            "-e",
-            nargs="+",
-            required=True,
-            help="Extensions to search (e.g., .md .txt .cs)"
-        )
-        parser.add_argument(
-            "--exclude",
-            "-x",
-            nargs="*",
-            default=DEFAULT_EXCLUDES,
-            help="Directory patterns to exclude"
+            "--exclude", "-x", nargs="*", default=DEFAULT_EXCLUDES, help="Directory patterns to exclude"
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -129,20 +112,13 @@ class ListFilesByExtensionScript(BaseCLIScript):
             root = Path(args.path).resolve()
 
             if not root.exists():
-                return {
-                    "success": False,
-                    "error": f"Path does not exist: {root}"
-                }
+                return {"success": False, "error": f"Path does not exist: {root}"}
 
             if not root.is_dir():
-                return {
-                    "success": False,
-                    "error": f"Path is not a directory: {root}"
-                }
+                return {"success": False, "error": f"Path is not a directory: {root}"}
 
             # Find files
             files = find_files_by_extension(root, args.extensions, args.exclude)
-
 
             return {
                 "success": True,
@@ -156,18 +132,15 @@ class ListFilesByExtensionScript(BaseCLIScript):
                         "relativePath": str(f.relative_to(root)),
                         "name": f.name,
                         "extension": f.suffix,
-                        "size": f.stat().st_size
+                        "size": f.stat().st_size,
                     }
                     for f in files
-                ]
+                ],
             }
 
         except Exception as e:
             self.logger.error(f"Failed to list files: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -179,11 +152,11 @@ class ListFilesByExtensionScript(BaseCLIScript):
             "",
             f"Extensions: {', '.join(result['extensions'])}",
             f"Excluded: {len(result['excluded'])} patterns",
-            ""
+            "",
         ]
 
-        for file in result['files']:
-            lines.append(file['path'])
+        for file in result["files"]:
+            lines.append(file["path"])
 
         return "\n".join(lines)
 
@@ -197,4 +170,5 @@ class ListFilesByExtensionScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(ListFilesByExtensionScript)

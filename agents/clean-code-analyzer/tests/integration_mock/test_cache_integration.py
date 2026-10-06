@@ -79,20 +79,29 @@ def test_no_cache_flag_bypasses(cache_dir, tmp_path, source_file):
 
     def fake_analyze(files, *args, **kwargs):
         analyzed.append(list(files))
-        return [{"source_file": str(f), "source_file_name": f.name, "principle": "SRP",
-                 "line": 1, "severity": "medium", "violation": "does two things",
-                 "suggestion": "split"} for f in files]
+        return [
+            {
+                "source_file": str(f),
+                "source_file_name": f.name,
+                "principle": "SRP",
+                "line": 1,
+                "severity": "medium",
+                "violation": "does two things",
+                "suggestion": "split",
+            }
+            for f in files
+        ]
 
-    with patch("cca.checkers.check_solid.check_server_available", return_value=True), \
-         patch("lib.engine.hybrid.check_server_available", return_value=True), \
-         patch("lib.engine.hybrid.analyze_files_parallel", side_effect=fake_analyze):
+    with patch("cca.checkers.check_solid.check_server_available", return_value=True), patch(
+        "lib.engine.hybrid.check_server_available", return_value=True
+    ), patch("lib.engine.hybrid.analyze_files_parallel", side_effect=fake_analyze):
         first = run_solid(tmp_path, "python", files=[source_file], cache_dir=cache_dir)
         second = run_solid(tmp_path, "python", files=[source_file], cache_dir=cache_dir)
         calls_after_cached_run = len(analyzed)
         bypass = run_solid(tmp_path, "python", files=[source_file], cache_dir=cache_dir, no_cache=True)
 
-    assert calls_after_cached_run == 1          # second run: 0 AI calls
+    assert calls_after_cached_run == 1  # second run: 0 AI calls
     assert (second["cache_hits"], second["cache_total"]) == (1, 1)
     assert second["violations"] == first["violations"]
-    assert len(analyzed) == 2                   # no_cache run: model called again
+    assert len(analyzed) == 2  # no_cache run: model called again
     assert "cache_hits" not in bypass

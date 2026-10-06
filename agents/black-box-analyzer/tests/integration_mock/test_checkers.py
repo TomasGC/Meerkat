@@ -4,10 +4,10 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from bba.checkers.check_unit_gaps import run as run_unit
+from bba.checkers.check_e2e_gaps import run as run_e2e
 from bba.checkers.check_integ_mock_gaps import run as run_integ_mock
 from bba.checkers.check_integ_real_gaps import run as run_integ_real
-from bba.checkers.check_e2e_gaps import run as run_e2e
+from bba.checkers.check_unit_gaps import run as run_unit
 
 
 def _make_project(root: Path) -> None:

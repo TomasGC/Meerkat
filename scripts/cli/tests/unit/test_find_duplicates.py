@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Tests for find_duplicates.py"""
 
-from pathlib import Path
-
 import pytest
 
 from cli.find_duplicates import FindDuplicatesScript
+
 
 @pytest.fixture
 def script():
     """Create script instance."""
     return FindDuplicatesScript()
+
 
 @pytest.fixture
 def temp_duplicate_files(tmp_path):
@@ -37,6 +37,7 @@ def transform_values(values):
 
     return tmp_path
 
+
 def test_hash_code_normalization(script):
     """Test code hashing with whitespace normalization."""
     code1 = "def foo():\n    return 1"
@@ -47,6 +48,7 @@ def test_hash_code_normalization(script):
 
     assert hash1 == hash2
 
+
 def test_calculate_similarity_identical(script):
     """Test similarity calculation for identical code."""
     code1 = "def foo(): return 1"
@@ -54,6 +56,7 @@ def test_calculate_similarity_identical(script):
 
     similarity = script._calculate_similarity(code1, code2)
     assert similarity == 1.0
+
 
 def test_calculate_similarity_different(script):
     """Test similarity calculation for different code."""
@@ -63,13 +66,16 @@ def test_calculate_similarity_different(script):
     similarity = script._calculate_similarity(code1, code2)
     assert similarity < 0.3
 
+
 def test_calculate_severity_high(script):
     """Test high severity for high similarity and many lines."""
     severity = script._calculate_severity(0.95, 10)
     assert severity == "high"
 
+
 def test_script_execution_success(script, temp_duplicate_files, monkeypatch):
     """Test full script execution."""
+
     class Args:
         path = temp_duplicate_files
         threshold = 5

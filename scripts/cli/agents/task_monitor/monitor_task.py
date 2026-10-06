@@ -11,17 +11,18 @@ Usage:
 """
 
 import argparse
+import json
 import subprocess
 import sys
 import time
-import json
-from pathlib import Path
 from datetime import datetime
-from typing import Optional, Dict, List
+from pathlib import Path
+from typing import Dict, Optional
 
 _SCRIPTS_DIR = Path(__file__).resolve().parents[3]  # this checkout's scripts/
 sys.path.insert(0, str(_SCRIPTS_DIR))
 from lib.config.model_config import get_model as _get_model
+
 _DEFAULT_MODEL = _get_model("fast")
 
 
@@ -52,11 +53,7 @@ class LocalAIMonitor:
 
         try:
             result = subprocess.run(
-                ["ollama", "run", self.model],
-                input=prompt,
-                text=True,
-                capture_output=True,
-                timeout=30
+                ["ollama", "run", self.model], input=prompt, text=True, capture_output=True, timeout=30
             )
 
             if result.returncode == 0:
@@ -64,7 +61,8 @@ class LocalAIMonitor:
                 output = result.stdout.strip()
                 # Extract JSON block
                 import re
-                json_match = re.search(r'\{.*\}', output, re.DOTALL)
+
+                json_match = re.search(r"\{.*\}", output, re.DOTALL)
                 if json_match:
                     return json.loads(json_match.group(0))
 
@@ -111,7 +109,7 @@ Respond in JSON:
         status = "running"
         problem_detected = False
         errors = []
-        warnings = []
+        warnings: list[str] = []
 
         # Common error patterns
         error_patterns = [
@@ -138,12 +136,7 @@ Respond in JSON:
             "status": status,
             "problem_detected": problem_detected,
             "summary": f"Detected {len(errors)} errors" if errors else "Running",
-            "details": {
-                "errors": errors,
-                "warnings": warnings,
-                "affected_files": [],
-                "suggestions": []
-            }
+            "details": {"errors": errors, "warnings": warnings, "affected_files": [], "suggestions": []},
         }
 
 
@@ -154,11 +147,11 @@ class TaskMonitor:
         self,
         pid: Optional[int] = None,
         pattern: Optional[str] = None,
-        log_file: Path = None,
+        log_file: Optional[Path] = None,
         task_type: str = "generic",
         output_file: Path = Path("task_notification.txt"),
         poll_interval: int = 10,
-        stall_threshold: int = 120
+        stall_threshold: int = 120,
     ):
         self.pid = pid
         self.pattern = pattern
@@ -200,11 +193,7 @@ class TaskMonitor:
                     break
 
                 # Ask local AI to analyze
-                analysis = self.ollama.analyze_log(
-                    log_content,
-                    self.task_type,
-                    self._get_detection_criteria()
-                )
+                analysis = self.ollama.analyze_log(log_content, self.task_type, self._get_detection_criteria())
 
                 # Problem detected?
                 if analysis["problem_detected"]:
@@ -218,16 +207,10 @@ class TaskMonitor:
 
         except KeyboardInterrupt:
             print("\n⚠️  Monitoring interrupted by user")
-            self._write_notification(
-                {"status": "interrupted", "summary": "User cancelled monitoring"},
-                "INTERRUPTED"
-            )
+            self._write_notification({"status": "interrupted", "summary": "User cancelled monitoring"}, "INTERRUPTED")
         except Exception as e:
             print(f"\n❌ Monitoring error: {e}")
-            self._write_notification(
-                {"status": "error", "summary": str(e)},
-                "ERROR"
-            )
+            self._write_notification({"status": "error", "summary": str(e)}, "ERROR")
 
     def _is_process_running(self) -> bool:
         """Check if monitored process is still running"""
@@ -235,20 +218,17 @@ class TaskMonitor:
             try:
                 # Check if PID exists
                 import psutil
+
                 return psutil.pid_exists(self.pid)
             except ImportError:
                 # Fallback: use ps command
-                result = subprocess.run(
-                    ["ps", "-p", str(self.pid)],
-                    capture_output=True
-                )
+                result = subprocess.run(["ps", "-p", str(self.pid)], capture_output=True)
                 return result.returncode == 0
 
         # Pattern-based: check if any process matches
-        result = subprocess.run(
-            ["pgrep", "-f", self.pattern],
-            capture_output=True
-        )
+        # main() rejects a run with neither --pid nor --pattern.
+        assert self.pattern is not None
+        result = subprocess.run(["pgrep", "-f", self.pattern], capture_output=True)
         return result.returncode == 0
 
     def _read_log(self) -> str:
@@ -282,38 +262,30 @@ class TaskMonitor:
             "test": {
                 "stall": "No log updates for 60s",
                 "failure": "FAILED or Exception in output",
-                "success": "BUILD SUCCESSFUL"
+                "success": "BUILD SUCCESSFUL",
             },
             "build": {
                 "stall": "No output for 120s",
                 "failure": "BUILD FAILED or compilation error",
-                "success": "BUILD SUCCESSFUL"
+                "success": "BUILD SUCCESSFUL",
             },
             "deploy": {
                 "stall": "No progress for 180s",
                 "failure": "Error or deployment failed",
-                "success": "Deployment complete"
-            }
+                "success": "Deployment complete",
+            },
         }
         return criteria_map.get(self.task_type, {})
 
     def _handle_completion(self):
         """Handle task completion - final analysis"""
         log_content = self._read_log()
-        analysis = self.ollama.analyze_log(
-            log_content,
-            self.task_type,
-            self._get_detection_criteria()
-        )
+        analysis = self.ollama.analyze_log(log_content, self.task_type, self._get_detection_criteria())
         self._write_notification(analysis, "COMPLETED")
 
     def _handle_stall(self, log_content: str):
         """Handle stalled task"""
-        analysis = self.ollama.analyze_log(
-            log_content,
-            self.task_type,
-            {"stall_detected": True}
-        )
+        analysis = self.ollama.analyze_log(log_content, self.task_type, {"stall_detected": True})
         analysis["status"] = "stalled"
         self._write_notification(analysis, "STALLED")
 
@@ -321,13 +293,7 @@ class TaskMonitor:
         """Write notification file for caller"""
         duration = time.time() - self.start_time
 
-        status_emoji = {
-            "success": "✅",
-            "failed": "❌",
-            "error": "⚠️",
-            "stalled": "⏸️",
-            "interrupted": "🛑"
-        }
+        status_emoji = {"success": "✅", "failed": "❌", "error": "⚠️", "stalled": "⏸️", "interrupted": "🛑"}
 
         emoji = status_emoji.get(analysis["status"], "❓")
 
@@ -383,21 +349,20 @@ Timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Monitor background tasks using local AI (zero Claude tokens)"
-    )
+    parser = argparse.ArgumentParser(description="Monitor background tasks using local AI (zero Claude tokens)")
     parser.add_argument("--pid", type=int, help="Process ID to monitor")
     parser.add_argument("--pattern", type=str, help="Process name pattern (regex)")
     parser.add_argument("--log", type=Path, required=True, help="Log file to watch")
-    parser.add_argument("--type", type=str, default="generic",
-                       choices=["test", "build", "deploy", "generic"],
-                       help="Task type for detection criteria")
-    parser.add_argument("--output", type=Path, default=Path("task_notification.txt"),
-                       help="Notification output file")
-    parser.add_argument("--interval", type=int, default=10,
-                       help="Polling interval in seconds")
-    parser.add_argument("--stall-threshold", type=int, default=120,
-                       help="Stall threshold in seconds")
+    parser.add_argument(
+        "--type",
+        type=str,
+        default="generic",
+        choices=["test", "build", "deploy", "generic"],
+        help="Task type for detection criteria",
+    )
+    parser.add_argument("--output", type=Path, default=Path("task_notification.txt"), help="Notification output file")
+    parser.add_argument("--interval", type=int, default=10, help="Polling interval in seconds")
+    parser.add_argument("--stall-threshold", type=int, default=120, help="Stall threshold in seconds")
 
     args = parser.parse_args()
 
@@ -411,7 +376,7 @@ def main():
         task_type=args.type,
         output_file=args.output,
         poll_interval=args.interval,
-        stall_threshold=args.stall_threshold
+        stall_threshold=args.stall_threshold,
     )
 
     monitor.monitor()

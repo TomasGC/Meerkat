@@ -17,25 +17,25 @@ _SHARED = Path(__file__).resolve().parents[3] / "scripts"  # this checkout's sha
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
-from lib.config import language_config
+from bba.model_utils import PROMPTS_DIR, analyze_file_with_model, check_server_available
 from bba.utils import detect_project_language
-from bba.model_utils import analyze_file_with_model, check_server_available, PROMPTS_DIR
+from lib.config import language_config
 
 # Source file extensions per language — code only: refactoring anti-patterns cannot
 # be scanned in yaml or sql, and those must not win detect_language's vote.
 LANGUAGE_EXTENSIONS = language_config.languages_of_kind("code")
 
 ANTI_PATTERNS = [
-    "static_method_call",       # calling static methods on concrete types
-    "new_in_method",            # new ConcreteType() inside constructor or method body
-    "no_interface",             # collaborator has no interface/abstraction
-    "sealed_or_final",          # sealed/final class with no test accessor
-    "global_mutable_state",     # static fields, singletons without reset
-    "hardcoded_io",             # hardcoded file paths, URLs, connection strings
-    "private_complex_logic",    # private methods with complex branching
-    "deep_method_chain",        # a.GetB().GetC().DoD() — impossible to intercept
+    "static_method_call",  # calling static methods on concrete types
+    "new_in_method",  # new ConcreteType() inside constructor or method body
+    "no_interface",  # collaborator has no interface/abstraction
+    "sealed_or_final",  # sealed/final class with no test accessor
+    "global_mutable_state",  # static fields, singletons without reset
+    "hardcoded_io",  # hardcoded file paths, URLs, connection strings
+    "private_complex_logic",  # private methods with complex branching
+    "deep_method_chain",  # a.GetB().GetC().DoD() — impossible to intercept
     "thread_sleep_or_datetime_now",  # non-deterministic time in production code
-    "unhandled_exception_swallow",   # empty catch blocks
+    "unhandled_exception_swallow",  # empty catch blocks
 ]
 
 
@@ -59,7 +59,9 @@ def get_source_files(src_path: Path, language: str) -> list[Path]:
 
 
 def scan_file(file_path: Path, language: str, role: str, max_chars: int) -> list[dict]:
-    return analyze_file_with_model(file_path, language, role, "scan_tdd_refactoring", prompts_dir=PROMPTS_DIR, max_chars=max_chars)
+    return analyze_file_with_model(
+        file_path, language, role, "scan_tdd_refactoring", prompts_dir=PROMPTS_DIR, max_chars=max_chars
+    )
 
 
 EFFORT_ORDER = {"Tiny": 0, "Small": 1, "Medium": 2, "Large": 3}
@@ -109,23 +111,27 @@ Examples:
     )
     parser.add_argument("src_path", type=Path, help="Path to source directory")
     parser.add_argument(
-        "--language", "-l",
+        "--language",
+        "-l",
         default="auto",
         choices=["auto"] + list(LANGUAGE_EXTENSIONS.keys()),
         help="Source language (default: auto-detect)",
     )
     parser.add_argument(
-        "--role", "-m",
+        "--role",
+        "-m",
         default="analyzer",
         help="Model role to use: analyzer, fast, deep, reasoning (default: analyzer)",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         help="Output JSON file (default: stdout)",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Print progress to stderr",
     )
@@ -186,6 +192,7 @@ Examples:
 
     if args.agents > 1:
         from concurrent.futures import ThreadPoolExecutor
+
         if args.verbose:
             print(f"[INFO] Running {args.agents} parallel agents for broader coverage...", file=sys.stderr)
         with ThreadPoolExecutor(max_workers=args.agents) as pool:

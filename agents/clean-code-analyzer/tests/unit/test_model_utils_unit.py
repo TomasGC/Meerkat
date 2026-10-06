@@ -10,19 +10,19 @@ import pytest
 
 import lib.ai.model_utils as mu
 from lib.ai.model_utils import (
+    _http_generate,
+    _parse_local_server,
+    analyze_files_async,
+    analyze_files_parallel,
     call_model,
     call_model_async,
     call_model_multi,
-    _http_generate,
-    _parse_local_server,
     check_server_available,
-    analyze_files_async,
-    analyze_files_parallel,
     split_into_chunks,
 )
 
-
 # ── check_server_available ─────────────────────────────────────────────────────
+
 
 def _tags_response(names: list[str], status: int = 200) -> MagicMock:
     """Mock an /api/tags response listing these model names."""
@@ -108,11 +108,13 @@ def test_availability_cache_hit():
 def test_default_role_is_the_one_checkers_use():
     """The bare call in the e2e fixture must gate on the same role the run loads."""
     import inspect
+
     default = inspect.signature(mu.check_server_available).parameters["role"].default
     assert default == "analyzer"
 
 
 # ── call_model ─────────────────────────────────────────────────────────────────
+
 
 def test_call_model_passes_prompt_via_stdin():
     """call_model passes the prompt through stdin=prompt."""
@@ -162,6 +164,7 @@ def test_call_model_nonzero_exit_returns_none():
 
 
 # ── _http_generate ──────────────────────────────────────────────────────────────
+
 
 def test_http_generate_returns_response_text():
     """_http_generate parses REST response and returns 'response' field."""
@@ -229,14 +232,18 @@ def test_http_generate_conn_close_exception_no_crash():
 
 # ── extract_json_array ──────────────────────────────────────────────────────────
 
-@pytest.mark.parametrize("text, expected", [
-    ('[{"line": 1}]', [{"line": 1}]),
-    ('Here is the analysis:\n[{"line": 5, "severity": "high"}]\nEnd.', [{"line": 5, "severity": "high"}]),
-    ("[]", []),
-    ("{not valid json}", None),
-    ("", None),
-    ('{"key": "value"}', None),
-])
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ('[{"line": 1}]', [{"line": 1}]),
+        ('Here is the analysis:\n[{"line": 5, "severity": "high"}]\nEnd.', [{"line": 5, "severity": "high"}]),
+        ("[]", []),
+        ("{not valid json}", None),
+        ("", None),
+        ('{"key": "value"}', None),
+    ],
+)
 def test_extract_json_array_parametrized(text, expected):
     result = mu.extract_json_array(text)
     assert result == expected
@@ -251,13 +258,17 @@ def test_extract_json_array_invalid_bracketed_content():
 
 # ── extract_json_object ─────────────────────────────────────────────────────────
 
-@pytest.mark.parametrize("text, expected", [
-    ('{"success": true}', {"success": True}),
-    ('Result: {"count": 3} end', {"count": 3}),
-    ("not json at all", None),
-    ("", None),
-    ('[1, 2, 3]', None),
-])
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ('{"success": true}', {"success": True}),
+        ('Result: {"count": 3} end', {"count": 3}),
+        ("not json at all", None),
+        ("", None),
+        ("[1, 2, 3]", None),
+    ],
+)
 def test_extract_json_object_parametrized(text, expected):
     result = mu.extract_json_object(text)
     assert result == expected
@@ -271,6 +282,7 @@ def test_extract_json_object_invalid_braced_content():
 
 
 # ── call_model_multi ───────────────────────────────────────────────────────────
+
 
 def test_call_model_multi_n1_single_call():
     """N=1 → single call to call_model (subprocess path)."""
@@ -305,6 +317,7 @@ def test_call_model_multi_n2_merges_unique():
 
 
 # ── split_into_chunks ───────────────────────────────────────────────────────────
+
 
 def test_split_into_chunks_small_source_returns_single_chunk():
     source = "line1\nline2\nline3\n"
@@ -352,9 +365,11 @@ def test_split_into_chunks_empty_source():
 
 # ── analyze_files_async ─────────────────────────────────────────────────────────
 
+
 def test_analyze_files_async_returns_violations(tmp_path):
     """analyze_files_async processes file and returns annotated violations."""
     import asyncio
+
     f = tmp_path / "mod.py"
     f.write_text("class GodClass: pass\n")
 
@@ -362,15 +377,11 @@ def test_analyze_files_async_returns_violations(tmp_path):
     prompts_dir.mkdir()
     (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
 
-    response_json = (
-        '[{"principle":"S","line":1,"severity":"high",'
-        '"violation":"too much","suggestion":"split"}]'
-    )
+    response_json = '[{"principle":"S","line":1,"severity":"high",' '"violation":"too much","suggestion":"split"}]'
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("lib.ai.model_utils._http_generate", return_value=response_json):
             results = asyncio.run(
-                analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                    prompts_dir=prompts_dir, no_cache=True)
+                analyze_files_async([f], "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, no_cache=True)
             )
 
     assert len(results) == 1
@@ -380,6 +391,7 @@ def test_analyze_files_async_returns_violations(tmp_path):
 def test_analyze_files_async_empty_on_failure(tmp_path):
     """analyze_files_async returns [] when _http_generate returns None."""
     import asyncio
+
     f = tmp_path / "mod.py"
     f.write_text("class X: pass\n")
 
@@ -390,8 +402,7 @@ def test_analyze_files_async_empty_on_failure(tmp_path):
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("lib.ai.model_utils._http_generate", return_value=None):
             results = asyncio.run(
-                analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                    prompts_dir=prompts_dir, no_cache=True)
+                analyze_files_async([f], "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, no_cache=True)
             )
 
     assert results == []
@@ -400,14 +411,13 @@ def test_analyze_files_async_empty_on_failure(tmp_path):
 def test_analyze_files_async_extra_slots_injected(tmp_path):
     """extra_slots values reach the prompt template for the matching file."""
     import asyncio
+
     f = tmp_path / "mod.py"
     f.write_text("class X: pass\n")
 
     prompts_dir = tmp_path / "prompts"
     prompts_dir.mkdir()
-    (prompts_dir / "solid_analysis.prompt").write_text(
-        "Analyze {language}:\n{source}\nKnown:\n{known_findings}"
-    )
+    (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}\nKnown:\n{known_findings}")
 
     captured = []
 
@@ -418,9 +428,15 @@ def test_analyze_files_async_extra_slots_injected(tmp_path):
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("lib.ai.model_utils._http_generate", side_effect=capture):
             asyncio.run(
-                analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                    prompts_dir=prompts_dir, no_cache=True,
-                                    extra_slots={f: {"known_findings": "- line 1: secret"}})
+                analyze_files_async(
+                    [f],
+                    "python",
+                    "analyzer",
+                    "solid_analysis",
+                    prompts_dir=prompts_dir,
+                    no_cache=True,
+                    extra_slots={f: {"known_findings": "- line 1: secret"}},
+                )
             )
 
     assert "Known:\n- line 1: secret" in captured[0]
@@ -429,6 +445,7 @@ def test_analyze_files_async_extra_slots_injected(tmp_path):
 def test_analyze_files_async_extra_slots_are_per_file(tmp_path):
     """Each file receives only its own extra_slots values."""
     import asyncio
+
     first = tmp_path / "first.py"
     first.write_text("class A: pass\n")
     second = tmp_path / "second.py"
@@ -447,12 +464,18 @@ def test_analyze_files_async_extra_slots_are_per_file(tmp_path):
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("lib.ai.model_utils._http_generate", side_effect=capture):
             asyncio.run(
-                analyze_files_async([first, second], "python", "analyzer", "solid_analysis",
-                                    prompts_dir=prompts_dir, no_cache=True,
-                                    extra_slots={
-                                        first: {"known_findings": "finding-A"},
-                                        second: {"known_findings": "finding-B"},
-                                    })
+                analyze_files_async(
+                    [first, second],
+                    "python",
+                    "analyzer",
+                    "solid_analysis",
+                    prompts_dir=prompts_dir,
+                    no_cache=True,
+                    extra_slots={
+                        first: {"known_findings": "finding-A"},
+                        second: {"known_findings": "finding-B"},
+                    },
+                )
             )
 
     prompt_a = next(p for p in captured if "class A" in p)
@@ -464,6 +487,7 @@ def test_analyze_files_async_extra_slots_are_per_file(tmp_path):
 def test_analyze_files_async_without_extra_slots_unchanged(tmp_path):
     """Templates with no extra slots still format when extra_slots is omitted."""
     import asyncio
+
     f = tmp_path / "mod.py"
     f.write_text("class X: pass\n")
 
@@ -480,8 +504,7 @@ def test_analyze_files_async_without_extra_slots_unchanged(tmp_path):
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("lib.ai.model_utils._http_generate", side_effect=capture):
             asyncio.run(
-                analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                    prompts_dir=prompts_dir, no_cache=True)
+                analyze_files_async([f], "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, no_cache=True)
             )
 
     assert captured[0] == "Analyze python:\nclass X: pass\n"
@@ -490,6 +513,7 @@ def test_analyze_files_async_without_extra_slots_unchanged(tmp_path):
 def test_analyze_files_async_cache_hit(tmp_path):
     """analyze_files_async returns cached result without calling _http_generate."""
     import asyncio
+
     f = tmp_path / "mod.py"
     f.write_text("class X: pass\n")
     cached_violations = [{"line": 1, "principle": "S"}]
@@ -502,8 +526,9 @@ def test_analyze_files_async_cache_hit(tmp_path):
     cache.get.return_value = cached_violations
     with patch.object(mu, "_http_generate") as mock_http:
         results = asyncio.run(
-            analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                prompts_dir=prompts_dir, no_cache=False, cache=cache)
+            analyze_files_async(
+                [f], "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, no_cache=False, cache=cache
+            )
         )
 
     mock_http.assert_not_called()
@@ -513,14 +538,14 @@ def test_analyze_files_async_cache_hit(tmp_path):
 def test_analyze_files_async_prompt_not_found(tmp_path):
     """analyze_files_async with missing prompt file → returns [] for that file."""
     import asyncio
+
     f = tmp_path / "mod.py"
     f.write_text("class X: pass\n")
     empty_dir = tmp_path / "empty_prompts"
     empty_dir.mkdir()
 
     results = asyncio.run(
-        analyze_files_async([f], "python", "analyzer", "nonexistent_prompt",
-                            prompts_dir=empty_dir, no_cache=True)
+        analyze_files_async([f], "python", "analyzer", "nonexistent_prompt", prompts_dir=empty_dir, no_cache=True)
     )
     assert results == []
 
@@ -528,6 +553,7 @@ def test_analyze_files_async_prompt_not_found(tmp_path):
 def test_analyze_files_async_agents_greater_than_1(tmp_path):
     """agents=2 with identical responses collapses to a single violation."""
     import asyncio
+
     f = tmp_path / "mod.py"
     f.write_text("class X: pass\n")
     prompts_dir = tmp_path / "prompts"
@@ -538,8 +564,9 @@ def test_analyze_files_async_agents_greater_than_1(tmp_path):
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("lib.ai.model_utils._http_generate", return_value=response_json):
             results = asyncio.run(
-                analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                    prompts_dir=prompts_dir, agents=2, no_cache=True)
+                analyze_files_async(
+                    [f], "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, agents=2, no_cache=True
+                )
             )
 
     # Both agents returned the same (file, line, principle) key — exactly one survives.
@@ -550,6 +577,7 @@ def test_analyze_files_async_agents_greater_than_1(tmp_path):
 def test_analyze_files_async_agents_keeps_distinct_findings(tmp_path):
     """agents=2 with differing responses keeps both — dedup must not over-merge."""
     import asyncio
+
     f = tmp_path / "mod.py"
     f.write_text("class X: pass\n")
     prompts_dir = tmp_path / "prompts"
@@ -563,8 +591,9 @@ def test_analyze_files_async_agents_keeps_distinct_findings(tmp_path):
     with patch("lib.ai.model_utils.get_model", return_value="test-model"):
         with patch("lib.ai.model_utils._http_generate", side_effect=responses):
             results = asyncio.run(
-                analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                    prompts_dir=prompts_dir, agents=2, no_cache=True)
+                analyze_files_async(
+                    [f], "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, agents=2, no_cache=True
+                )
             )
 
     assert len(results) == 2
@@ -574,6 +603,7 @@ def test_analyze_files_async_agents_keeps_distinct_findings(tmp_path):
 def test_analyze_files_async_writes_cache(tmp_path):
     """analyze_files_async with no_cache=False writes results to cache."""
     import asyncio
+
     f = tmp_path / "mod.py"
     f.write_text("class X: pass\n")
     prompts_dir = tmp_path / "prompts"
@@ -586,14 +616,16 @@ def test_analyze_files_async_writes_cache(tmp_path):
             cache = MagicMock()
             cache.get.return_value = None
             asyncio.run(
-                analyze_files_async([f], "python", "analyzer", "solid_analysis",
-                                    prompts_dir=prompts_dir, no_cache=False, cache=cache)
+                analyze_files_async(
+                    [f], "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, no_cache=False, cache=cache
+                )
             )
 
     cache.set.assert_called_once()
 
 
 # ── analyze_file_with_model ─────────────────────────────────────────────────────
+
 
 def test_analyze_file_with_model_cache_hit(tmp_path):
     """analyze_file_with_model returns cached result without calling model."""
@@ -607,8 +639,7 @@ def test_analyze_file_with_model_cache_hit(tmp_path):
     cache = MagicMock()
     cache.get.return_value = cached
     with patch.object(mu, "call_model") as mock_call:
-        result = mu.analyze_file_with_model(f, "python", "analyzer", "solid",
-                                            prompts_dir=prompts_dir, cache=cache)
+        result = mu.analyze_file_with_model(f, "python", "analyzer", "solid", prompts_dir=prompts_dir, cache=cache)
 
     mock_call.assert_not_called()
     assert result == cached
@@ -623,8 +654,9 @@ def test_analyze_file_with_model_agents_greater_than_1(tmp_path):
     (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
 
     with patch.object(mu, "call_model_multi", return_value=[{"line": 1, "principle": "S"}]) as mock_multi:
-        result = mu.analyze_file_with_model(f, "python", "analyzer", "solid_analysis",
-                                            prompts_dir=prompts_dir, agents=2, no_cache=True)
+        result = mu.analyze_file_with_model(
+            f, "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, agents=2, no_cache=True
+        )
 
     mock_multi.assert_called()
     assert len(result) >= 1
@@ -640,8 +672,9 @@ def test_analyze_file_with_model_agents_1_calls_model(tmp_path):
 
     response_json = '[{"principle":"S","line":1,"severity":"high","violation":"v","suggestion":"s"}]'
     with patch.object(mu, "call_model", return_value=response_json) as mock_call:
-        result = mu.analyze_file_with_model(f, "python", "analyzer", "solid_analysis",
-                                            prompts_dir=prompts_dir, agents=1, no_cache=True)
+        result = mu.analyze_file_with_model(
+            f, "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, agents=1, no_cache=True
+        )
 
     mock_call.assert_called()
     assert len(result) >= 1
@@ -653,8 +686,9 @@ def test_analyze_file_with_model_prompt_not_found(tmp_path):
     f.write_text("class X: pass\n")
     empty_dir = tmp_path  # no prompt files here
 
-    result = mu.analyze_file_with_model(f, "python", "analyzer", "nonexistent_prompt",
-                                        prompts_dir=empty_dir, no_cache=True)
+    result = mu.analyze_file_with_model(
+        f, "python", "analyzer", "nonexistent_prompt", prompts_dir=empty_dir, no_cache=True
+    )
     assert result == []
 
 
@@ -667,8 +701,9 @@ def test_analyze_file_with_model_empty_results(tmp_path):
     (prompts_dir / "solid_analysis.prompt").write_text("Analyze {language}:\n{source}")
 
     with patch.object(mu, "call_model", return_value=None):
-        result = mu.analyze_file_with_model(f, "python", "analyzer", "solid_analysis",
-                                            prompts_dir=prompts_dir, agents=1, no_cache=True)
+        result = mu.analyze_file_with_model(
+            f, "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, agents=1, no_cache=True
+        )
 
     assert result == []
 
@@ -685,17 +720,20 @@ def test_analyze_file_with_model_writes_cache(tmp_path):
     cache = MagicMock()
     cache.get.return_value = None
     with patch.object(mu, "call_model", return_value=response_json):
-        mu.analyze_file_with_model(f, "python", "analyzer", "solid_analysis",
-                                   prompts_dir=prompts_dir, agents=1, no_cache=False, cache=cache)
+        mu.analyze_file_with_model(
+            f, "python", "analyzer", "solid_analysis", prompts_dir=prompts_dir, agents=1, no_cache=False, cache=cache
+        )
 
     cache.set.assert_called_once()
 
 
 # ── CCA shim: get_claude_fallback_prompt ────────────────────────────────────────
 
+
 def _load_cca_shim():
     """Load CCA's common/model_utils.py by file path to avoid sys.modules cache collisions."""
     import importlib.util
+
     shim_path = Path(__file__).parent.parent.parent / "scripts" / "cca" / "model_utils.py"
     spec = importlib.util.spec_from_file_location("cca_common_model_utils", shim_path)
     mod = importlib.util.module_from_spec(spec)
@@ -728,6 +766,7 @@ def test_get_claude_fallback_prompt_key_error_returns_raw(tmp_path):
 # ── analyze_files_parallel ────────────────────────────────────────────────────
 # analyze_files_parallel → analyze_files_async → call_model_async (per file)
 # Patch call_model_async to avoid real network calls.
+
 
 def test_analyze_files_parallel_empty_list(tmp_path):
     """analyze_files_parallel with empty file list returns []."""
@@ -804,6 +843,7 @@ def test_analyze_files_parallel_passes_role(tmp_path):
 
 # ── _parse_local_server ───────────────────────────────────────────────────────
 
+
 def test_parse_local_server_standard_url():
     """_parse_local_server parses host and port from standard base_url."""
     config = {"local": {"base_url": "http://localhost:11434"}}
@@ -840,6 +880,7 @@ def test_parse_local_server_missing_config_uses_defaults():
 
 
 # ── call_model_async ──────────────────────────────────────────────────────────
+
 
 def test_call_model_async_returns_http_generate_result():
     """call_model_async delegates to _http_generate in an executor and returns its result."""

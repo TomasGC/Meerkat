@@ -7,11 +7,11 @@ Identifies scripts without tests and empty test files.
 """
 
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript, create_cli_script
@@ -21,6 +21,7 @@ from lib.models import TestCoverageResult
 @dataclass
 class ScriptCoverageInfo:
     """Coverage info for a single script."""
+
     script: str
     script_path: str
     test_file: str | None
@@ -37,18 +38,9 @@ class CheckTestCoverageScript(BaseCLIScript):
     def setup_parser(self, parser):
         """Add script-specific arguments."""
         parser.add_argument(
-            "--path",
-            "-p",
-            type=Path,
-            default=Path("."),
-            help="Path to directory (default: current directory)"
+            "--path", "-p", type=Path, default=Path("."), help="Path to directory (default: current directory)"
         )
-        parser.add_argument(
-            "--recursive",
-            "-r",
-            action="store_true",
-            help="Search subdirectories recursively"
-        )
+        parser.add_argument("--recursive", "-r", action="store_true", help="Search subdirectories recursively")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute coverage check."""
@@ -99,17 +91,16 @@ class CheckTestCoverageScript(BaseCLIScript):
             test_details={
                 "path": str(path),
                 "recursive": args.recursive,
-                "scripts": [self._info_to_dict(info) for info in coverage_info]
-            }
+                "scripts": [self._info_to_dict(info) for info in coverage_info],
+            },
         )
-
 
         return self._result_to_dict(result)
 
     def _find_scripts(self, path: Path, recursive: bool) -> list[Path]:
         """Find all scripts in directory."""
         patterns = ["*.py", "*.ps1"]
-        scripts = []
+        scripts: list[Path] = []
 
         for pattern in patterns:
             if recursive:
@@ -163,7 +154,7 @@ class CheckTestCoverageScript(BaseCLIScript):
             test_count=test_count,
             functions=functions,
             lines=lines,
-            status=status
+            status=status,
         )
 
     def _find_test_file(self, script_path: Path, search_root: Path) -> tuple[bool, Path | None]:
@@ -211,7 +202,7 @@ class CheckTestCoverageScript(BaseCLIScript):
 
         # Python: def test_*
         if test_file_path.suffix == ".py":
-            count = len(re.findall(r'^\s*def test_\w+', content, re.MULTILINE))
+            count = len(re.findall(r"^\s*def test_\w+", content, re.MULTILINE))
 
         # PowerShell: It "..."
         elif test_file_path.suffix == ".ps1":
@@ -229,9 +220,9 @@ class CheckTestCoverageScript(BaseCLIScript):
         count = 0
 
         if script_path.suffix == ".py":
-            count = len(re.findall(r'^\s*def \w+', content, re.MULTILINE))
+            count = len(re.findall(r"^\s*def \w+", content, re.MULTILINE))
         elif script_path.suffix == ".ps1":
-            count = len(re.findall(r'^\s*function \w+', content, re.MULTILINE))
+            count = len(re.findall(r"^\s*function \w+", content, re.MULTILINE))
 
         return count
 
@@ -253,11 +244,7 @@ class CheckTestCoverageScript(BaseCLIScript):
             "empty_test_files": 0,
             "total_tests": 0,
             "untested_list": [],
-            "test_details": {
-                "path": path,
-                "recursive": recursive,
-                "scripts": []
-            }
+            "test_details": {"path": path, "recursive": recursive, "scripts": []},
         }
 
     def _info_to_dict(self, info: ScriptCoverageInfo) -> dict:
@@ -270,7 +257,7 @@ class CheckTestCoverageScript(BaseCLIScript):
             "test_count": info.test_count,
             "functions": info.functions,
             "lines": info.lines,
-            "status": info.status
+            "status": info.status,
         }
 
     def _result_to_dict(self, result: TestCoverageResult) -> dict:
@@ -283,7 +270,7 @@ class CheckTestCoverageScript(BaseCLIScript):
             "empty_test_files": result.empty_test_files,
             "total_tests": result.total_tests,
             "untested_list": result.untested_list,
-            "test_details": result.test_details
+            "test_details": result.test_details,
         }
 
     def format_text(self, result: dict) -> str:
@@ -300,36 +287,40 @@ class CheckTestCoverageScript(BaseCLIScript):
             f"  Empty test files: {result['empty_test_files']}",
             f"  Coverage: {result['coverage_percent']:.1f}%",
             f"  Total tests: {result['total_tests']}",
-            ""
+            "",
         ]
 
-        if result['untested_list']:
+        if result["untested_list"]:
             lines.append("Scripts without tests:")
-            for script in result['untested_list']:
+            for script in result["untested_list"]:
                 lines.append(f"  - {script}")
             lines.append("")
 
         # Detailed script info
         lines.append("Detailed Coverage:")
-        for script_info in result['test_details']['scripts']:
-            status_icon = "✅" if script_info['status'] == "covered" else "❌"
+        for script_info in result["test_details"]["scripts"]:
+            status_icon = "✅" if script_info["status"] == "covered" else "❌"
             lines.append(f"{status_icon} {script_info['script']}")
-            lines.append(f"   Tests: {script_info['test_count']}, "
-                        f"Functions: {script_info['functions']}, "
-                        f"Lines: {script_info['lines']}")
+            lines.append(
+                f"   Tests: {script_info['test_count']}, "
+                f"Functions: {script_info['functions']}, "
+                f"Lines: {script_info['lines']}"
+            )
 
-            if script_info['status'] == "no_test_file":
+            if script_info["status"] == "no_test_file":
                 lines.append("   ⚠️  No test file found")
-            elif script_info['status'] == "empty_test_file":
+            elif script_info["status"] == "empty_test_file":
                 lines.append("   ⚠️  Test file exists but has no tests")
 
         return "\n".join(lines)
 
     def format_summary(self, result: dict) -> str:
         """Format result as brief summary."""
-        return (f"Coverage: {result['tested_scripts']}/{result['total_scripts']} scripts "
-                f"({result['coverage_percent']:.1f}%), "
-                f"{result['total_tests']} tests")
+        return (
+            f"Coverage: {result['tested_scripts']}/{result['total_scripts']} scripts "
+            f"({result['coverage_percent']:.1f}%), "
+            f"{result['total_tests']} tests"
+        )
 
 
 if __name__ == "__main__":

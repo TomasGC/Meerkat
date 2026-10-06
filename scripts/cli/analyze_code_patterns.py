@@ -10,12 +10,15 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+_get_model: Optional[Callable[..., str]]
 try:
-    from lib.config.model_config import get_model as _get_model
+    from lib.config.model_config import get_model
+
+    _get_model = get_model
 except ImportError:
     _get_model = None
 
@@ -29,23 +32,12 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
     def setup_parser(self, parser):
         """Add script-specific arguments."""
         parser.add_argument(
-            "--path",
-            "-p",
-            type=Path,
-            default=Path.cwd(),
-            help="Path to analyze (default: current directory)"
+            "--path", "-p", type=Path, default=Path.cwd(), help="Path to analyze (default: current directory)"
         )
         parser.add_argument(
-            "--checks",
-            "-c",
-            default="dead_code,dry,complexity,smells",
-            help="Comma-separated checks (default: all)"
+            "--checks", "-c", default="dead_code,dry,complexity,smells", help="Comma-separated checks (default: all)"
         )
-        parser.add_argument(
-            "--use-ollama",
-            action="store_true",
-            help="Use Ollama for validation of ambiguous cases"
-        )
+        parser.add_argument("--use-ollama", action="store_true", help="Use Ollama for validation of ambiguous cases")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute code analysis."""
@@ -53,22 +45,19 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
         path = args.path.resolve()
 
         if not path.exists():
-            return {
-                "success": False,
-                "error": f"Path not found: {path}"
-            }
+            return {"success": False, "error": f"Path not found: {path}"}
 
         checks = [c.strip() for c in args.checks.split(",")]
         self.logger.info(f"Analyzing {path} with checks: {', '.join(checks)}")
 
-        results = {
+        results: dict[str, Any] = {
             "success": True,
             "path": str(path),
             "checks_performed": checks,
             "dead_code": [],
             "dry_violations": [],
             "code_smells": [],
-            "complexity_issues": []
+            "complexity_issues": [],
         }
 
         # Run checks in parallel (simplified - sequential for now)
@@ -98,15 +87,14 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
 
         # Calculate totals
         results["total_issues"] = (
-            len(results["dead_code"]) +
-            len(results["dry_violations"]) +
-            len(results["code_smells"]) +
-            len(results["complexity_issues"])
+            len(results["dead_code"])
+            + len(results["dry_violations"])
+            + len(results["code_smells"])
+            + len(results["complexity_issues"])
         )
 
         results["analysis_time_ms"] = int((time.time() - start_time) * 1000)
         results["estimated_token_savings"] = self._estimate_token_savings(results)
-
 
         return results
 
@@ -119,8 +107,7 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
             return None
 
         returncode, stdout, stderr = run_command(
-            ["python", str(script_path), "--path", str(path), "--format", "json"],
-            timeout=60
+            ["python", str(script_path), "--path", str(path), "--format", "json"], timeout=60
         )
 
         if returncode == 0 and stdout:
@@ -140,8 +127,7 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
             return None
 
         returncode, stdout, stderr = run_command(
-            ["python", str(script_path), "--path", str(path), "--format", "json"],
-            timeout=60
+            ["python", str(script_path), "--path", str(path), "--format", "json"], timeout=60
         )
 
         if returncode == 0 and stdout:
@@ -161,8 +147,7 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
             return None
 
         returncode, stdout, stderr = run_command(
-            ["python", str(script_path), "--path", str(path), "--format", "json"],
-            timeout=60
+            ["python", str(script_path), "--path", str(path), "--format", "json"], timeout=60
         )
 
         if returncode == 0 and stdout:
@@ -189,17 +174,20 @@ class AnalyzeCodePatternsScript(BaseCLIScript):
                 for i, line in enumerate(lines):
                     # Simple regex for numeric literals (excluding 0, 1, 2)
                     import re
-                    for match in re.finditer(r'\b(\d{3,})\b', line):
+
+                    for match in re.finditer(r"\b(\d{3,})\b", line):
                         number = match.group(1)
                         if number not in ["100", "200", "404", "500"]:  # Common HTTP codes
-                            smells.append({
-                                "file": str(file.relative_to(path.parent if path.is_file() else path)),
-                                "type": "magic_number",
-                                "value": number,
-                                "line": i + 1,
-                                "severity": "medium",
-                                "suggestion": f"Extract to named constant"
-                            })
+                            smells.append(
+                                {
+                                    "file": str(file.relative_to(path.parent if path.is_file() else path)),
+                                    "type": "magic_number",
+                                    "value": number,
+                                    "line": i + 1,
+                                    "severity": "medium",
+                                    "suggestion": "Extract to named constant",
+                                }
+                            )
 
             except Exception:
                 continue
@@ -247,7 +235,7 @@ Respond with only 'yes' or 'no'.
                 text=True,
                 timeout=10,
                 encoding="utf-8",
-                errors="replace"
+                errors="replace",
             )
 
             if result.returncode == 0:
@@ -271,6 +259,7 @@ Respond with only 'yes' or 'no'.
 def main():
     """CLI entry point."""
     from lib.cli.base import create_cli_script
+
     create_cli_script(AnalyzeCodePatternsScript)
 
 

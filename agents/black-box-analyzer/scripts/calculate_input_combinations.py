@@ -13,12 +13,11 @@ Uses intelligent combinatorial explosion management:
 """
 
 import argparse
-import json
 import sys
 from pathlib import Path
 from typing import Any
 
-from bba.constants import DEFAULT_RESPONSE_CODES, EDGE_CASE_VALUES
+from bba.constants import EDGE_CASE_VALUES
 from bba.models import Endpoint, HTTPMethod, Parameter, Scenario
 from bba.utils import read_json, write_json
 
@@ -149,7 +148,7 @@ def generate_scenarios_for_endpoint(endpoint: Endpoint) -> list[Scenario]:
             )
 
     # --- Security Cases: Specific attack patterns ---
-    security_scenarios = [
+    security_scenarios: list[dict[str, Any]] = [
         # XSS
         {
             "name": "xss_script",
@@ -341,7 +340,7 @@ Examples:
             # Group by endpoint
             endpoint_scenario_counts = {}
             for scenario in scenarios:
-                key = f"{scenario.method.value} {scenario.endpoint}"
+                key = f"{scenario.method_name} {scenario.endpoint}"
                 endpoint_scenario_counts[key] = endpoint_scenario_counts.get(key, 0) + 1
 
             print("Scenario counts per endpoint:", file=sys.stderr)

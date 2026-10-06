@@ -27,6 +27,7 @@ from lib.cli.base import BaseCLIScript
 @dataclass
 class StructureValidationResult:
     """Structure validation result."""
+
     file: str
     type: str  # skill or agent
     valid: bool
@@ -62,12 +63,7 @@ def detect_type(file_path: Path) -> str:
         return "skill"  # Default
 
 
-def validate_yaml_frontmatter(
-    content: str,
-    errors: list[str],
-    warnings: list[str],
-    info: list[str]
-) -> None:
+def validate_yaml_frontmatter(content: str, errors: list[str], warnings: list[str], info: list[str]) -> None:
     """Validate YAML frontmatter."""
     # Match YAML frontmatter
     yaml_match = re.search(r"^---\s*\n(.+?)\n---", content, re.DOTALL | re.MULTILINE)
@@ -101,11 +97,7 @@ def validate_yaml_frontmatter(
                 warnings.append("Description should include trigger phrases (when/use/trigger)")
 
 
-def validate_common_issues(
-    content: str,
-    errors: list[str],
-    warnings: list[str]
-) -> None:
+def validate_common_issues(content: str, errors: list[str], warnings: list[str]) -> None:
     """Validate common issues (placeholders, non-English, markdown)."""
     # Check for placeholders
     if re.search(r"\[TODO\]|\[PLACEHOLDER\]|\[TBD\]", content):
@@ -120,11 +112,7 @@ def validate_common_issues(
         warnings.append("Malformed heading (missing space after ##)")
 
 
-def validate_skill_sections(
-    content: str,
-    errors: list[str],
-    warnings: list[str]
-) -> None:
+def validate_skill_sections(content: str, errors: list[str], warnings: list[str]) -> None:
     """Validate skill-specific sections."""
     # Required sections for skills (7 mandatory)
     required_sections = [
@@ -134,7 +122,7 @@ def validate_skill_sections(
         "Hard Constraints",
         "Operational Guidelines",
         "Self-Verification Checklist",
-        "Communication Style"
+        "Communication Style",
     ]
 
     missing_sections = []
@@ -151,10 +139,7 @@ def validate_skill_sections(
 
     # Check Persona Definition quality
     if re.search(r"##\s+Persona Definition", content):
-        persona_match = re.search(
-            r"(?ms)##\s+Persona Definition\s*\n(.+?)(?=\n##|\Z)",
-            content
-        )
+        persona_match = re.search(r"(?ms)##\s+Persona Definition\s*\n(.+?)(?=\n##|\Z)", content)
         if persona_match:
             persona_section = persona_match.group(1)
 
@@ -163,16 +148,14 @@ def validate_skill_sections(
                 warnings.append("Persona Definition missing expertise level (principal/senior/expert)")
 
             # Should not be generic "developer"
-            if re.search(r"\bYou are an? developer\b", persona_section) and \
-               not re.search(r"(principal|senior|expert|lead) developer", persona_section):
+            if re.search(r"\bYou are an? developer\b", persona_section) and not re.search(
+                r"(principal|senior|expert|lead) developer", persona_section
+            ):
                 warnings.append("Persona too generic ('developer' should be 'principal developer', etc.)")
 
     # Check Self-Verification Checklist format
     if re.search(r"##\s+Self-Verification Checklist", content):
-        checklist_match = re.search(
-            r"(?ms)##\s+Self-Verification Checklist\s*\n(.+?)(?=\n##|\Z)",
-            content
-        )
+        checklist_match = re.search(r"(?ms)##\s+Self-Verification Checklist\s*\n(.+?)(?=\n##|\Z)", content)
         if checklist_match:
             checklist_section = checklist_match.group(1)
 
@@ -180,17 +163,10 @@ def validate_skill_sections(
                 warnings.append("Self-Verification Checklist should use checkbox format [ ]")
 
 
-def validate_agent_sections(
-    content: str,
-    warnings: list[str],
-    info: list[str]
-) -> None:
+def validate_agent_sections(content: str, warnings: list[str], info: list[str]) -> None:
     """Validate agent-specific sections."""
     # Required sections for agents
-    required_sections = [
-        "Core Responsibilities",
-        "Hard Constraints"
-    ]
+    required_sections = ["Core Responsibilities", "Hard Constraints"]
 
     missing_sections = []
     for section in required_sections:
@@ -215,9 +191,7 @@ def validate_agent_sections(
 
 
 def validate_structure(
-    file_path: Path,
-    component_type: str = "auto",
-    strict: bool = False
+    file_path: Path, component_type: str = "auto", strict: bool = False
 ) -> StructureValidationResult:
     """
     Validate skill/agent structure.
@@ -267,12 +241,7 @@ def validate_structure(
         valid = len(errors) == 0
 
     return StructureValidationResult(
-        file=str(file_path),
-        type=component_type,
-        valid=valid,
-        errors=errors,
-        warnings=warnings,
-        info=info
+        file=str(file_path), type=component_type, valid=valid, errors=errors, warnings=warnings, info=info
     )
 
 
@@ -281,36 +250,23 @@ class ValidateSkillStructureScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--file",
-            type=Path,
-            required=True,
-            help="Path to SKILL.md or agent.md file"
-        )
+        parser.add_argument("--file", type=Path, required=True, help="Path to SKILL.md or agent.md file")
         parser.add_argument(
             "--type",
             "-t",
             choices=["auto", "skill", "agent"],
             default="auto",
-            help="Type of validation (default: auto-detect)"
+            help="Type of validation (default: auto-detect)",
         )
         parser.add_argument(
-            "--strict",
-            "-s",
-            action="store_true",
-            help="Enable strict validation (warnings become errors)"
+            "--strict", "-s", action="store_true", help="Enable strict validation (warnings become errors)"
         )
 
     def execute(self, args) -> dict[str, Any]:
         """Execute validation logic."""
         try:
             # Validate structure
-            result = validate_structure(
-                args.file,
-                component_type=args.type,
-                strict=args.strict
-            )
-
+            result = validate_structure(args.file, component_type=args.type, strict=args.strict)
 
             return {
                 "success": result.valid,
@@ -323,27 +279,20 @@ class ValidateSkillStructureScript(BaseCLIScript):
                 "summary": {
                     "errorCount": result.error_count,
                     "warningCount": result.warning_count,
-                    "infoCount": result.info_count
-                }
+                    "infoCount": result.info_count,
+                },
             }
 
         except Exception as e:
             self.logger.error(f"Failed to validate structure: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
         if not result.get("success"):
             return f"Error: {result.get('error', 'Unknown error')}"
 
-        lines = [
-            f"Validation: {result['file']}",
-            f"Type: {result['type']}",
-            ""
-        ]
+        lines = [f"Validation: {result['file']}", f"Type: {result['type']}", ""]
 
         if result["errors"]:
             lines.append("ERRORS:")
@@ -376,10 +325,10 @@ class ValidateSkillStructureScript(BaseCLIScript):
 
         # Validation result
         status = "[OK]" if result["valid"] else "[FAIL]"
-        return (f"{status} ({result['summary']['errorCount']} errors, "
-                f"{result['summary']['warningCount']} warnings)")
+        return f"{status} ({result['summary']['errorCount']} errors, " f"{result['summary']['warningCount']} warnings)"
 
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(ValidateSkillStructureScript)

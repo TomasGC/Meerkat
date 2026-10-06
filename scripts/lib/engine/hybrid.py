@@ -63,14 +63,16 @@ def scan_patterns(
     for i, line in enumerate(content.splitlines(), 1):
         for pattern, message, severity, suggestion in applicable:
             if pattern.search(line):
-                violations.append({
-                    "principle": principle,
-                    "file": filename,
-                    "line": i,
-                    "severity": severity,
-                    "message": message,
-                    "suggestion": suggestion,
-                })
+                violations.append(
+                    {
+                        "principle": principle,
+                        "file": filename,
+                        "line": i,
+                        "severity": severity,
+                        "message": message,
+                        "suggestion": suggestion,
+                    }
+                )
     return violations
 
 
@@ -157,33 +159,47 @@ def run_hybrid(
                 def known_for(f: Path) -> list[dict]:
                     rel = str(f.relative_to(path) if f.is_relative_to(path) else f)
                     return by_file.get(rel, [])
+
             else:
+
                 def known_for(f: Path) -> list[dict]:
                     return per_file.get(f, [])
 
-            extra_slots = {
-                f: {"known_findings": format_known_findings(known_for(f))}
-                for f in source_files
-            }
-            if use_cache:
+            extra_slots = {f: {"known_findings": format_known_findings(known_for(f))} for f in source_files}
+            # use_cache implies cache_dir is set; the second test only narrows the type.
+            if use_cache and cache_dir is not None:
                 raw_items, misses = _read_ai_cache(cache_dir, source_files, cache_key, cache_ttl_days)
                 cache_hits = len(source_files) - len(misses)
                 cache_total = len(source_files)
                 if misses:
                     failed: set[Path] = set()
-                    fresh = analyze_files_parallel(misses, language, role, prompt,
-                                                   prompts_dir=prompts_dir, agents=agents,
-                                                   no_cache=no_cache,
-                                                   extra_slots={f: extra_slots[f] for f in misses},
-                                                   failed=failed, cache=model_cache)
+                    fresh = analyze_files_parallel(
+                        misses,
+                        language,
+                        role,
+                        prompt,
+                        prompts_dir=prompts_dir,
+                        agents=agents,
+                        no_cache=no_cache,
+                        extra_slots={f: extra_slots[f] for f in misses},
+                        failed=failed,
+                        cache=model_cache,
+                    )
                     # A failed call is not a clean result: leave it uncached so the next run retries it.
                     _write_ai_cache(cache_dir, [f for f in misses if f not in failed], cache_key, fresh)
                     raw_items.extend(fresh)
             else:
-                raw_items = analyze_files_parallel(source_files, language, role, prompt,
-                                                   prompts_dir=prompts_dir, agents=agents,
-                                                   no_cache=no_cache, extra_slots=extra_slots,
-                                                   cache=model_cache)
+                raw_items = analyze_files_parallel(
+                    source_files,
+                    language,
+                    role,
+                    prompt,
+                    prompts_dir=prompts_dir,
+                    agents=agents,
+                    no_cache=no_cache,
+                    extra_slots=extra_slots,
+                    cache=model_cache,
+                )
             ai_violations = []
             for item in raw_items:
                 src = Path(item.get("source_file", ""))
@@ -191,14 +207,16 @@ def run_hybrid(
                 if format_ai_violation is not None:
                     ai_violations.append(format_ai_violation(item, rel))
                 else:
-                    ai_violations.append({
-                        "principle": principle,
-                        "file": rel,
-                        "line": item.get("line", 0),
-                        "severity": item.get("severity", default_severity),
-                        "message": f"[{item.get(ai_type_key, '?')}]: {item.get('description', '')}",
-                        "suggestion": item.get("fix", ""),
-                    })
+                    ai_violations.append(
+                        {
+                            "principle": principle,
+                            "file": rel,
+                            "line": item.get("line", 0),
+                            "severity": item.get("severity", default_severity),
+                            "message": f"[{item.get(ai_type_key, '?')}]: {item.get('description', '')}",
+                            "suggestion": item.get("fix", ""),
+                        }
+                    )
             violations.extend(drop_near_duplicates(ai_violations, violations))
             if not files_analyzed:
                 files_analyzed = len(source_files)
@@ -217,7 +235,10 @@ def run_hybrid(
 
 
 def _read_ai_cache(
-    cache_dir: Path, source_files: list[Path], key: str, ttl_days: int,
+    cache_dir: Path,
+    source_files: list[Path],
+    key: str,
+    ttl_days: int,
 ) -> tuple[list[dict], list[Path]]:
     """Return (raw AI items served from cache, files that missed).
 
@@ -242,8 +263,6 @@ def _write_ai_cache(cache_dir: Path, misses: list[Path], key: str, fresh: list[d
     for item in fresh:
         src = Path(item.get("source_file", ""))
         if src in by_file:
-            by_file[src].append(
-                {k: v for k, v in item.items() if k not in ("source_file", "source_file_name")}
-            )
+            by_file[src].append({k: v for k, v in item.items() if k not in ("source_file", "source_file_name")})
     for f, items in by_file.items():
         set_cached(cache_dir, f, key, items)

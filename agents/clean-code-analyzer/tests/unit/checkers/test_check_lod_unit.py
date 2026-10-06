@@ -1,26 +1,27 @@
 """Unit tests for checkers/check_lod.py — regex/grep, no Ollama."""
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-
 from cca.checkers.check_lod import run
 
 
-@pytest.mark.parametrize("code,should_flag", [
-    # Three-level property chain (4 parts) → flag
-    ("result = obj.service.repository.find_by_id(42)\n", True),
-    # Triple method chain → flag
-    ("val = a.get_b().get_c().get_d()\n", True),
-    # Single-level property → no flag
-    ("name = user.profile\n", False),
-    # Two-level property chain — 3 parts, 2 dots → no flag (needs 3+ dots)
-    ("name = user.profile.name\n", False),
-    # Fluent query builder — exempt pattern
-    ("items = db.query(User).filter(User.active).all()\n", False),
-])
+@pytest.mark.parametrize(
+    "code,should_flag",
+    [
+        # Three-level property chain (4 parts) → flag
+        ("result = obj.service.repository.find_by_id(42)\n", True),
+        # Triple method chain → flag
+        ("val = a.get_b().get_c().get_d()\n", True),
+        # Single-level property → no flag
+        ("name = user.profile\n", False),
+        # Two-level property chain — 3 parts, 2 dots → no flag (needs 3+ dots)
+        ("name = user.profile.name\n", False),
+        # Fluent query builder — exempt pattern
+        ("items = db.query(User).filter(User.active).all()\n", False),
+    ],
+)
 def test_lod(tmp_path, code, should_flag):
     """Parametrized Law of Demeter violation check."""
     (tmp_path / "mod.py").write_text(code)
@@ -28,9 +29,7 @@ def test_lod(tmp_path, code, should_flag):
     assert result["success"] is True
     has_violations = len(result["violations"]) > 0
     assert has_violations == should_flag, (
-        f"Code: {code!r}\n"
-        f"Expected should_flag={should_flag}, "
-        f"got violations={result['violations']}"
+        f"Code: {code!r}\n" f"Expected should_flag={should_flag}, " f"got violations={result['violations']}"
     )
 
 
@@ -46,11 +45,10 @@ def test_lod_return_schema(tmp_path):
 
 # ── non-Python language support ─────────────────────────────────────────────────
 
+
 def test_lod_typescript_no_crash(tmp_path):
     """check_lod.run with TypeScript file → success=True, no exception."""
-    (tmp_path / "service.ts").write_text(
-        "export class Service {\n  doWork() { return this.dep.getResult(); }\n}\n"
-    )
+    (tmp_path / "service.ts").write_text("export class Service {\n  doWork() { return this.dep.getResult(); }\n}\n")
     result = run(tmp_path, "typescript")
     assert result["success"] is True
     assert isinstance(result["violations"], list)
@@ -69,6 +67,7 @@ def test_lod_string_literal_chain_not_flagged(tmp_path):
 
 # ── error path ──────────────────────────────────────────────────────────────────
 
+
 def test_lod_oserror_reading_file_skips(tmp_path):
     """OSError reading file → no crash, empty violations returned."""
     (tmp_path / "mod.py").write_text("x = 1\n")
@@ -80,6 +79,7 @@ def test_lod_oserror_reading_file_skips(tmp_path):
 
 # ── comment line skip ───────────────────────────────────────────────────────────
 
+
 def test_lod_comment_line_not_flagged(tmp_path):
     """Lines starting with # → skipped, no false LoD violations."""
     code = "# result = obj.service.repository.find_by_id(42)\n"
@@ -89,6 +89,7 @@ def test_lod_comment_line_not_flagged(tmp_path):
 
 
 # ── self. chain exempt ──────────────────────────────────────────────────────────
+
 
 def test_lod_self_property_chain_exempt(tmp_path):
     """Deep property chain starting with self → exempt from LoD."""
@@ -100,6 +101,7 @@ def test_lod_self_property_chain_exempt(tmp_path):
 
 
 # ── single file path ────────────────────────────────────────────────────────────
+
 
 def test_lod_single_file_path(tmp_path):
     """run() with single file path (not directory) → files_analyzed=1."""

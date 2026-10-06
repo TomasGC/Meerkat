@@ -241,6 +241,16 @@ Still host paths, on purpose: `~/.claude/logs/delegation-stats.jsonl` (written b
 `~/.cache/*` (search-tech, BBA). Inside `lib/`, modules reached from `lib/__init__` import `paths` relatively:
 pytest's importlib mode loads `scripts/lib` as `scripts.lib` before any conftest has put `scripts/` on the path.
 
+## Lint and Coverage Gates (#48)
+
+Coverage of `unit` + `integration_mock` + `integration_real` (without `live_ai`) on sources only is **94%** (gate:
+80%; `pyproject.toml` omits test trees and fixtures). Commands and pinned tool versions: `contexts/commands.md`.
+
+- Tests that pin a known bug: strict `xfail` with `reason="bug (#N): ..."` (#50 BBA analyzers, #51 CLI scripts).
+  Fixing the bug makes the test pass, and strict mode then fails the run until the mark goes.
+- `scripts/cli/tests/unit/test_monitor_task.py` stubs `lib.config.model_config` only while importing the module
+  (`patch.dict(sys.modules)`): a stub left in `sys.modules` broke every lib test collected after it.
+
 ## Prompt Templates Are Tracked
 
 `.gitignore`'s `*local*` rule (personal files) would also hide `agents/*/scripts/prompts/local/`, the local-AI

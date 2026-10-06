@@ -13,7 +13,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -25,26 +25,24 @@ def analyze_package_json(content: str, top_n: int) -> dict:
     """Analyze Node.js package.json file."""
     data = json.loads(content)
 
-    result = {
+    result: dict[str, Any] = {
         "language": "javascript",
         "framework": None,
         "packageManager": "npm",
         "dependencies": [],
         "devDependencies": [],
-        "scripts": {}
+        "scripts": {},
     }
 
     # Extract dependencies
     if "dependencies" in data:
         result["dependencies"] = [
-            {"name": name, "version": version}
-            for name, version in list(data["dependencies"].items())[:top_n]
+            {"name": name, "version": version} for name, version in list(data["dependencies"].items())[:top_n]
         ]
 
     if "devDependencies" in data:
         result["devDependencies"] = [
-            {"name": name, "version": version}
-            for name, version in list(data["devDependencies"].items())[:top_n]
+            {"name": name, "version": version} for name, version in list(data["devDependencies"].items())[:top_n]
         ]
 
     # Detect framework
@@ -76,13 +74,13 @@ def analyze_package_json(content: str, top_n: int) -> dict:
 
 def analyze_requirements_txt(content: str, top_n: int) -> dict:
     """Analyze Python requirements.txt file."""
-    result = {
+    result: dict[str, Any] = {
         "language": "python",
         "framework": None,
         "packageManager": "pip",
         "dependencies": [],
         "devDependencies": [],
-        "scripts": {}
+        "scripts": {},
     }
 
     # Parse requirements
@@ -115,13 +113,13 @@ def analyze_requirements_txt(content: str, top_n: int) -> dict:
 
 def analyze_cargo_toml(content: str, top_n: int) -> dict:
     """Analyze Rust Cargo.toml file."""
-    result = {
+    result: dict[str, Any] = {
         "language": "rust",
         "framework": None,
         "packageManager": "cargo",
         "dependencies": [],
         "devDependencies": [],
-        "scripts": {}
+        "scripts": {},
     }
 
     # Simple TOML parsing (dependencies section)
@@ -182,13 +180,13 @@ def analyze_cargo_toml(content: str, top_n: int) -> dict:
 
 def analyze_go_mod(content: str, top_n: int) -> dict:
     """Analyze Go go.mod file."""
-    result = {
+    result: dict[str, Any] = {
         "language": "go",
         "framework": None,
         "packageManager": "go",
         "dependencies": [],
         "devDependencies": [],
-        "scripts": {}
+        "scripts": {},
     }
 
     # Parse require block
@@ -199,10 +197,7 @@ def analyze_go_mod(content: str, top_n: int) -> dict:
             # Single-line require
             match = re.match(r"require\s+([^\s]+)\s+([^\s]+)", line)
             if match and len(result["dependencies"]) < top_n:
-                result["dependencies"].append({
-                    "name": match.group(1),
-                    "version": match.group(2)
-                })
+                result["dependencies"].append({"name": match.group(1), "version": match.group(2)})
         elif not line.startswith(("module", "go ", ")", "//")):
             # Multi-line require block
             match = re.match(r"([^\s]+)\s+([^\s]+)", line)
@@ -227,13 +222,13 @@ def analyze_go_mod(content: str, top_n: int) -> dict:
 
 def analyze_pom_xml(content: str, top_n: int) -> dict:
     """Analyze Java pom.xml file."""
-    result = {
+    result: dict[str, Any] = {
         "language": "java",
         "framework": None,
         "packageManager": "maven",
         "dependencies": [],
         "devDependencies": [],
-        "scripts": {}
+        "scripts": {},
     }
 
     # Simple XML parsing (dependencies)
@@ -301,17 +296,9 @@ class AnalyzeDependenciesScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
+        parser.add_argument("--file", required=True, help="Path to package file (auto-detects type from filename)")
         parser.add_argument(
-            "--file",
-            required=True,
-            help="Path to package file (auto-detects type from filename)"
-        )
-        parser.add_argument(
-            "--top-n",
-            "-n",
-            type=int,
-            default=10,
-            help="Number of top dependencies to return (default: 10)"
+            "--top-n", "-n", type=int, default=10, help="Number of top dependencies to return (default: 10)"
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -323,30 +310,17 @@ class AnalyzeDependenciesScript(BaseCLIScript):
             # Analyze dependencies
             result = analyze_dependencies(file_path, args.top_n)
 
-
-            return {
-                "success": True,
-                **result
-            }
+            return {"success": True, **result}
 
         except FileNotFoundError as e:
             self.logger.error(str(e))
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
         except ValueError as e:
             self.logger.error(str(e))
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
         except Exception as e:
             self.logger.error(f"Failed to analyze dependencies: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -359,24 +333,24 @@ class AnalyzeDependenciesScript(BaseCLIScript):
             f"Language: {result['language']}",
             f"Framework: {result['framework'] or 'None detected'}",
             f"Package Manager: {result['packageManager']}",
-            ""
+            "",
         ]
 
-        if result['dependencies']:
+        if result["dependencies"]:
             lines.append(f"Dependencies ({len(result['dependencies'])}):")
-            for dep in result['dependencies']:
+            for dep in result["dependencies"]:
                 lines.append(f"  - {dep['name']} ({dep['version']})")
             lines.append("")
 
-        if result['devDependencies']:
+        if result["devDependencies"]:
             lines.append(f"Dev Dependencies ({len(result['devDependencies'])}):")
-            for dep in result['devDependencies']:
+            for dep in result["devDependencies"]:
                 lines.append(f"  - {dep['name']} ({dep['version']})")
             lines.append("")
 
-        if result['scripts']:
+        if result["scripts"]:
             lines.append(f"Scripts ({len(result['scripts'])}):")
-            for name, cmd in list(result['scripts'].items())[:5]:
+            for name, cmd in list(result["scripts"].items())[:5]:
                 lines.append(f"  - {name}: {cmd}")
             lines.append("")
 
@@ -387,11 +361,11 @@ class AnalyzeDependenciesScript(BaseCLIScript):
         if not result.get("success"):
             return f"[ERROR] {result.get('error', 'Unknown error')}"
 
-        framework = result['framework'] or result['language']
-        return (f"{framework} project with {len(result['dependencies'])} dependencies "
-                f"({result['packageManager']})")
+        framework = result["framework"] or result["language"]
+        return f"{framework} project with {len(result['dependencies'])} dependencies " f"({result['packageManager']})"
 
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(AnalyzeDependenciesScript)

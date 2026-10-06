@@ -2,16 +2,17 @@
 """Tests for calculate_complexity.py"""
 
 import ast
-from pathlib import Path
 
 import pytest
 
 from cli.calculate_complexity import CalculateComplexityScript
 
+
 @pytest.fixture
 def script():
     """Create script instance."""
     return CalculateComplexityScript()
+
 
 @pytest.fixture
 def temp_complex_file(tmp_path):
@@ -38,6 +39,7 @@ def complex_function(data):
 """)
     return file
 
+
 def test_calculate_cyclomatic_simple(script):
     """Test cyclomatic complexity for simple function."""
     code = "def foo(): return 1"
@@ -46,6 +48,7 @@ def test_calculate_cyclomatic_simple(script):
 
     complexity = script._calculate_cyclomatic(func)
     assert complexity == 1  # Base complexity
+
 
 def test_calculate_cyclomatic_with_conditions(script):
     """Test cyclomatic complexity with if statements."""
@@ -64,6 +67,7 @@ def foo(x):
     complexity = script._calculate_cyclomatic(func)
     assert complexity >= 2  # At least 2 decision points
 
+
 def test_calculate_nesting_depth(script):
     """Test nesting depth calculation."""
     code = """
@@ -79,13 +83,16 @@ def foo():
     depth = script._calculate_nesting(func)
     assert depth == 3
 
+
 def test_calculate_severity_high(script):
     """Test high severity calculation."""
     severity = script._calculate_severity(15, 5, 100)
     assert severity == "high"
 
+
 def test_script_execution_success(script, temp_complex_file, monkeypatch):
     """Test full script execution."""
+
     class Args:
         path = temp_complex_file.parent
         threshold = 5
@@ -97,8 +104,10 @@ def test_script_execution_success(script, temp_complex_file, monkeypatch):
     assert result["files_analyzed"] == 1
     assert "complexity_issues" in result
 
+
 def test_complexity_issue_reports_def_line(script, temp_complex_file):
     """Each complexity issue carries the line of its function's def statement."""
+
     class Args:
         path = temp_complex_file.parent
         threshold = 5

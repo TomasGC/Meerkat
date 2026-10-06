@@ -10,13 +10,12 @@ These tests validate agent → scripts delegation and autonomous execution.
 
 import json
 import subprocess
-from unittest.mock import MagicMock, patch
 import sys
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from lib import paths
-
 
 pytestmark = pytest.mark.e2e_agents
 
@@ -24,6 +23,7 @@ pytestmark = pytest.mark.e2e_agents
 # ---------------------------------------------------------------------------
 # E2E: black-box-analyzer agent workflow
 # ---------------------------------------------------------------------------
+
 
 def test_black_box_analyzer_detects_project_type(tmp_path):
     """black-box-analyzer agent must detect project type autonomously."""
@@ -47,8 +47,9 @@ func TestGetUser(t *testing.T) {
 }
 """)
 
-    from cli.detect_project_type import DetectProjectTypeScript
     import argparse
+
+    from cli.detect_project_type import DetectProjectTypeScript
 
     script = DetectProjectTypeScript()
     args = argparse.Namespace(path=tmp_path, format="json")
@@ -96,7 +97,7 @@ func TestCreateUser(t *testing.T) { /* test */ }
 func TestUpdateUser(t *testing.T) { /* test */ }
 """)
 
-    test_count = len([line for line in test_file.read_text().split('\n') if 'func Test' in line])
+    test_count = len([line for line in test_file.read_text().split("\n") if "func Test" in line])
     assert test_count == 4
 
 
@@ -126,28 +127,21 @@ def test_black_box_analyzer_identifies_coverage_gaps(tmp_path):
 def test_black_box_analyzer_prioritizes_by_risk():
     """black-box-analyzer agent must rank gaps by risk."""
     gaps = [
-        {
-            "endpoint": "/users/:id",
-            "method": "DELETE",
-            "scenario_type": "destructive",
-            "risk_level": "CRITICAL"
-        },
-        {
-            "endpoint": "/users",
-            "method": "GET",
-            "scenario_type": "happy_path",
-            "risk_level": "LOW"
-        },
+        {"endpoint": "/users/:id", "method": "DELETE", "scenario_type": "destructive", "risk_level": "CRITICAL"},
+        {"endpoint": "/users", "method": "GET", "scenario_type": "happy_path", "risk_level": "LOW"},
     ]
 
     # Sort by risk
-    sorted_gaps = sorted(gaps, key=lambda g: {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}.get(g["risk_level"], 0), reverse=True)
+    sorted_gaps = sorted(
+        gaps, key=lambda g: {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}.get(g["risk_level"], 0), reverse=True
+    )
     assert sorted_gaps[0]["risk_level"] == "CRITICAL"
 
 
 # ---------------------------------------------------------------------------
 # E2E: task-delegator agent workflow
 # ---------------------------------------------------------------------------
+
 
 def test_task_delegator_routes_analysis_task():
     """task-delegator agent must route analysis tasks to appropriate agents."""
@@ -181,6 +175,7 @@ def test_task_delegator_handles_parallel_execution():
 # E2E: code-reviewer agent workflow
 # ---------------------------------------------------------------------------
 
+
 def test_code_reviewer_agent_checks_quality(tmp_path):
     """code-reviewer agent must analyze code for quality issues."""
     code_file = tmp_path / "script.py"
@@ -210,10 +205,11 @@ def process_data(y):  # Duplicate function!
 
 def test_code_reviewer_agent_security_analysis():
     """code-reviewer agent must detect security vulnerabilities."""
-    from cli.analyze_commit_quality import AnalyzeCommitQualityScript
     import argparse
 
-    diff = '''diff --git a/src/users.py b/src/users.py
+    from cli.analyze_commit_quality import AnalyzeCommitQualityScript
+
+    diff = """diff --git a/src/users.py b/src/users.py
 --- a/src/users.py
 +++ b/src/users.py
 @@ -1,2 +1,6 @@
@@ -221,10 +217,10 @@ def test_code_reviewer_agent_security_analysis():
 +    return db.execute(f"SELECT * FROM users WHERE id = {user_id}").fetchall()
 +
 +password = "password123"
-'''
+"""
 
     script = AnalyzeCommitQualityScript()
-    with patch("cli.analyze_commit_quality.subprocess.run") as mock_run:
+    with patch("lib.utils.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout=diff, stderr="")
         args = argparse.Namespace(commit=None, staged=True, format="json")
         result = script.execute(args)
@@ -237,6 +233,7 @@ def test_code_reviewer_agent_security_analysis():
 # ---------------------------------------------------------------------------
 # E2E: full autonomous workflow (agent orchestration)
 # ---------------------------------------------------------------------------
+
 
 def test_full_agent_workflow_orchestration(tmp_path):
     """Full workflow: detect → analyze → prioritize → report."""
@@ -290,7 +287,7 @@ def test_agent_produces_structured_output():
                 "risk": "CRITICAL",
                 "reason": "Destructive operation without coverage",
             }
-        ]
+        ],
     }
 
     assert sample_output["success"] is True

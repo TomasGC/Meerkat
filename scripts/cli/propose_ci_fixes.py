@@ -14,13 +14,16 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+_get_model: Optional[Callable[..., str]]
 try:
-    from lib.config.model_config import get_model as _get_model
+    from lib.config.model_config import get_model
+
+    _get_model = get_model
 except ImportError:
     _get_model = None
 
@@ -31,6 +34,7 @@ from lib.utils import run_command
 @dataclass
 class ErrorInput:
     """CI error input."""
+
     error_id: str
     error_type: str  # compilation, test, lint, build
     error_message: str
@@ -42,6 +46,7 @@ class ErrorInput:
 @dataclass
 class FixProposal:
     """Fix proposal from Ollama."""
+
     error_id: str
     fix_type: str
     file_path: str
@@ -56,6 +61,7 @@ class FixProposal:
 @dataclass
 class EscalatedError:
     """Error escalated to Claude."""
+
     error_id: str
     error_type: str
     reason: str
@@ -122,11 +128,7 @@ def extract_context(error: ErrorInput, repo_path: Path) -> dict[str, Any]:
     Returns:
         Context dictionary
     """
-    context = {
-        "file_content": None,
-        "dependencies": [],
-        "related_files": []
-    }
+    context: dict[str, Any] = {"file_content": None, "dependencies": [], "related_files": []}
 
     if not error.file_path:
         return context
@@ -155,15 +157,9 @@ def extract_context(error: ErrorInput, repo_path: Path) -> dict[str, Any]:
             for build_file in build_files:
                 build_path = repo_path / build_file
                 if build_path.exists():
-                    returncode, stdout, _ = run_command(
-                        ["grep", "-i", class_name, str(build_path)],
-                        timeout=5
-                    )
+                    returncode, stdout, _ = run_command(["grep", "-i", class_name, str(build_path)], timeout=5)
                     if returncode == 0 and stdout.strip():
-                        context["dependencies"].append({
-                            "file": build_file,
-                            "match": stdout.strip()
-                        })
+                        context["dependencies"].append({"file": build_file, "match": stdout.strip()})
 
     return context
 
@@ -201,6 +197,7 @@ Respond with JSON only (no markdown):
     try:
         # Invoke Ollama
         import time
+
         start = time.time()
 
         _model = _get_model("fast", "local", fallback="qwen2.5-coder:7b") if _get_model else "qwen2.5-coder:7b"
@@ -210,7 +207,7 @@ Respond with JSON only (no markdown):
             text=True,
             timeout=30,
             encoding="utf-8",
-            errors="replace"
+            errors="replace",
         )
 
         latency_ms = int((time.time() - start) * 1000)
@@ -221,7 +218,7 @@ Respond with JSON only (no markdown):
         output = result.stdout.strip()
 
         # Try to extract JSON (Ollama might wrap in markdown)
-        json_match = re.search(r'\{[^}]+\}', output, re.DOTALL)
+        json_match = re.search(r"\{[^}]+\}", output, re.DOTALL)
         if json_match:
             output = json_match.group(0)
 
@@ -245,53 +242,43 @@ class ProposeCIFixesScript(BaseCLIScript):
     def setup_parser(self, parser):
         """Add script-specific arguments."""
         parser.add_argument(
-            "--errors-json",
-            type=Path,
-            required=True,
-            help="Path to errors JSON file from analyze_ci_failure.py"
+            "--errors-json", type=Path, required=True, help="Path to errors JSON file from analyze_ci_failure.py"
         )
         parser.add_argument(
-            "--repo-path",
-            type=Path,
-            default=Path.cwd(),
-            help="Repository path (default: current directory)"
+            "--repo-path", type=Path, default=Path.cwd(), help="Repository path (default: current directory)"
         )
 
     def execute(self, args) -> dict[str, Any]:
         """Execute fix proposal."""
         import time
+
         start_time = time.time()
 
         # Check Ollama availability
         returncode, _, _ = run_command(["ollama", "ps"], timeout=5)
         if returncode != 0:
             self.logger.warning("Ollama not available - escalating all errors to Claude")
-            return {
-                "success": False,
-                "error": "Ollama service unavailable",
-                "fallback": "escalate_all_to_claude"
-            }
+            return {"success": False, "error": "Ollama service unavailable", "fallback": "escalate_all_to_claude"}
 
         # Load errors
         if not args.errors_json.exists():
-            return {
-                "success": False,
-                "error": f"Errors file not found: {args.errors_json}"
-            }
+            return {"success": False, "error": f"Errors file not found: {args.errors_json}"}
 
         with open(args.errors_json, "r", encoding="utf-8") as f:
             errors_data = json.load(f)
 
         errors = []
         for idx, err in enumerate(errors_data.get("errors", [])):
-            errors.append(ErrorInput(
-                error_id=err.get("id", f"error_{idx}"),
-                error_type=err.get("type", "unknown"),
-                error_message=err.get("message", ""),
-                file_path=err.get("file"),
-                line_number=err.get("line"),
-                context_lines=err.get("context", [])
-            ))
+            errors.append(
+                ErrorInput(
+                    error_id=err.get("id", f"error_{idx}"),
+                    error_type=err.get("type", "unknown"),
+                    error_message=err.get("message", ""),
+                    file_path=err.get("file"),
+                    line_number=err.get("line"),
+                    context_lines=err.get("context", []),
+                )
+            )
 
         self.logger.info(f"Analyzing {len(errors)} errors")
 
@@ -314,33 +301,37 @@ class ProposeCIFixesScript(BaseCLIScript):
                 fix_response = invoke_ollama_for_fix(error, context)
 
                 if fix_response:
-                    proposals.append(FixProposal(
-                        error_id=error.error_id,
-                        fix_type=fix_response["fix_type"],
-                        file_path=error.file_path or "unknown",
-                        line_number=error.line_number,
-                        original_code=context.get("file_content"),
-                        fixed_code=fix_response["fixed_code"],
-                        reasoning=fix_response["reasoning"],
-                        confidence=fix_response["confidence"],
-                        ollama_latency_ms=fix_response["latency_ms"]
-                    ))
+                    proposals.append(
+                        FixProposal(
+                            error_id=error.error_id,
+                            fix_type=fix_response["fix_type"],
+                            file_path=error.file_path or "unknown",
+                            line_number=error.line_number,
+                            original_code=context.get("file_content"),
+                            fixed_code=fix_response["fixed_code"],
+                            reasoning=fix_response["reasoning"],
+                            confidence=fix_response["confidence"],
+                            ollama_latency_ms=fix_response["latency_ms"],
+                        )
+                    )
                 else:
                     # Ollama failed, escalate
                     escalated_count += 1
-                    escalated.append(EscalatedError(
-                        error_id=error.error_id,
-                        error_type=error.error_type,
-                        reason="Ollama failed to propose fix"
-                    ))
+                    escalated.append(
+                        EscalatedError(
+                            error_id=error.error_id, error_type=error.error_type, reason="Ollama failed to propose fix"
+                        )
+                    )
             else:
                 escalated_count += 1
                 self.logger.debug(f"Escalating {error.error_id} to Claude")
-                escalated.append(EscalatedError(
-                    error_id=error.error_id,
-                    error_type=error.error_type,
-                    reason="Complex error requiring Claude analysis"
-                ))
+                escalated.append(
+                    EscalatedError(
+                        error_id=error.error_id,
+                        error_type=error.error_type,
+                        reason="Complex error requiring Claude analysis",
+                    )
+                )
 
         # Calculate token savings
         # Estimate: 8K tokens saved per Ollama-handled error
@@ -364,7 +355,7 @@ class ProposeCIFixesScript(BaseCLIScript):
                     "fixed_code": p.fixed_code,
                     "reasoning": p.reasoning,
                     "confidence": p.confidence,
-                    "ollama_latency_ms": p.ollama_latency_ms
+                    "ollama_latency_ms": p.ollama_latency_ms,
                 }
                 for p in proposals
             ],
@@ -373,14 +364,13 @@ class ProposeCIFixesScript(BaseCLIScript):
                     "error_id": e.error_id,
                     "error_type": e.error_type,
                     "reason": e.reason,
-                    "requires_claude": e.requires_claude
+                    "requires_claude": e.requires_claude,
                 }
                 for e in escalated
             ],
             "estimated_token_savings": estimated_token_savings,
-            "claude_tokens_needed": claude_tokens_needed
+            "claude_tokens_needed": claude_tokens_needed,
         }
-
 
         return result
 
@@ -388,6 +378,7 @@ class ProposeCIFixesScript(BaseCLIScript):
 def main():
     """CLI entry point."""
     from lib.cli.base import create_cli_script
+
     create_cli_script(ProposeCIFixesScript)
 
 

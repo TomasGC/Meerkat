@@ -29,8 +29,17 @@ def run(
     **kwargs,
 ) -> dict:
     return run_gap_checker(
-        path, language, tier=_TIER, principle=_PRINCIPLE, prompt=_PROMPT,
-        missing_message="No integration/mock test file found for this source file", ai_message=_ai_message,
-        files=files, agents=agents, no_cache=no_cache, role=role,
-        cache_dir=cache_dir, cache_ttl_days=cache_ttl_days,
+        path,
+        language,
+        tier=_TIER,
+        principle=_PRINCIPLE,
+        prompt=_PROMPT,
+        missing_message="No integration/mock test file found for this source file",
+        ai_message=_ai_message,
+        files=files,
+        agents=agents,
+        no_cache=no_cache,
+        role=role,
+        cache_dir=cache_dir,
+        cache_ttl_days=cache_ttl_days,
     )

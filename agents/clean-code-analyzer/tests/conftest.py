@@ -1,6 +1,7 @@
-import pytest
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import pytest
 
 # Add the agent's scripts dir to path
 SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
@@ -83,7 +84,10 @@ def clean_project(tmp_path):
 
 @pytest.fixture
 def mock_ollama_violations():
-    return '[{"principle": "S", "line": 5, "severity": "high", "violation": "Too many responsibilities", "suggestion": "Split class"}]'
+    return (
+        '[{"principle": "S", "line": 5, "severity": "high", "violation": "Too many responsibilities", "suggestion":'
+        ' "Split class"}]'
+    )
 
 
 @pytest.fixture

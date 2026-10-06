@@ -7,13 +7,8 @@ Handles detection and analysis of mobile apps:
 """
 
 import re
-import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from bba.constants import MOBILE_PATTERNS
 from bba.models import (
     EntryPoint,
     EntryPointType,
@@ -38,8 +33,7 @@ class MobileAnalyzer(BaseAnalyzer):
     def can_analyze(self, project_info: ProjectInfo) -> bool:
         """Check if this analyzer can handle mobile projects."""
         return (
-            ProjectType.ANDROID_APP in project_info.project_types
-            or ProjectType.IOS_APP in project_info.project_types
+            ProjectType.ANDROID_APP in project_info.project_types or ProjectType.IOS_APP in project_info.project_types
         )
 
     def extract_entry_points(self, project_path: Path) -> list[EntryPoint]:
@@ -68,9 +62,7 @@ class MobileAnalyzer(BaseAnalyzer):
                 continue
 
             # Activities
-            activity_pattern = re.compile(
-                r"class\s+(\w+)\s*:\s*(?:AppCompat)?Activity"
-            )
+            activity_pattern = re.compile(r"class\s+(\w+)\s*:\s*(?:AppCompat)?Activity")
             for match in activity_pattern.finditer(content):
                 activity_name = match.group(1)
                 line_num = content[: match.start()].count("\n") + 1
@@ -89,9 +81,7 @@ class MobileAnalyzer(BaseAnalyzer):
 
                 # Extract lifecycle methods within this Activity
                 entry_points.extend(
-                    self._extract_android_lifecycle(
-                        content, activity_name, file_path, project_path, match.end()
-                    )
+                    self._extract_android_lifecycle(content, activity_name, file_path, project_path, match.end())
                 )
 
             # Fragments
@@ -174,9 +164,7 @@ class MobileAnalyzer(BaseAnalyzer):
         """Extract Android lifecycle methods."""
         lifecycle_methods = []
 
-        lifecycle_pattern = re.compile(
-            r"override\s+fun\s+(onCreate|onStart|onResume|onPause|onStop|onDestroy)"
-        )
+        lifecycle_pattern = re.compile(r"override\s+fun\s+(onCreate|onStart|onResume|onPause|onStop|onDestroy)")
 
         # Bound search to end of this class body — stop at next class declaration
         next_class = re.search(r"\nclass\s+", content[start_pos:])
@@ -232,11 +220,7 @@ class MobileAnalyzer(BaseAnalyzer):
                 )
 
                 # Extract lifecycle methods
-                entry_points.extend(
-                    self._extract_ios_lifecycle(
-                        content, vc_name, file_path, project_path, match.end()
-                    )
-                )
+                entry_points.extend(self._extract_ios_lifecycle(content, vc_name, file_path, project_path, match.end()))
 
             # SwiftUI Views
             swiftui_pattern = re.compile(r"struct\s+(\w+)\s*:\s*View")

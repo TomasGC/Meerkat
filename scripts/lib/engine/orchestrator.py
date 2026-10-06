@@ -8,6 +8,7 @@ severity filtering, and json/table output.
 """
 
 import argparse
+import functools
 import importlib
 import inspect
 import json
@@ -53,7 +54,9 @@ def _detect_base_branch(path: Path) -> str | None:
     for branch in ("main", "master"):
         r = subprocess.run(
             ["git", "rev-parse", "--verify", branch],
-            capture_output=True, cwd=str(path), timeout=5,
+            capture_output=True,
+            cwd=str(path),
+            timeout=5,
         )
         if r.returncode == 0:
             return branch
@@ -125,8 +128,7 @@ def _run_by_language(
     language of the files they are actually reading.
     """
     runs = [
-        _run_checker(name, module_path, path, language, files, agents, no_cache,
-                     cache_ttl_days, role, cache_dir)
+        _run_checker(name, module_path, path, language, files, agents, no_cache, cache_ttl_days, role, cache_dir)
         for language, files in groups.items()
     ]
     return _merge_runs(name, runs)
@@ -215,39 +217,53 @@ def main(
     headers and the "Summary by X" line. `app_name` drives the banner text.
     """
     parser = argparse.ArgumentParser(description=app_name)
-    parser.add_argument("--path", "-p", type=Path, default=Path.cwd(),
-                        help="Path to analyze (default: cwd)")
-    parser.add_argument("--checks", "-c", default="all",
-                        help="Comma-separated checkers or 'all' (default: all)")
-    parser.add_argument("--format", "-f", choices=["json", "table"], default="json",
-                        help="Output format (default: json)")
-    parser.add_argument("--output", "-o", type=Path, default=None,
-                        help="Output file path (default: stdout)")
-    parser.add_argument("--top", "-n", type=int, default=None,
-                        help="Limit output to top N violations by severity")
-    parser.add_argument("--min-severity", choices=["high", "medium", "low"], default="low",
-                        help="Minimum severity to include (default: low = all)")
-    parser.add_argument("--stream", action=argparse.BooleanOptionalAction, default=True,
-                        help="Stream checker progress to stderr as each finishes (default: on)")
-    parser.add_argument("--since", default=None, metavar="REF",
-                        help="Incremental: only analyze files changed since git ref (e.g. HEAD~1, main)")
-    parser.add_argument("--staged", action="store_true",
-                        help="Incremental: only analyze git staged files")
-    parser.add_argument("--agents", type=int, default=1, metavar="N",
-                        help="Run N independent local AI calls per file, dedup-merge (default: 1)")
-    parser.add_argument("--no-cache", action="store_true",
-                        help="Bypass per-file local AI result cache")
-    parser.add_argument("--cache-ttl", type=int, default=7, metavar="DAYS",
-                        help="Cache TTL in days; 0 = never expire (default: 7)")
-    parser.add_argument("--clear-cache", action="store_true",
-                        help="Delete all cached results and exit")
-    parser.add_argument("--full", action="store_true",
-                        help="Full-repo analysis, bypass auto branch-vs-main detection")
+    parser.add_argument("--path", "-p", type=Path, default=Path.cwd(), help="Path to analyze (default: cwd)")
+    parser.add_argument("--checks", "-c", default="all", help="Comma-separated checkers or 'all' (default: all)")
+    parser.add_argument(
+        "--format", "-f", choices=["json", "table"], default="json", help="Output format (default: json)"
+    )
+    parser.add_argument("--output", "-o", type=Path, default=None, help="Output file path (default: stdout)")
+    parser.add_argument("--top", "-n", type=int, default=None, help="Limit output to top N violations by severity")
+    parser.add_argument(
+        "--min-severity",
+        choices=["high", "medium", "low"],
+        default="low",
+        help="Minimum severity to include (default: low = all)",
+    )
+    parser.add_argument(
+        "--stream",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Stream checker progress to stderr as each finishes (default: on)",
+    )
+    parser.add_argument(
+        "--since",
+        default=None,
+        metavar="REF",
+        help="Incremental: only analyze files changed since git ref (e.g. HEAD~1, main)",
+    )
+    parser.add_argument("--staged", action="store_true", help="Incremental: only analyze git staged files")
+    parser.add_argument(
+        "--agents",
+        type=int,
+        default=1,
+        metavar="N",
+        help="Run N independent local AI calls per file, dedup-merge (default: 1)",
+    )
+    parser.add_argument("--no-cache", action="store_true", help="Bypass per-file local AI result cache")
+    parser.add_argument(
+        "--cache-ttl", type=int, default=7, metavar="DAYS", help="Cache TTL in days; 0 = never expire (default: 7)"
+    )
+    parser.add_argument("--clear-cache", action="store_true", help="Delete all cached results and exit")
+    parser.add_argument("--full", action="store_true", help="Full-repo analysis, bypass auto branch-vs-main detection")
     model_group = parser.add_mutually_exclusive_group()
-    model_group.add_argument("--role", default=None, metavar="ROLE",
-                             help="Override model role for all semantic checkers (analyzer, fast, deep, reasoning)")
-    model_group.add_argument("--fast", action="store_true",
-                             help="Use 'fast' role for all semantic checkers")
+    model_group.add_argument(
+        "--role",
+        default=None,
+        metavar="ROLE",
+        help="Override model role for all semantic checkers (analyzer, fast, deep, reasoning)",
+    )
+    model_group.add_argument("--fast", action="store_true", help="Use 'fast' role for all semantic checkers")
     args = parser.parse_args(argv)
     if args.fast:
         args.role = "fast"
@@ -283,20 +299,21 @@ def main(
     elif args.since:
         incremental_files = get_changed_files(path, since=args.since)
         if incremental_files is not None:
-            print(f"[Incremental] changed since {args.since}: {len(incremental_files)} files",
-                  file=sys.stderr, flush=True)
+            print(
+                f"[Incremental] changed since {args.since}: {len(incremental_files)} files", file=sys.stderr, flush=True
+            )
         else:
-            print(f"[Incremental] --since: not a git repo; running full analysis", file=sys.stderr)
+            print("[Incremental] --since: not a git repo; running full analysis", file=sys.stderr)
     elif not args.full:
         base = _detect_base_branch(path)
         if base:
             incremental_files = get_branch_files(path, base)
             if incremental_files is not None:
-                print(f"[Auto] branch vs {base}: {len(incremental_files)} changed files",
-                      file=sys.stderr, flush=True)
+                print(f"[Auto] branch vs {base}: {len(incremental_files)} changed files", file=sys.stderr, flush=True)
             else:
-                print(f"[Auto] not a git repo or no changes vs {base}; running full analysis",
-                      file=sys.stderr, flush=True)
+                print(
+                    f"[Auto] not a git repo or no changes vs {base}; running full analysis", file=sys.stderr, flush=True
+                )
         else:
             print("[Auto] base branch not found; running full analysis", file=sys.stderr, flush=True)
 
@@ -353,16 +370,25 @@ def main(
             print(
                 f"  {bar}  {status} {result.get('principle', checker_name):<22} "
                 f"{n:>3} violations  ({ms}ms){cache_str}",
-                file=sys.stderr, flush=True,
+                file=sys.stderr,
+                flush=True,
             )
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for name, mod_path in selected:
             future = executor.submit(
-                _run_by_language, name, mod_path, path, groups_by_checker[name],
-                args.agents, args.no_cache, args.cache_ttl, args.role, cache_dir,
+                _run_by_language,
+                name,
+                mod_path,
+                path,
+                groups_by_checker[name],
+                args.agents,
+                args.no_cache,
+                args.cache_ttl,
+                args.role,
+                cache_dir,
             )
-            future.add_done_callback(lambda f, n=name: on_checker_done(f, n))
+            future.add_done_callback(functools.partial(on_checker_done, checker_name=name))
 
     results = _completed
 
@@ -376,8 +402,7 @@ def main(
                 all_violations.append(v)
 
     _min_sev = _SEVERITY_ORDER.get(args.min_severity, 2)
-    all_violations = [v for v in all_violations
-                      if _SEVERITY_ORDER.get(v.get("severity", "low"), 2) <= _min_sev]
+    all_violations = [v for v in all_violations if _SEVERITY_ORDER.get(v.get("severity", "low"), 2) <= _min_sev]
     all_violations.sort(key=lambda v: _SEVERITY_ORDER.get(v.get("severity", "low"), 2))
 
     if args.top:
@@ -398,18 +423,21 @@ def main(
             print(
                 f"  {principle:<28} {bar}  {counts['count']:>3}  "
                 f"({counts['high']}H {counts['medium']}M {counts['low']}L)",
-                file=sys.stderr, flush=True,
+                file=sys.stderr,
+                flush=True,
             )
         print(f"{'─' * 60}", file=sys.stderr, flush=True)
         print(
             f"  Total: {len(all_violations)} violations  |  {total_time}ms",
-            file=sys.stderr, flush=True,
+            file=sys.stderr,
+            flush=True,
         )
         if cache_hits:
             saved_s = round(cache_hits * 1.5)
             print(
                 f"  Cache: {cache_hits} hits / {cache_total} files  (~{saved_s}s saved)",
-                file=sys.stderr, flush=True,
+                file=sys.stderr,
+                flush=True,
             )
 
     output_data: dict = {
@@ -436,8 +464,10 @@ def main(
         _print_table(all_violations, label_singular)
         print(f"\nSummary by {label_singular}:")
         for principle, counts in sorted(summary.items()):
-            print(f"  {principle:<28} {counts['count']:>3} total  "
-                  f"({counts['high']} high, {counts['medium']} medium, {counts['low']} low)")
+            print(
+                f"  {principle:<28} {counts['count']:>3} total  "
+                f"({counts['high']} high, {counts['medium']} medium, {counts['low']} low)"
+            )
     else:
         json_str = json.dumps(output_data, indent=2)
         if args.output:

@@ -11,9 +11,7 @@ Supports both direct run IDs and full GitHub URLs (pipeline or PR).
 """
 
 import re
-import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
@@ -23,7 +21,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript
 from lib.utils import run_command
-
 
 # Error patterns for categorization (order matters - most specific first)
 ERROR_PATTERNS = {
@@ -88,6 +85,7 @@ NOISE_PATTERNS = [
 @dataclass
 class CIAnalysis:
     """CI failure analysis result."""
+
     run_id: str
     repo: str
     infrastructure_errors: list[str]
@@ -100,9 +98,14 @@ class CIAnalysis:
     @property
     def total_errors(self) -> int:
         """Total number of errors."""
-        return (len(self.infrastructure_errors) + len(self.compilation_errors) +
-                len(self.test_failures) + len(self.lint_errors) +
-                len(self.build_errors) + len(self.unknown_errors))
+        return (
+            len(self.infrastructure_errors)
+            + len(self.compilation_errors)
+            + len(self.test_failures)
+            + len(self.lint_errors)
+            + len(self.build_errors)
+            + len(self.unknown_errors)
+        )
 
     @property
     def priority_category(self) -> str:
@@ -167,7 +170,7 @@ def analyze_logs(logs: str) -> dict[str, list[str]]:
         "test": [],
         "lint": [],
         "build": [],
-        "unknown": []
+        "unknown": [],
     }
 
     seen_errors: set[str] = set()
@@ -206,20 +209,9 @@ class AnalyzeCIFailureScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--url",
-            "-u",
-            help="GitHub URL (pipeline run or pull request)"
-        )
-        parser.add_argument(
-            "--run-id",
-            "-r",
-            help="GitHub Actions run ID (alternative to --url)"
-        )
-        parser.add_argument(
-            "--repo",
-            help="Repository in format 'owner/repo' (required with --run-id)"
-        )
+        parser.add_argument("--url", "-u", help="GitHub URL (pipeline run or pull request)")
+        parser.add_argument("--run-id", "-r", help="GitHub Actions run ID (alternative to --url)")
+        parser.add_argument("--repo", help="Repository in format 'owner/repo' (required with --run-id)")
 
     def execute(self, args) -> dict[str, Any]:
         """Execute CI failure analysis."""
@@ -227,20 +219,14 @@ class AnalyzeCIFailureScript(BaseCLIScript):
         returncode, _, _ = run_command(["gh", "--version"], timeout=5)
         if returncode != 0:
             self.logger.error("gh CLI not found. Install from: https://cli.github.com/")
-            return {
-                "success": False,
-                "error": "gh CLI not found"
-            }
+            return {"success": False, "error": "gh CLI not found"}
 
         # Parse arguments
         if args.url:
             parsed = parse_github_url(args.url)
             if not parsed:
                 self.logger.error("Invalid GitHub URL format")
-                return {
-                    "success": False,
-                    "error": "Invalid GitHub URL format"
-                }
+                return {"success": False, "error": "Invalid GitHub URL format"}
 
             repo, run_id = parsed
 
@@ -249,29 +235,18 @@ class AnalyzeCIFailureScript(BaseCLIScript):
             run_id = args.run_id
 
         else:
-            return {
-                "success": False,
-                "error": "Either --url or (--run-id and --repo) must be provided"
-            }
+            return {"success": False, "error": "Either --url or (--run-id and --repo) must be provided"}
 
         self.logger.info(f"Analyzing run #{run_id} for repo {repo}")
 
         # Fetch logs
         logs = fetch_failed_logs(repo, run_id)
         if logs is None:
-            return {
-                "success": False,
-                "error": "Failed to fetch logs"
-            }
+            return {"success": False, "error": "Failed to fetch logs"}
 
         if not logs.strip():
             self.logger.info("No failed logs found. Run may have passed or is still in progress.")
-            return {
-                "success": True,
-                "run_id": run_id,
-                "repo": repo,
-                "total_errors": 0
-            }
+            return {"success": True, "run_id": run_id, "repo": repo, "total_errors": 0}
 
         # Analyze logs
         errors = analyze_logs(logs)
@@ -288,7 +263,6 @@ class AnalyzeCIFailureScript(BaseCLIScript):
             unknown_errors=errors["unknown"],
         )
 
-
         return {
             "success": True,
             "run_id": analysis.run_id,
@@ -300,7 +274,7 @@ class AnalyzeCIFailureScript(BaseCLIScript):
             "test_failures": analysis.test_failures,
             "lint_errors": analysis.lint_errors,
             "build_errors": analysis.build_errors,
-            "unknown_errors": analysis.unknown_errors
+            "unknown_errors": analysis.unknown_errors,
         }
 
     def format_text(self, result: dict) -> str:
@@ -317,66 +291,66 @@ class AnalyzeCIFailureScript(BaseCLIScript):
             f"Repo: {result['repo']}",
             f"Total Errors: {result['total_errors']}",
             f"Priority: {result['priority_category']}",
-            ""
+            "",
         ]
 
         # Infrastructure errors
-        if result['infrastructure_errors']:
+        if result["infrastructure_errors"]:
             lines.append(f"[!] Infrastructure Errors ({len(result['infrastructure_errors'])} found)")
             lines.append("-" * 60)
-            for err in result['infrastructure_errors'][:10]:
+            for err in result["infrastructure_errors"][:10]:
                 lines.append(f"  [X] {err}")
-            if len(result['infrastructure_errors']) > 10:
+            if len(result["infrastructure_errors"]) > 10:
                 lines.append(f"  [i] ... and {len(result['infrastructure_errors']) - 10} more")
             lines.append("")
 
         # Compilation errors
-        if result['compilation_errors']:
+        if result["compilation_errors"]:
             lines.append(f"[!] Compilation Errors ({len(result['compilation_errors'])} found)")
             lines.append("-" * 60)
-            for err in result['compilation_errors'][:10]:
+            for err in result["compilation_errors"][:10]:
                 lines.append(f"  [X] {err}")
-            if len(result['compilation_errors']) > 10:
+            if len(result["compilation_errors"]) > 10:
                 lines.append(f"  [i] ... and {len(result['compilation_errors']) - 10} more")
             lines.append("")
 
         # Build errors
-        if result['build_errors']:
+        if result["build_errors"]:
             lines.append(f"[!] Build Errors ({len(result['build_errors'])} found)")
             lines.append("-" * 60)
-            for err in result['build_errors'][:10]:
+            for err in result["build_errors"][:10]:
                 lines.append(f"  [X] {err}")
-            if len(result['build_errors']) > 10:
+            if len(result["build_errors"]) > 10:
                 lines.append(f"  [i] ... and {len(result['build_errors']) - 10} more")
             lines.append("")
 
         # Test failures
-        if result['test_failures']:
+        if result["test_failures"]:
             lines.append(f"[!] Test Failures ({len(result['test_failures'])} found)")
             lines.append("-" * 60)
-            for err in result['test_failures'][:15]:
+            for err in result["test_failures"][:15]:
                 lines.append(f"  [X] {err}")
-            if len(result['test_failures']) > 15:
+            if len(result["test_failures"]) > 15:
                 lines.append(f"  [i] ... and {len(result['test_failures']) - 15} more")
             lines.append("")
 
         # Lint errors
-        if result['lint_errors']:
+        if result["lint_errors"]:
             lines.append(f"[!] Lint Errors ({len(result['lint_errors'])} found)")
             lines.append("-" * 60)
-            for err in result['lint_errors'][:10]:
+            for err in result["lint_errors"][:10]:
                 lines.append(f"  [!] {err}")
-            if len(result['lint_errors']) > 10:
+            if len(result["lint_errors"]) > 10:
                 lines.append(f"  [i] ... and {len(result['lint_errors']) - 10} more")
             lines.append("")
 
         # Unknown errors
-        if result['unknown_errors']:
+        if result["unknown_errors"]:
             lines.append(f"[!] Other Errors ({len(result['unknown_errors'])} found)")
             lines.append("-" * 60)
-            for err in result['unknown_errors'][:5]:
+            for err in result["unknown_errors"][:5]:
                 lines.append(f"  [X] {err}")
-            if len(result['unknown_errors']) > 5:
+            if len(result["unknown_errors"]) > 5:
                 lines.append(f"  [i] ... and {len(result['unknown_errors']) - 5} more")
             lines.append("")
 
@@ -386,7 +360,7 @@ class AnalyzeCIFailureScript(BaseCLIScript):
         lines.append("=" * 63)
         lines.append("")
 
-        priority = result['priority_category']
+        priority = result["priority_category"]
         if priority == "infrastructure":
             lines.append("[!] Retry the workflow (infrastructure failure, likely transient)")
             lines.append(f"  gh run rerun {result['run_id']} --repo {result['repo']}")
@@ -411,10 +385,10 @@ class AnalyzeCIFailureScript(BaseCLIScript):
         if not result.get("success"):
             return f"[ERROR] {result.get('error', 'Unknown error')}"
 
-        return (f"[{result['priority_category'].upper()}] "
-                f"{result['total_errors']} errors in run {result['run_id']}")
+        return f"[{result['priority_category'].upper()}] " f"{result['total_errors']} errors in run {result['run_id']}"
 
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(AnalyzeCIFailureScript)

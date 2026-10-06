@@ -9,8 +9,9 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent.parent.parent / "scripts"
 
 
-def _make_analysis(coverage: float, untested: int, critical: int = 0, high: int = 0,
-                   by_endpoint: dict | None = None) -> dict:
+def _make_analysis(
+    coverage: float, untested: int, critical: int = 0, high: int = 0, by_endpoint: dict | None = None
+) -> dict:
     return {
         "coverage_summary": {
             "coverage_percent": coverage,
@@ -25,9 +26,11 @@ def _make_analysis(coverage: float, untested: int, critical: int = 0, high: int 
 
 def test_cli_missing_file_exits_one(temp_dir):
     result = subprocess.run(
-        [sys.executable, str(scripts_dir / "diff_analysis.py"),
-         str(temp_dir / "no.json"), str(temp_dir / "no2.json")],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        [sys.executable, str(scripts_dir / "diff_analysis.py"), str(temp_dir / "no.json"), str(temp_dir / "no2.json")],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     assert result.returncode == 1
 
@@ -38,9 +41,11 @@ def test_cli_json_format(temp_dir):
     b.write_text(json.dumps(_make_analysis(40.0, 5)))
     c.write_text(json.dumps(_make_analysis(60.0, 3)))
     result = subprocess.run(
-        [sys.executable, str(scripts_dir / "diff_analysis.py"),
-         str(b), str(c), "--format", "json"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        [sys.executable, str(scripts_dir / "diff_analysis.py"), str(b), str(c), "--format", "json"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     assert result.returncode == 0
     data = json.loads(result.stdout)
@@ -55,7 +60,10 @@ def test_cli_regression_exits_one(temp_dir):
     c.write_text(json.dumps(_make_analysis(60.0, 5, by_endpoint={"/x": {"coverage_percent": 20.0}})))
     result = subprocess.run(
         [sys.executable, str(scripts_dir / "diff_analysis.py"), str(b), str(c)],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     assert result.returncode == 1
 
@@ -67,6 +75,9 @@ def test_cli_no_regression_exits_zero(temp_dir):
     c.write_text(json.dumps(_make_analysis(60.0, 3)))
     result = subprocess.run(
         [sys.executable, str(scripts_dir / "diff_analysis.py"), str(b), str(c)],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     assert result.returncode == 0

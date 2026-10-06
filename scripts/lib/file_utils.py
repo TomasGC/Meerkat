@@ -22,6 +22,7 @@ class FileReadResult:
         lines: Number of lines in content (0 if not exists)
         error: Error message if read failed (None if success)
     """
+
     exists: bool
     path: str
     content: Optional[str] = None
@@ -55,36 +56,21 @@ def read_file_safe(file_path: Path, encoding: str = "utf-8") -> FileReadResult:
     """
     # Check if file exists
     if not file_path.exists():
-        return FileReadResult(
-            exists=False,
-            path=str(file_path)
-        )
+        return FileReadResult(exists=False, path=str(file_path))
 
     # Try to read file
     try:
         content = file_path.read_text(encoding=encoding)
         lines = len(content.splitlines())
 
-        return FileReadResult(
-            exists=True,
-            path=str(file_path),
-            content=content,
-            lines=lines
-        )
+        return FileReadResult(exists=True, path=str(file_path), content=content, lines=lines)
 
     except Exception as e:
         # Any error during read (encoding, permission, etc.)
-        return FileReadResult(
-            exists=True,
-            path=str(file_path),
-            error=str(e)
-        )
+        return FileReadResult(exists=True, path=str(file_path), error=str(e))
 
 
-def read_files_safe(
-    file_paths: list[Path],
-    encoding: str = "utf-8"
-) -> list[FileReadResult]:
+def read_files_safe(file_paths: list[Path], encoding: str = "utf-8") -> list[FileReadResult]:
     """
     Read multiple files with graceful error handling.
 

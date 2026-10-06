@@ -41,10 +41,13 @@ def step_collect(project_path: Path, output_dir: Path, tiers: tuple[str, ...]) -
     """Run collect_runtime_coverage.py and return paths of generated lcov files."""
     collector = Path(__file__).parent / "collect_runtime_coverage.py"
     cmd = [
-        sys.executable, str(collector),
+        sys.executable,
+        str(collector),
         str(project_path),
-        "--tiers", *tiers,
-        "--output-dir", str(output_dir),
+        "--tiers",
+        *tiers,
+        "--output-dir",
+        str(output_dir),
     ]
     rc = _run(cmd, project_path, "collect")
     if rc != 0:
@@ -90,7 +93,8 @@ def step_reportgenerator(
         # Try dotnet tool
         result = subprocess.run(
             ["dotnet", "tool", "list", "--global"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         if "reportgenerator" in result.stdout.lower():
             rg = "reportgenerator"
@@ -123,7 +127,7 @@ def step_open_browser(index_html: Path) -> None:
     print(f"\n[browser] Opening {url}", file=sys.stderr)
     system = platform.system()
     if system == "Windows":
-        os.startfile(str(index_html.resolve()))
+        os.startfile(str(index_html.resolve()))  # type: ignore[attr-defined]  # Windows-only, guarded above
     elif system == "Darwin":
         subprocess.run(["open", url])
     else:
@@ -137,6 +141,7 @@ def print_summary(report_dir: Path, lcov_files: list[Path], combined: Path) -> N
         return
 
     import json
+
     try:
         data = json.loads(summary_file.read_text(encoding="utf-8"))
         summary = data.get("summary", {})
@@ -145,8 +150,8 @@ def print_summary(report_dir: Path, lcov_files: list[Path], combined: Path) -> N
         print(f"  Branch coverage : {summary.get('branchcoverage', 'n/a')}%", file=sys.stderr)
         print(f"  Coverable lines : {summary.get('coverablelines', 'n/a')}", file=sys.stderr)
         print(f"  Covered lines   : {summary.get('coveredlines', 'n/a')}", file=sys.stderr)
-        assemblies = summary.get('assemblies', [])
-        total_classes = sum(len(a.get('classes', [])) for a in assemblies)
+        assemblies = summary.get("assemblies", [])
+        total_classes = sum(len(a.get("classes", [])) for a in assemblies)
         print(f"  Files (classes) : {total_classes}", file=sys.stderr)
         print("─────────────────────────────────────────────────────", file=sys.stderr)
     except Exception:
@@ -214,7 +219,9 @@ Examples:
     # ── Step 1: Collect ──────────────────────────────────────────────────────
     if args.skip_collect:
         print("[collect] Skipping — using existing lcov files", file=sys.stderr)
-        lcov_files = [output_dir / f"coverage_{t}.lcov" for t in args.tiers if (output_dir / f"coverage_{t}.lcov").exists()]
+        lcov_files = [
+            output_dir / f"coverage_{t}.lcov" for t in args.tiers if (output_dir / f"coverage_{t}.lcov").exists()
+        ]
         if not lcov_files:
             print(f"[ERROR] No lcov files found in {output_dir}", file=sys.stderr)
             return 1

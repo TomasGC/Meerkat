@@ -14,8 +14,7 @@ Usage:
   python orchestrate.py --path /project --clear-cache            # delete all cached results
 """
 
-
-
+from lib import paths
 from lib.engine.orchestrator import (  # noqa: F401 — re-exported for tests/unit/test_orchestrate.py
     _build_summary,
     _detect_base_branch,
@@ -24,7 +23,6 @@ from lib.engine.orchestrator import (  # noqa: F401 — re-exported for tests/un
     _progress_bar,
     _run_checker,
 )
-from lib import paths
 from lib.engine.orchestrator import main as _engine_main
 
 CHECKERS: dict[str, str] = {

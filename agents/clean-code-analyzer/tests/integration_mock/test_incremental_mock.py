@@ -5,8 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts"
 
 DIRTY_PYTHON = """\
@@ -28,9 +26,7 @@ def double_positives(items):
 
 def _git(cmd, cwd):
     """Run a git command, return (returncode, stdout)."""
-    result = subprocess.run(
-        cmd, cwd=str(cwd), capture_output=True, text=True
-    )
+    result = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True)
     return result.returncode, result.stdout
 
 
@@ -59,10 +55,14 @@ def test_since_head_only_analyzes_changed_files(tmp_path):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(tmp_path),
-            "--since", "HEAD",
-            "--checks", "lod",
-            "--format", "json",
+            "--path",
+            str(tmp_path),
+            "--since",
+            "HEAD",
+            "--checks",
+            "lod",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -74,9 +74,7 @@ def test_since_head_only_analyzes_changed_files(tmp_path):
 
     violated_files = {v["file"] for v in data["violations"]}
     # dirty.py should appear in violations, clean.py should not
-    assert not any("clean" in f for f in violated_files), (
-        f"clean.py should not have violations; got: {violated_files}"
-    )
+    assert not any("clean" in f for f in violated_files), f"clean.py should not have violations; got: {violated_files}"
 
 
 def test_since_non_git_falls_back_to_full(tmp_path):
@@ -89,10 +87,14 @@ def test_since_non_git_falls_back_to_full(tmp_path):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(src),
-            "--since", "HEAD",
-            "--checks", "lod",
-            "--format", "json",
+            "--path",
+            str(src),
+            "--since",
+            "HEAD",
+            "--checks",
+            "lod",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -106,6 +108,7 @@ def test_since_non_git_falls_back_to_full(tmp_path):
 
 
 # ── --staged flag ───────────────────────────────────────────────────────────────
+
 
 def test_staged_flag_analyzes_only_staged_files(tmp_path):
     """--staged: only staged files analyzed; unstaged files produce no violations."""
@@ -126,10 +129,13 @@ def test_staged_flag_analyzes_only_staged_files(tmp_path):
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(tmp_path),
+            "--path",
+            str(tmp_path),
             "--staged",
-            "--checks", "lod",
-            "--format", "json",
+            "--checks",
+            "lod",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -141,6 +147,6 @@ def test_staged_flag_analyzes_only_staged_files(tmp_path):
 
     violated_files = {v["file"] for v in data["violations"]}
     # dirty.py should appear; clean.py should not
-    assert not any("clean" in f for f in violated_files), (
-        f"clean.py should not have violations; got files: {violated_files}"
-    )
+    assert not any(
+        "clean" in f for f in violated_files
+    ), f"clean.py should not have violations; got files: {violated_files}"

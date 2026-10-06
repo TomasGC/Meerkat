@@ -8,23 +8,26 @@ from pathlib import Path
 
 import pytest
 
-
 SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts"  # scripts/
 FIXTURES_DIRTY = Path(__file__).parent.parent / "fixtures" / "e2e" / "dirty_python"
 FIXTURES_CLEAN = Path(__file__).parent.parent / "fixtures" / "e2e" / "clean_python"
 
 
+@pytest.mark.usefixtures("local_ai_service")
 @pytest.mark.live_ai
-def test_dirty_code_detected(local_ai_service):
+def test_dirty_code_detected():
     """Dirty fixture files produce violations from mechanical checkers."""
     result = subprocess.run(
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(FIXTURES_DIRTY),
+            "--path",
+            str(FIXTURES_DIRTY),
             "--full",
-            "--checks", "naming,lod,inheritance",
-            "--format", "json",
+            "--checks",
+            "naming,lod,inheritance",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -38,17 +41,21 @@ def test_dirty_code_detected(local_ai_service):
     assert "Naming" in principles
 
 
+@pytest.mark.usefixtures("local_ai_service")
 @pytest.mark.live_ai
-def test_clean_code_zero_violations(local_ai_service):
+def test_clean_code_zero_violations():
     """Clean fixture files produce 0 violations from mechanical checkers."""
     result = subprocess.run(
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(FIXTURES_CLEAN),
+            "--path",
+            str(FIXTURES_CLEAN),
             "--full",
-            "--checks", "naming,lod,inheritance",
-            "--format", "json",
+            "--checks",
+            "naming,lod,inheritance",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -88,10 +95,13 @@ def _run_mechanical(repo: Path, *mode_flags: str) -> dict:
         [
             sys.executable,
             str(SCRIPTS_DIR / "orchestrate.py"),
-            "--path", str(repo),
+            "--path",
+            str(repo),
             *mode_flags,
-            "--checks", "naming,comments",
-            "--format", "json",
+            "--checks",
+            "naming,comments",
+            "--format",
+            "json",
             "--no-cache",
         ],
         capture_output=True,
@@ -164,9 +174,10 @@ def test_clear_cache_honours_cca_cache_dir(tmp_path):
     assert "Cleared 2" in result.stderr
 
 
+@pytest.mark.usefixtures("local_ai_service")
 @pytest.mark.live_ai
 @pytest.mark.slow
-def test_agents_n_completes_without_duplicates(local_ai_service, tmp_path):
+def test_agents_n_completes_without_duplicates(tmp_path):
     """--agents 3 completes and emits no duplicate (file, line, principle) entries.
 
     No count ratio against an --agents 1 run: each run is an independent
@@ -175,7 +186,9 @@ def test_agents_n_completes_without_duplicates(local_ai_service, tmp_path):
     tests/unit/test_model_utils_unit.py; here the orchestrator's own dedup also
     applies, so the CLI output cannot isolate the agents-level merge.
     """
-    import subprocess, json
+    import json
+    import subprocess
+
     # Create a dirty project
     dirty = tmp_path / "dirty.py"
     dirty.write_text("""
@@ -191,13 +204,23 @@ except:
     pass
 """)
     r = subprocess.run(
-        ["python", str(SCRIPTS_DIR / "orchestrate.py"),
-         "--path", str(tmp_path),
-         "--checks", "solid",
-         "--agents", "3",
-         "--fast",
-         "--format", "json", "--no-cache"],
-        capture_output=True, text=True, timeout=300
+        [
+            "python",
+            str(SCRIPTS_DIR / "orchestrate.py"),
+            "--path",
+            str(tmp_path),
+            "--checks",
+            "solid",
+            "--agents",
+            "3",
+            "--fast",
+            "--format",
+            "json",
+            "--no-cache",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=300,
     )
     assert r.returncode == 0, f"Failed: {r.stderr}"
     data = json.loads(r.stdout)
@@ -207,28 +230,43 @@ except:
     assert len(keys) == len(set(keys)), f"Duplicate violations survived merge: {keys}"
 
 
+@pytest.mark.usefixtures("local_ai_service")
 @pytest.mark.live_ai
 @pytest.mark.slow
-@pytest.mark.parametrize("language,fixture_subdir", [
-    ("typescript", "dirty_typescript"),
-    ("javascript", "dirty_javascript"),
-    ("go",         "dirty_go"),
-    ("powershell", "dirty_powershell"),
-    ("bash",       "dirty_bash"),
-])
-def test_multilang_e2e_violations_detected(local_ai_service, language, fixture_subdir):
+@pytest.mark.parametrize(
+    "language,fixture_subdir",
+    [
+        ("typescript", "dirty_typescript"),
+        ("javascript", "dirty_javascript"),
+        ("go", "dirty_go"),
+        ("powershell", "dirty_powershell"),
+        ("bash", "dirty_bash"),
+    ],
+)
+def test_multilang_e2e_violations_detected(language, fixture_subdir):
     """Full pipeline on multi-language dirty fixtures finds violations."""
-    import subprocess, json
+    import json
+    import subprocess
+
     fixture_path = Path(__file__).parent.parent / "fixtures" / "e2e" / fixture_subdir
     if not fixture_path.exists():
         pytest.skip(f"Fixture missing: {fixture_path}")
 
     result = subprocess.run(
-        ["python", str(SCRIPTS_DIR / "orchestrate.py"),
-         "--path", str(fixture_path),
-         "--checks", "solid,cqrs",  # Ollama checkers — language-agnostic
-         "--format", "json", "--no-cache"],
-        capture_output=True, text=True, timeout=180
+        [
+            "python",
+            str(SCRIPTS_DIR / "orchestrate.py"),
+            "--path",
+            str(fixture_path),
+            "--checks",
+            "solid,cqrs",  # Ollama checkers — language-agnostic
+            "--format",
+            "json",
+            "--no-cache",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
     )
     assert result.returncode == 0, f"stderr: {result.stderr}"
     data = json.loads(result.stdout)

@@ -29,12 +29,7 @@ def detect_project_type(project_path: Path) -> dict:
     Returns:
         Dict with type, technology, build, and test commands
     """
-    result = {
-        "type": "unknown",
-        "technology": "Unknown",
-        "build": "(To be configured)",
-        "test": "(To be configured)"
-    }
+    result = {"type": "unknown", "technology": "Unknown", "build": "(To be configured)", "test": "(To be configured)"}
 
     # Detect Cypress (check package.json for cypress dependency)
     package_json = project_path / "package.json"
@@ -54,9 +49,11 @@ def detect_project_type(project_path: Path) -> dict:
                 result["build"] = "npm install"
                 result["test"] = "npx cypress run"
             # Check for Vue
-            elif "vue" in dependencies or \
-                 (project_path / "vite.config.js").exists() or \
-                 (project_path / "vite.config.ts").exists():
+            elif (
+                "vue" in dependencies
+                or (project_path / "vite.config.js").exists()
+                or (project_path / "vite.config.ts").exists()
+            ):
                 result["type"] = "vuejs"
                 result["technology"] = "Vue.js 3"
                 result["build"] = "npm run build"
@@ -105,9 +102,11 @@ def detect_project_type(project_path: Path) -> dict:
             result["test"] = "dotnet test"
 
     # Detect Python
-    elif (project_path / "requirements.txt").exists() or \
-         (project_path / "setup.py").exists() or \
-         (project_path / "pyproject.toml").exists():
+    elif (
+        (project_path / "requirements.txt").exists()
+        or (project_path / "setup.py").exists()
+        or (project_path / "pyproject.toml").exists()
+    ):
         result["type"] = "python"
         result["technology"] = "Python"
         result["build"] = "pip install -r requirements.txt"
@@ -129,7 +128,7 @@ def format_env(result: dict) -> str:
         f"PROJECT_TYPE={result['type']}",
         f"PROJECT_TECHNOLOGY={result['technology']}",
         f"BUILD_COMMAND={result['build']}",
-        f"TEST_COMMAND={result['test']}"
+        f"TEST_COMMAND={result['test']}",
     ]
     return "\n".join(lines)
 
@@ -139,17 +138,10 @@ class DetectProjectTypeScript(BaseCLIScript):
 
     def setup_parser(self, parser):
         """Add script-specific arguments."""
-        parser.add_argument(
-            "--path",
-            "-p",
-            default=".",
-            help="Path to project root (defaults to current directory)"
-        )
+        parser.add_argument("--path", "-p", default=".", help="Path to project root (defaults to current directory)")
         # Override format to include 'env' option
         parser.add_argument(
-            "--format-env",
-            action="store_true",
-            help="Output as environment variables (alternative to --format)"
+            "--format-env", action="store_true", help="Output as environment variables (alternative to --format)"
         )
 
     def execute(self, args) -> dict[str, Any]:
@@ -160,34 +152,20 @@ class DetectProjectTypeScript(BaseCLIScript):
 
             if not project_path.exists():
                 self.logger.error(f"Path does not exist: {project_path}")
-                return {
-                    "success": False,
-                    "error": f"Path does not exist: {project_path}"
-                }
+                return {"success": False, "error": f"Path does not exist: {project_path}"}
 
             if not project_path.is_dir():
                 self.logger.error(f"Path is not a directory: {project_path}")
-                return {
-                    "success": False,
-                    "error": f"Path is not a directory: {project_path}"
-                }
+                return {"success": False, "error": f"Path is not a directory: {project_path}"}
 
             # Detect project type
             result = detect_project_type(project_path)
 
-
-            return {
-                "success": True,
-                **result,
-                "format_env": args.format_env if hasattr(args, 'format_env') else False
-            }
+            return {"success": True, **result, "format_env": args.format_env if hasattr(args, "format_env") else False}
 
         except Exception as e:
             self.logger.error(f"Failed to detect project type: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def format_text(self, result: dict) -> str:
         """Format as human-readable text."""
@@ -198,7 +176,7 @@ class DetectProjectTypeScript(BaseCLIScript):
             f"Type: {result['type']}",
             f"Technology: {result['technology']}",
             f"Build: {result['build']}",
-            f"Test: {result['test']}"
+            f"Test: {result['test']}",
         ]
         return "\n".join(lines)
 
@@ -219,4 +197,5 @@ class DetectProjectTypeScript(BaseCLIScript):
 
 if __name__ == "__main__":
     from lib.cli.base import create_cli_script
+
     create_cli_script(DetectProjectTypeScript)

@@ -6,8 +6,8 @@ import pytest
 
 from lib.engine.discovery import (
     _DISCOVERY_CACHE,
-    dominant_language,
     discover_files,
+    dominant_language,
     get_changed_files,
     get_staged_files,
 )

@@ -9,11 +9,10 @@ Creates comprehensive coverage analysis:
 """
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
-from bba.models import CoverageGap, HTTPMethod, Scenario, TestCase
+from bba.models import CoverageGap, HTTPMethod, Scenario, TestCase, parse_method
 from bba.utils import read_json, write_json
 
 
@@ -22,7 +21,7 @@ def scenario_matches_test_library(scenario: Scenario, test: TestCase) -> bool:
     Library-mode matching: compare method name + branch condition keywords
     against test name, rather than HTTP path + method.
     """
-    method_name = scenario.endpoint.lower()       # repurposed as method name
+    method_name = scenario.endpoint.lower()  # repurposed as method name
     branch_condition = scenario.input_combination.get("condition", "").lower()
     test_name_lower = test.name.lower()
 
@@ -77,10 +76,7 @@ def scenario_matches_test(scenario: Scenario, test: TestCase) -> bool:
 
     # Happy path keywords
     if scenario.scenario_type == "happy_path":
-        if any(
-            keyword in test_name_lower
-            for keyword in ["success", "valid", "should_work", "returns_ok", "200"]
-        ):
+        if any(keyword in test_name_lower for keyword in ["success", "valid", "should_work", "returns_ok", "200"]):
             return True
 
     # Error case keywords
@@ -123,10 +119,7 @@ def scenario_matches_test(scenario: Scenario, test: TestCase) -> bool:
 
     # Edge case keywords
     elif scenario.scenario_type == "edge_case":
-        if any(
-            keyword in test_name_lower
-            for keyword in ["edge", "boundary", "limit", "empty", "null", "max", "min"]
-        ):
+        if any(keyword in test_name_lower for keyword in ["edge", "boundary", "limit", "empty", "null", "max", "min"]):
             return True
 
     # Fallback: if endpoint and method match, assume some coverage
@@ -136,9 +129,7 @@ def scenario_matches_test(scenario: Scenario, test: TestCase) -> bool:
     return False
 
 
-def find_related_tests(
-    scenario: Scenario, all_tests: list[TestCase], mode: str = "api"
-) -> list[TestCase]:
+def find_related_tests(scenario: Scenario, all_tests: list[TestCase], mode: str = "api") -> list[TestCase]:
     """
     Find all tests related to a scenario.
 
@@ -151,9 +142,7 @@ def find_related_tests(
     return [test for test in all_tests if matcher(scenario, test)]
 
 
-def generate_coverage_matrix(
-    scenarios_file: Path, tests_file: Path, mode: str = "api"
-) -> list[CoverageGap]:
+def generate_coverage_matrix(scenarios_file: Path, tests_file: Path, mode: str = "api") -> list[CoverageGap]:
     """
     Generate coverage matrix from scenarios and tests.
 
@@ -171,7 +160,7 @@ def generate_coverage_matrix(
     for scenario_dict in scenarios_data.get("scenarios", []):
         scenario = Scenario(
             endpoint=scenario_dict["endpoint"],
-            method=HTTPMethod(scenario_dict["method"]),
+            method=parse_method(scenario_dict["method"]),
             input_combination=scenario_dict["input_combination"],
             expected_output=scenario_dict["expected_output"],
             scenario_type=scenario_dict["scenario_type"],
@@ -233,9 +222,9 @@ def calculate_coverage_stats(coverage_gaps: list[CoverageGap]) -> dict:
     coverage_percent = (tested_scenarios / total_scenarios * 100) if total_scenarios > 0 else 0
 
     # Group by endpoint
-    endpoint_stats = {}
+    endpoint_stats: dict[str, dict[str, float]] = {}
     for gap in coverage_gaps:
-        endpoint_key = f"{gap.scenario.method.value} {gap.scenario.endpoint}"
+        endpoint_key = f"{gap.scenario.method_name} {gap.scenario.endpoint}"
         if endpoint_key not in endpoint_stats:
             endpoint_stats[endpoint_key] = {
                 "total": 0,
@@ -251,12 +240,10 @@ def calculate_coverage_stats(coverage_gaps: list[CoverageGap]) -> dict:
 
     # Calculate endpoint coverage percentages
     for stats in endpoint_stats.values():
-        stats["coverage_percent"] = (
-            (stats["tested"] / stats["total"] * 100) if stats["total"] > 0 else 0
-        )
+        stats["coverage_percent"] = (stats["tested"] / stats["total"] * 100) if stats["total"] > 0 else 0
 
     # Group by scenario type
-    type_stats = {}
+    type_stats: dict[str, dict[str, float]] = {}
     for gap in coverage_gaps:
         scenario_type = gap.scenario.scenario_type
         if scenario_type not in type_stats:
@@ -274,17 +261,15 @@ def calculate_coverage_stats(coverage_gaps: list[CoverageGap]) -> dict:
 
     # Calculate type coverage percentages
     for stats in type_stats.values():
-        stats["coverage_percent"] = (
-            (stats["tested"] / stats["total"] * 100) if stats["total"] > 0 else 0
-        )
+        stats["coverage_percent"] = (stats["tested"] / stats["total"] * 100) if stats["total"] > 0 else 0
 
     return {
         "total_scenarios": total_scenarios,
         "tested_scenarios": tested_scenarios,
         "untested_scenarios": untested_scenarios,
         "coverage_percent": round(coverage_percent, 2),
-        "by_entry_point": endpoint_stats,   # canonical key (works for API + library)
-        "by_endpoint": endpoint_stats,      # legacy alias — kept for backward compat
+        "by_entry_point": endpoint_stats,  # canonical key (works for API + library)
+        "by_endpoint": endpoint_stats,  # legacy alias — kept for backward compat
         "by_type": type_stats,
     }
 
@@ -305,9 +290,9 @@ def generate_markdown_table(coverage_gaps: list[CoverageGap]) -> str:
     lines.append("")
 
     # Group by endpoint
-    endpoint_groups = {}
+    endpoint_groups: dict[str, list[CoverageGap]] = {}
     for gap in coverage_gaps:
-        endpoint_key = f"{gap.scenario.method.value} {gap.scenario.endpoint}"
+        endpoint_key = f"{gap.scenario.method_name} {gap.scenario.endpoint}"
         if endpoint_key not in endpoint_groups:
             endpoint_groups[endpoint_key] = []
         endpoint_groups[endpoint_key].append(gap)
@@ -338,7 +323,8 @@ def generate_markdown_table(coverage_gaps: list[CoverageGap]) -> str:
                 test_names += f" (+{len(gap.related_tests) - 3} more)"
 
             lines.append(
-                f"| {scenario.description} | {scenario.scenario_type} | {scenario.expected_output} | {status} | {test_names or '-'} |"
+                f"| {scenario.description} | {scenario.scenario_type} | {scenario.expected_output} | {status} |"
+                f" {test_names or '-'} |"
             )
 
         lines.append("")
@@ -420,7 +406,8 @@ Examples:
             print("By Scenario Type:", file=sys.stderr)
             for scenario_type, type_stats in stats["by_type"].items():
                 print(
-                    f"  {scenario_type}: {type_stats['tested']}/{type_stats['total']} ({type_stats['coverage_percent']:.1f}%)",
+                    f"  {scenario_type}: {type_stats['tested']}/{type_stats['total']}"
+                    f" ({type_stats['coverage_percent']:.1f}%)",
                     file=sys.stderr,
                 )
             print("", file=sys.stderr)

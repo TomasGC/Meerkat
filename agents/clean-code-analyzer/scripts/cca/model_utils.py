@@ -6,16 +6,16 @@ from pathlib import Path
 from lib.ai.model_utils import (  # noqa: F401
     LOCAL_AI_HOST,
     LOCAL_AI_PORT,
-    check_server_available,
-    call_model,
-    call_model_async,
-    call_model_multi,
-    run_prompt,
     analyze_file_with_model,
     analyze_files_async,
     analyze_files_parallel,
+    call_model,
+    call_model_async,
+    call_model_multi,
+    check_server_available,
     extract_json_array,
     extract_json_object,
+    run_prompt,
     split_into_chunks,
 )
 

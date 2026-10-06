@@ -9,15 +9,10 @@ Provides common functionality:
 - Output formatting (JSON/text/summary)
 """
 
+import sys
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from typing import Any
-
-import sys
-from pathlib import Path
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from lib.formatters import format_json
 from lib.logger import setup_logger
@@ -133,18 +128,11 @@ class BaseCLIScript(ABC):
         Note:
             Automatically calls setup_parser() to allow subclasses to add custom args.
         """
-        parser = ArgumentParser(
-            description=self.__doc__ or "CLI script",
-            formatter_class=RawDescriptionHelpFormatter
-        )
+        parser = ArgumentParser(description=self.__doc__ or "CLI script", formatter_class=RawDescriptionHelpFormatter)
 
         # Common arguments
         parser.add_argument(
-            "--format",
-            "-f",
-            choices=["json", "text", "summary"],
-            default="json",
-            help="Output format (default: json)"
+            "--format", "-f", choices=["json", "text", "summary"], default="json", help="Output format (default: json)"
         )
 
         # Allow subclass to add custom arguments
@@ -192,7 +180,6 @@ class BaseCLIScript(ABC):
 
             # Output result
             self.output(result, parsed_args.format)
-
 
             return 0
 

@@ -33,13 +33,11 @@ Failure probability (1-5):
 """
 
 import argparse
-import json
-import re
 import sys
 from pathlib import Path
 
 from bba.constants import RISK_THRESHOLDS
-from bba.models import CoverageGap, HTTPMethod, RiskAssessment, Scenario, TestCase
+from bba.models import CoverageGap, HTTPMethod, RiskAssessment, Scenario, TestCase, parse_method
 from bba.utils import read_json, write_json
 
 
@@ -60,7 +58,6 @@ def assess_business_impact(scenario: Scenario) -> tuple[int, str]:
     """
     path = scenario.endpoint.lower()
     method = scenario.method
-    scenario_type = scenario.scenario_type
 
     if _is_library_scenario(scenario):
         name = scenario.endpoint.lower()
@@ -110,7 +107,6 @@ def assess_technical_risk(scenario: Scenario) -> tuple[int, str]:
     """
     method = scenario.method
     scenario_type = scenario.scenario_type
-    path = scenario.endpoint.lower()
 
     if _is_library_scenario(scenario):
         condition = scenario.input_combination.get("condition", "").lower()
@@ -147,10 +143,7 @@ def assess_technical_risk(scenario: Scenario) -> tuple[int, str]:
             return 4, "Null handling - potential NullPointerException"
 
         # Boundary values
-        if any(
-            keyword in scenario.description.lower()
-            for keyword in ["max", "min", "boundary", "limit"]
-        ):
+        if any(keyword in scenario.description.lower() for keyword in ["max", "min", "boundary", "limit"]):
             return 3, "Boundary value handling"
 
         return 2, "General edge case"
@@ -179,8 +172,6 @@ def assess_failure_probability(scenario: Scenario) -> tuple[int, str]:
         Tuple of (probability_score, reasoning)
     """
     scenario_type = scenario.scenario_type
-    method = scenario.method
-    path = scenario.endpoint.lower()
 
     if _is_library_scenario(scenario):
         condition = scenario.input_combination.get("condition", "").lower()
@@ -208,10 +199,7 @@ def assess_failure_probability(scenario: Scenario) -> tuple[int, str]:
         if "none" in str(scenario.input_combination).lower():
             return 4, "Null handling frequently causes production issues"
 
-        if any(
-            keyword in scenario.description.lower()
-            for keyword in ["empty", "max", "boundary"]
-        ):
+        if any(keyword in scenario.description.lower() for keyword in ["empty", "max", "boundary"]):
             return 3, "Edge cases moderately likely to fail"
 
         return 2, "Edge cases generally handled"
@@ -326,7 +314,7 @@ def load_coverage_matrix(matrix_file: Path) -> list[CoverageGap]:
         scenario_dict = gap_dict["scenario"]
         scenario = Scenario(
             endpoint=scenario_dict["endpoint"],
-            method=HTTPMethod(scenario_dict["method"]),
+            method=parse_method(scenario_dict["method"]),
             input_combination=scenario_dict["input_combination"],
             expected_output=scenario_dict["expected_output"],
             scenario_type=scenario_dict["scenario_type"],
@@ -383,15 +371,9 @@ def calculate_risk_stats(risk_assessments: list[RiskAssessment]) -> dict:
     }
 
     # Average scores
-    avg_business_impact = (
-        sum(a.business_impact for a in risk_assessments) / total if total > 0 else 0
-    )
-    avg_technical_risk = (
-        sum(a.technical_risk for a in risk_assessments) / total if total > 0 else 0
-    )
-    avg_failure_probability = (
-        sum(a.failure_probability for a in risk_assessments) / total if total > 0 else 0
-    )
+    avg_business_impact = sum(a.business_impact for a in risk_assessments) / total if total > 0 else 0
+    avg_technical_risk = sum(a.technical_risk for a in risk_assessments) / total if total > 0 else 0
+    avg_failure_probability = sum(a.failure_probability for a in risk_assessments) / total if total > 0 else 0
     avg_risk_score = sum(a.risk_score for a in risk_assessments) / total if total > 0 else 0
 
     return {
@@ -460,9 +442,7 @@ Examples:
         level_order = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
         min_level_index = level_order.index(args.min_level)
 
-        filtered_assessments = [
-            a for a in risk_assessments if level_order.index(a.risk_level) >= min_level_index
-        ]
+        filtered_assessments = [a for a in risk_assessments if level_order.index(a.risk_level) >= min_level_index]
 
         # Calculate stats
         stats = calculate_risk_stats(filtered_assessments)
@@ -500,7 +480,7 @@ Examples:
             for i, assessment in enumerate(filtered_assessments[:10], 1):
                 scenario = assessment.gap.scenario
                 print(
-                    f"  {i}. [{assessment.risk_level}] {scenario.method.value} {scenario.endpoint}",
+                    f"  {i}. [{assessment.risk_level}] {scenario.method_name} {scenario.endpoint}",
                     file=sys.stderr,
                 )
                 print(f"     Score: {assessment.risk_score}/125", file=sys.stderr)

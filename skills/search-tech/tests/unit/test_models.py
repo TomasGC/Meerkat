@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """Tests for search_tech.models module."""
 
-import pytest
 from datetime import datetime
 
-from pathlib import Path
+import pytest
 
 from search_tech.models import (
-    Source,
     ResultType,
     SearchQuery,
-    SearchResult,
     SearchResponse,
+    SearchResult,
+    Source,
     ValidationError,
 )
 
@@ -65,10 +64,7 @@ class TestSearchQueryValidation:
 
     def test_valid_tags_with_special_chars(self):
         """Test that tags with allowed special chars are valid."""
-        query = SearchQuery(
-            keywords=["test"],
-            tags=["c++", "c#", "node.js", "asp.net"]
-        )
+        query = SearchQuery(keywords=["test"], tags=["c++", "c#", "node.js", "asp.net"])
         assert query.tags == ["c++", "c#", "node.js", "asp.net"]
 
     def test_negative_min_score_raises_error(self):

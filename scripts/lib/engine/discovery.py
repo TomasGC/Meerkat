@@ -87,10 +87,12 @@ def dominant_language(path: Path, threshold: float = 0.6) -> str:
     language. Ties break toward config order.
     """
     files = discover_files(path)
-    kinds = ("code",)
+    kinds: tuple[str, ...] = ("code",)
     counts = {name: len(group) for name, group in group_by_language(files, kinds).items()}
     if not counts:
-        kinds = tuple({lang.get("kind") for lang in language_config.all_languages().values()} - {None})
+        kinds = tuple(
+            {kind for lang in language_config.all_languages().values() if (kind := lang.get("kind")) is not None}
+        )
         counts = {name: len(group) for name, group in group_by_language(files, kinds).items()}
     if not counts:
         return "unknown"
@@ -104,7 +106,10 @@ def get_changed_files(path: Path, since: str = "HEAD") -> list[Path] | None:
     try:
         result = subprocess.run(
             ["git", "diff", "--name-only", since],
-            capture_output=True, text=True, cwd=str(path), timeout=10,
+            capture_output=True,
+            text=True,
+            cwd=str(path),
+            timeout=10,
         )
         if result.returncode != 0:
             return None
@@ -118,7 +123,10 @@ def get_branch_files(path: Path, base: str = "main") -> list[Path] | None:
     try:
         result = subprocess.run(
             ["git", "diff", "--name-only", f"{base}...HEAD"],
-            capture_output=True, text=True, cwd=str(path), timeout=10,
+            capture_output=True,
+            text=True,
+            cwd=str(path),
+            timeout=10,
         )
         if result.returncode != 0:
             return None
@@ -132,7 +140,10 @@ def get_staged_files(path: Path) -> list[Path] | None:
     try:
         result = subprocess.run(
             ["git", "diff", "--cached", "--name-only"],
-            capture_output=True, text=True, cwd=str(path), timeout=10,
+            capture_output=True,
+            text=True,
+            cwd=str(path),
+            timeout=10,
         )
         if result.returncode != 0:
             return None

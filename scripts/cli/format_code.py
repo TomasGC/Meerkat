@@ -10,7 +10,6 @@ Usage:
     python format_code.py --file src/api.ts --check-only
 """
 
-import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -83,7 +82,7 @@ class FormatCode(BaseCLIScript):
         # Run formatter
         try:
             cmd = self._build_command(formatter, file_path, language)
-            result = subprocess.run(
+            subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
@@ -110,7 +109,7 @@ class FormatCode(BaseCLIScript):
 
         # Find files
         pattern = "**/*" if self.args.recursive else "*"
-        files = []
+        files: list[Path] = []
 
         for ext in [".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".cs"]:
             files.extend(dir_path.glob(f"{pattern}{ext}"))
@@ -168,9 +167,7 @@ class FormatCode(BaseCLIScript):
 
         return formatters.get(language)
 
-    def _build_command(
-        self, formatter: str, file_path: Path, language: str
-    ) -> list[str]:
+    def _build_command(self, formatter: str, file_path: Path, language: str) -> list[str]:
         """Build formatter command."""
         if formatter == "black":
             cmd = ["black"]

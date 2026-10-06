@@ -10,14 +10,14 @@ if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
 from .models import (
-    Language,
-    HTTPMethod,
-    ProjectInfo,
-    Endpoint,
-    TestCase,
-    Scenario,
     CoverageGap,
+    Endpoint,
+    HTTPMethod,
+    Language,
+    ProjectInfo,
     RiskAssessment,
+    Scenario,
+    TestCase,
 )
 
 __all__ = [
