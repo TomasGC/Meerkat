@@ -16,9 +16,7 @@ from prioritize_by_risk import (
     load_coverage_matrix,
 )
 from prioritize_by_risk import main as prioritize_main
-from prioritize_by_risk import (
-    prioritize_gaps,
-)
+from prioritize_by_risk import prioritize_gaps
 
 
 def test_assess_business_impact_payment():

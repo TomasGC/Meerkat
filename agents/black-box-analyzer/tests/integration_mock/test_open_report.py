@@ -10,12 +10,7 @@ from unittest.mock import patch
 import pytest
 
 from open_report import main as open_report_main
-from open_report import (
-    step_collect,
-    step_merge,
-    step_open_browser,
-    step_reportgenerator,
-)
+from open_report import step_collect, step_merge, step_open_browser, step_reportgenerator
 
 
 def test_step_merge_fallback_concatenates(temp_dir, minimal_lcov_file):
