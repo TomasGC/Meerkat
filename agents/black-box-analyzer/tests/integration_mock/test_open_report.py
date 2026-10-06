@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+
 from open_report import main as open_report_main
 from open_report import (
     step_collect,

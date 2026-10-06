@@ -4,6 +4,7 @@
 import ast
 
 import pytest
+
 from cli.calculate_complexity import CalculateComplexityScript
 
 

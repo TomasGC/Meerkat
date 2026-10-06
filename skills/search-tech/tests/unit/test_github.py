@@ -7,6 +7,7 @@ import sys
 from unittest.mock import Mock, patch
 
 import pytest
+
 import search_github
 from search_github import check_gh_cli, search_github_discussions, search_github_issues
 from search_tech.logger import MetricsCollector

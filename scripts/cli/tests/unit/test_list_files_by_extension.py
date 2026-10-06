@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from cli.list_files_by_extension import DEFAULT_EXCLUDES, find_files_by_extension, is_excluded
 from lib.utils import write_file_safe
 

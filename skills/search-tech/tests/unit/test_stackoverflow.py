@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 import requests
+
 import search_stackoverflow
 from search_stackoverflow import search_stackoverflow as search
 from search_tech.cache import SearchCache

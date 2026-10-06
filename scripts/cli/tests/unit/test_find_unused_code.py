@@ -2,6 +2,7 @@
 """Tests for find_unused_code.py"""
 
 import pytest
+
 from cli.find_unused_code import FindUnusedCodeScript
 
 

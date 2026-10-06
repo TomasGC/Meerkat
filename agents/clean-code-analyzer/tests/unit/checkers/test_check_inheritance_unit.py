@@ -7,6 +7,7 @@ is flagged, but a 4-class chain (depth 3) is NOT.
 from unittest.mock import patch
 
 import pytest
+
 from cca.checkers.check_inheritance import run
 
 

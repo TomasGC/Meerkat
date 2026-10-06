@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from lib.engine import discovery
 from lib.engine.discovery import dominant_language, group_by_language, is_test_file
 

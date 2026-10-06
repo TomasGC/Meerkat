@@ -4,6 +4,7 @@
 import json
 
 import pytest
+
 from lib import paths
 
 

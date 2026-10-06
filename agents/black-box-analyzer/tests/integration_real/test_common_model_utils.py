@@ -2,6 +2,7 @@
 """Tests for common/model_utils.py — int_real tests (live local AI required)"""
 
 import pytest
+
 from bba.model_utils import PROMPTS_DIR, analyze_file_with_model, call_model, run_prompt
 
 

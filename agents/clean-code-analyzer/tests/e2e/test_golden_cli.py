@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import pytest
+
 from lib.testing import golden  # noqa: E402
 
 _ORCHESTRATE = Path(__file__).resolve().parents[2] / "scripts" / "orchestrate.py"

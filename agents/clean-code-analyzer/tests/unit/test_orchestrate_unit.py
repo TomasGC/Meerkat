@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from cca.orchestrate import (
     _build_summary,
     _detect_base_branch,

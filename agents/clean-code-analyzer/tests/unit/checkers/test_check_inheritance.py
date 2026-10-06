@@ -1,6 +1,7 @@
 """Tests for check_inheritance — Composition over Inheritance detection."""
 
 import pytest
+
 from cca.checkers.check_inheritance import _check_python
 
 

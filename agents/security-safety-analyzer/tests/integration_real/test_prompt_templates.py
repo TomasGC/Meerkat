@@ -8,6 +8,7 @@ and silently produces zero AI findings.
 from pathlib import Path
 
 import pytest
+
 from ssa.model_utils import PROMPTS_DIR
 
 # Slots supplied by analyze_files_parallel for every call

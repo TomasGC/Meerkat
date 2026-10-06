@@ -3,8 +3,9 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import lib.engine.discovery as fu
 import pytest
+
+import lib.engine.discovery as fu
 from lib.engine.discovery import dominant_language, get_changed_files, get_staged_files, read_file_safe
 
 

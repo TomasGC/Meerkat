@@ -6,6 +6,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+
 from cli.get_branch_summary import (
     GetBranchSummaryScript,
     format_brief_summary,

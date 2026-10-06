@@ -5,6 +5,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+
 from cli.extract_issue import (
     ExtractTicketScript,
     extract_issue,

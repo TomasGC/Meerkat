@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from cli.update_section_in_markdown import update_section_in_markdown
 from lib.utils import write_file_safe
 

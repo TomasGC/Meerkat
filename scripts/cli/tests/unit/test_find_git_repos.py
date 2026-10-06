@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from cli.find_git_repos import find_git_repos, get_repo_info
 from lib.utils import run_command, write_file_safe
 

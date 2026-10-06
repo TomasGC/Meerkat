@@ -8,6 +8,7 @@ with mocked git operations.
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from cli.analyze_commit_quality import AnalyzeCommitQualityScript
 from cli.format_commit_message import FormatCommitMessageScript
 

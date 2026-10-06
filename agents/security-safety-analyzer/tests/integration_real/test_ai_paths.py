@@ -9,6 +9,7 @@ import importlib
 from pathlib import Path
 
 import pytest
+
 from ssa.model_utils import check_server_available
 
 pytestmark = [

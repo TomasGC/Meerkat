@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from cca.checkers.check_yagni import run
 
 _HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"

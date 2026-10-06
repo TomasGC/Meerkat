@@ -6,8 +6,9 @@ call_model_async is replaced; it records every prompt. No server needed.
 from pathlib import Path
 from unittest.mock import patch
 
-import lib.ai.model_utils as mu
 import pytest
+
+import lib.ai.model_utils as mu
 
 _TSQL = "CREATE PROCEDURE dbo.GetOrder @id INT AS\nBEGIN TRY\n  SELECT * FROM [dbo].orders WHERE id = @id\nEND TRY\n"
 _PGSQL = (

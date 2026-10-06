@@ -4,6 +4,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+
 from bba.models import (
     AnalysisResult,
     CoverageGap,

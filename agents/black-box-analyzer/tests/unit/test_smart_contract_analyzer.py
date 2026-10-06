@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from analyzers.blockchain.smart_contract_analyzer import SmartContractAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, Parameter, ProjectInfo, ProjectType
 

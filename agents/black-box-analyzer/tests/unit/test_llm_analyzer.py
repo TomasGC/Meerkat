@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from analyzers.llm_analyzer import LLMAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, Parameter, ProjectInfo, ProjectType
 

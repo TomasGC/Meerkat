@@ -4,8 +4,9 @@
 import json
 from pathlib import Path
 
-import bba.utils as utils_mod
 import pytest
+
+import bba.utils as utils_mod
 from bba.models import Language
 from bba.utils import (
     count_lines_of_code,

@@ -6,8 +6,9 @@ import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import lib.ai.model_utils as mu
 import pytest
+
+import lib.ai.model_utils as mu
 from lib.ai.model_utils import (
     _http_generate,
     _parse_local_server,

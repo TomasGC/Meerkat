@@ -5,6 +5,7 @@ replaced. Regenerate with scripts/cli/update_golden.py --agent bba.
 """
 
 import pytest
+
 from lib.testing import golden  # noqa: E402
 
 

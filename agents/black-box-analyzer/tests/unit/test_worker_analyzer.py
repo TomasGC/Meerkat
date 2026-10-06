@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from analyzers.event_driven.worker_analyzer import WorkerAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, ProjectInfo, ProjectType
 

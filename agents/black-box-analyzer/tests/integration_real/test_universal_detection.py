@@ -7,6 +7,7 @@ Tests all 19 project types with real fixtures.
 from pathlib import Path
 
 import pytest
+
 from analyze_project_structure import analyze_project as detect_project_structure
 from analyzers.api_analyzer import APIAnalyzer
 from analyzers.blockchain.smart_contract_analyzer import SmartContractAnalyzer

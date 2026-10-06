@@ -2,6 +2,7 @@
 """Tests for analyze_commit_quality.py"""
 
 import pytest
+
 from cli.analyze_commit_quality import QUALITY_PATTERNS, SECURITY_PATTERNS, AnalyzeCommitQualityScript
 
 

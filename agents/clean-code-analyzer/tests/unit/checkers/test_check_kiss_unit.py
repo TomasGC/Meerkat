@@ -12,8 +12,9 @@ import json
 import subprocess
 from unittest.mock import MagicMock, patch
 
-import cca.checkers.check_kiss as kiss_mod
 import pytest
+
+import cca.checkers.check_kiss as kiss_mod
 from cca.checkers.check_kiss import run
 
 _HYBRID_CHECK_AVAILABLE = "lib.engine.hybrid.check_server_available"

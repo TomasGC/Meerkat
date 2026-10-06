@@ -5,8 +5,9 @@ import json
 import sys
 from unittest.mock import patch
 
-import parallel_analyzer
 import pytest
+
+import parallel_analyzer
 from bba.cache import AnalysisCache
 
 _REPORT = {"success": True, "project_info": {"language": "python"}, "summary": {"total_entry_points": 0}}

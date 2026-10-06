@@ -5,8 +5,9 @@ import json
 import sys
 from unittest.mock import patch
 
-import bba.model_utils as model_utils
 import pytest
+
+import bba.model_utils as model_utils
 from bba.models import HTTPMethod, Language, TestFramework
 from parse_test_files import (
     _classify_by_regex,

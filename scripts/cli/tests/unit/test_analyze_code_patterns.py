@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from cli.analyze_code_patterns import AnalyzeCodePatternsScript
 
 

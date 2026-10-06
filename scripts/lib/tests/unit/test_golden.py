@@ -4,8 +4,9 @@ import asyncio
 import json
 from pathlib import Path
 
-import lib.ai.model_utils as model_utils
 import pytest
+
+import lib.ai.model_utils as model_utils
 from lib.testing import golden
 
 _TEMPLATE = "Review this {language} code.\nSource:\n{source}\nKnown:\n{known_findings}\nReturn JSON.\n"

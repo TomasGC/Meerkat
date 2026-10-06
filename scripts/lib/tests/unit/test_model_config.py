@@ -4,8 +4,9 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-import lib.config.model_config as mc
 import pytest
+
+import lib.config.model_config as mc
 
 _SAMPLE_CONFIG = {
     "local": {

@@ -2,6 +2,7 @@
 """Tests for analyzers/sql_analyzer.py: SQL parameter parsing and scenario generation."""
 
 import pytest
+
 from analyzers.sql_analyzer import SQLAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, Parameter, ProjectInfo, ProjectType
 

@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from analyzers.event_driven.message_queue_analyzer import MessageQueueAnalyzer
 from bba.models import EntryPoint, Language, ProjectInfo, ProjectType
 

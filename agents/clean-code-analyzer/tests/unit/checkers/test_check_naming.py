@@ -1,6 +1,7 @@
 """Tests for check_naming — magic numbers, magic strings, single-letter vars."""
 
 import pytest
+
 from cca.checkers.check_naming import _check_file
 
 

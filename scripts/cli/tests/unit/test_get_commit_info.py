@@ -8,6 +8,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+
 from cli.get_commit_info import GetCommitInfoScript, format_csv_output, get_commit_files, get_commit_info
 
 

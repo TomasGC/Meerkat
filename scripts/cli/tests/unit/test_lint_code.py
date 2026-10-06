@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from cli.lint_code import LintCode
 
 # ---------------------------------------------------------------------------

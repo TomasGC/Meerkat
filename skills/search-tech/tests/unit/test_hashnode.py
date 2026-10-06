@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+
 import search_hashnode as module
 from search_hashnode import search_hashnode
 from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source

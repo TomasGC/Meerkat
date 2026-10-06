@@ -4,6 +4,7 @@ import subprocess
 from unittest.mock import patch
 
 import pytest
+
 from ssa import file_utils
 from ssa.file_utils import (
     discover_files,

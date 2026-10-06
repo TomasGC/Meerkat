@@ -2,6 +2,7 @@
 """Tests for analyzers/fullstack_analyzer.py: API + frontend analysis combined."""
 
 import pytest
+
 from analyzers.fullstack_analyzer import FullstackAnalyzer
 from bba.models import (
     EntryPoint,

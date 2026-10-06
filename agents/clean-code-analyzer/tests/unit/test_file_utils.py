@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from lib.engine.discovery import (
     _DISCOVERY_CACHE,
     discover_files,

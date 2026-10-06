@@ -6,6 +6,7 @@ import sys
 from unittest.mock import patch
 
 import pytest
+
 import scan_tdd_refactoring
 from scan_tdd_refactoring import _merge_blocker_runs, get_source_files, summarize
 

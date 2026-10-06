@@ -2,6 +2,7 @@
 """Tests for common/cli/base.py"""
 
 import pytest
+
 from lib import base_cli as legacy
 from lib.cli.base import BaseCLIScript, create_cli_script
 

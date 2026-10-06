@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+
 from lib import integrations
 from lib.integrations import get_profile_detection_info, validate_profile
 

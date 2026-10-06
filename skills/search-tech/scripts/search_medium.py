@@ -25,6 +25,7 @@ except ImportError:
 
 # Medium's RSS is remote, untrusted XML: defusedxml refuses entity-expansion and external-entity tricks
 from defusedxml import ElementTree as ET
+
 from search_tech.cache import SearchCache
 from search_tech.logger import MetricsCollector, get_defaults, setup_logger
 from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source, ValidationError

@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+
 import search_devto as module
 from search_devto import search_devto
 from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source

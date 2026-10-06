@@ -4,6 +4,7 @@
 from datetime import datetime
 
 import pytest
+
 from search_tech.models import (
     ResultType,
     SearchQuery,

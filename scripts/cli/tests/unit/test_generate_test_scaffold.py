@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from cli.generate_test_scaffold import (
     detect_language,
     generate_bash_tests,

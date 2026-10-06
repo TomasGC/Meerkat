@@ -9,8 +9,9 @@ import asyncio
 from pathlib import Path
 from unittest.mock import patch
 
-import lib.ai.model_utils as mu
 import pytest
+
+import lib.ai.model_utils as mu
 
 _ITEM = '[{"line": 3, "description": "d"}]'
 

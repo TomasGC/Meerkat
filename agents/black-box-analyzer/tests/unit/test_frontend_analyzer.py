@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from analyzers.frontend_analyzer import FrontendAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, Parameter, ProjectInfo, ProjectType
 

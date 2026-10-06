@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+
 from upload_coverage import _find_codecov, _merge_lcov
 from upload_coverage import main as upload_main
 from upload_coverage import upload_with_codecov

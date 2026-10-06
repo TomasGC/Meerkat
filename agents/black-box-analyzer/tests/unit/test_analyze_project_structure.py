@@ -4,6 +4,7 @@
 import json
 
 import pytest
+
 from analyze_project_structure import (
     analyze_project,
     count_endpoints,

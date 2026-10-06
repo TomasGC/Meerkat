@@ -5,6 +5,7 @@ replaced. Regenerate with scripts/cli/update_golden.py --agent cca.
 """
 
 import pytest
+
 from lib.testing import golden  # noqa: E402
 
 PROJECTS = golden.project_names()

@@ -5,6 +5,7 @@ import argparse
 from unittest.mock import patch
 
 import pytest
+
 from cli.generate_comment import (
     GenerateCommentScript,
     categorize_file,

@@ -5,6 +5,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+
 from bba.model_utils import (
     PROMPTS_DIR,
     extract_json_array,

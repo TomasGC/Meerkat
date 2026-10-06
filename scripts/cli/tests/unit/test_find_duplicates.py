@@ -2,6 +2,7 @@
 """Tests for find_duplicates.py"""
 
 import pytest
+
 from cli.find_duplicates import FindDuplicatesScript
 
 

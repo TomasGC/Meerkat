@@ -4,6 +4,7 @@
 import json
 
 import pytest
+
 from diff_analysis import (
     compare_analyses,
     format_markdown,

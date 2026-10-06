@@ -14,6 +14,7 @@ import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from lib import paths
 
 pytestmark = pytest.mark.e2e_agents

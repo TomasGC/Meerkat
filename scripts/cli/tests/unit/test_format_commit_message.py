@@ -6,6 +6,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+
 from cli.format_commit_message import (
     FormatCommitMessageScript,
     format_commit_message,

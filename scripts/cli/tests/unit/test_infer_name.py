@@ -3,6 +3,7 @@
 import json
 
 import pytest
+
 from cli.infer_name import InferNameScript
 
 # ---------------------------------------------------------------------------

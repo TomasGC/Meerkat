@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
 from cli.generate_kanban_entry import GenerateKanbanEntryScript
 from cli.search_kanban import SearchKanbanScript
 from cli.update_kanban import UpdateKanbanScript

@@ -5,8 +5,9 @@ import time
 from pathlib import Path
 from unittest.mock import patch
 
-import lib.engine.cache as cache_mod
 import pytest
+
+import lib.engine.cache as cache_mod
 
 
 @pytest.fixture

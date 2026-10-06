@@ -127,7 +127,7 @@ def step_open_browser(index_html: Path) -> None:
     print(f"\n[browser] Opening {url}", file=sys.stderr)
     system = platform.system()
     if system == "Windows":
-        os.startfile(str(index_html.resolve()))
+        os.startfile(str(index_html.resolve()))  # type: ignore[attr-defined]  # Windows-only, guarded above
     elif system == "Darwin":
         subprocess.run(["open", url])
     else:

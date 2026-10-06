@@ -5,6 +5,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
+
 from cli.validate_skill_structure import detect_type, validate_structure
 from lib.utils import write_file_safe
 

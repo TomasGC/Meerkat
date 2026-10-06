@@ -2,6 +2,7 @@
 """Tests for analyzers/api_analyzer.py: endpoint extraction per framework and API scenarios."""
 
 import pytest
+
 from analyzers.api_analyzer import APIAnalyzer
 from bba.models import EntryPoint, EntryPointType, HTTPMethod, Language, ProjectInfo, ProjectType
 

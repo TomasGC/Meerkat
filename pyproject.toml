@@ -10,6 +10,15 @@ extend-exclude = '/(fixtures|template-base)/'
 profile = "black"
 line_length = 120
 skip_glob = ["**/fixtures/**", "template-base/**"]
+# First-party packages live under these roots (the ones the conftests put on sys.path). Without them isort guesses
+# from the working directory, and sorts lib/cca/bba imports differently on Linux than on Windows.
+src_paths = [
+    "scripts",
+    "agents/black-box-analyzer/scripts",
+    "agents/clean-code-analyzer/scripts",
+    "agents/security-safety-analyzer/scripts",
+    "skills/search-tech/scripts",
+]
 
 [tool.coverage.run]
 # Coverage measures sources: test trees and fixtures are excluded.

@@ -4,6 +4,7 @@
 import json
 
 import pytest
+
 from cli.propose_ci_fixes import (
     ErrorInput,
     extract_context,

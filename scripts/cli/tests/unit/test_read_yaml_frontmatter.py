@@ -8,8 +8,9 @@ from pathlib import Path
 from textwrap import dedent
 from unittest.mock import patch
 
-import cli.read_yaml_frontmatter as reader
 import pytest
+
+import cli.read_yaml_frontmatter as reader
 from cli.read_yaml_frontmatter import ReadYamlFrontmatterScript, extract_frontmatter, parse_yaml_simple
 from lib import paths
 from lib.utils import write_file_safe

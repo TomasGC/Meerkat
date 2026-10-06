@@ -2,8 +2,9 @@
 
 from unittest.mock import patch
 
-import lib.engine.discovery as fu
 import pytest
+
+import lib.engine.discovery as fu
 from cca.checkers.check_naming import run as run_naming
 
 

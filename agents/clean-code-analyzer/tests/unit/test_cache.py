@@ -1,6 +1,7 @@
 """Tests for the per-file result cache."""
 
 import pytest
+
 from lib.engine.cache import clear_cache, get_cached, set_cached
 
 

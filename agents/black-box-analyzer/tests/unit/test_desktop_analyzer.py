@@ -2,6 +2,7 @@
 """Tests for analyzers/desktop_analyzer.py: window and event-handler extraction per toolkit."""
 
 import pytest
+
 from analyzers.desktop_analyzer import DesktopAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, ProjectInfo, ProjectType
 

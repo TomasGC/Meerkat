@@ -5,6 +5,7 @@ import json
 import os
 
 import pytest
+
 from bba.cache import AnalysisCache, _model_cache_dir, clear_model_cache, get_model_cached, set_model_cached
 from bba.models import (
     AnalysisResult,

@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from cli.analyze_dependencies import (
     analyze_cargo_toml,
     analyze_dependencies,

@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 import requests
+
 import search_reddit as search_reddit_module
 from search_reddit import search_reddit, search_reddit_subreddit
 from search_tech.cache import SearchCache

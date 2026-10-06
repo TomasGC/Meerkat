@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 import yaml
+
 from lib import formatters
 from lib.formatters import format_json, format_yaml
 

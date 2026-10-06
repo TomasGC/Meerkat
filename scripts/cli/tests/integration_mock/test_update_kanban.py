@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
 from cli.search_kanban import KanbanEntry
 from cli.update_kanban import UpdateKanbanScript, get_commit_title, update_existing_entry
 

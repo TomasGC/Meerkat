@@ -6,6 +6,7 @@ SSA's orchestrator passes no cache_dir to its checkers, so there is no cache rou
 """
 
 import pytest
+
 from lib.testing import golden  # noqa: E402
 
 

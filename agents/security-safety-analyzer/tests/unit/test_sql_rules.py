@@ -7,6 +7,7 @@ not match — parameterized dynamic SQL is the norm, not the exception.
 from pathlib import Path
 
 import pytest
+
 from ssa.checkers import (
     check_concurrency,
     check_error_handling,

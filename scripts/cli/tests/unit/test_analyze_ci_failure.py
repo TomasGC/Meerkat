@@ -5,6 +5,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+
 from cli.analyze_ci_failure import (
     AnalyzeCIFailureScript,
     CIAnalysis,

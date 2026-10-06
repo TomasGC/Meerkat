@@ -2,8 +2,9 @@
 
 from pathlib import Path
 
-import cca.orchestrate
 import pytest
+
+import cca.orchestrate
 from cca.checkers import check_comments, check_naming
 
 

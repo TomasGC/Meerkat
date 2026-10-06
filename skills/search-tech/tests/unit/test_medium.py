@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+
 import search_medium as module
 from search_medium import search_medium, search_medium_tag
 from search_tech.models import ResultType, SearchQuery, SearchResponse, SearchResult, Source

@@ -5,6 +5,7 @@ import json
 import sys
 
 import pytest
+
 from bba.models import CoverageGap, HTTPMethod, Scenario, TestFramework
 from prioritize_by_risk import (
     assess_business_impact,

@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pytest
+
 from cli.search_kanban import filter_entries, parse_kanban_file
 from lib.utils import write_file_safe
 
