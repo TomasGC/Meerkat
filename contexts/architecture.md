@@ -40,6 +40,7 @@ Local AI  Scripts  Agents
 ├── CLAUDE.md / CLAUDE.local.md      # Global + personal instructions
 ├── settings.json / settings.local.json
 ├── pyproject.toml / .flake8          # tool settings only: black, isort, flake8, mypy, coverage = Condor's gates (#48)
+├── .github/workflows/               # push-ci + pr-ci: callers of Condor's shared pipelines on Condor main (#2)
 │
 ├── contexts/                        # Auto-loaded session context
 │   ├── kanban.md                    # Work history
