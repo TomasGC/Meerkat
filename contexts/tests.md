@@ -251,6 +251,19 @@ Coverage of `unit` + `integration_mock` + `integration_real` (without `live_ai`)
 - `scripts/cli/tests/unit/test_monitor_task.py` stubs `lib.config.model_config` only while importing the module
   (`patch.dict(sys.modules)`): a stub left in `sys.modules` broke every lib test collected after it.
 
+## CI on GitHub Actions (#2)
+
+`.github/workflows/` only calls Condor's shared pipelines, on Condor's `main` like every other project:
+- `push-ci.yml` (Push-CI): every push to `feature/**`, `bugfix/**`, `refactor/**` runs `python-push-ci.yml`.
+  It is skipped when no Python file changed. Otherwise it runs lint (7 jobs), the marker guard (every collected
+  test carries a tier marker), one job per tier with `-m "not live_ai"`, and coverage (80%).
+- `pr-ci.yml` (PR-CI): runs when Push-CI completes (`workflow_run`, which fires only from the default branch's copy
+  of the file, so a change to it takes effect after merge). It runs `common-pr-ci.yml`: PR title format, context
+  files updated (`contexts/`), tests changed with code, security checks, and a summary comment. No `secrets: inherit`.
+
+Meerkat's layout is passed as inputs (`scripts-dir: .`, four requirements files, `source-dirs`, `exclude-dirs`), so
+it runs the same pipeline as Otter, Raven and Anglerfish. The CI-safe run above is what the tier jobs execute.
+
 ## Prompt Templates Are Tracked
 
 `.gitignore`'s `*local*` rule (personal files) would also hide `agents/*/scripts/prompts/local/`, the local-AI

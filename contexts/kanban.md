@@ -14,16 +14,16 @@ tags: #lint #coverage #mypy #testing #bugs
 Ref: https://github.com/TomasGC/Meerkat/issues/48
 Commits: 4c0916c, 8925901, 9593b61, 64efca4, 826a125, b1dac53, b0540d1
 
-2026-10-05 - [#2] Run the test suites on GitHub Actions from any checkout
+2026-10-06 - [#2] Run the test suites on GitHub Actions from any checkout
 - Part 1, relocatable checkout: `scripts/lib/paths.py` resolves the repo from `__file__` (`CHECKOUT`); user data (local configs, integration profiles, caches) follows `MEERKAT_HOME`, else the checkout. No code locates the repo through `~/.claude` any more
 - One `sys.path` bootstrap per agent package (`cca`, `ssa`, `bba`, `search_tech`) in its `__init__`; 40 per-module blocks and the engine's inserts removed; a guard test fails if a repo package is loaded from outside the checkout
 - Every test that reaches the model or the Ollama CLI is marked `live_ai` (#36: SSA's live orchestrate tests left the mock tier, with a 30-minute timeout); `-m "not live_ai"` replaces every `--ignore`/`--deselect` and passes with the model unreachable
-- Linux run (python:3.12 container) found two portability bugs, fixed: the golden runner kept `pkg.py` as one file name on POSIX, `open_report.py` crashed without `dotnet`
-- Proof: a clone outside `~/.claude` with an empty `HOME`/`USERPROFILE` passes 2587 CI-safe tests; the container passes every tier
-- Next: #48 (Condor lint and coverage gates), then the workflows calling Condor's Python and PR pipelines
-tags: #ci #paths #testing #portability
+- Proof: a clone outside `~/.claude` with an empty `HOME`/`USERPROFILE` passes the CI-safe run; a python:3.12 container passes every tier and found two portability bugs, fixed (golden runner file names on POSIX, `open_report.py` without `dotnet`)
+- Part 2, Condor (TomasGC/Condor#7): one Python push pipeline and one PR pipeline for every project, differing only by inputs; a job per tier, a marker collection guard, pinned lint tools, 80% coverage, self-tests on fixture projects; app migrations in Otter#63, Raven#8, Anglerfish#56
+- Part 3: `push-ci.yml` (push to feature/bugfix/refactor branches) and `pr-ci.yml` (`workflow_run` after Push-CI) call Condor's `main`, like every project; lint and coverage gates passed first (#48); Push-CI green on GitHub
+tags: #ci #paths #testing #portability #github-actions #condor
 Ref: https://github.com/TomasGC/Meerkat/issues/2
-Commits: 4ae1a7d, 7d750b9, 19cb2e9
+Commits: 4ae1a7d, 7d750b9, 19cb2e9, a96acfa
 
 2026-10-04 - [#46] One test layout for every component
 - Every agent, skill, `scripts/lib` and `scripts/cli` keeps its tests in `tests/{unit,integration_mock,integration_real,e2e}` with data in `tests/fixtures/`; tests spanning several components moved to a root `tests/`; one `pytest.ini`
