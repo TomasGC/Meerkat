@@ -291,12 +291,17 @@ def test_error_result_formats():
     assert script.format_summary({"success": False, "error": "x"}) == "[ERROR] x"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#51): format_text iterates result['frontmatter'], which is None for a file without frontmatter",
-)
 def test_run_text_output_for_file_without_frontmatter(tmp_path, capsys):
     file_path = tmp_path / "plain.md"
     file_path.write_text("# no frontmatter\n", encoding="utf-8")
-    code, _ = _run(["--file", str(file_path), "--format", "text"], capsys)
+    code, out = _run(["--file", str(file_path), "--format", "text"], capsys)
     assert code == 0
+    assert out.strip() == "No frontmatter found"
+
+
+def test_run_summary_output_for_file_without_frontmatter(tmp_path, capsys):
+    file_path = tmp_path / "plain.md"
+    file_path.write_text("# no frontmatter\n", encoding="utf-8")
+    code, out = _run(["--file", str(file_path), "--format", "summary"], capsys)
+    assert code == 0
+    assert out.strip() == "No frontmatter found"
