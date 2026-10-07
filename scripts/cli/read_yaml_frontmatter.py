@@ -34,9 +34,9 @@ def extract_frontmatter(file_path: Path) -> Optional[dict]:
     except Exception:
         return None
 
-    # Match frontmatter (multiline)
-    pattern = r"^---\n(.*?)\n---"
-    match = re.search(pattern, content, re.DOTALL | re.MULTILINE)
+    # Frontmatter only counts at the very start of the file, closed by a line of its own: two horizontal
+    # rules further down are markdown, not frontmatter
+    match = re.match(r"---\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|$)", content, re.DOTALL)
 
     if not match:
         return None
@@ -111,6 +111,9 @@ def parse_yaml_simple(yaml_content: str) -> dict:
     return parsed
 
 
+_NO_FRONTMATTER = "No frontmatter found"
+
+
 class ReadYamlFrontmatterScript(BaseCLIScript):
     """Extract and parse YAML frontmatter from markdown files."""
 
@@ -142,6 +145,8 @@ class ReadYamlFrontmatterScript(BaseCLIScript):
         """Format as human-readable text."""
         if not result.get("success"):
             return f"Error: {result.get('error', 'Unknown error')}"
+        if not result["frontmatter"]:
+            return _NO_FRONTMATTER
 
         lines = []
         for key, value in result["frontmatter"].items():
@@ -159,6 +164,8 @@ class ReadYamlFrontmatterScript(BaseCLIScript):
         """Format as brief summary."""
         if not result.get("success"):
             return f"[ERROR] {result.get('error', 'Unknown error')}"
+        if not result["frontmatter"]:
+            return _NO_FRONTMATTER
 
         keys = list(result["frontmatter"].keys())
         return f"Extracted {len(keys)} fields: {', '.join(keys)}"

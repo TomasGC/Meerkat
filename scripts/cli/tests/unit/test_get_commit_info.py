@@ -179,11 +179,9 @@ def test_run_text_format(capsys):
     assert capsys.readouterr().out.strip() == "2 commits retrieved"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#51): execute() returns GitCommitInfo dataclasses, so the default --format json cannot serialize them",
-)
 def test_run_default_json_format_succeeds(capsys):
     with patch("cli.get_commit_info.run_command", side_effect=_git):
         assert GetCommitInfoScript().run([]) == 0
-    assert json.loads(capsys.readouterr().out)["success"] is True
+    result = json.loads(capsys.readouterr().out)
+    assert result["success"] is True
+    assert result["commits"] and {"hash", "author", "date", "message"} <= result["commits"][0].keys()

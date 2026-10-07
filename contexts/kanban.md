@@ -4,6 +4,16 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-07 - [#51] Fix six CLI script bugs found by the coverage tests of #48
+- Default `--format json` of `get_branch_summary.py` and `get_commit_info.py` crashed on their dataclasses: `lib.formatters.format_json` now writes a dataclass as its fields (one fix in the shared writer, other objects still rejected)
+- `read_yaml_frontmatter.py`: text and summary output crashed on a file without frontmatter; and frontmatter was matched at any line (`^` under `re.MULTILINE`), so any markdown with two `---` rules (Meerkat's README) was parsed as YAML. Now only at the file's start, CRLF included
+- `format_commit_message.py`: inverted lowercase condition ("Add" kept, "README" became "rEADME"); type names matched inside words ("ci" in "dependencies"); past tenses converted case-insensitively; one `COMMIT_TYPES` list instead of three
+- Legacy `lib/base_cli.py`: `run()` returned 1 only on paper, `self.error()` exited first (and doubled the "Error:" prefix)
+- Tests: the six strict xfail marks removed, 12 new; 3367 passed + 17 xfailed (was 3352 + 23)
+tags: #scripts #cli #bugs #testing
+Ref: https://github.com/TomasGC/Meerkat/issues/51
+Commits: 254b821, bec346f, 8445782, 7e911e4, a4c3b18
+
 2026-10-07 - [#57] Run PR-CI on pull request events
 - `pr-ci.yml` runs on `pull_request` (opened, reopened, synchronize, edited) instead of `workflow_run` after Push-CI, following Condor's new PR pipeline (TomasGC/Condor#19); only Meerkat's layout inputs are left (`contexts-dir`, `code-paths`, `test-paths`)
 - PR-CI's checks now sit on the PR's head commit, in its checks list; the old trigger attached them to `main` and never ran for a PR opened after its last push (#56 merged unchecked)

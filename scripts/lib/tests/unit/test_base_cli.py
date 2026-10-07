@@ -308,13 +308,11 @@ class TestLegacyBaseCLIScript:
         assert _LegacyScript().run(["--unknown"]) == 2
         assert "unrecognized arguments" in capsys.readouterr().err
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="bug (#51): run() calls self.error(), whose sys.exit escapes the except block instead of returning 1",
-    )
     def test_run_returns_one_when_execute_raises(self, capsys):
         assert _LegacyScript().run(["--fail"]) == 1
-        assert "boom" in capsys.readouterr().err
+        err = capsys.readouterr().err
+        assert "boom" in err
+        assert "Error: Error:" not in err
 
     def test_error_exits_with_given_code(self, capsys):
         with pytest.raises(SystemExit) as exc:

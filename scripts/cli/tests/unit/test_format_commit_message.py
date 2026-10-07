@@ -131,10 +131,6 @@ def test_format_commit_message_strips_whitespace_and_period():
     assert format_commit_message("#1", "feat", " add parser. ") == "#1: feat: add parser"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#51): the lowercase condition is inverted, so 'Add' keeps its capital (and 'README' becomes 'rEADME')",
-)
 def test_format_commit_message_lowercases_first_letter():
     assert format_commit_message("#1", "feat", "Add parser") == "#1: feat: add parser"
 
@@ -143,16 +139,24 @@ def test_generate_suggestion_infers_chore():
     assert generate_suggestion("#7 bump the version.") == "#7: chore: bump the version"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#51): the type regex has no word boundary, so 'ci' inside 'dependencies' is taken as the type",
-)
 def test_generate_suggestion_ignores_type_names_inside_words():
     assert generate_suggestion("#7 bump dependencies") == "#7: chore: bump dependencies"
 
 
 def test_generate_suggestion_converts_created_and_updated():
     assert generate_suggestion("#7 created and updated the index") == "#7: feat: create and update the index"
+
+
+def test_format_commit_message_keeps_an_acronym():
+    assert format_commit_message("#1", "docs", "README updated") == "#1: docs: README updated"
+
+
+def test_generate_suggestion_converts_capitalized_past_tense():
+    assert generate_suggestion("#7 Added parser") == "#7: feat: add parser"
+
+
+def test_generate_suggestion_reads_a_whole_word_type():
+    assert generate_suggestion("#7 ci: pin the actions") == "#7: ci: pin the actions"
 
 
 def _run(argv, capsys):

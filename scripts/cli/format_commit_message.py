@@ -22,16 +22,16 @@ from lib.integrations import get_issue_format
 
 # Commit types
 COMMIT_TYPES = ["feat", "fix", "refactor", "test", "docs", "chore", "style", "perf", "ci", "build"]
+_TYPES = "|".join(COMMIT_TYPES)
+# A type is a whole word: "ci" inside "dependencies" is not one
+_TYPE_WORD = rf"\b({_TYPES})\b"
 
 
 def _get_commit_pattern() -> str:
     """Build commit pattern from active profile's issue format."""
     issue_pattern = get_issue_format()
     # Build full pattern: <issue>: <type>: <message>
-    return rf"^({issue_pattern}):\s+(feat|fix|refactor|test|docs|chore|style|perf|ci|build):\s+.{{3,}}"
-
-
-COMMIT_TYPES = ["feat", "fix", "refactor", "test", "docs", "chore", "style", "perf", "ci", "build"]
+    return rf"^({issue_pattern}):\s+({_TYPES}):\s+.{{3,}}"
 
 
 @dataclass
@@ -101,19 +101,20 @@ def generate_suggestion(message: str) -> Optional[str]:
     suggested_message = re.sub(r"\.$", "", suggested_message)
 
     # Convert past tense to imperative BEFORE extracting type
-    suggested_message = re.sub(r"\badded\b", "add", suggested_message)
-    suggested_message = re.sub(r"\bfixed\b", "fix", suggested_message)
-    suggested_message = re.sub(r"\brefactored\b", "refactor", suggested_message)
-    suggested_message = re.sub(r"\bupdated\b", "update", suggested_message)
-    suggested_message = re.sub(r"\bcreated\b", "create", suggested_message)
+    for past, imperative in (
+        ("added", "add"),
+        ("fixed", "fix"),
+        ("refactored", "refactor"),
+        ("updated", "update"),
+        ("created", "create"),
+    ):
+        suggested_message = re.sub(rf"\b{past}\b", imperative, suggested_message, flags=re.IGNORECASE)
 
     # Extract type
-    type_match = re.search(r"(feat|fix|refactor|test|docs|chore|style|perf|ci|build)", message)
+    type_match = re.search(_TYPE_WORD, message)
     if type_match:
         suggested_type = type_match.group(1)
-        suggested_message = re.sub(
-            r"(feat|fix|refactor|test|docs|chore|style|perf|ci|build)[:\s]*", "", suggested_message, count=1
-        )
+        suggested_message = re.sub(rf"{_TYPE_WORD}[:\s]*", "", suggested_message, count=1)
     else:
         # Infer type from message
         if re.search(r"\b(add|implement|create)\b", suggested_message):
@@ -149,8 +150,8 @@ def format_commit_message(issue_id: str, commit_type: str, message: str) -> str:
     message = message.strip()
     message = re.sub(r"\.$", "", message)
 
-    # Lowercase first letter (unless proper noun)
-    if message and not message[0].isupper() or (message and len(message) > 1 and message[1].isupper()):
+    # Lowercase the first letter, except for an acronym ("README", "CI")
+    if message and message[0].isupper() and not (len(message) > 1 and message[1].isupper()):
         message = message[0].lower() + message[1:]
 
     return f"{issue_id}: {commit_type}: {message}"
