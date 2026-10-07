@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript
 from lib.integrations import get_issue_format
+from lib.kanban import NOT_FOUND, find_kanban_file
 from lib.utils import run_command
 
 
@@ -58,14 +59,14 @@ def load_kanban_entry(issue_id: str, kanban_path: Optional[Path] = None) -> Opti
 
     Args:
         issue_id: Issue ID (#123 or #12345)
-        kanban_path: Path to kanban.md (default: .claude/contexts/kanban.md)
+        kanban_path: Path to kanban.md (default: the current repository's, see lib.kanban)
 
     Returns:
         KANBAN entry content or None
     """
     if kanban_path is None:
-        kanban_path = Path(".claude/contexts/kanban.md")
-        if not kanban_path.exists():
+        kanban_path = find_kanban_file()
+        if kanban_path is None:
             return None
 
     try:
@@ -84,12 +85,13 @@ def load_kanban_entry(issue_id: str, kanban_path: Optional[Path] = None) -> Opti
         return None
 
 
-def load_session_context(cwd: Optional[Path] = None) -> dict:
+def load_session_context(cwd: Optional[Path] = None, kanban_path: Optional[Path] = None) -> dict:
     """
     Load session context (branch, issue, KANBAN).
 
     Args:
         cwd: Current working directory
+        kanban_path: Path to kanban.md (default: the repository's containing cwd)
 
     Returns:
         Context dictionary
@@ -103,26 +105,36 @@ def load_session_context(cwd: Optional[Path] = None) -> dict:
     issue_id = get_issue_from_branch(cwd)
 
     # Load KANBAN entry if issue found
+    kanban_path = kanban_path or find_kanban_file(cwd)
     kanban_context = None
-    if issue_id:
-        kanban_context = load_kanban_entry(issue_id)
+    if issue_id and kanban_path:
+        kanban_context = load_kanban_entry(issue_id, kanban_path)
 
     return {
         "branch": branch,
         "issue": issue_id,
         "kanbanFound": kanban_context is not None,
         "kanbanContext": kanban_context,
+        "kanbanFile": str(kanban_path) if kanban_path else None,
     }
 
 
 class LoadSessionContextScript(BaseCLIScript):
     """Load project context at session startup."""
 
+    def setup_parser(self, parser):
+        """Add script-specific arguments."""
+        parser.add_argument(
+            "--kanban-file", "-k", default="", help="Path to kanban.md (default: the current repository's)"
+        )
+
     def execute(self, args) -> dict[str, Any]:
         """Execute context loading."""
         try:
-            # Load session context
-            context = load_session_context()
+            kanban_path = Path(args.kanban_file) if args.kanban_file else None
+            if kanban_path and not kanban_path.exists():
+                return {"success": False, "error": f"kanban.md not found at: {kanban_path}"}
+            context = load_session_context(kanban_path=kanban_path)
 
             return {"success": True, **context}
 
@@ -144,9 +156,11 @@ class LoadSessionContextScript(BaseCLIScript):
             lines.append(f"- Issue: {result['issue']}")
 
             if result["kanbanFound"]:
-                lines.append("- KANBAN: Found")
+                lines.append(f"- KANBAN: Found ({result['kanbanFile']})")
                 lines.append("")
                 lines.append(result["kanbanContext"])
+            elif not result["kanbanFile"]:
+                lines.append(f"- KANBAN: {NOT_FOUND}")
             else:
                 lines.append("- KANBAN: Not found (new issue?)")
 

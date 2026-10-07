@@ -18,6 +18,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.cli.base import BaseCLIScript
+from lib.kanban import NOT_FOUND, find_kanban_file
 
 
 @dataclass
@@ -199,15 +200,16 @@ class SearchKanbanScript(BaseCLIScript):
         parser.add_argument(
             "--path",
             "-p",
-            default=".claude/contexts/kanban.md",
-            help="Path to kanban.md (default: .claude/contexts/kanban.md)",
+            default="",
+            help="Path to kanban.md (default: the current repository's)",
         )
 
     def execute(self, args) -> dict[str, Any]:
         """Execute KANBAN search."""
         try:
-            # Parse kanban.md
-            file_path = Path(args.path)
+            file_path = Path(args.path) if args.path else find_kanban_file()
+            if file_path is None:
+                return {"success": False, "error": NOT_FOUND}
             entries = parse_kanban_file(file_path)
 
             if not entries:

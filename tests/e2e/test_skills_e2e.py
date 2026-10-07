@@ -204,7 +204,9 @@ def test_start_session_skill_loads_context(tmp_path):
     (claude_dir / "CLAUDE.md").write_text("# Project\n\n## Purpose\nTest project\n")
 
     script = LoadSessionContextScript()
-    args = argparse.Namespace(project_root=tmp_path, format="json")
+    args = argparse.Namespace(kanban_file="", format="json")
     with patch("cli.load_session_context.run_command", return_value=(0, "main\n", "")):
         result = script.execute(args)
-    assert isinstance(result, dict)
+    assert result["success"] is True
+    assert result["branch"] == "main"
+    assert result["issue"] is None

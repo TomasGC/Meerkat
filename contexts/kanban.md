@@ -4,6 +4,16 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-07 - [#35] Point start-session at the Python session loader
+- `start-session` ran a `load-session-context.ps1` that no longer exists; it now runs `scripts/cli/load_session_context.py --format text`, with `--kanban-file` to override the lookup
+- One kanban lookup, `lib.kanban.find_kanban_file`, shared by the loader, `update_kanban` and `search_kanban`: `.claude/contexts/kanban.md` up to the repository root, then `contexts/kanban.md` at the root (Meerkat's layout)
+- Fixed a leak: the old upward search had no repository boundary and ended at `~`, so a project without a kanban read and wrote Meerkat's; a bare `.git` folder (no `HEAD`) found in the home directory does not count as a root
+- Loader tested for the first time (its test file was empty); the test that accepted the leak became a strict repo-root test
+- Tests: 3337 passed + 23 xfailed (was 3322)
+tags: #skills #kanban #paths
+Ref: https://github.com/TomasGC/Meerkat/issues/35
+Commits: 8f7fd4f, be6f12d
+
 2026-10-06 - [#48] Pass the Condor lint and coverage gates
 - Meerkat passes every gate of Condor's Python pipeline with its pinned tools: black and isort (one formatter-only commit, 312 files), flake8 (538 findings fixed in code; E402 only for script bootstraps), pylint 8.23, mypy (281 errors), bandit, vulture, pip-audit
 - Coverage of sources from 67% to 94% (gate 80%): BBA 58% → 98%, scripts/cli 63% → 86%, search-tech → 96%; library code with no caller deleted (lib/validators.py, most of lib/formatters and lib/utils, search_tech/utils.py)
