@@ -72,7 +72,7 @@
       "line": 67,
       "severity": "high",
       "message": "eval()/exec() runs dynamic code — code injection risk",
-      "suggestion": "Use parameterized queries or sanitize/escape all external input"
+      "suggestion": "Never evaluate untrusted input: ast.literal_eval for literals, a restricted parser or an explicit dispatch table for expressions"
     },
     {
       "principle": "SensitiveData",
