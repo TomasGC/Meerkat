@@ -4,6 +4,14 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-07 - [#57] Run PR-CI on pull request events
+- `pr-ci.yml` runs on `pull_request` (opened, reopened, synchronize, edited) instead of `workflow_run` after Push-CI, following Condor's new PR pipeline (TomasGC/Condor#19); only Meerkat's layout inputs are left (`contexts-dir`, `code-paths`, `test-paths`)
+- PR-CI's checks now sit on the PR's head commit, in its checks list; the old trigger attached them to `main` and never ran for a PR opened after its last push (#56 merged unchecked)
+- Tested before Condor merged, pinned to its PR's commit: checked on `opened` after the last push (run 37625384800), an invalid title edit failed the title check (run 37626410331), the restored title passed (run 37627308443); then switched to Condor `@main`
+tags: #ci #pr-ci #condor
+Refs: https://github.com/TomasGC/Meerkat/issues/57, https://github.com/TomasGC/Condor/issues/19
+Commit: 5be5340
+
 2026-10-07 - [#37] Give each SSA injection rule its own suggestion
 - `check_security.py` gave all 45 injection and universal rules one SQL suggestion ("use parameterized queries"), so `eval`/`exec`, JWT, XSS, SSRF, `curl | sh` and plaintext-secret findings carried advice that did not fit them
 - Every rule is now `(regex, message, severity, suggestion)` like the other SSA tables; shared fixes are named constants (`_SQL_FIX`, `_SSRF_FIX`, `_REDIRECT_FIX`, `_MASS_ASSIGNMENT_FIX`, `_JWT_ALGORITHM_FIX`, `_XSS_FIX`, eval fixes per language)
