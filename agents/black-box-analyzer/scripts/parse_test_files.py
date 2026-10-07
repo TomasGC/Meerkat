@@ -435,15 +435,17 @@ def parse_python_tests(project_path: Path) -> list[TestCase]:
 
         # Pattern: def test_xxx(...):
         test_pattern = re.compile(r"def\s+(test_\w+)\s*\(")
+        # End of the signature: a ':' closing its line, after any multi-line parameter list
+        signature_end_pattern = re.compile(r":[ \t]*(?:#.*)?$", re.MULTILINE)
         matches = test_pattern.finditer(content)
 
         for match in matches:
             test_name = match.group(1)
             line_num = content[: match.start()].count("\n") + 1
 
-            # Extract test body (indented block)
-            test_body_start = match.end()
-            lines = content[test_body_start:].split("\n")
+            # Extract test body (indented block), from the line after the signature
+            signature_end = signature_end_pattern.search(content, match.end())
+            lines = content[signature_end.end() :].split("\n") if signature_end else []
             test_body_lines: list[str] = []
             initial_indent = None
 
@@ -552,20 +554,19 @@ def parse_ruby_tests(project_path: Path) -> list[TestCase]:
             test_name = match.group(1)
             line_num = content[: match.start()].count("\n") + 1
 
-            # Extract test body (until matching 'end')
-            # start at 0: the 'do' on the it/describe line was already consumed by the regex
+            # Extract test body: the 'do' on the it line opens it, its matching 'end' closes it
             test_body_start = match.end()
             lines = content[test_body_start:].split("\n")
             test_body_lines = []
-            end_count = 0
+            depth = 0
 
             for line in lines:
                 if re.search(r"\bdo\b|\bbegin\b", line):
-                    end_count += 1
+                    depth += 1
                 if re.search(r"\bend\b", line):
-                    if end_count == 0:
+                    depth -= 1
+                    if depth <= 0:
                         break
-                    end_count -= 1
                 test_body_lines.append(line)
 
             test_body = "\n".join(test_body_lines)

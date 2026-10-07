@@ -357,10 +357,6 @@ def test_parse_ruby_tests_detects_selenium_test_as_e2e(temp_dir):
     assert case.test_type == "e2e"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): parse_ruby_tests counts the it-line 'do' as nested, so a body runs into the next test",
-)
 def test_parse_ruby_tests_body_stops_at_its_own_end(temp_dir):
     (temp_dir / "users_spec.rb").write_text(
         "describe 'Users' do\n"
@@ -371,16 +367,20 @@ def test_parse_ruby_tests_body_stops_at_its_own_end(temp_dir):
     assert types == {"creates user": "unit", "lists users": "e2e"}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): parse_python_tests takes the indent of the 'def' line remainder (0), so a body runs to EOF",
-)
 def test_parse_python_tests_body_stops_at_next_function(temp_dir):
     (temp_dir / "test_calc.py").write_text(
         "def test_a():\n    x = 1\n    assert x == 1\n\n\n" "def test_b():\n    m = MagicMock()\n    assert m\n"
     )
     types = {c.name: c.test_type for c in parse_python_tests(temp_dir)}
     assert types == {"test_a": "unit", "test_b": "int_mock"}
+
+
+def test_parse_python_tests_body_starts_after_multiline_signature(temp_dir):
+    (temp_dir / "test_svc.py").write_text(
+        "def test_a(\n    tmp_path,\n):\n    m = MagicMock()\n\n\ndef test_b():\n    assert 1\n"
+    )
+    types = {c.name: c.test_type for c in parse_python_tests(temp_dir)}
+    assert types == {"test_a": "int_mock", "test_b": "unit"}
 
 
 # ── parse_tests dispatch ────────────────────────────────────────────────────
