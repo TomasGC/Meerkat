@@ -111,7 +111,8 @@ ENDPOINT_PATTERNS = {
     # Python
     "py_fastapi": re.compile(r'@app\.(get|post|put|patch|delete)\s*\(\s*["\']([^"\']+)["\']'),
     "py_flask": re.compile(r'@app\.route\s*\(\s*["\']([^"\']+)["\']\s*,\s*methods\s*=\s*\[["\']([A-Z]+)["\']\]'),
-    "py_django": re.compile(r'path\s*\(\s*["\']([^"\']+)["\']\s*,'),
+    # Django URLconf: path()/re_path(), not obj.path() or xpath()
+    "py_django": re.compile(r'(?<![\w.])(?:re_)?path\s*\(\s*["\']([^"\']+)["\']\s*,'),
     # C#
     "cs_aspnet_attribute": re.compile(r'\[Http(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']*)["\']\s*\)\]'),
     "cs_aspnet_minimal": re.compile(r'app\.Map(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']'),

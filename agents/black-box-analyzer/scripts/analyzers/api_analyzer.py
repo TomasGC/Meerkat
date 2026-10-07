@@ -260,6 +260,9 @@ class APIAnalyzer(BaseAnalyzer):
                 for match in matches:
                     if pattern_name == "py_flask":
                         path, method = match
+                    elif pattern_name == "py_django":
+                        # A URLconf route accepts every method; GET is its default
+                        path, method = match, "GET"
                     else:
                         method, path = match
 

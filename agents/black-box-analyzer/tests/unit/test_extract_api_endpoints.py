@@ -3,8 +3,6 @@
 
 import json
 
-import pytest
-
 from bba.models import HTTPMethod, Language
 from extract_api_endpoints import (
     extract_csharp_endpoints,
@@ -192,10 +190,6 @@ def test_extract_python_flask_reads_path_then_method(temp_dir):
     assert [(e.path, e.method, e.framework) for e in endpoints] == [("/login", HTTPMethod.POST, "flask")]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): py_django pattern has one capture group, so `method, path = match` unpacks a string",
-)
 def test_extract_python_django_path_does_not_crash(temp_dir):
     root = _project(temp_dir, "django", {"urls.py": "urlpatterns = [path('users/', views.users)]\n"})
     endpoints = extract_python_endpoints(root)

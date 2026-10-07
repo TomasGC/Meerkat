@@ -204,6 +204,9 @@ def extract_python_endpoints(project_path: Path) -> list[Endpoint]:
                 if pattern_name == "py_flask":
                     # Flask: (path, method)
                     path, method = match
+                elif pattern_name == "py_django":
+                    # Django: (path,), a URLconf route accepts every method; GET is its default
+                    path, method = match, "GET"
                 else:
                     # FastAPI: (method, path)
                     method, path = match
