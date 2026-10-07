@@ -4,6 +4,15 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-07 - [#37] Give each SSA injection rule its own suggestion
+- `check_security.py` gave all 45 injection and universal rules one SQL suggestion ("use parameterized queries"), so `eval`/`exec`, JWT, XSS, SSRF, `curl | sh` and plaintext-secret findings carried advice that did not fit them
+- Every rule is now `(regex, message, severity, suggestion)` like the other SSA tables; shared fixes are named constants (`_SQL_FIX`, `_SSRF_FIX`, `_REDIRECT_FIX`, `_MASS_ASSIGNMENT_FIX`, `_JWT_ALGORITHM_FIX`, `_XSS_FIX`, eval fixes per language)
+- The 11 SQL rules keep their text byte for byte; golden: one record changed, `python_project`'s eval/exec finding
+- Tests: 15 new (shape of every rule, 12 rules by weakness, SQL text unchanged); 3352 passed + 23 xfailed
+tags: #ssa #security #golden-tests
+Ref: https://github.com/TomasGC/Meerkat/issues/37
+Commit: cde303a
+
 2026-10-07 - [#35] Point start-session at the Python session loader
 - `start-session` ran a `load-session-context.ps1` that no longer exists; it now runs `scripts/cli/load_session_context.py --format text`, with `--kanban-file` to override the lookup
 - One kanban lookup, `lib.kanban.find_kanban_file`, shared by the loader, `update_kanban` and `search_kanban`: `.claude/contexts/kanban.md` up to the repository root, then `contexts/kanban.md` at the root (Meerkat's layout)
