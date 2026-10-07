@@ -3,8 +3,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from analyzers.event_driven.message_queue_analyzer import MessageQueueAnalyzer
 from bba.models import EntryPoint, Language, ProjectInfo, ProjectType
 
@@ -53,11 +51,6 @@ def test_python_kafka_consumer_is_a_message_consumer(tmp_path):
     assert [(p.name, p.data_type) for p in consumer.params] == [("message", "ConsumerRecord")]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): "
-    "the variable name is searched in the 100 chars before the match, which never contain KafkaConsumer",
-)
 def test_python_kafka_consumer_is_named_after_its_variable(tmp_path):
     _write(tmp_path, "consumer.py", "orders = KafkaConsumer('orders')\n")
 
