@@ -266,11 +266,6 @@ def test_infer_tested_endpoint_converts_verb_to_http_method():
     assert infer_tested_endpoint("create an order", 'post("/orders")') == ("/orders", HTTPMethod.POST)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): "
-    "verb regex needs word boundaries, so CamelCase/snake_case names (TestGetUser) never yield a method",
-)
 @pytest.mark.parametrize("name", ["TestGetUser", "test_get_user", "getUserReturnsUser"])
 def test_infer_tested_target_reads_verb_from_code_style_names(name):
     assert infer_tested_target(name, 'client.get("/users/1")') == ("/users/1", "GET")

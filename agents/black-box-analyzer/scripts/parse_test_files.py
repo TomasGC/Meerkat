@@ -162,9 +162,11 @@ def infer_tested_target(test_name: str, content: str) -> tuple[str | None, str |
         "DELETE": r"\b(delete|remove|destroy)\b",
     }
 
+    # Split code-style names into words: TestGetUser, test_get_user -> "test get user"
+    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", test_name).replace("_", " ").lower()
     detected_method = None
     for method, pattern in method_patterns.items():
-        if re.search(pattern, test_name.lower()):
+        if re.search(pattern, words):
             detected_method = method
             break
 
