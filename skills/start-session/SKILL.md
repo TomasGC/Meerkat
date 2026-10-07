@@ -1,6 +1,6 @@
 ---
 name: start-session
-description: Load project context (issue, KANBAN) and offer to read GitHub issue. Delegates to shared PowerShell script.
+description: Load project context (issue, KANBAN) and offer to read GitHub issue. Delegates to the shared Python session loader.
 ---
 
 # Start Session
@@ -10,9 +10,11 @@ Load project context for current work session.
 ## What This Skill Does
 
 1. **Call the shared script** to load context:
-   ```powershell
-   ~/.claude/scripts/load-session-context.ps1 --format text
+   ```bash
+   python ~/.claude/scripts/cli/load_session_context.py --format text
    ```
+   It finds the kanban of the current repository (`.claude/contexts/kanban.md`, or `contexts/kanban.md` at the
+   repository root) and never looks outside it; `--kanban-file <path>` overrides the lookup.
 
 2. **Display the output** to the user
 
@@ -27,7 +29,7 @@ Principal developer specialized in context loading and GitHub integration.
 
 ## Tools
 
-- **Bash** - Execute the PowerShell script
+- **Bash** - Run the session loader
 - **mcp__plugin_github_github__getGitHubIssue** - Read GitHub issues if user wants
 
 ## Model
@@ -36,7 +38,7 @@ Principal developer specialized in context loading and GitHub integration.
 
 ## Hard Constraints
 
-1. **Always call the script first** - `~/.claude/scripts/load-session-context.ps1 --format text`
+1. **Always call the script first** - `python ~/.claude/scripts/cli/load_session_context.py --format text`
 2. **Show the output** - Display what the script returns
 3. **Respect user choice** - Don't read GitHub unless user says yes
 4. **Flexible issue format** - Accept "#123" or "123" (infer prefix from branch)
@@ -46,7 +48,7 @@ Principal developer specialized in context loading and GitHub integration.
 ### Step 1: Load Context
 
 ```bash
-pwsh ~/.claude/scripts/load-session-context.ps1 --format text
+python ~/.claude/scripts/cli/load_session_context.py --format text
 ```
 
 The script will output formatted text like:
@@ -165,7 +167,7 @@ Done!
 
 ## Benefits
 
-- **Single source of truth** - Logic in one PowerShell script
+- **Single source of truth** - Logic in one Python script
 - **Reusable** - Script can be invoked manually or by other tools
 - **Maintainable** - Changes in one place only
 - **Fast** - Minimal context loading (targeted KANBAN read)
