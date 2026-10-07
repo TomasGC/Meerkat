@@ -257,12 +257,13 @@ Coverage of `unit` + `integration_mock` + `integration_real` (without `live_ai`)
 - `push-ci.yml` (Push-CI): every push to `feature/**`, `bugfix/**`, `refactor/**` runs `python-push-ci.yml`.
   It is skipped when no Python file changed. Otherwise it runs lint (7 jobs), the marker guard (every collected
   test carries a tier marker), one job per tier with `-m "not live_ai"`, and coverage (80%).
-- `pr-ci.yml` (PR-CI): runs when Push-CI completes (`workflow_run`, which fires only from the default branch's copy
-  of the file, so a change to it takes effect after merge). It runs `common-pr-ci.yml`: PR title format, secret
-  scan, and the context check, which fails when `.py` files change without `contexts/kanban.md` and warns when
-  tests change without `tests.md`; only a failure posts a comment on the PR. No `secrets: inherit`.
-  Its run is attached to `main`, not to the PR's head commit, so it does not appear in the PR's checks list and
-  cannot be a required check: read it under Actions, PR-CI. First run on #55, green.
+- `pr-ci.yml` (PR-CI): runs on the pull request (`opened`, `reopened`, `synchronize`, `edited`; #57, Condor #19).
+  It runs `common-pr-ci.yml`: PR title format, secret scan, and the context check, which fails when `.py` files
+  change without `contexts/kanban.md` and warns when tests change without `tests.md`; only a failure posts a comment
+  on the PR. No `secrets: inherit`. Its checks sit on the PR's head commit, in the PR's checks list next to
+  Push-CI's, so they can be required; a PR opened after its last push is checked on `opened`, a title edit re-runs
+  them. It does not wait for Push-CI: none of its checks reads the build. Until #57 it ran on `workflow_run` after
+  Push-CI, attached to `main`: never on the PR, and never for a PR opened late (#56 merged unchecked).
 
 Meerkat's layout is passed as inputs (`scripts-dir: .`, four requirements files, `source-dirs`, `exclude-dirs`), so
 it runs the same pipeline as Otter, Raven and Anglerfish. The CI-safe run above is what the tier jobs execute.

@@ -1,30 +1,22 @@
 name: PR-CI
 
 on:
-  workflow_run:
-    workflows: ["Push-CI"]
-    types: [completed]
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
 
 permissions:
   pull-requests: write
   contents: read
 
 concurrency:
-  group: pr-ci-${{ github.event.workflow_run.head_branch }}
+  group: pr-ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   pr-checks:
     uses: TomasGC/Condor/.github/workflows/common-pr-ci.yml@main
-    # No `secrets: inherit`: the PR pipeline needs only the built-in GITHUB_TOKEN, and workflow_run runs with the
-    # base repo's permissions even for a PR from a fork.
+    # Meerkat keeps its context files in contexts/ and its code in Python.
     with:
-      push-ci-conclusion: ${{ github.event.workflow_run.conclusion }}
-      head-branch: ${{ github.event.workflow_run.head_branch }}
-      head-sha: ${{ github.event.workflow_run.head_sha }}
-      # Meerkat keeps its context files in contexts/ and its code in Python; it has no Android build.
       contexts-dir: contexts
       code-paths: '\.py$'
       test-paths: '(^|/)tests/'
-      dependency-check: false
-      apk-size-check: false
