@@ -215,7 +215,7 @@ class FrontendAnalyzer(BaseAnalyzer):
 
         # Composables (separate .ts/.js files)
         for file_path in walk_files(project_path, ["*.ts", "*.js"]):
-            if "composables" not in str(file_path):
+            if "composables" not in file_path.relative_to(project_path).parent.as_posix():
                 continue
 
             content = read_file_safe(file_path)

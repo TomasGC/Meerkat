@@ -154,10 +154,6 @@ def test_vue_use_functions_count_only_under_their_dedicated_dir(tmp_path):
     assert _composables(tmp_path) == [("useCounter", 2)]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): the composables-dir check matches the absolute path, so a parent dir named composables counts",
-)
 def test_vue_composable_dir_check_ignores_directories_above_the_project(tmp_path):
     project = tmp_path / "composables-demo"
     _write(project, "src/utils/useHelper.js", "export function useHelper() {}\n")
