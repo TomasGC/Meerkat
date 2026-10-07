@@ -418,7 +418,7 @@ BLOCKCHAIN_PATTERNS = {
     "solidity_modifier": re.compile(r"modifier\s+(\w+)\s*\("),
     "solidity_contract": re.compile(r"contract\s+(\w+)"),
     # Rust (Solana)
-    "solana_instruction": re.compile(r"#\[program\]|pub\s+fn\s+(\w+)\s*\([^)]*ctx:\s*Context"),
+    "solana_instruction": re.compile(r"pub\s+fn\s+(\w+)\s*\([^)]*ctx:\s*Context(?:<(\w+)>)?"),
     # Move (Aptos/Sui)
     "move_function": re.compile(r"public\s+entry\s+fun\s+(\w+)"),
 }

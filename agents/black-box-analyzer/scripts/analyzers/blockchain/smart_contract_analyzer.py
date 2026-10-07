@@ -170,10 +170,7 @@ class SmartContractAnalyzer(BaseAnalyzer):
                 func_name = match.group(1)
                 line_num = content[: match.start()].count("\n") + 1
 
-                # Extract Context type
-                ctx_pattern = re.compile(r"Context<(\w+)>")
-                ctx_match = ctx_pattern.search(match.group(0))
-                ctx_type = ctx_match.group(1) if ctx_match else "Unknown"
+                ctx_type = match.group(2) or "Unknown"
 
                 entry_points.append(
                     EntryPoint(
