@@ -87,15 +87,8 @@ class SmartContractAnalyzer(BaseAnalyzer):
                     func_sig = match.group(0)
                     params = self._parse_solidity_params(func_sig)
 
-                    # Determine correct Solidity visibility (public/external/internal/private)
-                    if "public" in func_sig:
-                        visibility = "public"
-                    elif "external" in func_sig:
-                        visibility = "external"
-                    elif "private" in func_sig:
-                        visibility = "private"
-                    else:
-                        visibility = "internal"
+                    # The pattern only matches public and external functions
+                    visibility = match.group(2)
 
                     entry_points.append(
                         EntryPoint(

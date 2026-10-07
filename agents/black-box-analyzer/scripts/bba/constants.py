@@ -413,7 +413,7 @@ MESSAGE_QUEUE_PATTERNS = {
 # Blockchain / Smart contract detection patterns
 BLOCKCHAIN_PATTERNS = {
     # Solidity (Ethereum)
-    "solidity_function": re.compile(r"function\s+(\w+)\s*\([^)]*\)\s+(?:public|external)"),
+    "solidity_function": re.compile(r"function\s+(\w+)\s*\([^)]*\)\s+(public|external)"),
     "solidity_event": re.compile(r"event\s+(\w+)\s*\("),
     "solidity_modifier": re.compile(r"modifier\s+(\w+)\s*\("),
     "solidity_contract": re.compile(r"contract\s+(\w+)"),

@@ -64,6 +64,14 @@ def test_solidity_functions_are_scoped_to_their_contract(tmp_path):
     assert "Token.withdraw" not in eps
 
 
+def test_solidity_visibility_ignores_parameter_names(tmp_path):
+    _write(tmp_path, "Sig.sol", "contract Sig {\n    function verify(bytes32 publicKey) external {}\n}\n")
+
+    eps = _by_name(SmartContractAnalyzer().extract_entry_points(tmp_path))
+
+    assert eps["Sig.verify"].metadata["visibility"] == "external"
+
+
 def test_solidity_events_and_modifiers_are_extracted(tmp_path):
     _write(
         tmp_path,
