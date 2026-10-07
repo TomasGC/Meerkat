@@ -268,10 +268,16 @@ python scripts/cli/format_commit_message.py --issue "#3" --type feat --message "
 ## KANBAN
 
 ```bash
+python scripts/cli/load_session_context.py --format text   # what /start-session runs: branch, issue, its kanban entry
 python scripts/cli/search_kanban.py --issue "#3"
 python scripts/cli/search_kanban.py --tag "testing"
 python scripts/cli/update_kanban.py --auto
 ```
+
+All three find the kanban with `lib.kanban.find_kanban_file` (#35): `.claude/contexts/kanban.md` from the current
+directory up to the repository root, then `contexts/kanban.md` at the root (Meerkat's own layout). The search never
+leaves the repository, and a `.git` folder without `HEAD` is not a repository root. Outside any repository only the
+current directory is searched. `--kanban-file` (`--path` for `search_kanban.py`) overrides the lookup.
 
 ---
 

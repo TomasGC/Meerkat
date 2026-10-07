@@ -258,8 +258,11 @@ Coverage of `unit` + `integration_mock` + `integration_real` (without `live_ai`)
   It is skipped when no Python file changed. Otherwise it runs lint (7 jobs), the marker guard (every collected
   test carries a tier marker), one job per tier with `-m "not live_ai"`, and coverage (80%).
 - `pr-ci.yml` (PR-CI): runs when Push-CI completes (`workflow_run`, which fires only from the default branch's copy
-  of the file, so a change to it takes effect after merge). It runs `common-pr-ci.yml`: PR title format, context
-  files updated (`contexts/`), tests changed with code, security checks, and a summary comment. No `secrets: inherit`.
+  of the file, so a change to it takes effect after merge). It runs `common-pr-ci.yml`: PR title format, secret
+  scan, and the context check, which fails when `.py` files change without `contexts/kanban.md` and warns when
+  tests change without `tests.md`; only a failure posts a comment on the PR. No `secrets: inherit`.
+  Its run is attached to `main`, not to the PR's head commit, so it does not appear in the PR's checks list and
+  cannot be a required check: read it under Actions, PR-CI. First run on #55, green.
 
 Meerkat's layout is passed as inputs (`scripts-dir: .`, four requirements files, `source-dirs`, `exclude-dirs`), so
 it runs the same pipeline as Otter, Raven and Anglerfish. The CI-safe run above is what the tier jobs execute.

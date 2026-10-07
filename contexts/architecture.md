@@ -80,6 +80,7 @@ Local AI  Scripts  Agents
 │   │   └── utils/switch_profile.py
 │   ├── lib/                         # Shared library — importable by scripts, skills, plugins, agents
 │   │   ├── paths.py                 # CHECKOUT (code, templates, fixtures) + user_root() (MEERKAT_HOME or CHECKOUT)
+│   │   ├── kanban.py                # find_kanban_file: the current repository's kanban, never outside it (#35)
 │   │   ├── ai/                      # model_utils — local AI client
 │   │   ├── config/                  # model_config (roles) + language_config (languages, skip dirs, standards)
 │   │   ├── logger.py                # the one logging implementation (ColoredFormatter, setup_logger)
