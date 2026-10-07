@@ -28,17 +28,34 @@ _SECRET_PATTERNS = [
     ),
 ]
 
+# One suggestion per kind of weakness; each rule names the fix that applies to it.
+_SQL_FIX = "Use parameterized queries or sanitize/escape all external input"
+_SSRF_FIX = "Check the URL against an allowlist of hosts and schemes; never let the caller choose the destination"
+_REDIRECT_FIX = "Redirect only to relative paths or to an allowlist of known URLs"
+_MASS_ASSIGNMENT_FIX = (
+    "Copy only allowed fields into the model (an explicit allowlist or a DTO), never the whole payload"
+)
+_JWT_ALGORITHM_FIX = "Pin the accepted algorithms to the one in use (e.g. ['RS256']); never accept 'none'"
+_XSS_FIX = "Assign textContent or HTML-encode the value; use a vetted sanitizer when markup is really needed"
+_JS_EVAL_FIX = "Never evaluate untrusted input: JSON.parse for data, an explicit dispatch table instead of dynamic code"
+_PY_EVAL_FIX = (
+    "Never evaluate untrusted input: ast.literal_eval for literals, "
+    "a restricted parser or an explicit dispatch table for expressions"
+)
+
 # Weaknesses whose syntax is the same in every language
 _UNIVERSAL_PATTERNS = [
     (
         re.compile(r'(?i)["\']alg["\']\s*:\s*["\']none["\']'),
         "JWT header sets alg=none — signature is never verified",
         "high",
+        _JWT_ALGORITHM_FIX,
     ),
     (
         re.compile(r"(?i)[?&](token|api_key|apikey|password|secret|access_token)="),
         "Credential passed in URL query string — leaks through logs and referrers",
         "medium",
+        "Send credentials in a header (Authorization) or the request body, never in the query string",
     ),
 ]
 
@@ -56,139 +73,196 @@ _INJECTION_PATTERNS = {
             re.compile(r'execute\s*\(\s*["\'].*%s.*["\']'),
             "SQL query built with % formatting — SQL injection risk",
             "high",
+            _SQL_FIX,
         ),
-        (re.compile(r'execute\s*\(\s*f["\']'), "SQL query built with f-string — SQL injection risk", "high"),
-        (re.compile(r'execute\s*\(\s*["\'].*\+'), "SQL query built with concatenation — SQL injection risk", "high"),
+        (re.compile(r'execute\s*\(\s*f["\']'), "SQL query built with f-string — SQL injection risk", "high", _SQL_FIX),
+        (
+            re.compile(r'execute\s*\(\s*["\'].*\+'),
+            "SQL query built with concatenation — SQL injection risk",
+            "high",
+            _SQL_FIX,
+        ),
         (
             re.compile(r"open\s*\(\s*(?:request|input|os\.environ)"),
             "Path from external input — path traversal risk",
             "high",
+            "Resolve the path and check it stays inside an allowed base directory; reject '..' and absolute paths",
         ),
         (
             re.compile(r'requests\.(?:get|post|put|patch|delete|head)\s*\(\s*(?:f["\']|request\.|input\(|os\.environ)'),
             "Outbound request to a caller-controlled URL — SSRF risk",
             "high",
+            _SSRF_FIX,
         ),
         (
             re.compile(r'redirect\s*\(\s*(?:request\.|f["\'])'),
             "Redirect target from external input — open redirect risk",
             "medium",
+            _REDIRECT_FIX,
         ),
         (
             re.compile(r"jwt\.decode\s*\([^)]*verify\s*=\s*False"),
             "JWT decoded with verify=False — signature not checked",
             "high",
+            "Verify the signature: pass the key and an explicit algorithms list to jwt.decode",
         ),
         (
             re.compile(r'algorithms\s*=\s*\[\s*["\']none["\']'),
             "JWT accepts the none algorithm — signature can be stripped",
             "high",
+            _JWT_ALGORITHM_FIX,
         ),
         (
             re.compile(r"\*\*request\.(?:json|form|data|POST|args)"),
             "Request body splatted into a model — mass assignment risk",
             "high",
+            _MASS_ASSIGNMENT_FIX,
         ),
         # Bare builtin only: `ast.literal_eval(`, `model.eval()` and `cursor.execute(` must not match.
-        (re.compile(r"(?<![\w.])(?:eval|exec)\s*\("), "eval()/exec() runs dynamic code — code injection risk", "high"),
+        (
+            re.compile(r"(?<![\w.])(?:eval|exec)\s*\("),
+            "eval()/exec() runs dynamic code — code injection risk",
+            "high",
+            _PY_EVAL_FIX,
+        ),
     ],
     "javascript": [
-        (re.compile(r'innerHTML\s*=\s*[^"\'`]'), "innerHTML set from variable — XSS risk", "high"),
-        (re.compile(r"eval\s*\("), "eval() with dynamic code — code injection risk", "high"),
+        (re.compile(r'innerHTML\s*=\s*[^"\'`]'), "innerHTML set from variable — XSS risk", "high", _XSS_FIX),
+        (re.compile(r"eval\s*\("), "eval() with dynamic code — code injection risk", "high", _JS_EVAL_FIX),
         (
             re.compile(r"fetch\s*\(\s*(?:`|req\.(?:query|body|params))"),
             "Outbound request to a caller-controlled URL — SSRF risk",
             "high",
+            _SSRF_FIX,
         ),
         (
             re.compile(r"res\.redirect\s*\(\s*req\."),
             "Redirect target from external input — open redirect risk",
             "medium",
+            _REDIRECT_FIX,
         ),
         (
             re.compile(r"\.\.\.req\.(?:body|query|params)"),
             "Request payload spread into a model — mass assignment risk",
             "high",
+            _MASS_ASSIGNMENT_FIX,
         ),
         (
             re.compile(r'jwt\.verify\s*\([^)]*algorithms\s*:\s*\[\s*["\']none["\']'),
             "JWT accepts the none algorithm — signature can be stripped",
             "high",
+            _JWT_ALGORITHM_FIX,
         ),
     ],
     "typescript": [
-        (re.compile(r'innerHTML\s*=\s*[^"\'`]'), "innerHTML set from variable — XSS risk", "high"),
-        (re.compile(r"eval\s*\("), "eval() with dynamic code — code injection risk", "high"),
+        (re.compile(r'innerHTML\s*=\s*[^"\'`]'), "innerHTML set from variable — XSS risk", "high", _XSS_FIX),
+        (re.compile(r"eval\s*\("), "eval() with dynamic code — code injection risk", "high", _JS_EVAL_FIX),
         (
             re.compile(r"fetch\s*\(\s*(?:`|req\.(?:query|body|params))"),
             "Outbound request to a caller-controlled URL — SSRF risk",
             "high",
+            _SSRF_FIX,
         ),
         (
             re.compile(r"res\.redirect\s*\(\s*req\."),
             "Redirect target from external input — open redirect risk",
             "medium",
+            _REDIRECT_FIX,
         ),
         (
             re.compile(r"\.\.\.req\.(?:body|query|params)"),
             "Request payload spread into a model — mass assignment risk",
             "high",
+            _MASS_ASSIGNMENT_FIX,
         ),
         (
             re.compile(r'jwt\.verify\s*\([^)]*algorithms\s*:\s*\[\s*["\']none["\']'),
             "JWT accepts the none algorithm — signature can be stripped",
             "high",
+            _JWT_ALGORITHM_FIX,
         ),
     ],
     "go": [
-        (re.compile(r'Sprintf\s*\(["\'].*SELECT.*\+'), "SQL query built with Sprintf — SQL injection risk", "high"),
+        (
+            re.compile(r'Sprintf\s*\(["\'].*SELECT.*\+'),
+            "SQL query built with Sprintf — SQL injection risk",
+            "high",
+            _SQL_FIX,
+        ),
         (
             re.compile(r"http\.(?:Get|Post|Head)\s*\(\s*r\.(?:URL|FormValue|Form)"),
             "Outbound request to a caller-controlled URL — SSRF risk",
             "high",
+            _SSRF_FIX,
         ),
         (
             re.compile(r"http\.Redirect\s*\([^,]+,\s*[^,]+,\s*r\."),
             "Redirect target from external input — open redirect risk",
             "medium",
+            _REDIRECT_FIX,
         ),
     ],
     "csharp": [
-        (re.compile(r'string\.Format\s*\(["\'].*SELECT'), "SQL query built with Format — SQL injection risk", "high"),
-        (re.compile(r'\$["\'].*SELECT.*\{'), "SQL query built with interpolation — SQL injection risk", "high"),
+        (
+            re.compile(r'string\.Format\s*\(["\'].*SELECT'),
+            "SQL query built with Format — SQL injection risk",
+            "high",
+            _SQL_FIX,
+        ),
+        (
+            re.compile(r'\$["\'].*SELECT.*\{'),
+            "SQL query built with interpolation — SQL injection risk",
+            "high",
+            _SQL_FIX,
+        ),
         (
             re.compile(r'(?:GetAsync|PostAsync|SendAsync)\s*\(\s*(?:Request\.|\$")'),
             "Outbound request to a caller-controlled URL — SSRF risk",
             "high",
+            _SSRF_FIX,
         ),
         (
             re.compile(r"return\s+Redirect\s*\(\s*(?:Request\.|\w+Url\b)"),
             "Redirect target from external input — open redirect risk",
             "medium",
+            _REDIRECT_FIX,
         ),
         (
             re.compile(r"\bTryUpdateModel(?:Async)?\s*\("),
             "TryUpdateModel binds every posted field — mass assignment risk",
             "high",
+            _MASS_ASSIGNMENT_FIX,
         ),
         (
             re.compile(r"Validate(?:Issuer|Audience|Lifetime)\s*=\s*false"),
             "JWT validation disabled — tokens accepted without checks",
             "high",
+            "Keep ValidateIssuer, ValidateAudience and ValidateLifetime on, with explicit valid values",
         ),
-        (re.compile(r"RequireSignedTokens\s*=\s*false"), "Unsigned JWTs accepted — signature can be stripped", "high"),
+        (
+            re.compile(r"RequireSignedTokens\s*=\s*false"),
+            "Unsigned JWTs accepted — signature can be stripped",
+            "high",
+            "Keep RequireSignedTokens = true and configure the signing keys",
+        ),
     ],
     "razor": [
-        (re.compile(r"@Html\.Raw\s*\("), "Html.Raw emits unencoded output — XSS risk", "high"),
-        (re.compile(r'innerHTML\s*=\s*[^"\'`]'), "innerHTML set from variable — XSS risk", "high"),
+        (re.compile(r"@Html\.Raw\s*\("), "Html.Raw emits unencoded output — XSS risk", "high", _XSS_FIX),
+        (re.compile(r'innerHTML\s*=\s*[^"\'`]'), "innerHTML set from variable — XSS risk", "high", _XSS_FIX),
     ],
     "powershell": [
         (
             re.compile(r"Invoke-Expression|(?<![\w-])iex\s"),
             "Invoke-Expression runs dynamic code — code injection risk",
             "high",
+            "Run a fixed command with the call operator (& $cmd @args) instead of a string passed to Invoke-Expression",
         ),
-        (re.compile(r"ConvertTo-SecureString\s+.*-AsPlainText"), "Plaintext secret converted to SecureString", "high"),
+        (
+            re.compile(r"ConvertTo-SecureString\s+.*-AsPlainText"),
+            "Plaintext secret converted to SecureString",
+            "high",
+            "Read the secret from a vault, Get-Credential or Read-Host -AsSecureString, not a plaintext literal",
+        ),
     ],
     # T-SQL and PostgreSQL: dynamic SQL is the injection point. Parameterized forms
     # (sp_executesql with a parameter list, format() with %I/%L, EXECUTE ... USING) do not match.
@@ -197,6 +271,7 @@ _INJECTION_PATTERNS = {
             re.compile(rf"(?i)\bEXEC(?:UTE)?\s*\(\s*(?:N?{_SQL_STRING}|@\w+)\s*\+"),
             "Dynamic SQL executed from a concatenated string — SQL injection risk",
             "high",
+            _SQL_FIX,
         ),
         (
             re.compile(
@@ -205,29 +280,39 @@ _INJECTION_PATTERNS = {
             ),
             "Dynamic SQL built by concatenating a variable — SQL injection risk",
             "high",
+            _SQL_FIX,
         ),
         (
             re.compile(rf"(?i)\bsp_executesql\s+N?{_SQL_STRING}\s*\+"),
             "sp_executesql statement built by concatenation — SQL injection risk; pass values as parameters",
             "high",
+            _SQL_FIX,
         ),
         (
             re.compile(rf"(?i)\bEXECUTE\s+{_SQL_STRING}\s*\|\|"),
             "Dynamic SQL built by || concatenation — SQL injection risk",
             "high",
+            _SQL_FIX,
         ),
         (
             re.compile(r"(?i)\bEXECUTE\s+format\s*\(\s*'[^']*%s"),
             "format() with %s splices raw text into SQL — use %I for identifiers, %L or USING for values",
             "high",
+            _SQL_FIX,
         ),
     ],
     "bash": [
-        (re.compile(r'\beval\s+["\']?\$'), "eval on a variable — command injection risk", "high"),
+        (
+            re.compile(r'\beval\s+["\']?\$'),
+            "eval on a variable — command injection risk",
+            "high",
+            'Don\'t eval variables: keep the command in an array and run it as "${cmd[@]}"',
+        ),
         (
             re.compile(r"curl\s+[^|]*\|\s*(?:ba)?sh"),
             "Piping a downloaded script into a shell — remote code execution risk",
             "high",
+            "Download the script to a file, verify its checksum or signature, then run it",
         ),
     ],
 }
@@ -258,7 +343,7 @@ def _mechanical_check(file: Path, root: Path, language: str) -> list[dict]:
 
     lang_patterns = _INJECTION_PATTERNS.get(language, []) + _UNIVERSAL_PATTERNS
     for i, line in enumerate(lines, 1):
-        for pattern, message, severity in lang_patterns:
+        for pattern, message, severity, suggestion in lang_patterns:
             if pattern.search(line):
                 violations.append(
                     {
@@ -267,7 +352,7 @@ def _mechanical_check(file: Path, root: Path, language: str) -> list[dict]:
                         "line": i,
                         "severity": severity,
                         "message": message,
-                        "suggestion": "Use parameterized queries or sanitize/escape all external input",
+                        "suggestion": suggestion,
                     }
                 )
 

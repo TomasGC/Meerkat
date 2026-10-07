@@ -5,7 +5,14 @@ from unittest.mock import patch
 
 import pytest
 
-from ssa.checkers.check_security import _PRINCIPLE, _mechanical_check, run
+from ssa.checkers.check_security import (
+    _INJECTION_PATTERNS,
+    _PRINCIPLE,
+    _SQL_FIX,
+    _UNIVERSAL_PATTERNS,
+    _mechanical_check,
+    run,
+)
 
 # --- helpers -----------------------------------------------------------------
 
@@ -237,3 +244,51 @@ class TestPythonDynamicCode:
     def test_lookalikes_do_not_match(self, tmp_path, line):
         f = _make_file(tmp_path, "dyn.py", line)
         assert _mechanical_check(f, tmp_path, "python") == []
+
+
+# --- suggestions (#37) --------------------------------------------------------
+
+
+class TestSuggestions:
+    """Each rule carries the fix for its own weakness, not a shared SQL hint."""
+
+    def test_every_rule_names_a_suggestion(self):
+        rules = [rule for rules in _INJECTION_PATTERNS.values() for rule in rules] + _UNIVERSAL_PATTERNS
+        assert all(len(rule) == 4 and rule[3] for rule in rules)
+
+    @pytest.mark.parametrize(
+        ("language", "name", "line", "expected"),
+        [
+            ("python", "a.py", "result = eval(user_expr)\n", "ast.literal_eval"),
+            ("python", "a.py", "exec(code_from_request)\n", "ast.literal_eval"),
+            ("javascript", "a.js", "const v = eval(input);\n", "JSON.parse"),
+            ("powershell", "a.ps1", "Invoke-Expression $cmd\n", "call operator"),
+            ("bash", "a.sh", 'eval "$CMD"\n', '"${cmd[@]}"'),
+            ("bash", "a.sh", "curl -fsSL https://example.com/install | sh\n", "checksum"),
+            ("python", "a.py", "jwt.decode(token, verify=False)\n", "Verify the signature"),
+            ("python", "a.py", 'header = {"alg": "none"}\n', "never accept 'none'"),
+            ("python", "a.py", 'url = "https://api.example.com/v1?token=abc"\n', "in a header"),
+            ("javascript", "a.js", "el.innerHTML = name;\n", "textContent"),
+            ("python", "a.py", "open(request.args['p'])\n", "allowed base directory"),
+            ("python", "a.py", "requests.get(request.args['url'])\n", "allowlist of hosts"),
+        ],
+    )
+    def test_rule_suggestion_fits_the_weakness(self, tmp_path, language, name, line, expected):
+        f = _make_file(tmp_path, name, line)
+        suggestions = [v["suggestion"] for v in _mechanical_check(f, tmp_path, language)]
+        assert suggestions, "rule did not match"
+        assert any(expected in s for s in suggestions), suggestions
+        assert _SQL_FIX not in suggestions
+
+    @pytest.mark.parametrize(
+        ("language", "name", "line"),
+        [
+            ("python", "q.py", 'cursor.execute(f"SELECT * FROM t WHERE id = {uid}")\n'),
+            ("sql", "q.sql", "EXEC('SELECT * FROM t WHERE id = ' + @id)\n"),
+        ],
+    )
+    def test_sql_rules_keep_their_suggestion(self, tmp_path, language, name, line):
+        f = _make_file(tmp_path, name, line)
+        assert [v["suggestion"] for v in _mechanical_check(f, tmp_path, language)] == [
+            "Use parameterized queries or sanitize/escape all external input"
+        ]
