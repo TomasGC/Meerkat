@@ -299,6 +299,27 @@ def test_run_text_output_for_file_without_frontmatter(tmp_path, capsys):
     assert out.strip() == "No frontmatter found"
 
 
+def test_horizontal_rules_further_down_are_not_frontmatter(tmp_path, capsys):
+    file_path = tmp_path / "readme.md"
+    file_path.write_text("# Title\n\n---\n\nname: not a field\n\n---\n\nMore text\n", encoding="utf-8")
+    assert extract_frontmatter(file_path) is None
+    code, out = _run(["--file", str(file_path), "--format", "text"], capsys)
+    assert code == 0
+    assert out.strip() == "No frontmatter found"
+
+
+def test_crlf_frontmatter_is_parsed(tmp_path):
+    file_path = tmp_path / "skill.md"
+    file_path.write_bytes(b"---\r\nname: crlf-skill\r\nmodel: sonnet\r\n---\r\n# Body\r\n")
+    assert extract_frontmatter(file_path) == {"name": "crlf-skill", "model": "sonnet"}
+
+
+def test_closing_delimiter_must_be_a_line_of_its_own(tmp_path):
+    file_path = tmp_path / "skill.md"
+    file_path.write_text("---\nname: x\n---not-a-delimiter\nmore: y\n", encoding="utf-8")
+    assert extract_frontmatter(file_path) is None
+
+
 def test_run_summary_output_for_file_without_frontmatter(tmp_path, capsys):
     file_path = tmp_path / "plain.md"
     file_path.write_text("# no frontmatter\n", encoding="utf-8")

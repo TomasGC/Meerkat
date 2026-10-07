@@ -34,9 +34,9 @@ def extract_frontmatter(file_path: Path) -> Optional[dict]:
     except Exception:
         return None
 
-    # Match frontmatter (multiline)
-    pattern = r"^---\n(.*?)\n---"
-    match = re.search(pattern, content, re.DOTALL | re.MULTILINE)
+    # Frontmatter only counts at the very start of the file, closed by a line of its own: two horizontal
+    # rules further down are markdown, not frontmatter
+    match = re.match(r"---\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|$)", content, re.DOTALL)
 
     if not match:
         return None
