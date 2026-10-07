@@ -59,7 +59,8 @@ class BaseCLIScript(ABC):
             return e.code if isinstance(e.code, int) else 1
 
         except Exception as e:
-            self.error(f"Error: {e}")
+            # Report and return: self.error() would sys.exit out of run() instead of returning 1
+            print(f"Error: {e}", file=sys.stderr)
             return 1
 
     def error(self, message: str, exit_code: int = 1) -> NoReturn:
