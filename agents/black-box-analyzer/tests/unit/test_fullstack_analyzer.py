@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for analyzers/fullstack_analyzer.py: API + frontend analysis combined."""
 
-import pytest
-
 from analyzers.fullstack_analyzer import FullstackAnalyzer
 from bba.models import (
     EntryPoint,
@@ -91,11 +89,6 @@ def test_generate_scenarios_gives_endpoints_api_scenarios_and_components_render_
     assert "RENDER" in {s.method for s in scenarios if s.endpoint == "UserList"}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): "
-    "APIAnalyzer.generate_scenarios defaults a missing method to GET, so components get HTTP scenarios",
-)
 def test_generate_scenarios_gives_components_no_http_scenarios():
     scenarios = FullstackAnalyzer().generate_scenarios([_entry(EntryPointType.COMPONENT, "UserList")])
 

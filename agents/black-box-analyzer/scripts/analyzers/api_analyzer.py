@@ -358,6 +358,9 @@ class APIAnalyzer(BaseAnalyzer):
         scenarios = []
 
         for entry_point in entry_points:
+            if entry_point.type != EntryPointType.HTTP_ENDPOINT:
+                continue
+
             # Extract HTTP method and path from metadata
             method_str = entry_point.metadata.get("method", "GET")
             path = entry_point.metadata.get("path", entry_point.name)
