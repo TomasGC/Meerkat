@@ -150,7 +150,7 @@ def test_no_kanban_found_from_cwd_is_an_error(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     with patch("cli.update_kanban.find_kanban_file", return_value=None):
         result = UpdateKanbanScript().execute(_args(issue="#1"))
-    assert "not found in current directory" in result["error"]
+    assert "not found in this repository" in result["error"]
 
 
 def test_auto_mode_outside_a_branch_records_no_commits(kanban):

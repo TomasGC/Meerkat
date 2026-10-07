@@ -1,12 +1,40 @@
 #!/usr/bin/env python3
 """Tests for search_kanban.py"""
 
+import argparse
 from pathlib import Path
 
 import pytest
 
-from cli.search_kanban import filter_entries, parse_kanban_file
+from cli.search_kanban import SearchKanbanScript, filter_entries, parse_kanban_file
 from lib.utils import write_file_safe
+
+
+def _search_args(**overrides):
+    defaults = dict(issue=None, tag=None, date=None, date_from=None, date_to=None, path="")
+    return argparse.Namespace(**{**defaults, **overrides})
+
+
+def test_search_without_path_uses_the_repository_kanban(sample_kanban, monkeypatch):
+    repo = sample_kanban.parent
+    (repo / ".git").mkdir()
+    (repo / ".git" / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    kanban = repo / ".claude" / "contexts" / "kanban.md"
+    kanban.parent.mkdir(parents=True)
+    kanban.write_text(sample_kanban.read_text(encoding="utf-8"), encoding="utf-8")
+    monkeypatch.chdir(repo)
+    result = SearchKanbanScript().execute(_search_args(issue="#456"))
+    assert result["success"] is True
+    assert [e["issue"] for e in result["entries"]] == ["#456"]
+
+
+def test_search_without_path_and_no_kanban_is_an_error(tmp_path, monkeypatch):
+    (tmp_path / ".git").mkdir()
+    (tmp_path / ".git" / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    result = SearchKanbanScript().execute(_search_args(issue="#1"))
+    assert result["success"] is False
+    assert "not found in this repository" in result["error"]
 
 
 @pytest.fixture

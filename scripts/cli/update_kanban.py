@@ -25,31 +25,8 @@ from cli.generate_comment import categorize_file, get_commit_files, get_commits_
 from cli.generate_kanban_entry import generate_descriptions
 from cli.search_kanban import KanbanEntry, parse_kanban_file
 from lib.cli.base import BaseCLIScript
+from lib.kanban import NOT_FOUND, find_kanban_file
 from lib.utils import run_command
-
-
-def find_kanban_file(start_path: Path | None = None) -> Path | None:
-    """
-    Search for .claude/contexts/kanban.md in current and parent directories.
-
-    Args:
-        start_path: Starting directory (defaults to current)
-
-    Returns:
-        Path to kanban.md or None if not found
-    """
-    search_path = start_path or Path.cwd()
-
-    while search_path:
-        kanban_path = search_path / ".claude" / "contexts" / "kanban.md"
-        if kanban_path.exists():
-            return kanban_path
-
-        if search_path.parent == search_path:
-            break
-        search_path = search_path.parent
-
-    return None
 
 
 def get_commit_title(commit_hash: str) -> str:
@@ -186,7 +163,7 @@ class UpdateKanbanScript(BaseCLIScript):
             "--kanban-file",
             "-k",
             default="",
-            help="Path to kanban.md (auto-detects .claude/contexts/kanban.md if not provided)",
+            help="Path to kanban.md (default: the current repository's)",
         )
         parser.add_argument("--no-backup", action="store_true", help="Skip backup creation")
         parser.add_argument("--auto", "-a", action="store_true", help="Auto-detect issue and commits")
@@ -254,10 +231,7 @@ class UpdateKanbanScript(BaseCLIScript):
             else:
                 found_kanban = find_kanban_file()
                 if not found_kanban:
-                    return {
-                        "success": False,
-                        "error": ".claude/contexts/kanban.md not found in current directory or parent directories",
-                    }
+                    return {"success": False, "error": NOT_FOUND}
                 kanban_file = found_kanban
 
             if not kanban_file.exists():

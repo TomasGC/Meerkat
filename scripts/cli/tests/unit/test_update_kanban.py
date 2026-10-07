@@ -4,56 +4,9 @@
 from cli.search_kanban import KanbanEntry
 from cli.update_kanban import (
     build_entry,
-    find_kanban_file,
     insert_entry_at_top,
     update_existing_entry,
 )
-from lib.utils import write_file_safe
-
-
-def test_find_kanban_file_current_dir(tmp_path):
-    """Test finding .claude/contexts/kanban.md in current directory."""
-    kanban_file = tmp_path / ".claude" / "contexts" / "kanban.md"
-    kanban_file.parent.mkdir(parents=True)
-    write_file_safe(kanban_file, "# KANBAN")
-
-    result = find_kanban_file(tmp_path)
-    assert result == kanban_file
-
-
-def test_find_kanban_file_ignores_legacy_flat_layout(tmp_path):
-    """Only the contexts/ layout counts — a flat .claude/KANBAN.md must be skipped."""
-    legacy = tmp_path / ".claude" / "KANBAN.md"
-    legacy.parent.mkdir(parents=True)
-    write_file_safe(legacy, "# KANBAN")
-
-    result = find_kanban_file(tmp_path)
-    assert result != legacy
-
-
-def test_find_kanban_file_parent_dir(tmp_path):
-    """Test finding kanban.md in parent directory."""
-    kanban_file = tmp_path / ".claude" / "contexts" / "kanban.md"
-    kanban_file.parent.mkdir(parents=True)
-    write_file_safe(kanban_file, "# KANBAN")
-
-    subdir = tmp_path / "subdir"
-    subdir.mkdir()
-
-    result = find_kanban_file(subdir)
-    assert result == kanban_file
-
-
-def test_find_kanban_file_not_found(tmp_path):
-    """Test when KANBAN.md is not found."""
-    # Create an isolated directory with no KANBAN.md and no parent with KANBAN.md
-    isolated = tmp_path / "isolated" / "subdir" / "deep"
-    isolated.mkdir(parents=True)
-
-    result = find_kanban_file(isolated)
-    # Will be None if tmp_path hierarchy has no KANBAN.md
-    # (could find parent KANBAN.md if one exists in real filesystem)
-    assert result is None or not str(result).startswith(str(isolated))
 
 
 def test_build_entry_simple():
