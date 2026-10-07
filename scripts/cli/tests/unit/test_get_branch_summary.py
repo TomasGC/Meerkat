@@ -277,12 +277,12 @@ def test_error_result_formats():
     assert script.format_summary({"success": False, "error": "x"}) == "[ERROR] x"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#51): execute() returns a BranchSummary dataclass, so the default --format json cannot serialize it",
-)
 def test_run_default_json_format_succeeds(capsys):
     with patch("cli.get_branch_summary.run_command", side_effect=_branch_repo()):
         code = GetBranchSummaryScript().run([])
     assert code == 0
-    assert json.loads(capsys.readouterr().out)["success"] is True
+    result = json.loads(capsys.readouterr().out)
+    assert result["success"] is True
+    summary = result["summary"]
+    assert summary["commits_count"] == len(summary["commits"])
+    assert {"current_branch", "base_branch", "uncommitted"} <= summary.keys()

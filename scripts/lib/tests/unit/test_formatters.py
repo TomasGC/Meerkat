@@ -2,6 +2,7 @@
 """Tests for lib/formatters.py"""
 
 import json
+from dataclasses import dataclass
 from unittest.mock import patch
 
 import pytest
@@ -16,6 +17,27 @@ def test_format_json_keeps_unicode_and_indent():
     assert '"café"' in text
     assert '\n    "n"' in text
     assert json.loads(text) == {"name": "café", "n": [1]}
+
+
+@dataclass
+class _Inner:
+    name: str
+
+
+@dataclass
+class _Outer:
+    count: int
+    items: list[_Inner]
+
+
+def test_format_json_writes_dataclasses_as_their_fields():
+    text = format_json({"success": True, "value": _Outer(count=1, items=[_Inner("a")])})
+    assert json.loads(text) == {"success": True, "value": {"count": 1, "items": [{"name": "a"}]}}
+
+
+def test_format_json_still_rejects_other_objects():
+    with pytest.raises(TypeError, match="object is not JSON serializable"):
+        format_json({"value": object()})
 
 
 def test_format_yaml_round_trips_block_style():
