@@ -4,6 +4,16 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-08 - [#61] BBA follow-ups from #50: deterministic test typing, Sidekiq jobs, root paths
+- Test typing no longer depends on the local model: the regex decides, unclear tests are `unit`, and `--ai-test-types` on `parse_test_files.py` brings back the model fallback. With the model up, the same suites give the same labels as with it down, with 0 model calls; Meerkat's agents parse in under 1 s
+- The fallback reached the model from a CI-safe e2e test (`parse_test_files.py` on a Go sample) whenever the model was up; it no longer can
+- Sidekiq: `Sidekiq::Job` (the name since 6.3), a superclass on the `class` line, and `def perform` without parentheses are recognized; `perform` is searched in the worker's own class only, so a worker without one no longer borrows the next class's (sidekiq repo: 0 → 40 workers, every change checked by hand)
+- A root path is read from an HTTP call in a test (`get "/"`, `client.get("/")`), never from any `"/"` string such as `split("/")`
+- Tests: 9 new; 3396 passed (was 3387); golden and detection outputs unchanged
+tags: #bba #testing #local-ai #determinism
+Ref: https://github.com/TomasGC/Meerkat/issues/61
+Commits: 9ae0bf6, 491c673, 29f0c73, aaf2b60
+
 2026-10-08 - [#50] Fix ten BBA analyzer bugs found by the coverage tests of #48
 - Django URLconf `path()` routes crashed Python endpoint extraction (djangoproject.com, Meerkat itself): they are now `GET` endpoints, and `xpath(`/`obj.path(` calls no longer match
 - Test parsing: Python and Ruby bodies ran past their own test, so a later `MagicMock` made earlier tests `int_mock` (Meerkat's agents: 418 → 124); the HTTP verb is now read from `TestGetUser` and `test_get_user`

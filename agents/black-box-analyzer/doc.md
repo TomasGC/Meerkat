@@ -69,7 +69,8 @@ Operational detail for each analysis phase. AGENT.md has the summary; this has t
 
 **Scripts**:
 - `parse_test_files.py <project> --output tests.json [--previous-pass <path>]`
-  - Classifies each test as unit/int_mock/int_real/e2e (regex + local AI fallback via `local/infer_test_type.prompt`)
+  - Classifies each test as unit/int_mock/int_real/e2e by regex; `--ai-test-types` adds the local AI fallback
+    (`local/infer_test_type.prompt`) for tests the regex can't classify, slower and model-dependent
   - With `--previous-pass`: diffs against prior run, reports ONLY newly added tests (60-80% less re-analysis)
 - `generate_coverage_matrix.py scenarios.json tests.json --output matrix.json --markdown coverage.md [--mode library]`
   - Produces scenario × test matrix with ✅/❌
