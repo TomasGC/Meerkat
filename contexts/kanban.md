@@ -4,6 +4,17 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-08 - [#50] Fix ten BBA analyzer bugs found by the coverage tests of #48
+- Django URLconf `path()` routes crashed Python endpoint extraction (djangoproject.com, Meerkat itself): they are now `GET` endpoints, and `xpath(`/`obj.path(` calls no longer match
+- Test parsing: Python and Ruby bodies ran past their own test, so a later `MagicMock` made earlier tests `int_mock` (Meerkat's agents: 418 → 124); the HTTP verb is now read from `TestGetUser` and `test_get_user`
+- Names were searched in the text before the match: prompts, Kafka consumers, Sidekiq workers (named after the previous class) and Bull queues (now the nearest declaration) take their own declaration's name
+- Blockchain: Solana contexts were always `Unknown` and each Anchor `#[program]` gave a `None` entry (47 in solana program-examples); Solidity read `public` from a parameter named `publicKey` (new test, written first)
+- Also: SQL `INOUT` and `in`-prefixed parameter names, components given HTTP scenarios (78 of 142 on nuxt/movies), composables matched on the absolute path
+- Tests: 17 strict xfail marks removed, 3 new; 3387 passed, 0 xfailed (was 3367 + 17); golden and detection outputs unchanged
+tags: #bba #bugs #testing
+Ref: https://github.com/TomasGC/Meerkat/issues/50
+Commits: 13da62b, 17bbc69, f59d695, ea97a5f, 6b307da, 3727db9, 6c21057, a43b23a, 34824ca
+
 2026-10-07 - [#51] Fix six CLI script bugs found by the coverage tests of #48
 - Default `--format json` of `get_branch_summary.py` and `get_commit_info.py` crashed on their dataclasses: `lib.formatters.format_json` now writes a dataclass as its fields (one fix in the shared writer, other objects still rejected)
 - `read_yaml_frontmatter.py`: text and summary output crashed on a file without frontmatter; and frontmatter was matched at any line (`^` under `re.MULTILINE`), so any markdown with two `---` rules (Meerkat's README) was parsed as YAML. Now only at the file's start, CRLF included

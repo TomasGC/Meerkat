@@ -3,8 +3,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from analyzers.blockchain.smart_contract_analyzer import SmartContractAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, Parameter, ProjectInfo, ProjectType
 
@@ -66,6 +64,14 @@ def test_solidity_functions_are_scoped_to_their_contract(tmp_path):
     assert "Token.withdraw" not in eps
 
 
+def test_solidity_visibility_ignores_parameter_names(tmp_path):
+    _write(tmp_path, "Sig.sol", "contract Sig {\n    function verify(bytes32 publicKey) external {}\n}\n")
+
+    eps = _by_name(SmartContractAnalyzer().extract_entry_points(tmp_path))
+
+    assert eps["Sig.verify"].metadata["visibility"] == "external"
+
+
 def test_solidity_events_and_modifiers_are_extracted(tmp_path):
     _write(
         tmp_path,
@@ -123,11 +129,6 @@ def test_solana_instruction_becomes_a_contract_function_with_ctx_param(tmp_path)
     assert [(p.name, p.param_type) for p in deposit.params] == [("ctx", "context")]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): "
-    "Context<...> is searched in the match text, which stops at `Context`, so the type is always Unknown",
-)
 def test_solana_instruction_records_its_context_type(tmp_path):
     _write(tmp_path, "lib.rs", _SOLANA_DEPOSIT)
 
@@ -136,10 +137,6 @@ def test_solana_instruction_records_its_context_type(tmp_path):
     assert deposit.metadata == {"platform": "solana", "context": "Deposit"}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): the #[program] alternative of solana_instruction has no capture group, so it yields a None name",
-)
 def test_anchor_program_attribute_does_not_become_a_nameless_entry_point(tmp_path):
     _write(
         tmp_path,

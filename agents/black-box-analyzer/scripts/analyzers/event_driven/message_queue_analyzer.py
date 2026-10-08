@@ -73,9 +73,9 @@ class MessageQueueAnalyzer(BaseEventDrivenAnalyzer):
             for match in kafka_consumer_pattern.finditer(content):
                 line_num = content[: match.start()].count("\n") + 1
 
-                # Try to extract consumer variable name
+                # Try to extract consumer variable name from the match's own line
                 var_pattern = re.compile(r"(\w+)\s*=\s*.*KafkaConsumer")
-                var_match = var_pattern.search(content[max(0, match.start() - 100) : match.start()])
+                var_match = var_pattern.search(content[content.rfind("\n", 0, match.start()) + 1 : match.end()])
                 consumer_name = var_match.group(1) if var_match else "consumer"
 
                 entry_points.append(

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Tests for analyzers/sql_analyzer.py: SQL parameter parsing and scenario generation."""
 
-import pytest
-
 from analyzers.sql_analyzer import SQLAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, Parameter, ProjectInfo, ProjectType
 
@@ -62,21 +60,12 @@ def test_parse_sql_params_strips_in_and_out_direction():
     assert [(p.name, p.data_type) for p in params] == [("user_id", "int"), ("total", "numeric")]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): direction regex tries IN before INOUT, so 'INOUT x INT' parses as name 'OUT', type 'x'",
-)
 def test_parse_sql_params_strips_inout_direction():
     params = SQLAnalyzer()._parse_sql_params("INOUT counter INT")
 
     assert [(p.name, p.data_type) for p in params] == [("counter", "int")]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): "
-    "unanchored optional IN/OUT prefix eats the start of a name, so 'invoice_id INT' becomes 'voice_id'",
-)
 def test_parse_sql_params_keeps_names_starting_with_in():
     params = SQLAnalyzer()._parse_sql_params("invoice_id INT")
 

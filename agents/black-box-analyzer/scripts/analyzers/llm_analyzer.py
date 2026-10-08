@@ -124,9 +124,9 @@ class LLMAnalyzer(BaseAnalyzer):
                 prompt_content = match.group(1)
                 line_num = content[: match.start()].count("\n") + 1
 
-                # Extract template name from variable assignment
+                # Extract template name from the assignment on the match's own line
                 var_pattern = re.compile(r"(\w+)\s*=\s*PromptTemplate")
-                var_match = var_pattern.search(content[max(0, match.start() - 100) : match.start()])
+                var_match = var_pattern.search(content[content.rfind("\n", 0, match.start()) + 1 : match.end()])
                 template_name = var_match.group(1) if var_match else "prompt_template"
 
                 entry_points.append(

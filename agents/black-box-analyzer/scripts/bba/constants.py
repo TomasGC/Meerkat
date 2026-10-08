@@ -111,7 +111,8 @@ ENDPOINT_PATTERNS = {
     # Python
     "py_fastapi": re.compile(r'@app\.(get|post|put|patch|delete)\s*\(\s*["\']([^"\']+)["\']'),
     "py_flask": re.compile(r'@app\.route\s*\(\s*["\']([^"\']+)["\']\s*,\s*methods\s*=\s*\[["\']([A-Z]+)["\']\]'),
-    "py_django": re.compile(r'path\s*\(\s*["\']([^"\']+)["\']\s*,'),
+    # Django URLconf: path()/re_path(), not obj.path() or xpath()
+    "py_django": re.compile(r'(?<![\w.])(?:re_)?path\s*\(\s*["\']([^"\']+)["\']\s*,'),
     # C#
     "cs_aspnet_attribute": re.compile(r'\[Http(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']*)["\']\s*\)\]'),
     "cs_aspnet_minimal": re.compile(r'app\.Map(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']'),
@@ -387,7 +388,7 @@ WORKER_PATTERNS = {
     "celery_task": re.compile(r"@(?:app|celery)\.task|@shared_task"),
     "celery_app": re.compile(r"Celery\s*\("),
     # Ruby - Sidekiq
-    "sidekiq_worker": re.compile(r"class\s+\w+\s*include\s+Sidekiq::Worker"),
+    "sidekiq_worker": re.compile(r"class\s+(\w+)\s*include\s+Sidekiq::Worker"),
     "sidekiq_perform": re.compile(r"def\s+perform\s*\("),
     # Node.js - Bull
     "bull_queue": re.compile(r"new\s+Queue\(|queue\.process\("),
@@ -412,12 +413,12 @@ MESSAGE_QUEUE_PATTERNS = {
 # Blockchain / Smart contract detection patterns
 BLOCKCHAIN_PATTERNS = {
     # Solidity (Ethereum)
-    "solidity_function": re.compile(r"function\s+(\w+)\s*\([^)]*\)\s+(?:public|external)"),
+    "solidity_function": re.compile(r"function\s+(\w+)\s*\([^)]*\)\s+(public|external)"),
     "solidity_event": re.compile(r"event\s+(\w+)\s*\("),
     "solidity_modifier": re.compile(r"modifier\s+(\w+)\s*\("),
     "solidity_contract": re.compile(r"contract\s+(\w+)"),
     # Rust (Solana)
-    "solana_instruction": re.compile(r"#\[program\]|pub\s+fn\s+(\w+)\s*\([^)]*ctx:\s*Context"),
+    "solana_instruction": re.compile(r"pub\s+fn\s+(\w+)\s*\([^)]*ctx:\s*Context(?:<(\w+)>)?"),
     # Move (Aptos/Sui)
     "move_function": re.compile(r"public\s+entry\s+fun\s+(\w+)"),
 }

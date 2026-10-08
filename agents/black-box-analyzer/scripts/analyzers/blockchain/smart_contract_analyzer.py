@@ -87,15 +87,8 @@ class SmartContractAnalyzer(BaseAnalyzer):
                     func_sig = match.group(0)
                     params = self._parse_solidity_params(func_sig)
 
-                    # Determine correct Solidity visibility (public/external/internal/private)
-                    if "public" in func_sig:
-                        visibility = "public"
-                    elif "external" in func_sig:
-                        visibility = "external"
-                    elif "private" in func_sig:
-                        visibility = "private"
-                    else:
-                        visibility = "internal"
+                    # The pattern only matches public and external functions
+                    visibility = match.group(2)
 
                     entry_points.append(
                         EntryPoint(
@@ -170,10 +163,7 @@ class SmartContractAnalyzer(BaseAnalyzer):
                 func_name = match.group(1)
                 line_num = content[: match.start()].count("\n") + 1
 
-                # Extract Context type
-                ctx_pattern = re.compile(r"Context<(\w+)>")
-                ctx_match = ctx_pattern.search(match.group(0))
-                ctx_type = ctx_match.group(1) if ctx_match else "Unknown"
+                ctx_type = match.group(2) or "Unknown"
 
                 entry_points.append(
                     EntryPoint(

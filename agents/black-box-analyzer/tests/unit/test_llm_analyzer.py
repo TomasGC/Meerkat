@@ -3,8 +3,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from analyzers.llm_analyzer import LLMAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, Parameter, ProjectInfo, ProjectType
 
@@ -87,11 +85,6 @@ def test_langchain_basetool_class_agent_executor_and_prompt(tmp_path):
     assert prompt.metadata == {"template_content": "Summarize {x}"}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): "
-    "the variable name is searched in the 100 chars before the match, which never contain PromptTemplate",
-)
 def test_prompt_template_is_named_after_its_variable(tmp_path):
     _write(tmp_path, "p.py", "summary_prompt = PromptTemplate(template='Summarize')\n")
 

@@ -3,8 +3,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from analyzers.event_driven.worker_analyzer import WorkerAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, ProjectInfo, ProjectType
 
@@ -74,10 +72,6 @@ def test_celery_decorator_with_no_function_after_it_is_ignored(tmp_path):
 # ── Sidekiq ───────────────────────────────────────────────────────────────────
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): the enclosing class is searched before match.start(), which is the worker's own `class` keyword",
-)
 def test_sidekiq_worker_is_named_after_its_own_class(tmp_path):
     _write(
         tmp_path,
@@ -99,11 +93,6 @@ def test_sidekiq_worker_without_perform_method_is_ignored(tmp_path):
 # ── Bull and asynq ────────────────────────────────────────────────────────────
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): "
-    "the queue constant is searched before match.start(), which excludes the `new Queue(` line itself",
-)
 def test_bull_queue_declaration_is_named_after_its_constant(tmp_path):
     _write(tmp_path, "src/queue.js", "const emailQueue = new Queue('email')\n")
 

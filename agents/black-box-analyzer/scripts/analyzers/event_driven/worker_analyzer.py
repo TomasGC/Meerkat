@@ -107,30 +107,24 @@ class WorkerAnalyzer(BaseEventDrivenAnalyzer):
             # Pattern: class WorkerName include Sidekiq::Worker
             sidekiq_worker_pattern = WORKER_PATTERNS["sidekiq_worker"]
             for match in sidekiq_worker_pattern.finditer(content):
-                # Extract class name
-                class_pattern = re.compile(r"class\s+(\w+)")
-                # Use rfind equivalent: last match before current position = enclosing class
-                class_matches = list(class_pattern.finditer(content[: match.start()]))
-                class_match = class_matches[-1] if class_matches else None
-                if class_match:
-                    worker_name = class_match.group(1)
-                    line_num = content[: class_match.start()].count("\n") + 1
+                worker_name = match.group(1)
+                line_num = content[: match.start()].count("\n") + 1
 
-                    # Find perform method
-                    perform_pattern = WORKER_PATTERNS["sidekiq_perform"]
-                    perform_match = perform_pattern.search(content, match.end())
-                    if perform_match:
-                        entry_points.append(
-                            EntryPoint(
-                                type=EntryPointType.BACKGROUND_JOB,
-                                name=worker_name,
-                                params=[],
-                                file_path=format_path_relative(file_path, project_path),
-                                line_number=line_num,
-                                framework="sidekiq",
-                                metadata={"worker_type": "class"},
-                            )
+                # Find perform method
+                perform_pattern = WORKER_PATTERNS["sidekiq_perform"]
+                perform_match = perform_pattern.search(content, match.end())
+                if perform_match:
+                    entry_points.append(
+                        EntryPoint(
+                            type=EntryPointType.BACKGROUND_JOB,
+                            name=worker_name,
+                            params=[],
+                            file_path=format_path_relative(file_path, project_path),
+                            line_number=line_num,
+                            framework="sidekiq",
+                            metadata={"worker_type": "class"},
                         )
+                    )
 
         return entry_points
 
@@ -149,10 +143,10 @@ class WorkerAnalyzer(BaseEventDrivenAnalyzer):
                 # Extract queue and job name
                 line_num = content[: match.start()].count("\n") + 1
 
-                # Try to extract queue name
+                # Queue name: the nearest queue declared up to this match, its own line included
                 queue_pattern = re.compile(r"const\s+(\w+)\s*=\s*new\s+Queue")
-                queue_match = queue_pattern.search(content[: match.start()])
-                queue_name = queue_match.group(1) if queue_match else "queue"
+                queue_names = queue_pattern.findall(content[: match.end()])
+                queue_name = queue_names[-1] if queue_names else "queue"
 
                 entry_points.append(
                     EntryPoint(

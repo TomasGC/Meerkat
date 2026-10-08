@@ -260,6 +260,9 @@ class APIAnalyzer(BaseAnalyzer):
                 for match in matches:
                     if pattern_name == "py_flask":
                         path, method = match
+                    elif pattern_name == "py_django":
+                        # A URLconf route accepts every method; GET is its default
+                        path, method = match, "GET"
                     else:
                         method, path = match
 
@@ -355,6 +358,9 @@ class APIAnalyzer(BaseAnalyzer):
         scenarios = []
 
         for entry_point in entry_points:
+            if entry_point.type != EntryPointType.HTTP_ENDPOINT:
+                continue
+
             # Extract HTTP method and path from metadata
             method_str = entry_point.metadata.get("method", "GET")
             path = entry_point.metadata.get("path", entry_point.name)

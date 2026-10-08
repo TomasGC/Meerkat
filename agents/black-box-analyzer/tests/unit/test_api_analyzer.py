@@ -120,16 +120,18 @@ def test_extract_python_endpoints_reads_fastapi_and_flask(tmp_path):
     assert _summary(entry_points) == [("GET", "/items/{item_id}", "fastapi"), ("POST", "/login", "flask")]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bug (#50): py_django pattern has one capture group, so `method, path = match` unpacks a string and raises",
-)
 def test_extract_python_endpoints_handles_django_urlconf(tmp_path):
     _write(tmp_path, "urls.py", "urlpatterns = [\n    path('users/', views.users),\n]\n")
 
     entry_points = APIAnalyzer().extract_entry_points(tmp_path)
 
     assert [ep.metadata["path"] for ep in entry_points] == ["users/"]
+
+
+def test_extract_python_endpoints_ignores_path_method_calls(tmp_path):
+    _write(tmp_path, "scrape.py", "node = xpath('//a', doc)\nself.path('a', 1)\nos.path('x', 1)\n")
+
+    assert APIAnalyzer().extract_entry_points(tmp_path) == []
 
 
 def test_extract_java_endpoints_maps_spring_mappings(tmp_path):

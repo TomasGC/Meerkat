@@ -167,7 +167,7 @@ class SQLAnalyzer(BaseAnalyzer):
 
             # Parse: @name TYPE or name TYPE or IN name TYPE
             parts = re.match(
-                r"(?:IN|OUT|INOUT)?\s*[@]?(\w+)\s+(\w+)",
+                r"(?:(?:INOUT|IN|OUT)\s+)?@?(\w+)\s+(\w+)",
                 param,
                 re.IGNORECASE,
             )
