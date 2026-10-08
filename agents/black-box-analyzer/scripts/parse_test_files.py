@@ -178,6 +178,7 @@ def infer_tested_target(test_name: str, content: str) -> tuple[str | None, str |
         r'["\'](/[a-zA-Z0-9/_:-]+)["\']',  # "/api/users"
         r"url\s*=\s*[\"']([^\"']+)[\"']",  # url = "/path"
         r"path\s*=\s*[\"']([^\"']+)[\"']",  # path = "/path"
+        r"\b(?:get|post|put|patch|delete)\b\s*\(?\s*[\"'](/)[\"']",  # get "/": a bare root only as a call's argument
     ]
 
     detected_path = None

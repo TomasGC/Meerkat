@@ -281,6 +281,15 @@ def test_infer_tested_target_reads_verb_from_code_style_names(name):
     assert infer_tested_target(name, 'client.get("/users/1")') == ("/users/1", "GET")
 
 
+@pytest.mark.parametrize("content", ['get "/"', 'client.get("/")'])
+def test_infer_tested_target_reads_root_path_of_an_http_call(content):
+    assert infer_tested_target("test_get_home", content) == ("/", "GET")
+
+
+def test_infer_tested_target_ignores_a_bare_slash_string():
+    assert infer_tested_target("test_split", 'parts = path.split("/")') == (None, None)
+
+
 def test_infer_tested_endpoint_keeps_path_without_verb():
     assert infer_tested_endpoint("TestHealth", 'call("/health")') == ("/health", None)
 
