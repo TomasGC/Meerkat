@@ -96,6 +96,22 @@ def test_sidekiq_job_and_subclassed_workers_are_extracted(tmp_path, header):
     assert [ep.name for ep in WorkerAnalyzer().extract_entry_points(tmp_path)] == ["HardJob"]
 
 
+def test_sidekiq_perform_without_parentheses_is_found(tmp_path):
+    _write(tmp_path, "exit_job.rb", "class ExitJob\n  include Sidekiq::Job\n\n  def perform\n  end\nend\n")
+
+    assert [ep.name for ep in WorkerAnalyzer().extract_entry_points(tmp_path)] == ["ExitJob"]
+
+
+def test_sidekiq_worker_does_not_borrow_the_next_class_perform(tmp_path):
+    _write(
+        tmp_path,
+        "jobs.rb",
+        "class SomeJob\n  include Sidekiq::Job\nend\n\nclass Other\n  def perform(x)\n  end\nend\n",
+    )
+
+    assert WorkerAnalyzer().extract_entry_points(tmp_path) == []
+
+
 def test_sidekiq_worker_without_perform_method_is_ignored(tmp_path):
     _write(tmp_path, "w.rb", "class Base\nend\nclass Lazy\n  include Sidekiq::Worker\nend\n")
 

@@ -28,6 +28,9 @@ from bba.utils import (
 
 from .base_event_driven_analyzer import BaseEventDrivenAnalyzer
 
+# Start of a class definition, at the start of a line: ends the previous class's body
+_CLASS_START = re.compile(r"^\s*class\s", re.MULTILINE)
+
 
 class WorkerAnalyzer(BaseEventDrivenAnalyzer):
     """Analyzer for background worker systems (Celery, Sidekiq, Bull, asynq)."""
@@ -110,9 +113,10 @@ class WorkerAnalyzer(BaseEventDrivenAnalyzer):
                 worker_name = match.group(1)
                 line_num = content[: match.start()].count("\n") + 1
 
-                # Find perform method
-                perform_pattern = WORKER_PATTERNS["sidekiq_perform"]
-                perform_match = perform_pattern.search(content, match.end())
+                # Find perform method in this worker's own class, before the next class starts
+                next_class = _CLASS_START.search(content, match.end())
+                class_end = next_class.start() if next_class else len(content)
+                perform_match = WORKER_PATTERNS["sidekiq_perform"].search(content, match.end(), class_end)
                 if perform_match:
                     entry_points.append(
                         EntryPoint(
