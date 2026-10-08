@@ -59,7 +59,7 @@ def test_real_infer_test_type_via_local_ai():
     from parse_test_files import infer_test_type
 
     body = "result = add(1, 2)\nassert result == 3"
-    result = infer_test_type("test_add_returns_sum", body)
+    result = infer_test_type("test_add_returns_sum", body, use_ai=True)
     assert result in ("unit", "int_mock", "int_real", "e2e")
 
 

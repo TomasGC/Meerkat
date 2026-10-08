@@ -76,12 +76,12 @@ def _classify_by_regex(combined: str) -> str | None:
     return None
 
 
-def infer_test_type(test_name: str, test_body: str) -> str:
+def infer_test_type(test_name: str, test_body: str, use_ai: bool = False) -> str:
     """
     Classify a test as unit / int_mock / int_real / e2e.
 
-    Uses regex for speed (covers ~90% of cases). Falls back to local AI
-    for the ambiguous remainder — only if local AI is available.
+    Uses regex. With use_ai, asks the local AI about the ambiguous remainder,
+    if it is available: slower, and the labels then depend on the model.
     """
     if not test_body or not test_body.strip():
         return "unit"  # no body to inspect — safe default
@@ -91,6 +91,9 @@ def infer_test_type(test_name: str, test_body: str) -> str:
     result = _classify_by_regex(combined)
     if result:
         return result
+
+    if not use_ai:
+        return "unit"
 
     # Ambiguous — try local AI for a cheap 1-token answer
     try:
@@ -266,7 +269,7 @@ def infer_tested_endpoint(test_name: str, content: str) -> tuple[str | None, HTT
     return None, None
 
 
-def parse_go_tests(project_path: Path) -> list[TestCase]:
+def parse_go_tests(project_path: Path, use_ai: bool = False) -> list[TestCase]:
     """Parse Go test files (testing package)."""
     test_cases = []
 
@@ -302,14 +305,14 @@ def parse_go_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type=infer_test_type(test_name, test_body),
+                    test_type=infer_test_type(test_name, test_body, use_ai),
                 )
             )
 
     return test_cases
 
 
-def parse_typescript_tests(project_path: Path) -> list[TestCase]:
+def parse_typescript_tests(project_path: Path, use_ai: bool = False) -> list[TestCase]:
     """Parse TypeScript test files (Jest, Vitest, Mocha)."""
     test_cases = []
 
@@ -357,14 +360,14 @@ def parse_typescript_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type=infer_test_type(test_name, test_body),
+                    test_type=infer_test_type(test_name, test_body, use_ai),
                 )
             )
 
     return test_cases
 
 
-def parse_csharp_tests(project_path: Path) -> list[TestCase]:
+def parse_csharp_tests(project_path: Path, use_ai: bool = False) -> list[TestCase]:
     """Parse C# test files (xUnit, NUnit, MSTest)."""
     test_cases = []
 
@@ -415,14 +418,14 @@ def parse_csharp_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type=infer_test_type(test_name, test_body),
+                    test_type=infer_test_type(test_name, test_body, use_ai),
                 )
             )
 
     return test_cases
 
 
-def parse_python_tests(project_path: Path) -> list[TestCase]:
+def parse_python_tests(project_path: Path, use_ai: bool = False) -> list[TestCase]:
     """Parse Python test files (pytest, unittest)."""
     test_cases = []
 
@@ -474,14 +477,14 @@ def parse_python_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type=infer_test_type(test_name, test_body),
+                    test_type=infer_test_type(test_name, test_body, use_ai),
                 )
             )
 
     return test_cases
 
 
-def parse_java_tests(project_path: Path) -> list[TestCase]:
+def parse_java_tests(project_path: Path, use_ai: bool = False) -> list[TestCase]:
     """Parse Java test files (JUnit, TestNG)."""
     test_cases = []
 
@@ -528,14 +531,14 @@ def parse_java_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type=infer_test_type(test_name, test_body),
+                    test_type=infer_test_type(test_name, test_body, use_ai),
                 )
             )
 
     return test_cases
 
 
-def parse_ruby_tests(project_path: Path) -> list[TestCase]:
+def parse_ruby_tests(project_path: Path, use_ai: bool = False) -> list[TestCase]:
     """Parse Ruby test files (RSpec, Minitest)."""
     test_cases = []
 
@@ -584,14 +587,14 @@ def parse_ruby_tests(project_path: Path) -> list[TestCase]:
                     framework=framework,
                     tested_endpoint=endpoint,
                     tested_method=method,
-                    test_type=infer_test_type(test_name, test_body),
+                    test_type=infer_test_type(test_name, test_body, use_ai),
                 )
             )
 
     return test_cases
 
 
-def parse_tests(project_path: Path, language: Language | None = None) -> list[TestCase]:
+def parse_tests(project_path: Path, language: Language | None = None, use_ai: bool = False) -> list[TestCase]:
     """
     Parse all test files from project (universal).
 
@@ -608,6 +611,7 @@ def parse_tests(project_path: Path, language: Language | None = None) -> list[Te
     Args:
         project_path: Project root directory
         language: Language to parse (auto-detect if None)
+        use_ai: Ask the local AI about tests the regex can't classify
 
     Returns:
         List of TestCase objects
@@ -616,17 +620,17 @@ def parse_tests(project_path: Path, language: Language | None = None) -> list[Te
         language = detect_project_language(project_path)
 
     if language == Language.GO:
-        return parse_go_tests(project_path)
+        return parse_go_tests(project_path, use_ai)
     elif language in (Language.TYPESCRIPT, Language.JAVASCRIPT):
-        return parse_typescript_tests(project_path)
+        return parse_typescript_tests(project_path, use_ai)
     elif language == Language.CSHARP:
-        return parse_csharp_tests(project_path)
+        return parse_csharp_tests(project_path, use_ai)
     elif language == Language.PYTHON:
-        return parse_python_tests(project_path)
+        return parse_python_tests(project_path, use_ai)
     elif language == Language.JAVA:
-        return parse_java_tests(project_path)
+        return parse_java_tests(project_path, use_ai)
     elif language == Language.RUBY:
-        return parse_ruby_tests(project_path)
+        return parse_ruby_tests(project_path, use_ai)
     else:
         return []  # Language not supported for test parsing — return empty
 
@@ -679,11 +683,17 @@ Examples:
         help="Save full inventory here for use as next --previous-pass",
     )
 
+    parser.add_argument(
+        "--ai-test-types",
+        action="store_true",
+        help="Ask the local AI to type tests the regex can't classify (slower; labels depend on the model)",
+    )
+
     args = parser.parse_args()
 
     try:
         language = Language(args.language) if args.language else None
-        test_cases = parse_tests(args.project_path, language)
+        test_cases = parse_tests(args.project_path, language, use_ai=args.ai_test_types)
 
         all_tests_data = {
             "test_count": len(test_cases),

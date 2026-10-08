@@ -30,7 +30,7 @@ from parse_test_files import (
 
 @pytest.fixture(autouse=True)
 def no_local_ai():
-    """Ambiguous test bodies fall back to the local AI: keep it switched off unless a test says otherwise."""
+    """Tests that ask for the local AI fallback find it switched off unless they patch it on."""
     with patch.object(model_utils, "check_server_available", return_value=False):
         yield
 
@@ -187,7 +187,7 @@ def test_infer_test_type_uses_first_word_of_ai_answer(answer, expected):
         patch.object(model_utils, "check_server_available", return_value=True),
         patch.object(model_utils, "run_prompt", return_value=answer) as run_prompt,
     ):
-        assert infer_test_type("test_total", "assert total([1, 2]) == 3") == expected
+        assert infer_test_type("test_total", "assert total([1, 2]) == 3", use_ai=True) == expected
     assert run_prompt.call_args.kwargs["test_name"] == "test_total"
 
 
@@ -196,7 +196,7 @@ def test_infer_test_type_truncates_body_sent_to_ai():
         patch.object(model_utils, "check_server_available", return_value=True),
         patch.object(model_utils, "run_prompt", return_value="unit") as run_prompt,
     ):
-        infer_test_type("test_long", "x = 1\n" * 500)
+        infer_test_type("test_long", "x = 1\n" * 500, use_ai=True)
     assert len(run_prompt.call_args.kwargs["test_body"]) == 600
 
 
@@ -205,12 +205,22 @@ def test_infer_test_type_ai_error_falls_back_to_unit():
         patch.object(model_utils, "check_server_available", return_value=True),
         patch.object(model_utils, "run_prompt", side_effect=RuntimeError("server gone")),
     ):
-        assert infer_test_type("test_total", "assert total([1, 2]) == 3") == "unit"
+        assert infer_test_type("test_total", "assert total([1, 2]) == 3", use_ai=True) == "unit"
 
 
 def test_infer_test_type_ai_unavailable_is_unit_without_prompt():
     with patch.object(model_utils, "run_prompt") as run_prompt:
+        assert infer_test_type("test_total", "assert total([1, 2]) == 3", use_ai=True) == "unit"
+    run_prompt.assert_not_called()
+
+
+def test_infer_test_type_never_asks_the_model_without_the_flag():
+    with (
+        patch.object(model_utils, "check_server_available", return_value=True) as available,
+        patch.object(model_utils, "run_prompt", return_value="int_real") as run_prompt,
+    ):
         assert infer_test_type("test_total", "assert total([1, 2]) == 3") == "unit"
+    available.assert_not_called()
     run_prompt.assert_not_called()
 
 
@@ -420,6 +430,20 @@ def test_main_writes_inventory_and_auto_snapshot(sample_go_project, temp_dir, mo
     assert {t["name"] for t in data["tests"]} >= {"TestGetUser"}
     snapshot = sample_go_project / ".claude" / "bbanalysis-last-tests.json"
     assert json.loads(snapshot.read_text(encoding="utf-8")) == data
+
+
+def test_main_ai_test_types_flag_reaches_the_classifier(temp_dir, monkeypatch, capsys):
+    (temp_dir / "test_calc.py").write_text("def test_total():\n    assert total([1, 2]) == 3\n")
+    with (
+        patch.object(model_utils, "check_server_available", return_value=True),
+        patch.object(model_utils, "run_prompt", return_value="int_real"),
+    ):
+        assert _run_main(monkeypatch, temp_dir, "--language", "python", "--ai-test-types") == 0
+        with_flag = json.loads(capsys.readouterr().out)
+        assert _run_main(monkeypatch, temp_dir, "--language", "python") == 0
+        without_flag = json.loads(capsys.readouterr().out)
+    assert [t["test_type"] for t in with_flag["tests"]] == ["int_real"]
+    assert [t["test_type"] for t in without_flag["tests"]] == ["unit"]
 
 
 def test_main_save_snapshot_writes_full_inventory(sample_go_project, temp_dir, monkeypatch, capsys):
