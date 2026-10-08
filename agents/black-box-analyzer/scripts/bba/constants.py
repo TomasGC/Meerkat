@@ -388,7 +388,7 @@ WORKER_PATTERNS = {
     "celery_task": re.compile(r"@(?:app|celery)\.task|@shared_task"),
     "celery_app": re.compile(r"Celery\s*\("),
     # Ruby - Sidekiq
-    "sidekiq_worker": re.compile(r"class\s+(\w+)\s*include\s+Sidekiq::Worker"),
+    "sidekiq_worker": re.compile(r"class\s+(\w+)(?:\s*<\s*[\w:]+)?\s*include\s+Sidekiq::(?:Worker|Job)\b"),
     "sidekiq_perform": re.compile(r"def\s+perform\s*\("),
     # Node.js - Bull
     "bull_queue": re.compile(r"new\s+Queue\(|queue\.process\("),
