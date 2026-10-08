@@ -3,6 +3,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from analyzers.event_driven.worker_analyzer import WorkerAnalyzer
 from bba.models import EntryPoint, EntryPointType, Language, ProjectInfo, ProjectType
 
@@ -82,6 +84,32 @@ def test_sidekiq_worker_is_named_after_its_own_class(tmp_path):
     eps = WorkerAnalyzer().extract_entry_points(tmp_path)
 
     assert [ep.name for ep in eps] == ["HardWorker"]
+
+
+@pytest.mark.parametrize(
+    "header",
+    ["class HardJob\n  include Sidekiq::Job", "class HardJob < ApplicationJob\n  include Sidekiq::Worker"],
+)
+def test_sidekiq_job_and_subclassed_workers_are_extracted(tmp_path, header):
+    _write(tmp_path, "app/sidekiq/hard_job.rb", f"{header}\n\n  def perform(name)\n  end\nend\n")
+
+    assert [ep.name for ep in WorkerAnalyzer().extract_entry_points(tmp_path)] == ["HardJob"]
+
+
+def test_sidekiq_perform_without_parentheses_is_found(tmp_path):
+    _write(tmp_path, "exit_job.rb", "class ExitJob\n  include Sidekiq::Job\n\n  def perform\n  end\nend\n")
+
+    assert [ep.name for ep in WorkerAnalyzer().extract_entry_points(tmp_path)] == ["ExitJob"]
+
+
+def test_sidekiq_worker_does_not_borrow_the_next_class_perform(tmp_path):
+    _write(
+        tmp_path,
+        "jobs.rb",
+        "class SomeJob\n  include Sidekiq::Job\nend\n\nclass Other\n  def perform(x)\n  end\nend\n",
+    )
+
+    assert WorkerAnalyzer().extract_entry_points(tmp_path) == []
 
 
 def test_sidekiq_worker_without_perform_method_is_ignored(tmp_path):
