@@ -4,6 +4,16 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-22 - [#5] Live prompt tests: each AI checker prompt verified against the real model
+- Shared harness (`lib.testing.live_prompt`) runs each of CCA's 6, SSA's 9 and BBA's 4 engine prompts on a dirty/clean fixture pair and judges the AI findings only; 76 live cases across the three agents
+- A second, isolated yes/no call (`verify.prompt`, wording tailored per agent) re-checks each AI finding before keeping it; a wording change and a self-reported "confirmed" field were tried first and reverted (no effect) — the separate call recovered 2 of SSA's false positives with no loss of real detections
+- 9 of 19 prompts still return a finding on their clean twin even after verification (CCA's 4 design-principle checkers always; 5 of SSA's) — the model either confirms its own hedged claim or raises a different, real finding outside the seeded issue; pinned as strict xfail (`known_false_positive` in `case.json`), filed as #64 with the cause noted per case
+- Found while re-running the live cases: an unanchored `security/` gitignore rule had silently excluded SSA's security checker fixture from every commit on this branch (#34's bug class) — fixed, fixture recovered
+- Live tier: 76 tests, ~41 min with `devstral-small-2`; run by hand (`-m live_ai`), never in CI
+tags: #testing #live-ai #local-ai #prompts
+Ref: https://github.com/TomasGC/Meerkat/issues/5
+Commits: 4c0d704, a305ff6, 5487b94
+
 2026-10-08 - [#61] BBA follow-ups from #50: deterministic test typing, Sidekiq jobs, root paths
 - Test typing no longer depends on the local model: the regex decides, unclear tests are `unit`, and `--ai-test-types` on `parse_test_files.py` brings back the model fallback. With the model up, the same suites give the same labels as with it down, with 0 model calls; Meerkat's agents parse in under 1 s
 - The fallback reached the model from a CI-safe e2e test (`parse_test_files.py` on a Go sample) whenever the model was up; it no longer can
