@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Concurrency checker — pattern-based thread-safety scan plus AI race detection."""
 
+import ast
 import re
 import time
 from pathlib import Path
@@ -70,6 +71,97 @@ _SHARED_STATE = {
     ),
 }
 
+_LOCK_FACTORIES = frozenset({"Lock", "RLock", "Semaphore", "BoundedSemaphore", "Condition"})
+_LOCK_NAME_SUFFIX = "lock"
+_NESTED_SCOPES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+_TARGETS_OF = {
+    ast.Assign: lambda n: n.targets,
+    ast.AugAssign: lambda n: [n.target],
+    ast.AnnAssign: lambda n: [n.target],
+    ast.Delete: lambda n: n.targets,
+}
+
+
+def _call_name(node: ast.expr) -> str:
+    func = node.func if isinstance(node, ast.Call) else node
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return func.id if isinstance(func, ast.Name) else ""
+
+
+def _lock_names(tree: ast.Module) -> set[str]:
+    """Names bound to a lock factory call anywhere in the module."""
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
+            if _call_name(node.value) in _LOCK_FACTORIES:
+                names.update(_call_name(target) for target in node.targets)
+    return names
+
+
+def _is_lock(expr: ast.expr, lock_names: set[str]) -> bool:
+    if isinstance(expr, ast.Call):  # `with threading.Lock():` locks a fresh object: protects nothing
+        return False
+    name = _call_name(expr)
+    return name in lock_names or name.lower().endswith(_LOCK_NAME_SUFFIX)
+
+
+def _assigned_names(stmt: ast.stmt) -> set[str]:
+    targets = _TARGETS_OF.get(type(stmt))
+    if targets is None:
+        return set()
+    return {n.id for target in targets(stmt) for n in ast.walk(target) if isinstance(n, ast.Name)}
+
+
+def _child_blocks(stmt: ast.stmt) -> list[list[ast.stmt]]:
+    blocks = [getattr(stmt, field, []) for field in ("body", "orelse", "finalbody")]
+    blocks.extend(handler.body for handler in getattr(stmt, "handlers", []))
+    return blocks
+
+
+def _unlocked_writes(body: list[ast.stmt], lock_names: set[str], under_lock: bool = False) -> set[str]:
+    """Names assigned outside every lock-guarded `with`, not descending into nested scopes."""
+    written: set[str] = set()
+    for stmt in body:
+        if isinstance(stmt, _NESTED_SCOPES):
+            continue
+        if not under_lock:
+            written |= _assigned_names(stmt)
+        guarded = under_lock or (
+            isinstance(stmt, (ast.With, ast.AsyncWith))
+            and any(_is_lock(item.context_expr, lock_names) for item in stmt.items)
+        )
+        for block in _child_blocks(stmt):
+            written |= _unlocked_writes(block, lock_names, guarded)
+    return written
+
+
+def _global_statements(body: list[ast.stmt]) -> list[ast.Global]:
+    found: list[ast.Global] = []
+    for stmt in body:
+        if isinstance(stmt, ast.Global):
+            found.append(stmt)
+        elif not isinstance(stmt, _NESTED_SCOPES):
+            for block in _child_blocks(stmt):
+                found.extend(_global_statements(block))
+    return found
+
+
+def _unlocked_global_lines(content: str) -> list[int] | None:
+    """Lines of `global` statements whose names are written outside a lock; None if the source doesn't parse."""
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return None
+    lock_names = _lock_names(tree)
+    lines: set[int] = set()
+    for func in ast.walk(tree):
+        if isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            written = _unlocked_writes(func.body, lock_names)
+            lines.update(g.lineno for g in _global_statements(func.body) if written & set(g.names))
+    return sorted(lines)
+
+
 _GO_GOROUTINE = re.compile(r"\bgo\s+func\s*\(")
 _GO_WAITGROUP_ADD = re.compile(r"\.Add\s*\(")
 
@@ -103,9 +195,11 @@ def _mechanical_check(file: Path, root: Path, language: str) -> list[dict]:
     spawns_concurrency = language in _CONCURRENCY_IMPORTS and _CONCURRENCY_IMPORTS[language].search(content)
     if spawns_concurrency:
         pattern, message, severity = _SHARED_STATE[language]
-        for i, line in enumerate(lines, 1):
-            if pattern.search(line):
-                add(i, message, severity)
+        flagged = _unlocked_global_lines(content) if language == "python" else None
+        if flagged is None:
+            flagged = [i for i, line in enumerate(lines, 1) if pattern.search(line)]
+        for i in flagged:
+            add(i, message, severity)
 
     if language == "go":
         for i, line in enumerate(lines, 1):

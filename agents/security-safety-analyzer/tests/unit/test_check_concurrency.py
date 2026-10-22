@@ -73,6 +73,111 @@ class TestMechanicalSharedState:
         assert _mechanical_check(missing, tmp_path, "csharp") == []
 
 
+class TestPythonGlobalLockAwareness:
+    @staticmethod
+    def _check(tmp_path: Path, code: str) -> list[dict]:
+        return _mechanical_check(_make_file(tmp_path, "worker.py", code), tmp_path, "python")
+
+    def test_global_mutated_under_with_lock_is_clean(self, tmp_path):
+        code = (
+            "import threading\n"
+            "hits = 0\n"
+            "_hits_lock = threading.Lock()\n"
+            "\n"
+            "def record_hit():\n"
+            "    global hits\n"
+            "    with _hits_lock:\n"
+            "        hits += 1\n"
+        )
+        assert self._check(tmp_path, code) == []
+
+    def test_global_mutated_unprotected_in_thread_target_is_reported(self, tmp_path):
+        code = (
+            "import threading\n"
+            "hits = 0\n"
+            "\n"
+            "def record_hit():\n"
+            "    global hits\n"
+            "    hits += 1\n"
+            "\n"
+            "threading.Thread(target=record_hit).start()\n"
+        )
+        violations = self._check(tmp_path, code)
+        assert [v["line"] for v in violations] == [5]
+        assert "Global mutated" in violations[0]["message"]
+
+    def test_lock_built_from_rlock_counts_whatever_its_name(self, tmp_path):
+        code = (
+            "import threading\n"
+            "guard = threading.RLock()\n"
+            "def bump():\n"
+            "    global total\n"
+            "    with guard:\n"
+            "        total = 1\n"
+        )
+        assert self._check(tmp_path, code) == []
+
+    def test_attribute_named_lock_counts_without_visible_factory(self, tmp_path):
+        code = (
+            "import threading\n"
+            "def bump(self):\n"
+            "    global total\n"
+            "    with self._cache_lock:\n"
+            "        total += 1\n"
+        )
+        assert self._check(tmp_path, code) == []
+
+    def test_write_after_the_with_block_is_reported(self, tmp_path):
+        code = (
+            "import threading\n"
+            "lock = threading.Lock()\n"
+            "def bump():\n"
+            "    global total\n"
+            "    with lock:\n"
+            "        total += 1\n"
+            "    total += 1\n"
+        )
+        assert [v["line"] for v in self._check(tmp_path, code)] == [4]
+
+    def test_write_in_nested_branch_under_lock_is_clean(self, tmp_path):
+        code = (
+            "import threading\n"
+            "lock = threading.Lock()\n"
+            "def bump(flag):\n"
+            "    global total\n"
+            "    with lock:\n"
+            "        if flag:\n"
+            "            try:\n"
+            "                total += 1\n"
+            "            finally:\n"
+            "                pass\n"
+        )
+        assert self._check(tmp_path, code) == []
+
+    def test_global_only_read_is_clean(self, tmp_path):
+        code = "import threading\ndef show():\n    global total\n    return total\n"
+        assert self._check(tmp_path, code) == []
+
+    def test_fresh_lock_in_with_protects_nothing(self, tmp_path):
+        code = "import threading\ndef bump():\n    global total\n    with threading.Lock():\n        total += 1\n"
+        assert [v["line"] for v in self._check(tmp_path, code)] == [3]
+
+    def test_nested_function_write_does_not_flag_the_outer_function(self, tmp_path):
+        code = (
+            "import threading\n"
+            "def outer():\n"
+            "    global total\n"
+            "    def inner():\n"
+            "        total = 1\n"
+            "    return inner\n"
+        )
+        assert self._check(tmp_path, code) == []
+
+    def test_unparseable_source_falls_back_to_the_line_rule(self, tmp_path):
+        code = "import threading\ndef bump(:\n    global total\n"
+        assert [v["line"] for v in self._check(tmp_path, code)] == [3]
+
+
 class TestReconciliation:
     def test_mechanical_violations_reported_without_server(self, tmp_path):
         f = _make_file(tmp_path, "Cache.cs", "    private static int _hits = 0;\n")
