@@ -4,6 +4,15 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-22 - [#63] SSA no longer flags Python globals mutated under a lock
+- The mechanical concurrency rule reported every `global` line of a module importing threading/concurrent.futures/multiprocessing as "needs a lock", even inside `with lock:`; it was a line regex and could not see the block
+- Python now uses an AST pass: a `global` is reported only when one of its names is assigned (`=`, augmented, annotated, `del`) outside every `with`/`async with` on a lock; a lock is a name bound to `Lock`/`RLock`/`Semaphore`/`BoundedSemaphore`/`Condition`, or any name ending in `lock` (`self._cache_lock`); `with threading.Lock():` protects nothing
+- Finding line, message and severity unchanged; a file that does not parse falls back to the old line rule; other languages untouched; a `global` that is only read is no longer reported
+- Tests: 10 new (6 failed first); SSA 502 passed, repo CI-safe 3461 passed; SSA golden outputs unchanged
+tags: #ssa #concurrency #bugs
+Ref: https://github.com/TomasGC/Meerkat/issues/63
+Commit: 212de4d
+
 2026-10-22 - [#5] Live prompt tests: each AI checker prompt verified against the real model
 - Shared harness (`lib.testing.live_prompt`) runs each of CCA's 6, SSA's 9 and BBA's 4 engine prompts on a dirty/clean fixture pair and judges the AI findings only; 76 live cases across the three agents
 - A second, isolated yes/no call (`verify.prompt`, wording tailored per agent) re-checks each AI finding before keeping it; a wording change and a self-reported "confirmed" field were tried first and reverted (no effect) — the separate call recovered 2 of SSA's false positives with no loss of real detections
