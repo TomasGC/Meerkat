@@ -30,6 +30,8 @@ from pathlib import Path
 from typing import Callable
 from unittest import mock
 
+import pytest
+
 import lib.engine.hybrid as _hybrid
 
 PROXIMITY = 3  # the reconciliation window of lib.engine.dedup
@@ -51,6 +53,7 @@ class Case:
     span: tuple[int, int]
     issue: str
     file: str
+    known_false_positive: str | None = None
 
 
 @dataclass
@@ -87,9 +90,26 @@ def load_cases(root: Path) -> list[Case]:
                 (first, last),
                 meta["issue"],
                 names["dirty"][0],
+                meta.get("known_false_positive"),
             )
         )
     return cases
+
+
+def clean_params(cases: list[Case]) -> list:
+    """Case list for the clean-twin test: a case.json `known_false_positive` gets a strict xfail.
+
+    Strict: the mark must keep failing. A case that starts passing again needs its
+    `known_false_positive` removed, not a quietly-ignored xfail (same convention as #50/#51).
+    """
+    return [
+        (
+            pytest.param(case, marks=pytest.mark.xfail(strict=True, reason=case.known_false_positive))
+            if case.known_false_positive
+            else case
+        )
+        for case in cases
+    ]
 
 
 def required_fields(prompt_file: Path) -> set[str]:

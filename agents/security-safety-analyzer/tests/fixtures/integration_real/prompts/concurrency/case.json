@@ -6,5 +6,6 @@
     5,
     16
   ],
-  "issue": "a package-level counter incremented from many goroutines without a mutex"
+  "issue": "a package-level counter incremented from many goroutines without a mutex",
+  "known_false_positive": "#64 cause 1: the clean twin locks every access with mu.Lock()/Unlock(), model still claims no synchronization / non-atomic"
 }

@@ -47,6 +47,18 @@ def test_load_cases_reads_each_case(tmp_path):
     [case] = live_prompt.load_cases(tmp_path)
 
     assert (case.name, case.file, case.span, case.checker, case.prompt) == ("solid", "m.py", (2, 2), "check_x", "p")
+    assert case.known_false_positive is None
+
+
+def test_load_cases_reads_a_known_false_positive(tmp_path):
+    case_dir = _case(tmp_path)
+    meta = json.loads((case_dir / "case.json").read_text())
+    meta["known_false_positive"] = "#64: reason"
+    (case_dir / "case.json").write_text(json.dumps(meta))
+
+    [case] = live_prompt.load_cases(tmp_path)
+
+    assert case.known_false_positive == "#64: reason"
 
 
 @pytest.mark.parametrize(
@@ -201,3 +213,15 @@ def test_a_whole_file_finding_is_in_no_span():
 
     assert live_prompt.in_span(items, (1, 3)) == [{"line": 2}]
     assert live_prompt.outside_span(items, (1, 3)) == [{"line": 0}]
+
+
+def test_clean_params_marks_only_a_case_with_a_known_false_positive():
+    marked = live_prompt.Case("marked", Path(), "c", "p", "python", (1, 1), "issue", "m.py", "#64: reason")
+    plain = live_prompt.Case("plain", Path(), "c", "p", "python", (1, 1), "issue", "m.py")
+
+    params = live_prompt.clean_params([marked, plain])
+
+    assert params[1] is plain
+    mark = params[0].marks[0]
+    assert (mark.name, mark.kwargs) == ("xfail", {"strict": True, "reason": "#64: reason"})
+    assert params[0].values == (marked,)

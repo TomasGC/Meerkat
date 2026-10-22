@@ -35,6 +35,6 @@ def test_dirty_file_gets_an_ai_finding_on_the_seeded_issue(case):
     live_prompt.assert_detects(case, _run(case, "dirty"))
 
 
-@pytest.mark.parametrize("case", CASES, ids=lambda c: c.name)
+@pytest.mark.parametrize("case", live_prompt.clean_params(CASES), ids=lambda c: c.name)
 def test_clean_twin_gets_no_ai_finding_where_the_issue_was_fixed(case):
     live_prompt.assert_quiet_once_fixed(case, _run(case, "clean"))

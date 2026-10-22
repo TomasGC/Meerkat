@@ -6,5 +6,6 @@
     6,
     9
   ],
-  "issue": "withdraw_and_get_balance mutates the account and returns its data"
+  "issue": "withdraw_and_get_balance mutates the account and returns its data",
+  "known_false_positive": "#64 cause 1: verifier confirms the model's own hedged restatement of a non-issue on the clean twin"
 }

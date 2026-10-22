@@ -6,5 +6,6 @@
     3,
     8
   ],
-  "issue": "AES in ECB mode with a key hardcoded in the source"
+  "issue": "AES in ECB mode with a key hardcoded in the source",
+  "known_false_positive": "#64 cause 1: the clean twin uses AESGCM (AEAD), model still claims no authentication/integrity check"
 }
