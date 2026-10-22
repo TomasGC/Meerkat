@@ -221,6 +221,10 @@ them instead of hanging the session:
 - CCA `tests/e2e/test_e2e_full_analysis.py::test_agents_n_completes_without_duplicates` — 300s limit; passes in
   ~193s when the GPU is free.
 
+The live prompt tests (#5, `agents/*/tests/integration_real/test_prompts_live.py`) have no per-test timeout, since
+each case is one or two short model calls, not a full pipeline run — but the full 76-case run across CCA, SSA and
+BBA took ~41 minutes on `devstral-small-2` with the GPU mostly offloaded to CPU. Run them with `-m live_ai`.
+
 ## Clones and Worktrees Are Faithful (#2)
 
 Nothing locates the repository through `~/.claude` any more. `scripts/lib/paths.py` resolves it from its own file:

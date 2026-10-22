@@ -1,0 +1,11 @@
+{
+  "checker": "check_security",
+  "prompt": "security",
+  "language": "python",
+  "span": [
+    6,
+    9
+  ],
+  "issue": "IDOR: any caller reads any invoice by id, with no login and no ownership check",
+  "known_false_positive": "#64 cause 1: the clean twin requires login and filters by owner_id==current_user.id, model's own finding text describes that check and still calls it insufficient"
+}

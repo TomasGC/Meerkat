@@ -1,0 +1,11 @@
+{
+  "checker": "check_slap",
+  "prompt": "slap_analysis",
+  "language": "python",
+  "span": [
+    4,
+    14
+  ],
+  "issue": "process_order mixes validate/notify calls with price arithmetic, JSON encoding and SQL",
+  "known_false_positive": "#64 cause 1: verifier confirms the model's own hedged restatement of a non-issue on the clean twin"
+}

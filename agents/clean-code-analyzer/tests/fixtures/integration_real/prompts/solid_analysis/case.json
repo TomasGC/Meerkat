@@ -1,0 +1,11 @@
+{
+  "checker": "check_solid",
+  "prompt": "solid_analysis",
+  "language": "python",
+  "span": [
+    4,
+    17
+  ],
+  "issue": "ReportService loads, renders and emails: three reasons to change",
+  "known_false_positive": "#64 cause 1: verifier confirms the model's own hedged restatement of a non-issue on the clean twin"
+}

@@ -1,0 +1,11 @@
+{
+  "checker": "check_sensitive_data",
+  "prompt": "sensitive_data",
+  "language": "python",
+  "span": [
+    6,
+    8
+  ],
+  "issue": "the whole registration payload, credentials included, is written to the log",
+  "known_false_positive": "#64 cause 2: the clean twin only logs user_id (the seeded issue is fixed); the model raises a different, real pair of observations (user_id as PII, no success/failure audit log) that the fixture isn't clean for"
+}

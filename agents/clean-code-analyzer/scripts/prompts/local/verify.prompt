@@ -1,0 +1,15 @@
+You previously flagged a Clean Code issue in this {language} file.
+
+Source file:
+{source}
+
+Claimed issue at line {line}:
+{claim}
+
+Does the code, as written, actually break this principle? A violation counts
+even when the code runs correctly and has no bug — design principles judge
+structure, not runtime correctness. Only answer NO when the claim is wrong
+about the code itself (invented code, a principle that plainly does not
+apply, or a rule the code already satisfies).
+
+Answer with exactly one word: YES or NO.

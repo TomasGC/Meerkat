@@ -1,0 +1,10 @@
+{
+  "checker": "check_resource_leaks",
+  "prompt": "resource_leaks",
+  "language": "python",
+  "span": [
+    4,
+    8
+  ],
+  "issue": "the connection is closed only on the success path: an exception in execute leaks it"
+}

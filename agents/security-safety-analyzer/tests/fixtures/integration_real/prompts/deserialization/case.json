@@ -1,0 +1,11 @@
+{
+  "checker": "check_deserialization",
+  "prompt": "deserialization",
+  "language": "python",
+  "span": [
+    5,
+    10
+  ],
+  "issue": "zip slip: archive member names are joined to the target without checking they stay inside it",
+  "known_false_positive": "#64 cause 1: the clean twin already guards with destination.is_relative_to(root), model still claims no path validation"
+}

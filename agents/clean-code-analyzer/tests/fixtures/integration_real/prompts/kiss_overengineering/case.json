@@ -1,0 +1,10 @@
+{
+  "checker": "check_kiss",
+  "prompt": "kiss_overengineering",
+  "language": "python",
+  "span": [
+    4,
+    23
+  ],
+  "issue": "an abstract operation, a registry and a factory to add two numbers"
+}

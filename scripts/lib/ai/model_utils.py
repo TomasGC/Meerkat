@@ -22,6 +22,11 @@ from lib.config.model_config import get_model
 
 _THINK_RE = _re.compile(r"<think>.*?</think>", _re.DOTALL)
 
+# <prompts_dir>/verify.prompt, when present: a yes/no second opinion on each finding (#5)
+VERIFY_PROMPT = "verify"
+_CLAIM_TEXT_KEYS = ("violation", "description", "reason")
+_CLAIM_KIND_KEYS = ("principle", "pattern", "type")
+
 
 def _parse_local_server() -> tuple[str, int]:
     """Parse host and port from local.base_url in config."""
@@ -256,6 +261,19 @@ def analyze_file_with_model(
     return results
 
 
+def _claim(item: dict) -> str:
+    """One line naming what a finding claims, whatever field names its prompt uses."""
+    kind = next((str(v) for k, v in item.items() if k.endswith("_type") or k in _CLAIM_KIND_KEYS), "")
+    text = next((str(item[k]) for k in _CLAIM_TEXT_KEYS if item.get(k)), "")
+    return f"[{kind}] {text}" if kind else text
+
+
+def _verdict(answer: str | None) -> bool:
+    """Keep a finding unless the verifier clearly answers NO: a missing or unclear answer keeps it."""
+    words = (answer or "").strip().split()
+    return not words or words[0].strip(".,:!*").upper() != "NO"
+
+
 async def analyze_files_async(
     file_paths: list,
     language: str,
@@ -277,6 +295,11 @@ async def analyze_files_async(
     failed, when given, receives the Path of every file for which at least one chunk
     produced no usable response (no response, unparseable output, or an exception).
     A response that parses to an empty list is a clean result, not a failure.
+
+    When prompts_dir holds a verify.prompt, each finding is put to the model again
+    as a closed question about that one claim, and dropped on a clear NO. A local
+    model always finds something; asked about a single claim, it can say no. A
+    verifier call that fails keeps the finding: an outage never hides a real problem.
     """
     if prompts_dir is None:
         raise ValueError("prompts_dir is required")
@@ -287,6 +310,24 @@ async def analyze_files_async(
     except FileNotFoundError:
         print(f"[ERROR] Prompt file not found: {prompt_file}", file=sys.stderr)
         return []
+    verify_file = prompts_dir / f"{VERIFY_PROMPT}.prompt"
+    verifier = verify_file.read_text(encoding="utf-8") if verify_file.exists() else None
+
+    async def verified(items: list[dict], source: str, slots: dict) -> list[dict]:
+        if verifier is None or not items:
+            return items
+        answers = await asyncio.gather(
+            *[
+                call_model_async(
+                    verifier.format(source=source, line=item.get("line", 0), claim=_claim(item), **slots),
+                    role=role,
+                    timeout=timeout,
+                )
+                for item in items
+            ],
+            return_exceptions=True,
+        )
+        return [item for item, answer in zip(items, answers) if isinstance(answer, BaseException) or _verdict(answer)]
 
     async def analyze_one(file_path: Path) -> list[dict]:
         if not no_cache and cache is not None:
@@ -340,6 +381,7 @@ async def analyze_files_async(
         if failed is not None and chunk_failed:
             failed.add(file_path)
 
+        results = await verified(results, source, slots)
         for item in results:
             item["source_file"] = str(file_path)
             item["source_file_name"] = file_path.name
