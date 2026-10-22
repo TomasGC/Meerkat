@@ -1,0 +1,10 @@
+{
+  "checker": "check_security",
+  "prompt": "security",
+  "language": "python",
+  "span": [
+    6,
+    9
+  ],
+  "issue": "IDOR: any caller reads any invoice by id, with no login and no ownership check"
+}

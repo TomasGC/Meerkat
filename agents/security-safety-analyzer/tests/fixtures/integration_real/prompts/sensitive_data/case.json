@@ -1,0 +1,10 @@
+{
+  "checker": "check_sensitive_data",
+  "prompt": "sensitive_data",
+  "language": "python",
+  "span": [
+    6,
+    8
+  ],
+  "issue": "the whole registration payload, credentials included, is written to the log"
+}

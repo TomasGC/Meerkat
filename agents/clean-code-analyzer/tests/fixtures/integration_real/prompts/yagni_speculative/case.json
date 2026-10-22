@@ -1,0 +1,10 @@
+{
+  "checker": "check_yagni",
+  "prompt": "yagni_speculative",
+  "language": "python",
+  "span": [
+    1,
+    10
+  ],
+  "issue": "a plugin extension point with one do-nothing plugin, kept for future formats"
+}

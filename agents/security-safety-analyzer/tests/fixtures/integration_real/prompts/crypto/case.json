@@ -1,0 +1,10 @@
+{
+  "checker": "check_crypto",
+  "prompt": "crypto",
+  "language": "python",
+  "span": [
+    3,
+    8
+  ],
+  "issue": "AES in ECB mode with a key hardcoded in the source"
+}

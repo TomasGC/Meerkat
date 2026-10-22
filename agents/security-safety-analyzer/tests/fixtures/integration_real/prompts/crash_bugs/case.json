@@ -1,0 +1,10 @@
+{
+  "checker": "check_crash_bugs",
+  "prompt": "crash_bugs",
+  "language": "go",
+  "span": [
+    3,
+    9
+  ],
+  "issue": "AverageRating divides by len(stars), which is zero for a product without ratings"
+}

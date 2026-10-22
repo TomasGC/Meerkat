@@ -1,0 +1,10 @@
+{
+  "checker": "check_concurrency",
+  "prompt": "concurrency",
+  "language": "go",
+  "span": [
+    5,
+    16
+  ],
+  "issue": "a package-level counter incremented from many goroutines without a mutex"
+}

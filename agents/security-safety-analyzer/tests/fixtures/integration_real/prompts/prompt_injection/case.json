@@ -1,0 +1,10 @@
+{
+  "checker": "check_prompt_injection",
+  "prompt": "prompt_injection",
+  "language": "python",
+  "span": [
+    1,
+    3
+  ],
+  "issue": "the user's question is concatenated into the system instructions of the prompt"
+}

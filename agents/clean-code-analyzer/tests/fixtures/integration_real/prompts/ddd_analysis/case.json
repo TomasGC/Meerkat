@@ -1,0 +1,10 @@
+{
+  "checker": "check_ddd",
+  "prompt": "ddd_analysis",
+  "language": "python",
+  "span": [
+    1,
+    14
+  ],
+  "issue": "anemic Order: the total and the cancel rule live in OrderService"
+}

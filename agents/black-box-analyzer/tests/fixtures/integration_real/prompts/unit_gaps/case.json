@@ -1,0 +1,10 @@
+{
+  "checker": "check_unit_gaps",
+  "prompt": "unit_gaps",
+  "language": "python",
+  "span": [
+    1,
+    7
+  ],
+  "issue": "shipping_cost has validation and two pricing branches, and no unit test"
+}

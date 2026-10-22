@@ -1,0 +1,10 @@
+{
+  "checker": "check_integ_mock_gaps",
+  "prompt": "integ_mock_gaps",
+  "language": "python",
+  "span": [
+    6,
+    9
+  ],
+  "issue": "eur_to_usd calls an external rates API over HTTP, with no mocked integration test"
+}

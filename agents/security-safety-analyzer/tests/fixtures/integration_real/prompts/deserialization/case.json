@@ -1,0 +1,10 @@
+{
+  "checker": "check_deserialization",
+  "prompt": "deserialization",
+  "language": "python",
+  "span": [
+    5,
+    10
+  ],
+  "issue": "zip slip: archive member names are joined to the target without checking they stay inside it"
+}

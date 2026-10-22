@@ -1,0 +1,10 @@
+{
+  "checker": "check_e2e_gaps",
+  "prompt": "e2e_gaps",
+  "language": "python",
+  "span": [
+    6,
+    11
+  ],
+  "issue": "the checkout endpoint drives a whole user journey: cart, order, confirmation"
+}

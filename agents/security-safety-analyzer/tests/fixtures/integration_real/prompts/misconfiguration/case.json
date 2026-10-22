@@ -1,0 +1,10 @@
+{
+  "checker": "check_misconfiguration",
+  "prompt": "misconfiguration",
+  "language": "python",
+  "span": [
+    8,
+    10
+  ],
+  "issue": "the session cookie is set without Secure, HttpOnly or SameSite"
+}
