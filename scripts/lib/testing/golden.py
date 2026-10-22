@@ -18,6 +18,8 @@ A call is identified by matching the rendered prompt against each
 `<prompts_dir>/<name>.prompt` template (literal text fixed, slots free) and then
 the captured `{source}` slot against the text of each fixture file (or chunk).
 Both must resolve to exactly one candidate, otherwise the call is an error.
+A call to the agent's verify.prompt (the yes/no second opinion) is answered YES,
+so the recorded findings stand; the live prompt tests judge the verifier itself.
 """
 
 import importlib
@@ -188,6 +190,9 @@ class Replay:
             names = [n for n, _ in matches] or "none"
             raise self._fail(f"prompt matched {names} templates, expected exactly one: {prompt[:120]!r}")
         name, match = matches[0]
+        if name == _model_utils.VERIFY_PROMPT:
+            # The verifier keeps every recorded finding here; its own answers are judged live (#5)
+            return "YES"
         source = match.groupdict().get("source")
         keys = [k for k, text in self.sources.items() if text == source]
         if len(keys) != 1:

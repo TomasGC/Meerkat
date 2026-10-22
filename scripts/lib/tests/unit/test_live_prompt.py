@@ -9,17 +9,24 @@ from unittest.mock import patch
 
 import pytest
 
+import lib.ai.model_utils as model_utils
 import lib.engine.hybrid as hybrid
 from lib import paths
 from lib.testing import live_prompt
 
+# the verify.prompt in cca/ssa's prompts/local is a yes/no second opinion (#5), not an
+# analysis prompt: it has no JSON schema to assert on, so it's excluded from this list.
 _ENGINE_PROMPTS = [
-    *(paths.CHECKOUT / "agents/clean-code-analyzer/scripts/prompts/local").glob("*.prompt"),
-    *(paths.CHECKOUT / "agents/security-safety-analyzer/scripts/prompts/local").glob("*.prompt"),
-    *(
-        paths.CHECKOUT / f"agents/black-box-analyzer/scripts/prompts/local/{name}.prompt"
-        for name in ("unit_gaps", "integ_mock_gaps", "integ_real_gaps", "e2e_gaps")
-    ),
+    p
+    for p in (
+        *(paths.CHECKOUT / "agents/clean-code-analyzer/scripts/prompts/local").glob("*.prompt"),
+        *(paths.CHECKOUT / "agents/security-safety-analyzer/scripts/prompts/local").glob("*.prompt"),
+        *(
+            paths.CHECKOUT / f"agents/black-box-analyzer/scripts/prompts/local/{name}.prompt"
+            for name in ("unit_gaps", "integ_mock_gaps", "integ_real_gaps", "e2e_gaps")
+        ),
+    )
+    if p.stem != model_utils.VERIFY_PROMPT
 ]
 
 

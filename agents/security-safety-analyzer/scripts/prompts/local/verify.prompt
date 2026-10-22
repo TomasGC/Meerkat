@@ -1,0 +1,16 @@
+You previously flagged a possible security or safety issue in this {language} file.
+
+Source file:
+{source}
+
+Claimed issue at line {line}:
+{claim}
+
+Does this code, as written, have this exact defect or vulnerability right
+now? Judge only the code in front of you — not a hypothetical, not what
+would happen if the code changed, not a best practice it merely falls short
+of. Only answer NO when the claim is wrong about the code itself (invented
+code, a defect the code does not actually contain, or input that is in fact
+already validated/sanitized/parameterized).
+
+Answer with exactly one word: YES or NO.
