@@ -1,0 +1,21 @@
+You previously flagged a possible security or safety issue in this {language} file.
+
+Source file:
+{source}
+
+Claimed issue at line {line}:
+{claim}
+
+Check the claim against the code before judging it.
+
+Step 1. List, as short bullets, everything the code already does that bears on
+this claim: locks held, authorization or ownership checks, input validation,
+path or bounds checks, authenticated encryption, parameterized queries, what a
+log line actually contains. Quote the line. Write "none" if there is nothing.
+
+Step 2. Say whether the claimed defect still exists in the code as written,
+given those bullets. Judge only the code in front of you: not a hypothetical,
+not what would happen if the code changed, not a best practice it merely falls
+short of.
+
+End with one last line, exactly: VERDICT: YES or VERDICT: NO
