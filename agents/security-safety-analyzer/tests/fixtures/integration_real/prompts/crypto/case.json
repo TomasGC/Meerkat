@@ -7,5 +7,5 @@
     8
   ],
   "issue": "AES in ECB mode with a key hardcoded in the source",
-  "known_false_positive": "#64 cause 1: the clean twin uses AESGCM (AEAD), model still claims no authentication/integrity check"
+  "known_false_positive": "#64 cause 1: the clean twin uses AESGCM (AEAD), model still claims no authentication/integrity check. Measured (#64): the evidence-first second vote cleared it in 1 of 2 passes, so it stays pinned until it holds."
 }
