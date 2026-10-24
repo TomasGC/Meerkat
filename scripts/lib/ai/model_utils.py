@@ -24,6 +24,11 @@ _THINK_RE = _re.compile(r"<think>.*?</think>", _re.DOTALL)
 
 # <prompts_dir>/verify.prompt, when present: a yes/no second opinion on each finding (#5)
 VERIFY_PROMPT = "verify"
+# <prompts_dir>/verify_evidence.prompt, when present: a second vote that lists what the code already
+# does about the claim, then ends with "VERDICT: YES" or "VERDICT: NO" (#64)
+VERIFY_EVIDENCE_PROMPT = "verify_evidence"
+# every prompt that judges one finding instead of a file: no analysis schema, no live case of its own
+VERIFIER_PROMPTS = (VERIFY_PROMPT, VERIFY_EVIDENCE_PROMPT)
 _CLAIM_TEXT_KEYS = ("violation", "description", "reason")
 _CLAIM_KIND_KEYS = ("principle", "pattern", "type")
 
@@ -274,6 +279,15 @@ def _verdict(answer: str | None) -> bool:
     return not words or words[0].strip(".,:!*").upper() != "NO"
 
 
+def _evidence_verdict(answer: str | None) -> bool:
+    """Keep a finding unless the last line is VERDICT: NO; a missing or unclear answer keeps it."""
+    lines = [line for line in (answer or "").strip().splitlines() if line.strip()]
+    return not (lines and lines[-1].strip().strip("*").upper().startswith("VERDICT: NO"))
+
+
+_VOTES = {VERIFY_PROMPT: _verdict, VERIFY_EVIDENCE_PROMPT: _evidence_verdict}
+
+
 async def analyze_files_async(
     file_paths: list,
     language: str,
@@ -296,10 +310,12 @@ async def analyze_files_async(
     produced no usable response (no response, unparseable output, or an exception).
     A response that parses to an empty list is a clean result, not a failure.
 
-    When prompts_dir holds a verify.prompt, each finding is put to the model again
-    as a closed question about that one claim, and dropped on a clear NO. A local
-    model always finds something; asked about a single claim, it can say no. A
-    verifier call that fails keeps the finding: an outage never hides a real problem.
+    For each verifier prompt in prompts_dir (see VERIFIER_PROMPTS), every finding is put
+    to the model again as a closed question about that one claim. A finding survives only
+    if every vote keeps it. A local model always finds something; asked about a single
+    claim, it can say no, and a second prompt that makes it list what the code already
+    does catches claims the first one agrees with. A verifier call that fails keeps the
+    finding: an outage never hides a real problem.
     """
     if prompts_dir is None:
         raise ValueError("prompts_dir is required")
@@ -310,24 +326,36 @@ async def analyze_files_async(
     except FileNotFoundError:
         print(f"[ERROR] Prompt file not found: {prompt_file}", file=sys.stderr)
         return []
-    verify_file = prompts_dir / f"{VERIFY_PROMPT}.prompt"
-    verifier = verify_file.read_text(encoding="utf-8") if verify_file.exists() else None
+    verifiers = [
+        ((prompts_dir / f"{name}.prompt").read_text(encoding="utf-8"), vote)
+        for name, vote in _VOTES.items()
+        if (prompts_dir / f"{name}.prompt").exists()
+    ]
 
     async def verified(items: list[dict], source: str, slots: dict) -> list[dict]:
-        if verifier is None or not items:
+        if not verifiers or not items:
             return items
         answers = await asyncio.gather(
             *[
                 call_model_async(
-                    verifier.format(source=source, line=item.get("line", 0), claim=_claim(item), **slots),
+                    template.format(source=source, line=item.get("line", 0), claim=_claim(item), **slots),
                     role=role,
                     timeout=timeout,
                 )
                 for item in items
+                for template, _ in verifiers
             ],
             return_exceptions=True,
         )
-        return [item for item, answer in zip(items, answers) if isinstance(answer, BaseException) or _verdict(answer)]
+        step = len(verifiers)
+        return [
+            item
+            for index, item in enumerate(items)
+            if all(
+                isinstance(answer, BaseException) or vote(answer)
+                for answer, (_, vote) in zip(answers[index * step : (index + 1) * step], verifiers)
+            )
+        ]
 
     async def analyze_one(file_path: Path) -> list[dict]:
         if not no_cache and cache is not None:

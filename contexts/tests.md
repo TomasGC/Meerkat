@@ -225,6 +225,10 @@ The live prompt tests (#5, `agents/*/tests/integration_real/test_prompts_live.py
 each case is one or two short model calls, not a full pipeline run — but the full 76-case run across CCA, SSA and
 BBA took ~41 minutes on `devstral-small-2` with the GPU mostly offloaded to CPU. Run them with `-m live_ai`.
 
+`pytest -k <name>` matches directory names too: `-k security` selects every test under `agents/security-safety-analyzer/`,
+so a "run one case" loop spent 43 minutes on the whole SSA file. Select a case by its parametrized id or another name
+unique to it, and read the last pytest line of the log: `N skipped` means the model server was unreachable, not a result.
+
 ## Clones and Worktrees Are Faithful (#2)
 
 Nothing locates the repository through `~/.claude` any more. `scripts/lib/paths.py` resolves it from its own file:

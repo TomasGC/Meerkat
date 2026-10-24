@@ -26,7 +26,7 @@ _ENGINE_PROMPTS = [
             for name in ("unit_gaps", "integ_mock_gaps", "integ_real_gaps", "e2e_gaps")
         ),
     )
-    if p.stem != model_utils.VERIFY_PROMPT
+    if p.stem not in model_utils.VERIFIER_PROMPTS
 ]
 
 

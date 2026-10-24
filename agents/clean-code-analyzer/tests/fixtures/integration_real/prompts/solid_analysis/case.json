@@ -7,5 +7,5 @@
     17
   ],
   "issue": "ReportService loads, renders and emails: three reasons to change",
-  "known_false_positive": "#64 cause 1: verifier confirms the model's own hedged restatement of a non-issue on the clean twin"
+  "known_false_positive": "#64 cause 1: verifier confirms the model's own hedged restatement of a non-issue on the clean twin. Measured (#64): the yes/no and the evidence-first verifier both keep this claim; the evidence prompt gave no gain on design-principle claims, so CCA stays on one vote. Accepted limit; assistant review (#69) is the backstop."
 }

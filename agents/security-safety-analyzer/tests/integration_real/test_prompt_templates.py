@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from lib.ai.model_utils import VERIFY_PROMPT
+from lib.ai.model_utils import VERIFIER_PROMPTS
 from ssa.model_utils import PROMPTS_DIR
 
 # Slots supplied by analyze_files_parallel for every call
@@ -33,7 +33,7 @@ _EXTRA_SLOTS = {
 def _prompt_files() -> list[Path]:
     # verify.prompt is the yes/no second opinion (#5), not an analysis prompt: no {known_findings}-
     # style schema, no JSON array answer, slots source/line/claim instead.
-    return sorted(p for p in PROMPTS_DIR.glob("*.prompt") if p.stem != VERIFY_PROMPT)
+    return sorted(p for p in PROMPTS_DIR.glob("*.prompt") if p.stem not in VERIFIER_PROMPTS)
 
 
 def test_prompts_directory_is_not_empty():
