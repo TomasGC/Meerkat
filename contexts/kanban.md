@@ -4,6 +4,18 @@ Track of work sessions and completed tasks linked to GitHub issues.
 
 ---
 
+2026-10-24 - [#64] SSA findings must survive a second, evidence-first vote
+- A finding was kept unless one yes/no question got a NO, so a model agreeing with its own wrong claim kept it; SSA now also asks a prompt that lists what the code already does about the claim (locks, auth checks, authenticated encryption) and ends `VERDICT: YES|NO`, and a finding survives only if every verifier prompt keeps it
+- `lib.ai.model_utils` takes any number of verifier prompts from an agent's prompts directory (`VERIFIER_PROMPTS`, shared with the golden replay and the prompt-listing tests); CCA and BBA stay on one vote, since the evidence prompt gave no gain on design-principle claims
+- Measured first by re-asking recorded verifier prompts (two passes per agent), then live: SSA file 31 passed, no dirty-twin detection lost; `concurrency` and `security` clean twins now pass and lose their `known_false_positive`; `crypto`, `deserialization`, `sensitive_data` and the four CCA cases stay pinned with the measurement in each note
+- Not fixed: `prompt_injection`'s clean twin failed once on a finding that would also have survived the old vote (the model flipped the old verdict between passes); remaining cases move to a second part
+- Tests: 20 new for the votes, the verdict line and the shipped prompt; CI-safe 3481 passed (was 3461)
+tags: #ssa #verifier #local-ai #prompts
+Ref: https://github.com/TomasGC/Meerkat/issues/64
+Commits: 609ef6c, f8db241
+
+---
+
 2026-10-22 - [#63] SSA no longer flags Python globals mutated under a lock
 - The mechanical concurrency rule reported every `global` line of a module importing threading/concurrent.futures/multiprocessing as "needs a lock", even inside `with lock:`; it was a line regex and could not see the block
 - Python now uses an AST pass: a `global` is reported only when one of its names is assigned (`=`, augmented, annotated, `del`) outside every `with`/`async with` on a lock; a lock is a name bound to `Lock`/`RLock`/`Semaphore`/`BoundedSemaphore`/`Condition`, or any name ending in `lock` (`self._cache_lock`); `with threading.Lock():` protects nothing
